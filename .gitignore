@@ -8,6 +8,7 @@ _disabled/
 # MoonBit build artifacts
 mbt/target/
 mbt/_build/
+mbt/.mooncakes/
 
 # Stray local log files (debug output from past sessions)
 *.log
