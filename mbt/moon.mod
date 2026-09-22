@@ -1,15 +1,31 @@
-name = "RiantR/snn_mbt"
+name = "riantr/snn_mbt"
 
-version = "0.1.0"
+version = "0.10.131"
 
 readme = "README.md"
 
-repository = ""
+repository = "https://gitee.com/ren-yongxiang/moonbit-snn"
 
 license = "MIT"
 
-keywords = ["snn", "neuroscience", "spiking", "neuron-model"]
+keywords = [
+  "spiking-neural-network",
+  "neuroscience",
+  "bit-exact",
+  "izhikevich",
+  "if-neuron",
+  "adex",
+  "hodgkin-huxley",
+  "morris-lecar",
+  "stdp",
+  "stp",
+  "poisson",
+  "dendritic",
+  "snns",
+  "julia-port",
+  "simulation",
+]
 
-description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl. Simulates biophysical spiking neural networks with the same numerical trajectories as the Julia version."
+description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), and multicompartment dendritic neurons (BallAndStick, Tripod, Multipod). Float32 end-to-end with libm FFI (expf, tanhf, logf). 881 tests passing, 76 examples ported from Julia."
 
 preferred_target = "native"

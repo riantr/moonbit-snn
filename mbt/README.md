@@ -184,7 +184,7 @@ s2, s3)` with raw UInt64s (bypassing the integer-seed hashing).
 
 ```
 mbt/
-├── moon.mod                     # module: RiantR/snn_mbt
+├── moon.mod                     # module: riantr/snn_mbt
 ├── moon.pkg
 ├── README.md
 ├── units.mbt                    # 30+ Float32 unit constants

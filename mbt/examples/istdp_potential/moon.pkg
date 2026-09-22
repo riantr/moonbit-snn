@@ -2,7 +2,7 @@
 // potential-based post-synaptic trace) example.
 
 import {
-  "RiantR/snn_mbt",
+  "riantr/snn_mbt",
 }
 
 options(

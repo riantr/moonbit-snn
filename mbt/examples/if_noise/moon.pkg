@@ -1,7 +1,7 @@
 // moon.pkg for the if_noise example.
 
 import {
-  "RiantR/snn_mbt",
+  "riantr/snn_mbt",
 }
 
 options(

@@ -1,7 +1,7 @@
 // moon.pkg for the lagzi2022 example.
 
 import {
-  "RiantR/snn_mbt",
+  "riantr/snn_mbt",
 }
 
 options(

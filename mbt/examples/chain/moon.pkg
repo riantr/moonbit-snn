@@ -3,7 +3,7 @@
 // the executable target.
 
 import {
-  "RiantR/snn_mbt",
+  "riantr/snn_mbt",
 }
 
 options(

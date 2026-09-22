@@ -1,7 +1,7 @@
 // moon.pkg for the spike_analysis example.
 
 import {
-  "RiantR/snn_mbt",
+  "riantr/snn_mbt",
 }
 
 options(
