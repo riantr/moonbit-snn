@@ -4,7 +4,7 @@ import {
 
 name = "riantr/snn_mbt"
 
-version = "0.16.1"
+version = "0.16.2"
 
 readme = "README.md"
 
@@ -38,9 +38,10 @@ keywords = [
   "adam",
   "adamw",
   "rmsprop",
+  "adagrad",
   "optimizer",
 ]
 
-description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl plus CNN primitives + 5D spatiotemporal tensors + full optimiser suite. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), multicompartment dendritic neurons (BallAndStick, Tripod, Multipod); Conv2d / MaxPool2d / ReLU / Flatten / Linear forward + backward primitives; Tensor struct with broadcasting + softmax + log-softmax + cross-entropy; image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF) via riantr/moonbit_image; 5D [T,B,C,H,W] STImage for spiking-CNN time-series input; SGD + SGD-with-momentum + Adam (with bias correction) + AdamW (decoupled weight decay) + RMSprop optimisers. Float32 end-to-end with libm FFI (expf, tanhf, logf, sqrtf). 1003 tests passing, 76 examples ported from Julia."
+description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl plus CNN primitives + 5D spatiotemporal tensors + full optimiser suite. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), multicompartment dendritic neurons (BallAndStick, Tripod, Multipod); Conv2d / MaxPool2d / ReLU / Flatten / Linear forward + backward primitives; Tensor struct with broadcasting + softmax + log-softmax + cross-entropy; image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF) via riantr/moonbit_image; 5D [T,B,C,H,W] STImage for spiking-CNN time-series input; SGD + SGD-with-momentum + Adam (with bias correction) + AdamW (decoupled weight decay) + RMSprop + AdaGrad optimisers. Float32 end-to-end with libm FFI (expf, tanhf, logf, sqrtf). 1010 tests passing, 76 examples ported from Julia."
 
 preferred_target = "native"
