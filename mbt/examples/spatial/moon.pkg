@@ -1,0 +1,9 @@
+// moon.pkg for the spatial utilities demo.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

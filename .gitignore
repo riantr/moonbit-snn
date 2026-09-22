@@ -1,0 +1,36 @@
+# Build artifacts
+_build/
+_disabled/
+**/target/
+**/_build/
+**/.moon/
+
+# MoonBit build artifacts
+mbt/target/
+mbt/_build/
+
+# Stray local log files (debug output from past sessions)
+*.log
+**/_v*.log
+
+# Stray backup files / test output (debug artifacts)
+*.bak
+**/*.txt
+!**/moon.pkg
+!examples/**/pkg.json
+
+# Upstream Julia reference repos — NOT part of this repo
+# (we only ship the MoonBit port; refs are local working copies of
+#  SpikingNeuralNetworks.jl / SNNModels.jl / SNNUtils.jl used as the
+#  bit-exact reference for the port)
+refs/
+SpikingNeuralNetworks.jl/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Lock files (recreated by tooling)
+*.lock

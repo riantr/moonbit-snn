@@ -1,0 +1,9 @@
+// moon.pkg for the change_plasticity example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

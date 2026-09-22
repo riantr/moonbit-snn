@@ -1,0 +1,9 @@
+// moon.pkg for the IstdpRate (Vogels 2011 inhibitory STDP) example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

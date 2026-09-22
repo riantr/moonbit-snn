@@ -1,0 +1,9 @@
+// moon.pkg for the SNNUtils parameter constants demo.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

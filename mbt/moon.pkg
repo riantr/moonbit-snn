@@ -1,0 +1,8 @@
+options(
+  targets: {
+  },
+)
+
+import {
+  "moonbitlang/core/math",
+}

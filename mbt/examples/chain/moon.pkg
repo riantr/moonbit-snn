@@ -1,0 +1,11 @@
+// moon.pkg for the chain example.
+// Imports the parent `snn_mbt` package and marks this sub-package as
+// the executable target.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

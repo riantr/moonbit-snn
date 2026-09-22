@@ -1,0 +1,9 @@
+// moon.pkg for the afferent_response example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

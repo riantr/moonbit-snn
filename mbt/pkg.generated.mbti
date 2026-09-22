@@ -1,0 +1,769 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "RiantR/snn_mbt"
+
+// Values
+pub const M : Float = 1.0e6
+
+pub fn abs_f32(Float) -> Float
+
+pub fn adex_connect(SpikingSynapseAdEx, Int, Int, Float) -> Unit
+
+pub fn adex_sim_for(AdExModel, Float) -> Unit
+
+pub fn adex_step_synapses(AdEx, Float) -> Unit
+
+pub fn adex_synaptic_current(AdEx) -> Unit
+
+pub let ampere : Float
+
+pub fn any_n_neurons(AnyPop) -> Int
+
+pub fn box_muller(Xoshiro) -> (Double, Double)
+
+pub let cm : Float
+
+pub let cm2 : Float
+
+pub fn compose(Array[AnyPop], Array[SpikingSynapse], stims? : Array[AnyStim], monitors? : Array[Monitor], stdp? : Array[STDPEntryKind]) -> HeterogeneousModel
+
+pub fn expf(Float) -> Float
+
+pub let farad : Float
+
+pub fn find_pre_for_conn(Array[Int], Int) -> Int
+
+pub fn forward_adex_synapse(SpikingSynapseAdEx) -> Unit
+
+pub fn forward_hh_synapse(SpikingSynapseHH) -> Unit
+
+pub fn forward_iz_synapse(SpikingSynapseIZ) -> Unit
+
+pub fn forward_rate_synapse(RateSynapse) -> Unit
+
+pub fn forward_synapse(SpikingSynapse) -> Unit
+
+pub fn gerstner_kernel(Float, Float, Float, Float, Float) -> Float
+
+pub fn get_dt(Time) -> Float
+
+pub fn get_time(Time) -> Float
+
+pub fn get_time_heterogeneous(HeterogeneousModel) -> Float
+
+pub fn get_tt(Time) -> Int
+
+pub let gohm : Float
+
+pub fn heterogeneous_sim_for(HeterogeneousModel, Float) -> Unit
+
+pub fn hh_connect(SpikingSynapseHH, Int, Int, Float) -> Unit
+
+pub let hz : Float
+
+pub fn integrate_any(AnyPop, Float) -> Unit
+
+pub fn iz_connect(SpikingSynapseIZ, Int, Int, Float) -> Unit
+
+pub let khz : Float
+
+pub fn logf(Float) -> Float
+
+pub let m2 : Float
+
+pub let mA : Float
+
+pub let mF : Float
+
+pub let mM : Float
+
+pub let mS : Float
+
+pub let mV : Float
+
+pub let metre : Float
+
+pub fn mexican_hat_kernel(Float) -> Float
+
+pub let mm : Float
+
+pub let mohm : Float
+
+pub let ms : Float
+
+pub let msiemens : Float
+
+pub let nA : Float
+
+pub let nF : Float
+
+pub let nM : Float
+
+pub let nS : Float
+
+pub fn n_total(Array[AnyPop]) -> Int
+
+pub fn next_f32(Xoshiro) -> Float
+
+pub fn next_f64(Xoshiro) -> Double
+
+pub fn next_u32(Xoshiro) -> UInt
+
+pub fn next_u64(Xoshiro) -> UInt64
+
+pub let nm : Float
+
+pub let nm2 : Float
+
+pub let nsiemens : Float
+
+pub let ohm : Float
+
+pub fn ornstein_uhlenbeck_step(Xoshiro, Float, Float, Float, Float, Float) -> Float
+
+pub let pA : Float
+
+pub let pF : Float
+
+pub fn rand_f32(Xoshiro, Int) -> Array[Float]
+
+pub fn rand_f64(Xoshiro, Int) -> Array[Double]
+
+pub fn record_one(Monitor, Float) -> Unit
+
+pub fn record_one_adex(MonitorAdEx, Float) -> Unit
+
+pub fn record_zero(Model) -> Unit
+
+pub fn reset_time(Time) -> Unit
+
+pub fn reset_time_heterogeneous(HeterogeneousModel) -> Unit
+
+pub let s : Float
+
+pub fn sample_poisson(Xoshiro, Float) -> Int
+
+pub let second : Float
+
+pub fn set_dt(Time, Float) -> Unit
+
+pub fn set_time(Time, Float) -> Unit
+
+pub fn set_tt(Time, Int) -> Unit
+
+pub let siemens : Float
+
+pub fn sigmoid_f32(Float) -> Float
+
+pub fn sim_any_pops(Array[AnyPop], Float) -> Unit
+
+pub fn sim_any_pops_for(Array[AnyPop], Float, Float) -> Unit
+
+pub fn sim_for(Model, Float) -> Unit
+
+pub fn spiking_connect(SpikingSynapse, Int, Int, Float) -> Unit
+
+pub fn stdp_antisymmetric_plot(STDPAntiSymmetric, y_max? : Float, width? : Int, height? : Int) -> Unit
+
+pub fn stdp_antisymmetric_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], STDPAntiSymmetricVariables, STDPAntiSymmetric, Float) -> Unit
+
+pub fn stdp_kernel_plot(STDPGerstner, t_max? : Float, width? : Int, height? : Int) -> Unit
+
+pub fn stdp_mexican_hat_plot(STDPMexicanHat, x_max? : Float, width? : Int, height? : Int) -> Unit
+
+pub fn stdp_mexican_hat_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], Array[Float], Array[Float], STDPMexicanHat, Float) -> Unit
+
+pub fn stdp_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], STDPVariables, STDPGerstner, Float, Float) -> Unit
+
+pub fn stdp_weight_decorrelated(STDPGerstner) -> Float
+
+pub fn step_adex(AdEx, Float) -> Unit
+
+pub fn step_adex_model(AdExModel, Time) -> Unit
+
+pub fn step_heterogeneous(HeterogeneousModel, Float) -> Unit
+
+pub fn step_hh(HH, Float) -> Unit
+
+pub fn step_iz(IZ, Float) -> Unit
+
+pub fn step_ml(MorrisLecar, Float) -> Unit
+
+pub fn step_model(Model, Time) -> Unit
+
+pub fn step_neuron(IF, Float) -> Unit
+
+pub fn step_neuron_id(Identity, Float) -> Unit
+
+pub fn step_poisson(Poisson, Float) -> Unit
+
+pub fn step_synapses(IF, Float) -> Unit
+
+pub fn step_wc(WilsonCowan, Float) -> Unit
+
+pub fn stimulate_any(AnyStim, Time, Float) -> Unit
+
+pub fn stimulate_current_array(CurrentStimulusArray) -> Unit
+
+pub fn stimulate_current_if(CurrentStimulusIF) -> Unit
+
+pub fn stimulate_if(PoissonStimulusIF, Float, Float) -> Unit
+
+pub fn stimulate_spiketime(SpikeTimeStimulus, Float, Float) -> Unit
+
+pub fn synaptic_current(IF) -> Unit
+
+pub fn tanhf(Float) -> Float
+
+pub let uA : Float
+
+pub let uF : Float
+
+pub let uM : Float
+
+pub let um : Float
+
+pub let um2 : Float
+
+pub fn update_time(Time, Float) -> Unit
+
+pub let voltage : Float
+
+// Errors
+
+// Types and methods
+pub struct AdEx {
+  param : AdExParameter
+  spike : AdExPostSpike
+  n : Int
+  v : Array[Float]
+  w : Array[Float]
+  fire : Array[Bool]
+  threshold : Array[Float]
+  tabs : Array[Int]
+  i : Array[Float]
+  syn_curr : Array[Float]
+  ge : Array[Float]
+  gi : Array[Float]
+  he : Array[Float]
+  hi : Array[Float]
+  glu : Array[Float]
+  gaba : Array[Float]
+  gsyn_e : Array[Float]
+  gsyn_i : Array[Float]
+  e_e : Float
+  e_i : Float
+  tre : Float
+  tde : Float
+  tri : Float
+  tdi : Float
+}
+pub fn AdEx::new(Int, AdExParameter, Xoshiro) -> Self
+pub fn AdEx::new_with_spike(Int, AdExParameter, AdExPostSpike, Xoshiro) -> Self
+
+pub(all) struct AdExModel {
+  pops : Array[AdEx]
+  conns : Array[SpikingSynapseAdEx]
+  monitors : Array[MonitorAdEx]
+}
+
+pub struct AdExParameter {
+  c : Float
+  gl : Float
+  vt : Float
+  vr : Float
+  el : Float
+  tm : Float
+  r : Float
+  dt_slope : Float
+  tw : Float
+  a : Float
+  b : Float
+}
+pub fn AdExParameter::new() -> Self
+pub fn AdExParameter::with_vr(Float) -> Self
+
+pub struct AdExPostSpike {
+  at : Float
+  tau_a : Float
+  ap_membrane : Float
+  tabs_const : Float
+  up : Float
+}
+pub fn AdExPostSpike::new() -> Self
+pub fn AdExPostSpike::with_at(Float, Float) -> Self
+
+pub(all) enum AnyPop {
+  IF_(IF)
+  AdEx_(AdEx)
+  IZ_(IZ)
+  HH_(HH)
+  ML_(MorrisLecar)
+  Poisson_(Poisson)
+  WC_(WilsonCowan)
+}
+
+pub(all) enum AnyStim {
+  PoissonIF_(PoissonStimulusIF)
+  CurrentIF_(CurrentStimulusIF)
+  CurrentArr_(CurrentStimulusArray)
+  TimedStim_(SpikeTimeStimulus, Float)
+}
+
+pub(all) enum ConnectRule {
+  Bernoulli
+  FixedIn
+  FixedOut
+}
+
+pub struct CurrentStimulusArray {
+  mut i_base : Float
+  active : Array[Bool]
+  i : Array[Float]
+  n : Int
+  noise_sigma : Float
+  rng : Xoshiro
+}
+pub fn CurrentStimulusArray::new(Array[Float], Int, Float, Xoshiro, noise_sigma? : Float) -> Self
+pub fn CurrentStimulusArray::set_active(Self, Bool) -> Unit
+pub fn CurrentStimulusArray::set_i_base(Self, Float) -> Unit
+
+pub struct CurrentStimulusIF {
+  mut i_base : Float
+  active : Array[Bool]
+  pop : IF
+  noise_sigma : Float
+  rng : Xoshiro
+}
+pub fn CurrentStimulusIF::new(IF, Float, Xoshiro, noise_sigma? : Float) -> Self
+pub fn CurrentStimulusIF::set_active(Self, Bool) -> Unit
+pub fn CurrentStimulusIF::set_i_base(Self, Float) -> Unit
+
+pub struct HH {
+  param : HHParameter
+  n : Int
+  v : Array[Float]
+  m : Array[Float]
+  n_gate : Array[Float]
+  h : Array[Float]
+  fire : Array[Bool]
+  i : Array[Float]
+  ge : Array[Float]
+  gi : Array[Float]
+}
+pub fn HH::new(Int, HHParameter, Xoshiro) -> Self
+
+pub struct HHParameter {
+  cm : Float
+  gl : Float
+  el : Float
+  ek : Float
+  en : Float
+  gn : Float
+  gk : Float
+  vt : Float
+  tau_e : Float
+  tau_i : Float
+  e_e : Float
+  e_i : Float
+}
+pub fn HHParameter::new() -> Self
+
+pub(all) struct HeterogeneousModel {
+  pops : Array[AnyPop]
+  conns : Array[SpikingSynapse]
+  stims : Array[AnyStim]
+  time : Time
+  monitors : Array[Monitor]
+  stdp_entries : Array[STDPEntryKind]
+}
+
+pub struct IF {
+  param : IFParameter
+  spike : PostSpike
+  n : Int
+  v : Array[Float]
+  w : Array[Float]
+  fire : Array[Bool]
+  tabs : Array[Int]
+  i : Array[Float]
+  syn_curr : Array[Float]
+  ge : Array[Float]
+  gi : Array[Float]
+  he : Array[Float]
+  hi : Array[Float]
+  glu : Array[Float]
+  gaba : Array[Float]
+  gsyn_e : Array[Float]
+  gsyn_i : Array[Float]
+  e_e : Float
+  e_i : Float
+  tre : Float
+  tde : Float
+  tri : Float
+  tdi : Float
+}
+pub fn IF::new(Int, IFParameter, Xoshiro) -> Self
+
+pub struct IFParameter {
+  c : Float
+  gl : Float
+  tm : Float
+  vt : Float
+  vr : Float
+  el : Float
+  r : Float
+  dt_slope : Float
+  a : Float
+  b : Float
+  tw : Float
+}
+pub fn IFParameter::custom(Float, Float, Float, Float, Float) -> Self
+pub fn IFParameter::new() -> Self
+pub fn IFParameter::with_el(Float) -> Self
+
+pub struct IZ {
+  param : IZParameter
+  n : Int
+  v : Array[Float]
+  u : Array[Float]
+  fire : Array[Bool]
+  i : Array[Float]
+  ge : Array[Float]
+  gi : Array[Float]
+}
+pub fn IZ::new(Int, IZParameter, Xoshiro) -> Self
+
+pub struct IZParameter {
+  a : Float
+  b : Float
+  c : Float
+  d : Float
+  tau_e : Float
+  tau_i : Float
+  e_e : Float
+  e_i : Float
+}
+pub fn IZParameter::fs() -> Self
+pub fn IZParameter::new() -> Self
+pub fn IZParameter::rs() -> Self
+
+pub struct Identity {
+  n : Int
+  param : IdentityParameter
+  g : Array[Float]
+  h : Array[Float]
+  fire : Array[Bool]
+  spikecount : Array[Float]
+}
+pub fn Identity::new(Int, IdentityParameter) -> Self
+
+pub(all) struct IdentityParameter {
+  dummy : Float
+}
+
+pub(all) struct Model {
+  pops : Array[IF]
+  conns : Array[SpikingSynapse]
+  monitors : Array[Monitor]
+}
+
+pub struct Monitor {
+  pop : IF
+  sym : String
+  data : Array[Float]
+  times : Array[Float]
+  neuron : Int
+  rec_step : Int
+  mut step_count : Int
+}
+pub fn Monitor::ascii_plot(Self, width? : Int, height? : Int) -> Unit
+pub fn Monitor::clear_records(Self) -> Unit
+pub fn Monitor::count_spikes(Self) -> Int
+pub fn Monitor::count_spikes_interval(Self, Float, Float) -> Int
+pub fn Monitor::dump_csv_stdout(Self) -> Unit
+pub fn Monitor::dump_summary(Self) -> Unit
+pub fn Monitor::duration(Self) -> Float
+pub fn Monitor::firing_rate(Self) -> Float
+pub fn Monitor::firing_rate_interval(Self, Float, Float) -> Float
+pub fn Monitor::max(Self) -> Float
+pub fn Monitor::mean(Self) -> Float
+pub fn Monitor::min(Self) -> Float
+pub fn Monitor::new_fire(IF, Int) -> Self
+pub fn Monitor::new_v(IF, Int) -> Self
+pub fn Monitor::new_v_sr(IF, Int, Float) -> Self
+pub fn Monitor::spike_times(Self) -> Array[Float]
+
+pub struct MonitorAdEx {
+  pop : AdEx
+  sym : String
+  data : Array[Float]
+  times : Array[Float]
+  neuron : Int
+}
+pub fn MonitorAdEx::new_v(AdEx, Int) -> Self
+
+pub struct MorrisLecar {
+  param : MorrisLecarParameter
+  n : Int
+  v : Array[Float]
+  w : Array[Float]
+  fire : Array[Bool]
+  i : Array[Float]
+  ge : Array[Float]
+  gi : Array[Float]
+}
+pub fn MorrisLecar::new(Int, MorrisLecarParameter, Xoshiro) -> Self
+
+pub struct MorrisLecarParameter {
+  cm : Float
+  el : Float
+  ek : Float
+  eca : Float
+  gl : Float
+  gk : Float
+  gca : Float
+  tau_e : Float
+  tau_i : Float
+  v1 : Float
+  v2 : Float
+  v3 : Float
+  v4 : Float
+  phi : Float
+  e_e : Float
+  e_i : Float
+}
+pub fn MorrisLecarParameter::new() -> Self
+
+pub struct Poisson {
+  param : PoissonHomoParameter
+  n : Int
+  fire : Array[Bool]
+  randcache : Array[Float]
+  rng : Xoshiro
+}
+pub fn Poisson::new(Int, Float, Xoshiro) -> Self
+
+pub struct PoissonFixed {
+  rate : Float
+  mut mu : Float
+  active : Array[Bool]
+}
+pub fn PoissonFixed::new(Float) -> Self
+pub fn PoissonFixed::set_mu(Self, Float) -> Unit
+
+pub struct PoissonHomoParameter {
+  rate : Float
+}
+pub fn PoissonHomoParameter::new(Float) -> Self
+
+pub struct PoissonStimulusIF {
+  param : PoissonFixed
+  neurons : Array[Int]
+  g : Array[Float]
+  rng : Xoshiro
+}
+pub fn PoissonStimulusIF::new(IF, String, Float, Xoshiro) -> Self
+
+pub struct PostSpike {
+  tabs_const : Float
+}
+pub fn PostSpike::new() -> Self
+
+pub struct RateSynapse {
+  pre : WilsonCowan
+  post : WilsonCowan
+  matrix : SparseMatrixCSR
+}
+pub fn RateSynapse::new(WilsonCowan, WilsonCowan, Float, Float, Float, Xoshiro) -> Self
+
+pub(all) struct STDPAntiSymmetric {
+  a_x : Float
+  a_y : Float
+  tau_x : Float
+  tau_y : Float
+  alpha_pre : Float
+  alpha_post : Float
+  w_max : Float
+  w_min : Float
+}
+pub fn STDPAntiSymmetric::new() -> Self
+
+pub struct STDPAntiSymmetricVariables {
+  tr_x : Array[Float]
+  to_y : Array[Float]
+}
+pub fn STDPAntiSymmetricVariables::new(Int, Int) -> Self
+
+pub struct STDPEntry {
+  conn_index : Int
+  n_pre : Int
+  n_post : Int
+  vars : STDPVariables
+  param : STDPGerstner
+  t_now : Array[Float]
+}
+pub fn STDPEntry::advance(Self, Float) -> Unit
+pub fn STDPEntry::new(Int, Int, Int) -> Self
+
+pub struct STDPEntryAntiSymmetric {
+  conn_index : Int
+  n_pre : Int
+  n_post : Int
+  param : STDPAntiSymmetric
+  vars : STDPAntiSymmetricVariables
+  t_now : Array[Float]
+}
+pub fn STDPEntryAntiSymmetric::new(Int, Int, Int, param? : STDPAntiSymmetric) -> Self
+
+pub(all) enum STDPEntryKind {
+  Gerstner_(STDPEntry)
+  MexicanHat_(STDPEntryMexicanHat)
+  AntiSymmetric_(STDPEntryAntiSymmetric)
+}
+
+pub struct STDPEntryMexicanHat {
+  conn_index : Int
+  n_pre : Int
+  n_post : Int
+  param : STDPMexicanHat
+  tpre : Array[Float]
+  tpost : Array[Float]
+  t_now : Array[Float]
+}
+pub fn STDPEntryMexicanHat::new(Int, Int, Int, param? : STDPMexicanHat) -> Self
+
+pub(all) struct STDPGerstner {
+  a_pre : Float
+  a_post : Float
+  tau_pre : Float
+  tau_post : Float
+  w_max : Float
+  w_min : Float
+}
+pub fn STDPGerstner::new() -> Self
+
+pub(all) struct STDPMexicanHat {
+  a : Float
+  tau : Float
+  w_max : Float
+  w_min : Float
+}
+pub fn STDPMexicanHat::new() -> Self
+
+pub struct STDPVariables {
+  tpre : Array[Float]
+  tpost : Array[Float]
+  last_pre : Array[Float]
+  last_post : Array[Float]
+  active : Array[Bool]
+}
+pub fn STDPVariables::new(Int, Int) -> Self
+
+pub struct SparseMatrixCSR {
+  rows : Int
+  cols : Int
+  rowptr : Array[Int]
+  colptr : Array[Int]
+  vals : Array[Float]
+}
+pub fn SparseMatrixCSR::empty(Int, Int) -> Self
+pub fn SparseMatrixCSR::forward(Self, Array[Bool], Array[Float]) -> Unit
+pub fn SparseMatrixCSR::forward_rate(Self, Array[Float], Array[Float]) -> Unit
+pub fn SparseMatrixCSR::from_dense(Array[Array[Float]], Float) -> Self
+pub fn SparseMatrixCSR::get(Self, Int, Int) -> Float
+pub fn SparseMatrixCSR::nnz(Self) -> Int
+pub fn SparseMatrixCSR::random(Int, Int, Float, Float, Float, Xoshiro) -> Self
+pub fn SparseMatrixCSR::random_with_rule(Int, Int, Float, Float, Float, ConnectRule, Xoshiro) -> Self
+pub fn SparseMatrixCSR::row_nnz(Self, Int) -> Int
+pub fn SparseMatrixCSR::set(Self, Int, Int, Float) -> Unit
+
+pub struct SpikeTimeParameter {
+  spiketimes : Array[Float]
+  neurons : Array[Int]
+}
+pub fn SpikeTimeParameter::new(Array[Float], Array[Int]) -> Self
+
+pub struct SpikeTimeStimulus {
+  n : Int
+  param : SpikeTimeParameter
+  next_spike : Array[Float]
+  next_index : Array[Int]
+  fire : Array[Bool]
+  g : Array[Float]
+}
+pub fn SpikeTimeStimulus::new(IF, String, Array[Float], Array[Int]) -> Self
+
+pub struct SpikingSynapse {
+  pre : IF
+  post : IF
+  sym : String
+  matrix : SparseMatrixCSR
+}
+pub fn SpikingSynapse::new(IF, IF, String) -> Self
+pub fn SpikingSynapse::random(IF, IF, String, Float, Float, Float, Xoshiro) -> Self
+pub fn SpikingSynapse::random_with_rule(IF, IF, String, Float, Float, Float, ConnectRule, Xoshiro) -> Self
+
+pub struct SpikingSynapseAdEx {
+  pre : AdEx
+  post : AdEx
+  sym : String
+  matrix : SparseMatrixCSR
+}
+pub fn SpikingSynapseAdEx::new(AdEx, AdEx, String) -> Self
+pub fn SpikingSynapseAdEx::random(AdEx, AdEx, String, Float, Float, Float, Xoshiro) -> Self
+pub fn SpikingSynapseAdEx::random_with_rule(AdEx, AdEx, String, Float, Float, Float, ConnectRule, Xoshiro) -> Self
+
+pub struct SpikingSynapseHH {
+  pre : HH
+  post : HH
+  sym : String
+  matrix : SparseMatrixCSR
+}
+pub fn SpikingSynapseHH::new(HH, HH, String) -> Self
+pub fn SpikingSynapseHH::random(HH, HH, String, Float, Float, Float, Xoshiro) -> Self
+
+pub struct SpikingSynapseIZ {
+  pre : IZ
+  post : IZ
+  sym : String
+  matrix : SparseMatrixCSR
+}
+pub fn SpikingSynapseIZ::new(IZ, IZ, String) -> Self
+pub fn SpikingSynapseIZ::random(IZ, IZ, String, Float, Float, Float, Xoshiro) -> Self
+
+pub struct Time {
+  t : Array[Float]
+  tt : Array[Int]
+  mut dt : Float
+}
+pub fn Time::from_ms(Float) -> Self
+pub fn Time::new() -> Self
+
+pub(all) struct WCParameter {
+  dummy : Float
+}
+pub fn WCParameter::new() -> Self
+
+pub struct WilsonCowan {
+  param : WCParameter
+  n : Int
+  x : Array[Float]
+  r : Array[Float]
+  g : Array[Float]
+  i : Array[Float]
+}
+pub fn WilsonCowan::new(Int, Xoshiro) -> Self
+
+pub struct Xoshiro {
+  mut s0 : UInt64
+  mut s1 : UInt64
+  mut s2 : UInt64
+  mut s3 : UInt64
+}
+pub fn Xoshiro::default() -> Self
+pub fn Xoshiro::from_state(UInt64, UInt64, UInt64, UInt64) -> Self
+pub fn Xoshiro::new(UInt64) -> Self
+
+// Type aliases
+
+// Traits

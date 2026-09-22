@@ -1,0 +1,9 @@
+// moon.pkg for the tripod_receptor example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

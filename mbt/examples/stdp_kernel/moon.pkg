@@ -1,0 +1,9 @@
+// moon.pkg for the stdp_kernel example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

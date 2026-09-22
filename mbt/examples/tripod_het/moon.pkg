@@ -1,0 +1,9 @@
+// moon.pkg for the tripod_het example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

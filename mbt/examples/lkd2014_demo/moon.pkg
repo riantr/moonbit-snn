@@ -1,0 +1,9 @@
+// moon.pkg for the lkd2014_demo example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

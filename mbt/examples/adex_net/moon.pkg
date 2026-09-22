@@ -1,0 +1,9 @@
+// moon.pkg for the adex_net example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

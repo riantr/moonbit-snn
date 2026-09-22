@@ -1,0 +1,9 @@
+// moon.pkg for the potjans_diesmann example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

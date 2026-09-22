@@ -1,0 +1,9 @@
+// moon.pkg for the stp_onecell example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

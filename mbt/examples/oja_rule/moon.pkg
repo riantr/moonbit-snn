@@ -1,0 +1,9 @@
+// moon.pkg for the oja_rule example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)

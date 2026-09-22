@@ -1,0 +1,10 @@
+// moon.pkg for the IstdpPotential (Vogels 2011 inhibitory STDP with
+// potential-based post-synaptic trace) example.
+
+import {
+  "RiantR/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)
