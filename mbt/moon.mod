@@ -4,7 +4,7 @@ import {
 
 name = "riantr/snn_mbt"
 
-version = "0.20.2"
+version = "0.21.0"
 
 readme = "README.md"
 
