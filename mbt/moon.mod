@@ -4,7 +4,7 @@ import {
 
 name = "riantr/snn_mbt"
 
-version = "0.21.0"
+version = "0.22.0"
 
 readme = "README.md"
 
@@ -56,8 +56,11 @@ keywords = [
   "global-avgpool",
   "residual",
   "resnet",
+  "surrogate-gradient",
+  "fast-sigmoid",
+  "bp-friendly-spike",
 ]
 
-description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl plus CNN primitives + 5D spatiotemporal tensors + full optimiser suite + normalisation layers + learning-rate schedulers + generic Chain + pre-made bottles. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), multicompartment dendritic neurons (BallAndStick, Tripod, Multipod); Conv2d / MaxPool2d / ReLU / Flatten / Linear forward + backward primitives; Tensor struct with broadcasting + softmax + log-softmax + cross-entropy; image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF) via riantr/moonbit_image; 5D [T,B,C,H,W] STImage for spiking-CNN time-series input; SGD + SGD-with-momentum + Adam (with bias correction) + AdamW (decoupled weight decay) + RMSprop + AdaGrad optimisers; BatchNorm2d (with running stats + training/inference modes) + LayerNorm (per-sample, no running stats) with forward + backward; StepLR + ExponentialLR + CosineAnnealingLR + ReduceLROnPlateau schedulers; generic Chain / Sequential over Conv2d / ReLU / MaxPool2d / Flatten / Linear / BatchNorm2d / LayerNorm via tagged-enum dispatch with shape tracking and per-layer parameter gradients; pre-made MLP / SimpleCNN / LeNet5 bottles with He-init + xoshiro RNG. Float32 end-to-end with libm FFI (expf, tanhf, logf, sqrtf, cosf, sinf). 1053 tests passing, 76 examples ported from Julia."
+description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl plus CNN primitives + 5D spatiotemporal tensors + full optimiser suite + normalisation layers + learning-rate schedulers + generic Chain + pre-made bottles + ResNet foundations + surrogate gradients. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), multicompartment dendritic neurons (BallAndStick, Tripod, Multipod); Conv2d / MaxPool2d / ReLU / Flatten / Linear forward + backward primitives; Tensor struct with broadcasting + softmax + log-softmax + cross-entropy; image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF) via riantr/moonbit_image; 5D [T,B,C,H,W] STImage for spiking-CNN time-series input; SGD + SGD-with-momentum + Adam (with bias correction) + AdamW (decoupled weight decay) + RMSprop + AdaGrad optimisers; BatchNorm2d (with running stats + training/inference modes) + LayerNorm (per-sample, no running stats) with forward + backward; StepLR + ExponentialLR + CosineAnnealingLR + ReduceLROnPlateau schedulers; generic Chain / Sequential over Conv2d / ReLU / MaxPool2d / Flatten / Linear / BatchNorm2d / LayerNorm via tagged-enum dispatch with shape tracking and per-layer parameter gradients; pre-made MLP / SimpleCNN / LeNet5 bottles with He-init + xoshiro RNG; elementwise Add + AvgPool2d / GlobalAvgPool2d + ResidualBlock (identity + projection variants) ResNet foundations; fast-sigmoid surrogate gradient (Zenke & Ganguli 2018) for BPTT through IF / LIF Heaviside spikes. Float32 end-to-end with libm FFI (expf, tanhf, logf, sqrtf, cosf, sinf). 1085 tests passing, 76 examples ported from Julia."
 
 preferred_target = "native"
