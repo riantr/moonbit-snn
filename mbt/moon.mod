@@ -4,7 +4,7 @@ import {
 
 name = "riantr/snn_mbt"
 
-version = "0.16.2"
+version = "0.17.1"
 
 readme = "README.md"
 
@@ -40,8 +40,11 @@ keywords = [
   "rmsprop",
   "adagrad",
   "optimizer",
+  "batch-norm",
+  "layer-norm",
+  "normalization",
 ]
 
-description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl plus CNN primitives + 5D spatiotemporal tensors + full optimiser suite. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), multicompartment dendritic neurons (BallAndStick, Tripod, Multipod); Conv2d / MaxPool2d / ReLU / Flatten / Linear forward + backward primitives; Tensor struct with broadcasting + softmax + log-softmax + cross-entropy; image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF) via riantr/moonbit_image; 5D [T,B,C,H,W] STImage for spiking-CNN time-series input; SGD + SGD-with-momentum + Adam (with bias correction) + AdamW (decoupled weight decay) + RMSprop + AdaGrad optimisers. Float32 end-to-end with libm FFI (expf, tanhf, logf, sqrtf). 1010 tests passing, 76 examples ported from Julia."
+description = "Bit-exact MoonBit port of SpikingNeuralNetworks.jl plus CNN primitives + 5D spatiotemporal tensors + full optimiser suite + normalisation layers. Covers IF, AdEx, Izhikevich (IZ), HH, Morris-Lecar, Poisson neurons; Markram STP, Gerstner / MexicanHat / AntiSymmetric STDP, vSTDP, Confavreux2025, Receptors (AMPA / NMDA / GABAa / GABAb), multicompartment dendritic neurons (BallAndStick, Tripod, Multipod); Conv2d / MaxPool2d / ReLU / Flatten / Linear forward + backward primitives; Tensor struct with broadcasting + softmax + log-softmax + cross-entropy; image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF) via riantr/moonbit_image; 5D [T,B,C,H,W] STImage for spiking-CNN time-series input; SGD + SGD-with-momentum + Adam (with bias correction) + AdamW (decoupled weight decay) + RMSprop + AdaGrad optimisers; BatchNorm2d (with running stats + training/inference modes) + LayerNorm (per-sample, no running stats) with forward + backward. Float32 end-to-end with libm FFI (expf, tanhf, logf, sqrtf). 1026 tests passing, 76 examples ported from Julia."
 
 preferred_target = "native"
