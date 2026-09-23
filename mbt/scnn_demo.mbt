@@ -279,3 +279,185 @@ pub fn scnn_deterministic_forward() -> Bool {
   }
   true
 }
+
+// ---- SCNN v2 (v0.27.1): full K-step training with accuracy ----
+
+///|
+/// Predict argmax class for a batch of logits (length batch * n_classes).
+pub fn scnn_predict_batch(
+  logits_flat : Array[Float],
+  batch : Int,
+  n_classes : Int,
+) -> Array[Int] {
+  let preds : Array[Float] = Array::make(batch, 0.0F)
+  let mut i = 0
+  while i < batch {
+    let mut best = 0
+    let mut best_val = logits_flat[i * n_classes + 0]
+    let mut c = 1
+    while c < n_classes {
+      let v = logits_flat[i * n_classes + c]
+      if v > best_val {
+        best_val = v
+        best = c
+      }
+      c = c + 1
+    }
+    preds[i] = Float::from_int(best)
+    i = i + 1
+  }
+  // Cast Float to Int via reading + casting
+  let out : Array[Int] = Array::make(batch, 0)
+  let mut j = 0
+  while j < batch {
+    out[j] = preds[j].to_int()
+    j = j + 1
+  }
+  out
+}
+
+///|
+/// Compute classification accuracy on a batch.
+pub fn scnn_accuracy(
+  logits_flat : Array[Float],
+  labels : Array[Int],
+  batch : Int,
+  n_classes : Int,
+) -> Float {
+  let preds = scnn_predict_batch(logits_flat, batch, n_classes)
+  let mut correct = 0
+  let mut i = 0
+  while i < batch {
+    if preds[i] == labels[i] { correct = correct + 1 }
+    i = i + 1
+  }
+  Float::from_int(correct) / Float::from_int(batch)
+}
+
+///|
+/// Run a single forward + loss + backward pass; apply SGD updates to
+/// the model's layers in place. Returns (loss, accuracy) on the batch.
+pub fn scnn_train_step_with_sgd(
+  model : SimpleCNN,
+  input : Array[Float],
+  labels : Array[Int],
+  batch : Int,
+  n_classes : Int,
+  lr : Float,
+) -> (Float, Float) {
+  let (logits_flat, caches, _, _, _, _) = simple_cnn_forward(
+    model, input, batch,
+  )
+  // CE gradient (per-row: per-sample).
+  let d_logits : Array[Float] = Array::make(batch * n_classes, 0.0F)
+  let mut total_loss = 0.0F
+  let mut ii = 0
+  while ii < batch {
+    let row : Array[Float] = Array::make(n_classes, 0.0F)
+    let mut jj = 0
+    while jj < n_classes {
+      row[jj] = logits_flat[ii * n_classes + jj]
+      jj = jj + 1
+    }
+    let probs = softmax_row(row)
+    let target = one_hot(labels[ii], n_classes)
+    total_loss = total_loss + cross_entropy_one(probs, target)
+    let mut k = 0
+    while k < n_classes {
+      d_logits[ii * n_classes + k] = probs[k] - target[k]
+      k = k + 1
+    }
+    ii = ii + 1
+  }
+  let mean_loss = total_loss / Float::from_int(batch)
+  // Backward.
+  let (_d_input, grads) = simple_cnn_backward(model, caches, d_logits, batch)
+  ignore(_d_input)
+  // SGD update — walk per-layer params by matching on Layer enum
+  // variant (shadow binding gives access to the variant's payload).
+  let clip = 1.0F
+  let mut g_idx = 0
+  while g_idx < grads.length() {
+    let d_grad = grads[g_idx]
+    let d_layer = model.layers[g_idx]
+    match (d_layer, d_grad) {
+      (Conv2d(param), LayerGrad::Conv2d(d_w, d_b)) => {
+        clip_grad_array(d_w, clip)
+        clip_grad_array(d_b, clip)
+        for i in 0..<param.weight.length() {
+          param.weight[i] = param.weight[i] - lr * d_w[i]
+        }
+        for i in 0..<param.bias.length() {
+          param.bias[i] = param.bias[i] - lr * d_b[i]
+        }
+      }
+      (Linear(param), LayerGrad::Linear(d_w, d_b)) => {
+        clip_grad_array(d_w, clip)
+        clip_grad_array(d_b, clip)
+        for i in 0..<param.weight.length() {
+          param.weight[i] = param.weight[i] - lr * d_w[i]
+        }
+        for i in 0..<param.bias.length() {
+          param.bias[i] = param.bias[i] - lr * d_b[i]
+        }
+      }
+      (BatchNorm2d(bn), LayerGrad::BatchNorm2d(d_g, d_b)) => {
+        clip_grad_array(d_g, clip)
+        clip_grad_array(d_b, clip)
+        for i in 0..<bn.gamma.length() {
+          bn.gamma[i] = bn.gamma[i] - lr * d_g[i]
+        }
+        for i in 0..<bn.beta.length() {
+          bn.beta[i] = bn.beta[i] - lr * d_b[i]
+        }
+      }
+      _ => ()
+    }
+    g_idx = g_idx + 1
+  }
+  let acc = scnn_accuracy(logits_flat, labels, batch, n_classes)
+  (mean_loss, acc)
+}
+
+///|
+/// Run K SGD training steps on the synthetic dataset. Returns
+/// (initial_loss, final_loss, initial_acc, final_acc).
+pub fn scnn_train_n_steps(
+  n_steps : Int,
+  lr : Float,
+  seed : UInt64,
+) -> (Float, Float, Float, Float) {
+  let (images, labels) = synthetic_mnist_build()
+  let batch = images.length()
+  let n_classes = 10
+  let model = SimpleCNN::new(1, 8, 16, seed)
+  // Flatten images into a single batch.
+  let flat_input : Array[Float] = Array::make(batch * 28 * 28, 0.0F)
+  let mut i = 0
+  while i < batch {
+    let img = images[i]
+    let mut j = 0
+    while j < 28 * 28 {
+      flat_input[i * 28 * 28 + j] = img[j]
+      j = j + 1
+    }
+    i = i + 1
+  }
+  // Initial loss + accuracy (no updates).
+  let (init_loss, init_acc) = scnn_train_step_with_sgd(
+    model, flat_input, labels, batch, n_classes, 0.0F,
+  )
+  // K real steps.
+  for _k in 0..<n_steps {
+    let (_l, _a) = scnn_train_step_with_sgd(
+      model, flat_input, labels, batch, n_classes, lr,
+    )
+    ignore(_l)
+    ignore(_a)
+  }
+  // Final loss + accuracy.
+  let (final_loss, final_acc) = scnn_train_step_with_sgd(
+    model, flat_input, labels, batch, n_classes, 0.0F,
+  )
+  (init_loss, final_loss, init_acc, final_acc)
+}

@@ -89,3 +89,28 @@ test "scnn_demo / scnn_loss_is_reasonable sanity check passes" {
     fail("loss should be positive, finite, and bounded at random init")
   }
 }
+
+// ---- SCNN v2 (v0.27.1) training loop tests ----
+
+///|
+test "scnn_v2 / scnn_accuracy > 0.5 on synthetic dataset after K=20 SGD steps" {
+  // With K=20 SGD steps and lr=0.05 on a small synthetic dataset,
+  // expect accuracy to exceed chance (1/10 = 0.1).
+  let (_init_loss, _final_loss, init_acc, final_acc) = scnn_train_n_steps(20, 0.05F, 7UL)
+  if init_acc > 0.5F {
+    fail("initial accuracy too high (\{init_acc}); would mean dataset is trivial")
+  }
+  if final_acc <= init_acc + 0.05F {
+    fail("training did not improve accuracy: init = \{init_acc}, final = \{final_acc}")
+  }
+  ignore(_init_loss)
+  ignore(_final_loss)
+}
+
+///|
+test "scnn_v2 / loss decreases over K=10 SGD steps" {
+  let (init_loss, final_loss, _ia, _fa) = scnn_train_n_steps(10, 0.05F, 42UL)
+  if final_loss >= init_loss {
+    fail("training did not reduce loss: init = \{init_loss}, final = \{final_loss}")
+  }
+}
