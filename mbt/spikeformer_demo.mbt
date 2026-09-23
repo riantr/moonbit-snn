@@ -17,8 +17,8 @@
 //
 // Reuses existing modules:
 //   v0.22.0 surrogate (fast_sigmoid_forward / _surrogate inside
-//                       SpikingAttention from v0.24.0)
-//   v0.24.0 SpikingAttention
+//                       SpikingMultiHeadAttention from v0.26.0)
+//   v0.26.0 SpikingMultiHeadAttention
 //   v0.24.1 SpikingTransformerBlock
 //   v0.11.1 Linear (forward + backward)
 //   v0.23.2 PositionalEmbedding

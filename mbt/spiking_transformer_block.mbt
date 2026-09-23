@@ -1,11 +1,11 @@
 // spiking_transformer_block.mbt — Pre-Norm Spiking Transformer block.
 //
-// Like TransformerBlock but uses `SpikingAttention` (v0.24.0) instead
+// Like TransformerBlock but uses `SpikingMultiHeadAttention` (v0.26.0) instead
 // of standard `MultiHeadAttention`. The softmax along the key axis is
 // replaced by `fast_sigmoid_forward`, and the backward uses the
 // `fast_sigmoid_surrogate` (v0.22.0) for BPTT-compatible gradients.
 //
-//   x2 = x  +  SpikingAttention( LN1(x) )    # spiking self-attention path
+//   x2 = x  +  SpikingMultiHeadAttention( LN1(x) )    # spiking self-attention path
 //   y  = x2 +  FFN( LN2(x2) )                 # feed-forward path
 //
 // where FFN(h) = Linear2(GELU(Linear1(h))) and d_ff = 4 d_model.
@@ -19,7 +19,7 @@ pub struct SpikingTransformerBlock {
   beta : Float
   ln_1 : LayerNorm
   ln_2 : LayerNorm
-  sa : SpikingAttention
+  sa : SpikingMultiHeadAttention
   ffn_w1 : LinearParam
   ffn_w2 : LinearParam
 }
@@ -33,7 +33,7 @@ pub struct SpikingTransformerBlockCache {
   x_norm1 : Array[Float]
   x_norm2 : Array[Float]
   ln1_cache : LayerNormCache
-  sa_cache : SpikingAttnCache
+  sa_cache : SpikingMultiHeadAttnCache
   ln2_cache : LayerNormCache
   ffn_hidden_pre_gelu : Array[Float]
   ffn_hidden_post_gelu : Array[Float]
@@ -67,7 +67,7 @@ pub fn SpikingTransformerBlock::new(
   let actual_d_ff = if d_ff < 0 { 4 * d_model } else { d_ff }
   let ln_1 = LayerNorm::new(1, 1, d_model)
   let ln_2 = LayerNorm::new(1, 1, d_model)
-  let sa = SpikingAttention::new(d_model, num_heads, beta, seed + 100UL)
+  let sa = SpikingMultiHeadAttention::new(d_model, num_heads, beta, seed + 100UL)
   let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w1_weight = xavier_normal_init(rng, d_model * actual_d_ff, d_model, actual_d_ff)
   let w1_bias : Array[Float] = Array::make(actual_d_ff, 0.0F)
