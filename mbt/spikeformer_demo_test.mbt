@@ -159,3 +159,105 @@ test "spikeformer beta sensitivity: β affects training trajectory" {
     fail("β=1 vs β=100 produced identical cls_w (impossible)")
   }
 }
+
+// ---- Mini-SpikeFormer v2 (v0.27.2) tests: predict + eval accuracy ----
+
+///|
+test "spikeformer_argmax: returns index of max value (ties → first)" {
+  let logits : Array[Float] = [1.0F, 2.0F, 3.0F, 0.5F, 0.1F]
+  assert_eq(spikeformer_argmax(logits), 2)
+  // All-equal: first occurrence wins.
+  let all_eq : Array[Float] = [1.0F, 1.0F, 1.0F]
+  assert_eq(spikeformer_argmax(all_eq), 0)
+  // Single element.
+  let one : Array[Float] = [42.0F]
+  assert_eq(spikeformer_argmax(one), 0)
+}
+
+///|
+test "mini_spike_former_predict: returns valid class in [0, n_classes)" {
+  let (images, _labels) = spikeformer_dataset_build(1UL)
+  let msf = MiniSpikeFormer::new(16, 2, 1.0F, 10, 42UL)
+  let one_img : Array[Float] = Array::make(28 * 28, 0.0F)
+  for j in 0..<(28 * 28) {
+    one_img[j] = images[j]
+  }
+  let pred = mini_spike_former_predict(one_img, msf)
+  if pred < 0 || pred >= 10 {
+    fail("predicted class = \{pred}, expected in [0, 10)")
+  }
+}
+
+///|
+test "mini_spike_former_eval_accuracy: untrained model is near chance" {
+  let (images, labels) = spikeformer_dataset_build(1UL)
+  let msf = MiniSpikeFormer::new(16, 2, 1.0F, 10, 42UL)
+  let acc = mini_spike_former_eval_accuracy(images, labels, msf)
+  // Chance = 1/10 = 0.1. An untrained model should NOT exceed 0.5
+  // (a higher value would mean the synthetic dataset is trivial).
+  if acc > 0.5F {
+    fail("untrained accuracy = \{acc}, suspiciously high; chance = 0.1")
+  }
+  // And the result must be a valid fraction in [0, 1].
+  if acc < 0.0F || acc > 1.0F {
+    fail("accuracy out of [0, 1]: \{acc}")
+  }
+}
+
+///|
+test "mini_spike_former_eval_accuracy: empty label list returns 0" {
+  let (images, _labels) = spikeformer_dataset_build(1UL)
+  let msf = MiniSpikeFormer::new(16, 2, 1.0F, 10, 42UL)
+  let empty : Array[Int] = Array::make(0, 0)
+  let acc = mini_spike_former_eval_accuracy(images, empty, msf)
+  assert_eq(acc, 0.0F)
+}
+
+///|
+test "mini_spike_former_train_n_steps: accuracy > chance after K=12 steps" {
+  let (images, labels) = spikeformer_dataset_build(1UL)
+  let msf = MiniSpikeFormer::new(16, 2, 1.0F, 10, 42UL)
+  let one_img : Array[Float] = Array::make(28 * 28, 0.0F)
+  for j in 0..<(28 * 28) {
+    one_img[j] = images[j]
+  }
+  let (init_acc, final_acc) = mini_spike_former_train_n_steps(
+    one_img, labels[0], 12, 0.005F, msf,
+  )
+  // Sanity: initial accuracy is in [0, 1]. We do NOT assert that
+  // init_acc < 0.5 because with a single sample and 10 classes, the
+  // random init may happen to classify it correctly by chance (1/10).
+  if init_acc < 0.0F || init_acc > 1.0F {
+    fail("initial accuracy = \{init_acc}, out of [0, 1]")
+  }
+  // Training must not decrease accuracy (training is non-degrading).
+  if !(final_acc >= init_acc) {
+    fail("training reduced accuracy: \{init_acc} → \{final_acc}")
+  }
+  // Final accuracy should clearly beat chance (0.1) — headroom ≥ 0.4
+  // to ensure the model has converged on the training sample.
+  if final_acc < 0.5F {
+    fail("final accuracy = \{final_acc}, expected ≥ 0.5 (well above chance 0.1)")
+  }
+}
+
+///|
+test "mini_spike_former_train_n_steps: loss decreases AND accuracy improves" {
+  let (images, labels) = spikeformer_dataset_build(1UL)
+  let msf = MiniSpikeFormer::new(16, 2, 1.0F, 10, 42UL)
+  let one_img : Array[Float] = Array::make(28 * 28, 0.0F)
+  for j in 0..<(28 * 28) {
+    one_img[j] = images[j]
+  }
+  let (init_loss, _) = mini_spike_former_forward(one_img, 1, labels[0], msf)
+  let (_init_acc, final_acc) = mini_spike_former_train_n_steps(
+    one_img, labels[0], 10, 0.005F, msf,
+  )
+  let (final_loss, _) = mini_spike_former_forward(one_img, 1, labels[0], msf)
+  if !(final_loss < init_loss) {
+    fail("loss did not decrease: \{init_loss} → \{final_loss}")
+  }
+  if final_acc < 0.5F {
+    fail("final accuracy = \{final_acc}, expected ≥ 0.5 after training")
+  }
+}

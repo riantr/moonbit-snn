@@ -110,7 +110,7 @@ pub fn chain_forward(
 ) -> (Array[Float], Array[LayerCache], Int, Int, Int, Int) {
   let caches : Array[LayerCache] = []
   let mut data = input
-  let mut cur_n = n
+  let cur_n = n
   let mut cur_c = c
   let mut cur_h = h
   let mut cur_w = w

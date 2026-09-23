@@ -31,8 +31,8 @@ pub struct BatchNorm2d {
   beta : Array[Float]
   // Running statistics (for inference); updated with exponential moving
   // average during training. Empty if running stats are not tracked.
-  mut running_mean : Array[Float]
-  mut running_var : Array[Float]
+  running_mean : Array[Float]
+  running_var : Array[Float]
   // BN hyper-parameters.
   momentum : Float  // EMA coefficient for running stats; 0 disables updates.
   eps : Float

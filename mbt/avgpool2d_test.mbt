@@ -28,7 +28,7 @@ test "avgpool2d_forward / per-channel independence" {
   let p = AvgPool2dParam::new(4, 4, stride=1, pad=0)
   // ch=0: [[1, 2, 3, 4], [5, 6, 7, 8], ...] sum=1..16 -> avg = 8.5
   // ch=1: similar, different values -> avg = 24.5
-  let mut input : Array[Float] = []
+  let input : Array[Float] = []
   for ch in 0..<2 {
     let base = if ch == 0 { 1 } else { 17 }
     for k in 0..<16 {

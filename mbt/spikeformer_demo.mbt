@@ -581,3 +581,82 @@ pub fn mini_spike_former_eval_loss(
   }
   sum_loss / Float::from_int(n)
 }
+
+// ---- Mini-SpikeFormer v2 (v0.27.2): prediction + eval accuracy ----
+
+///|
+/// Argmax over a 1D Float array → index of the maximum value.
+/// On ties, returns the first (lowest) occurrence.
+pub fn spikeformer_argmax(probs : Array[Float]) -> Int {
+  let n = probs.length()
+  let mut best_i = 0
+  let mut best_v = probs[0]
+  for i in 1..<n {
+    if probs[i] > best_v {
+      best_v = probs[i]
+      best_i = i
+    }
+  }
+  best_i
+}
+
+///|
+/// Predict argmax class for a single 28×28 image. Reuses
+/// `mini_spike_former_forward` (the label is unused for argmax).
+pub fn mini_spike_former_predict(
+  images : Array[Float],
+  msf : MiniSpikeFormer,
+) -> Int {
+  let (_l, cache) = mini_spike_former_forward(images, 1, 0, msf)
+  ignore(_l)
+  spikeformer_argmax(cache.probs)
+}
+
+///|
+/// Classification accuracy on a list of (image, label) samples. Each
+/// image is evaluated independently (batch=1 forward pass). Returns
+/// correct / total as a Float; returns 0.0 for an empty label list.
+pub fn mini_spike_former_eval_accuracy(
+  images : Array[Float],
+  labels : Array[Int],
+  msf : MiniSpikeFormer,
+) -> Float {
+  let n = labels.length()
+  if n == 0 {
+    return 0.0F
+  }
+  let mut correct = 0
+  for i in 0..<n {
+    let img_off = i * 28 * 28
+    let one_img : Array[Float] = Array::make(28 * 28, 0.0F)
+    for j in 0..<(28 * 28) {
+      one_img[j] = images[img_off + j]
+    }
+    let pred = mini_spike_former_predict(one_img, msf)
+    if pred == labels[i] {
+      correct = correct + 1
+    }
+  }
+  Float::from_int(correct) / Float::from_int(n)
+}
+
+///|
+/// Train `n_steps` SGD updates on a single (image, label) sample
+/// and report (initial_acc, final_acc) on that same sample. Initial
+/// accuracy is measured before any updates; final accuracy is measured
+/// after the K updates. Sample must be a single 28×28 image (length
+/// 784); pass `[label]` to `eval_accuracy` via the single-sample path.
+pub fn mini_spike_former_train_n_steps(
+  images : Array[Float],
+  label : Int,
+  n_steps : Int,
+  lr : Float,
+  msf : MiniSpikeFormer,
+) -> (Float, Float) {
+  let init_acc = mini_spike_former_eval_accuracy(images, [label], msf)
+  for _k in 0..<n_steps {
+    ignore(mini_spike_former_train_step(images, label, lr, msf))
+  }
+  let final_acc = mini_spike_former_eval_accuracy(images, [label], msf)
+  (init_acc, final_acc)
+}
