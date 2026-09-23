@@ -38,3 +38,9 @@ pub fn abs_f32(x : Float) -> Float {
 /// Float32 natural logarithm: matches Julia's `log(Float32, x)` and the
 /// C `logf` function. Used by STDP kernels with log-ratio traces.
 pub extern "C" fn logf(x : Float) -> Float = "logf"
+
+///|
+/// Float32 error function: matches Julia's `erf(Float32, x)` and the C
+/// `erff` function. Used by sparse-GELU activation (`x * Φ(x)`) and
+/// other cumulative-Gaussian activations.
+pub extern "C" fn erff(x : Float) -> Float = "erff"
