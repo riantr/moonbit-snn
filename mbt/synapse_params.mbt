@@ -41,7 +41,7 @@ pub fn DeltaSynapse::new() -> DeltaSynapse {
 
 ///|
 /// DeltaSynapseVars — per-neuron state for DeltaSynapse.
-pub struct DeltaSynapseVars {
+pub(all) struct DeltaSynapseVars {
   n : Int
   ge : Array[Float]
   gi : Array[Float]
