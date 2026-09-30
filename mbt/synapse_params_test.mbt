@@ -171,19 +171,20 @@ test "DoubleExpSynapseVars::new: zero-init, all four arrays" {
 
 ///|
 test "double_exp_synapse_step: 2-state ODE integrates spike input" {
-  // Spike input glu[0]=1.0F. After step:
-  //   he[0] += dt * (glu[0] - he[0]) / tau_re
-  //         = 0 + 0.125 * (1.0 - 0) / 1.0 = 0.125
-  //   ge[0] += dt * (he[0] - ge[0]) / tau_de
-  //         = 0 + 0.125 * (0.125 - 0) / 6.0 = 0.002604
+  // Julia-reference Euler (SNNModels.jl DoubleExpSynapse):
+  //   ge += dt * (he - ge) / tau_de
+  //   he += dt * (-he) / tau_re + glu   # glu is an impulse, added directly
+  // Spike input glu[0]=1.0F, dt=0.125, all-zero initial state:
+  //   ge[0] = 0 + 0.125 * (0 - 0) / 6 = 0
+  //   he[0] = 0 + 0.125 * 0 / 1 + 1 = 1.0
   let vars = DoubleExpSynapseVars::new(1)
   let p = DoubleExpSynapse::new()
   let glu : Array[Float] = [1.0F]
   let gaba : Array[Float] = [0.0F]
   let dt = 0.125F
   double_exp_synapse_step(vars, p, glu, gaba, dt)
-  let he_expected = dt * (1.0F - 0.0F) / p.tau_re
-  let ge_expected = dt * (he_expected - 0.0F) / p.tau_de
+  let he_expected = 1.0F
+  let ge_expected = 0.0F
   if (vars.he[0] - he_expected).abs() > 1.0e-5F {
     fail("he[0] = \{vars.he[0]}, expected ~\{he_expected}")
   }

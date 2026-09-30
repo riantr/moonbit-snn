@@ -133,7 +133,7 @@ pub fn DoubleExpSynapse::new() -> DoubleExpSynapse {
 
 ///|
 /// DoubleExpSynapseVars — per-neuron state for DoubleExpSynapse.
-pub struct DoubleExpSynapseVars {
+pub(all) struct DoubleExpSynapseVars {
   n : Int
   ge : Array[Float]
   gi : Array[Float]
@@ -225,9 +225,12 @@ pub fn single_exp_synapse_step(
 
 ///|
 /// Update step for DoubleExpSynapseVars: spike-driven conductance
-/// update + rise/decay exponentials. Mirrors Julia's 2-state ODE:
-///   h += dt * (input - h) / tau_rise
-///   g += dt * (h - g) / tau_decay
+/// update + rise/decay exponentials. Mirrors Julia's 2-state Euler
+/// in `SNNModels.jl/src/.../synapses/DoubleExpSynapse.jl`:
+///   ge += dt * (he - ge) / tau_de
+///   gi += dt * (hi - gi) / tau_di
+///   he += dt * (-he) / tau_re + glu    # impulse on rise-var
+///   hi += dt * (-hi) / tau_ri + gaba   # impulse on rise-var
 /// Caller is responsible for clearing glu / gaba buffers afterwards.
 pub fn double_exp_synapse_step(
   vars : DoubleExpSynapseVars,
@@ -243,12 +246,12 @@ pub fn double_exp_synapse_step(
   let inv_tau_di : Float = 1.0F / param.tau_di
   let mut i = 0
   while i < n {
-    // Update rise vars (he, hi).
-    vars.he[i] = vars.he[i] + dt * (glu[i] - vars.he[i]) * inv_tau_re
-    vars.hi[i] = vars.hi[i] + dt * (gaba[i] - vars.hi[i]) * inv_tau_ri
-    // Update conductance (ge, gi).
+    // Update conductance first (uses current he/hi).
     vars.ge[i] = vars.ge[i] + dt * (vars.he[i] - vars.ge[i]) * inv_tau_de
     vars.gi[i] = vars.gi[i] + dt * (vars.hi[i] - vars.gi[i]) * inv_tau_di
+    // Update rise vars — spike impulse is added directly (not scaled by tau).
+    vars.he[i] = vars.he[i] + dt * (-vars.he[i]) * inv_tau_re + glu[i]
+    vars.hi[i] = vars.hi[i] + dt * (-vars.hi[i]) * inv_tau_ri + gaba[i]
     i = i + 1
   }
 }
@@ -343,4 +346,24 @@ pub fn double_exp_conductance_current(
       vars.gi[i] * (v[i] - param.e_i) * param.gsyn_i
     i = i + 1
   }
+}
+
+///|
+/// Return-style double_exp_synapse_current. Same formula as
+/// `double_exp_conductance_current`, but allocates and returns a
+/// fresh array. Useful for tests and one-shot callers.
+pub fn double_exp_synapse_current(
+  vars : DoubleExpSynapseVars,
+  param : DoubleExpSynapse,
+  v : Array[Float],
+) -> Array[Float] {
+  let n = vars.n
+  let syn_curr : Array[Float] = Array::make(n, 0.0F)
+  let mut i = 0
+  while i < n {
+    syn_curr[i] = vars.ge[i] * (v[i] - param.e_e) * param.gsyn_e +
+      vars.gi[i] * (v[i] - param.e_i) * param.gsyn_i
+    i = i + 1
+  }
+  syn_curr
 }
