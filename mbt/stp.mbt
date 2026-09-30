@@ -103,7 +103,7 @@ pub fn MarkramSTPVariables::new(
 ///|
 /// MarkramSTPEntry — bundles a connection's STP rule with its mutable
 /// per-step state so the compose layer can apply it automatically.
-pub struct MarkramSTPEntry {
+pub(all) struct MarkramSTPEntry {
   // Connection identifier (index into HeterogeneousModel.conns).
   conn_index : Int
   // Mutable per-pre state (u, x, last_spike, rho_pre).
@@ -286,7 +286,7 @@ pub fn MarkramSTPParameterHet::homogeneous(
 /// variants) — per-pre-synaptic-neuron STP state. The struct is
 /// reused; the heterogeneous step function reads τD[j], τF[j], U[j]
 /// from MarkramSTPParameterHet arrays instead of scalars.
-pub struct MarkramSTPEntryHet {
+pub(all) struct MarkramSTPEntryHet {
   conn_index : Int
   vars : MarkramSTPVariables
   param : MarkramSTPParameterHet
@@ -428,7 +428,7 @@ pub fn MarkramSTPParameterTimestep::new() -> MarkramSTPParameterTimestep {
 /// MarkramSTPParameterTimestep rule with the same `MarkramSTPVariables`
 /// state used by the event-based variant. No `last_spike` bookkeeping
 /// is needed (continuous-time updates don't depend on ΔT).
-pub struct MarkramSTPEntryTimestep {
+pub(all) struct MarkramSTPEntryTimestep {
   conn_index : Int
   vars : MarkramSTPVariables
   param : MarkramSTPParameterTimestep
