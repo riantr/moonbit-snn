@@ -1,1 +1,0 @@
-// Intentionally empty. SynapseNormalization tests live in metaplasticity_test.mbt.
