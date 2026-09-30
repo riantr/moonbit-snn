@@ -65,7 +65,7 @@ pub fn IstdpRate::new() -> IstdpRate {
 /// trace values (`tpre`, `tpost`). The trace model is continuous-time
 /// Euler integration, so there is no `last_pre` / `last_post`
 /// bookkeeping.
-pub struct IstdpRateVariables {
+pub(all) struct IstdpRateVariables {
   tpre : Array[Float]
   tpost : Array[Float]
 }
@@ -82,7 +82,7 @@ pub fn IstdpRateVariables::new(n_pre : Int, n_post : Int) -> IstdpRateVariables 
 /// IstdpRateEntry — bundles a connection's IstdpRate rule with the
 /// per-step state plus an internal `t_now` clock so the compose layer
 /// can advance simulation time across step calls.
-pub struct IstdpRateEntry {
+pub(all) struct IstdpRateEntry {
   conn_index : Int
   n_pre : Int
   n_post : Int
@@ -243,7 +243,7 @@ pub fn IstdpPotential::new() -> IstdpPotential {
 /// here is updated each step to low-pass-filter `v_post[i]`, so the
 /// step function takes the post-synaptic membrane potential as an
 /// additional input.
-pub struct IstdpPotentialVariables {
+pub(all) struct IstdpPotentialVariables {
   tpre : Array[Float]
   tpost : Array[Float]
 }
@@ -262,7 +262,7 @@ pub fn IstdpPotentialVariables::new(
 ///|
 /// IstdpPotentialEntry — bundles a connection's IstdpPotential rule
 /// with per-step state plus an internal `t_now` clock.
-pub struct IstdpPotentialEntry {
+pub(all) struct IstdpPotentialEntry {
   conn_index : Int
   n_pre : Int
   n_post : Int
