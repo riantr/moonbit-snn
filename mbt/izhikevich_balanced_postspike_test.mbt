@@ -167,3 +167,55 @@ test "izhikevich_balanced_postspike — refractory decrement tracks per-neuron" 
     }
   }
 }
+
+///|
+test "izhikevich_balanced_postspike — E/I balanced: both populations fire" {
+  // Verify the E/I balanced network scenario: both populations fire at
+  // least once under 1 kHz Poisson drive. Mirrors the example's main().
+  let rng = Xoshiro::new(123UL)
+  let dt = 0.125F
+  let n_e = 50
+  let n_i = 25
+  let e_pop = IZ::init_with_postspike(
+    n_e, IZParameter::rs(), -65.0F, -13.0F, IZPostSpike::custom(4),
+  )
+  let i_pop = IZ::init_with_postspike(
+    n_i, IZParameter::fs(), -65.0F, -13.0F, IZPostSpike::custom(4),
+  )
+  let total_steps = 4000 // 0.5 s
+  let mut e_spikes = 0
+  let mut i_spikes = 0
+  for _ in 0..<total_steps {
+    for j in 0..<n_e {
+      let s = @snn_mbt.get_poisson_spikes(1.0F, dt, rng)
+      if s == 1.0F {
+        e_pop.ge[j] = e_pop.ge[j] + 1.0F
+      }
+    }
+    for j in 0..<n_i {
+      let s = @snn_mbt.get_poisson_spikes(1.0F, dt, rng)
+      if s == 1.0F {
+        i_pop.ge[j] = i_pop.ge[j] + 1.0F
+      }
+    }
+    @snn_mbt.step_iz_with_postspike(e_pop, dt)
+    @snn_mbt.step_iz_with_postspike(i_pop, dt)
+    for j in 0..<n_e {
+      if e_pop.fire[j] {
+        e_spikes = e_spikes + 1
+      }
+    }
+    for j in 0..<n_i {
+      if i_pop.fire[j] {
+        i_spikes = i_spikes + 1
+      }
+    }
+  }
+  // Both populations must fire at least once under drive.
+  if e_spikes == 0 {
+    fail("E population never fired")
+  }
+  if i_spikes == 0 {
+    fail("I population never fired")
+  }
+}
