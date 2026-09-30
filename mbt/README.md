@@ -6,7 +6,7 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.27.2, 2026-09-23)
+## Status (v0.42.2, 2026-09-30)
 
 | Component | Status | Notes |
 |---|---|---|
