@@ -73,6 +73,7 @@ fn count_neurons(p : AnyPop) -> Int {
     ML_(x) => x.n
     WC_(x) => x.n
     HetRec_(x) => x.n
+    IFCANAHP_(x) => x.n
   }
 }
 

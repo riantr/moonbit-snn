@@ -41,6 +41,7 @@ test "AnyPop sim — heterogeneous 5 populations" {
       Poisson_(_) => ()
       WC_(_) => ()
       HetRec_(_) => ()
+      IFCANAHP_(_) => ()
     }
   }
   // Total neurons = 2 + 1 + 1 + 1 + 1 = 6

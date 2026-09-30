@@ -21,6 +21,7 @@ pub(all) enum AnyPop {
   Poisson_(Poisson)
   WC_(WilsonCowan)
   HetRec_(HetRec)
+  IFCANAHP_(IFCANAHP)
 }
 
 ///|
@@ -50,6 +51,7 @@ pub fn integrate_any(p : AnyPop, dt : Float) -> Unit {
     Poisson_(x) => step_poisson(x, dt)
     WC_(x) => step_wc(x, dt)
     HetRec_(x) => step_hetrec(x, dt)
+    IFCANAHP_(x) => integrate_ifcanahp(x, x.param, dt)
   }
 }
 
@@ -68,6 +70,7 @@ pub fn any_n_neurons(p : AnyPop) -> Int {
     Poisson_(x) => x.n
     WC_(x) => x.n
     HetRec_(x) => x.n
+    IFCANAHP_(x) => x.n
   }
 }
 

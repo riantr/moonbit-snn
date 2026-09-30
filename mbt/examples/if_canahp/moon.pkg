@@ -1,0 +1,9 @@
+// moon.pkg for the IF_CANAHP example.
+
+import {
+  "riantr/snn_mbt",
+}
+
+options(
+  "is-main": true,
+)
