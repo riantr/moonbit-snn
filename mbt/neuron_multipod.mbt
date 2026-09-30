@@ -247,13 +247,13 @@ pub fn Multipod::step(p : Multipod, dt : Float) -> Unit {
     let inner_i = p.hi_d[d_idx]
     let mut i = 0
     while i < n {
-      // Update glu_receptors [1, 2] (h_d[d][i][1] + he_d[i] * alpha[0],
-      // h_d[d][i][2] + he_d[i] * alpha[1]).
-      p.h_d[d_idx][i][1] = p.h_d[d_idx][i][1] + inner_e[i] * p.alpha[0]
-      p.h_d[d_idx][i][2] = p.h_d[d_idx][i][2] + inner_e[i] * p.alpha[1]
-      // Update gaba_receptors [3, 4].
-      p.h_d[d_idx][i][3] = p.h_d[d_idx][i][3] + inner_i[i] * p.alpha[2]
-      p.h_d[d_idx][i][4] = p.h_d[d_idx][i][4] + inner_i[i] * p.alpha[3]
+      // Update glu_receptors [0, 1] (h_d[d][i][0] + he_d[i] * alpha[0],
+      // h_d[d][i][1] + he_d[i] * alpha[1]).
+      p.h_d[d_idx][i][0] = p.h_d[d_idx][i][0] + inner_e[i] * p.alpha[0]
+      p.h_d[d_idx][i][1] = p.h_d[d_idx][i][1] + inner_e[i] * p.alpha[1]
+      // Update gaba_receptors [2, 3].
+      p.h_d[d_idx][i][2] = p.h_d[d_idx][i][2] + inner_i[i] * p.alpha[2]
+      p.h_d[d_idx][i][3] = p.h_d[d_idx][i][3] + inner_i[i] * p.alpha[3]
       i = i + 1
     }
     d_idx = d_idx + 1

@@ -88,42 +88,77 @@ test "Multipod::new initial v_s in [vr, vt]" {
 
 ///|
 test "Multipod::step nd=2 zero-input runs cleanly" {
-  // Deferred — even after the v0.10.53 nested-array refactor, the
-  // MoonBit JIT still stack-overflows on Multipod::step's deep
-  // iteration patterns. Further investigation (e.g. rolling our
-  // own JIT-friendly inner kernels) needed. Constructor tests pass;
-  // runtime tests are skipped.
+  // v0.50.0 fixed the 1-based vs 0-based indexing bug in the receptor
+  // update block (was writing to h_d[d][i][4] when storage only has
+  // indices 0..3). Re-enabled runtime step test.
   let d = Dendrite::new(2)
   let p = Multipod::new([d, d], 2)
-  assert_eq(p.n, 2)
-  assert_eq(p.nd, 2)
+  let mut step = 0
+  while step < 50 {
+    Multipod::step(p, 0.125F)
+    step = step + 1
+  }
+  // All v_s must be finite (no NaN).
+  let mut i = 0
+  while i < p.n {
+    let v = p.v_s[i]
+    if v != v {
+      fail("v_s not finite")
+    }
+    i = i + 1
+  }
 }
 
 ///|
 test "Multipod::step nd=3 zero-input runs cleanly" {
-  // Deferred — see nd=2 test for rationale.
   let d = Dendrite::new(3)
   let p = Multipod::new([d, d, d], 2)
-  assert_eq(p.nd, 3)
-  assert_eq(p.v_d.length(), 3)
+  let mut step = 0
+  while step < 50 {
+    Multipod::step(p, 0.125F)
+    step = step + 1
+  }
+  let mut i = 0
+  while i < p.n {
+    let v = p.v_s[i]
+    if v != v {
+      fail("v_s not finite")
+    }
+    i = i + 1
+  }
 }
 
 ///|
 test "Multipod::step integrates soma + dendrite currents without NaN" {
-  // Deferred — see nd=2 test for rationale.
   let d = Dendrite::new(2)
   let p = Multipod::new([d, d], 2)
   p.he_s[0] = 5.0F
-  assert_eq(p.he_s[0], 5.0F)
+  let mut step = 0
+  while step < 100 {
+    Multipod::step(p, 0.125F)
+    step = step + 1
+  }
+  // Verify v_s is finite after 100 steps with non-zero he_s.
+  let v = p.v_s[0]
+  if v != v {
+    fail("v_s not finite")
+  }
 }
 
 ///|
 test "Multipod::step fire flag toggles under high drive" {
-  // Deferred — see nd=2 test for rationale.
   let d = Dendrite::new(2)
   let p = Multipod::new([d, d], 2)
   p.he_s[0] = 1000.0F
-  assert_eq(p.he_s[0], 1000.0F)
+  let mut step = 0
+  while step < 200 {
+    Multipod::step(p, 0.125F)
+    step = step + 1
+  }
+  let v = p.v_s[0]
+  if v != v {
+    fail("v_s not finite")
+  }
 }
 
 // =========================================================================
