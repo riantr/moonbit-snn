@@ -35,3 +35,6 @@ Thumbs.db
 
 # Lock files (recreated by tooling)
 *.lock
+
+# Local staging dir for in-progress work (Batch D workaround)
+_new_lstm/
