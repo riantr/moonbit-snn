@@ -26,7 +26,7 @@ pub struct GRUQNetworkContinuous {
   mlp_b1 : Array[Float]
   gru : GruCellParam
   mlp_w2 : Array[Array[Float]]
-  mlp_b2 : Float
+  mut mlp_b2 : Float
 }
 
 ///|

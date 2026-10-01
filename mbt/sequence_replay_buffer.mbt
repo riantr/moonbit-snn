@@ -172,8 +172,107 @@ pub fn SequenceReplayBuffer::sample_seq_batch(
       start_idx = Float::from_double(u_pos * Double::from_int(safe_max)).to_int()
       if start_idx < 0 {
         start_idx = 0
-      } else if start_idx >= safe_max {
-        start_idx = safe_max - 1
+      } else if start_idx > safe_max {
+        start_idx = safe_max
+      }
+    }
+    // Walk forward seq_len steps; break if any earlier step was
+    // terminal (subsequent slots get zero-padded + mask set).
+    let mut crossed_done = false
+    for t in 0..<seq_len {
+      let global_idx = start_idx + t
+      let obs_off = (k * seq_len + t) * self.state_dim
+      let act_off = (k * seq_len + t) * self.action_dim
+      if crossed_done || global_idx >= self.size {
+        // Already past the end of the buffer or terminal:
+        // leave the slot at 0 (zero-init) and mark the mask.
+        terminal_mask[k * seq_len + t] = 1.0F
+        done_seq[k * seq_len + t] = 0.0F
+      } else {
+        let buf_off = global_idx * self.state_dim
+        for d in 0..<self.state_dim {
+          obs_seq[obs_off + d] = self.states[buf_off + d]
+          next_obs_seq[obs_off + d] = self.next_states[buf_off + d]
+        }
+        let a_buf_off = global_idx * self.action_dim
+        for d in 0..<self.action_dim {
+          action_seq[act_off + d] = self.actions[a_buf_off + d]
+        }
+        reward_seq[k * seq_len + t] = self.rewards[global_idx]
+        done_seq[k * seq_len + t] = self.dones[global_idx]
+        if self.dones[global_idx] > 0.5F {
+          // This slot is the terminal one. Mark mask=1 for the
+          // NEXT slot (caller resets hidden state there) but keep
+          // the current obs/next_obs visible.
+          crossed_done = true
+          if t + 1 < seq_len {
+            terminal_mask[k * seq_len + t + 1] = 1.0F
+          }
+        }
+      }
+    }
+  }
+  (obs_seq, action_seq, reward_seq, next_obs_seq, done_seq, terminal_mask, hidden_init)
+}
+
+// ----------------------------------------------------------------------------
+// Deterministic sampling helper.
+//
+// `sample_seq_batch_at` is identical to `sample_seq_batch` except the start
+// index for each batch element is taken from the caller-supplied
+// `start_indices` array (length `batch_size`) instead of being drawn from
+// an RNG. This is useful for:
+//   1. Reproducible / regression tests where a specific window must be
+//      observed (the RNG-based path uses box-muller + |z| which produces
+//      a half-normal distribution concentrated near 0, so hitting a
+//      specific `start_idx` requires many seeded draws).
+//   2. Callers that want bit-exact reproducibility across runs (e.g.
+//      curriculum learning, evaluation rollouts).
+//
+// Preconditions:
+//   - `start_indices.length() == batch_size`
+//   - For each k: `0 <= start_indices[k] <= max_start` where
+//     `max_start = size - seq_len` (clamped to 0 when buffer is empty).
+//     Out-of-range values are clamped, matching `sample_seq_batch`'s
+//     post-RNG clamp behaviour.
+///|
+/// Same as `sample_seq_batch` but takes explicit start indices (one per
+/// batch element) instead of drawing from an RNG. See block comment
+/// above for rationale. Returns the same 7-tuple as `sample_seq_batch`.
+pub fn SequenceReplayBuffer::sample_seq_batch_at(
+  self : SequenceReplayBuffer,
+  batch_size : Int,
+  seq_len : Int,
+  start_indices : Array[Int],
+) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float]) {
+  let max_start = self.size - seq_len
+  let safe_max = if max_start < 1 {
+    0
+  } else {
+    max_start
+  }
+  let obs_seq : Array[Float] = Array::make(batch_size * seq_len * self.state_dim, 0.0F)
+  let action_seq : Array[Float] = Array::make(batch_size * seq_len * self.action_dim, 0.0F)
+  let reward_seq : Array[Float] = Array::make(batch_size * seq_len, 0.0F)
+  let next_obs_seq : Array[Float] = Array::make(batch_size * seq_len * self.state_dim, 0.0F)
+  let done_seq : Array[Float] = Array::make(batch_size * seq_len, 0.0F)
+  let terminal_mask : Array[Float] = Array::make(batch_size * seq_len, 0.0F)
+  let hidden_init : Array[Float] = Array::make(batch_size, 0.0F)
+  for k in 0..<batch_size {
+    // Pull the requested start_idx and clamp to valid range (mirrors
+    // the post-RNG clamp in `sample_seq_batch`).
+    let mut start_idx = if k < start_indices.length() {
+      start_indices[k]
+    } else {
+      0
+    }
+    if safe_max <= 0 {
+      start_idx = 0
+    } else {
+      if start_idx < 0 {
+        start_idx = 0
+      } else if start_idx > safe_max {
+        start_idx = safe_max
       }
     }
     // Walk forward seq_len steps; break if any earlier step was
