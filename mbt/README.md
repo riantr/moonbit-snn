@@ -6,7 +6,7 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.57.0, 2026-10-01)
+## Status (v0.83.0, 2026-10-02)
 
 | Component | Status | Notes |
 |---|---|---|
@@ -433,6 +433,80 @@ population sizes and rates down to keep sim times tractable).
 For each of these, a *scaled-down qualitative* port works
 (`afferent_response`, `festa2024`, etc.) but the Julia run-time
 parameters are not reproduced bit-for-bit.
+
+## Recent additions (v0.58.0 - v0.83.0, 2026-10-02)
+
+Six batches shipped between v0.57.0 and v0.83.0, all `moon check` clean
+(0 errors, 0 diagnostics on new files). Tests blocked by Windows
+CreateProcessW 32K cmdline limit on `moon test` past v0.61.0; existing
+1801 test baseline verified working through v0.61.0.
+
+### Batch C follow-up (v0.58.0 - v0.61.0): BPTT boundary handling
+- `sample_seq_batch_at` helper for arbitrary-window sequence replay
+  buffer sampling with `terminal_mask` for proper hidden-state
+  zeroing at episode boundaries.
+- 10 BPTT boundary tests added at v0.61.0 (1801 → 1811 tests).
+
+### Batch D (v0.61.0 - v0.63.0): Recurrent deterministic actor-critic (LSTM)
+- v0.61.0 `LSTMDeterministicPolicy`: recurrent actor for POMDPs.
+  state → MLP w1 → ReLU → LSTM cell → MLP w2 → tanh squash → action.
+- v0.62.0 `LSTMQNetworkContinuous`: recurrent critic.
+  [state; action] → MLP w1 → ReLU → LSTM cell → MLP w2 → scalar Q.
+- v0.63.0 `LSTM_DDPG`: full DDPG agent wrapping actor + twin critics +
+  5 Polyak targets. 6 distinct seeds (offset by +100UL for targets).
+
+### Batch E (v0.64.0 - v0.67.0): BPTT-driven recurrent critic/actor updates
+- v0.64.0 `gru_ddpg_update_critic_seq`: GRU critic T-step BPTT.
+- v0.65.0 `gru_ddpg_update_actor_seq`: GRU actor BPTT (finite-difference
+  ∂Q/∂a with eps=1e-3).
+- v0.66.0 `lstm_ddpg_update_critic_seq`: LSTM critic T-step BPTT.
+- v0.67.0 `lstm_ddpg_update_actor_seq`: LSTM actor BPTT.
+
+### Batch F (v0.68.0 - v0.71.0): Recurrent SAC (stochastic actor + twin critics)
+- v0.68.0 `GRUSACActor`: stochastic actor — state → MLP w1 → ReLU →
+  GRU cell → two MLP branches (mean + log_std) → tanh squash + Gaussian
+  sampling. log_std clamped [-20, 2] (Haarnoja 2018).
+- v0.69.0 `LSTMSACActor`: parallel LSTM variant.
+- v0.70.0 `SAC_GRU`: stochastic actor + twin recurrent critics + auto-alpha
+  + 5 Polyak targets. `target_entropy = -action_dim` default.
+- v0.71.0 `SAC_LSTM`: parallel.
+
+### Batch G (v0.72.0 - v0.75.0): Gated Transformer-XL (GTrXL) recurrent memory
+- v0.72.0 `GTrXLBlock`: gated FFN residual primitive.
+  y = sigmoid(W_gate · x) ⊙ FFN(x) + x (Parisotto et al. 2020).
+  Gate init std scaled by 0.1 so initial gate ≈ sigmoid(0) ≈ 0.5.
+- v0.73.0 `GTrXLDeterministicPolicy`: recurrent actor with GTrXL block
+  as memory.
+- v0.74.0 `GTrXLQNetworkContinuous` + `GTrXL_DDPG`: twin critics + 5
+  Polyak targets; 9 tensors per network, 45 total.
+- v0.75.0 `GTrXLSACActor` + `SAC_GTrXL`: stochastic SAC + auto-alpha; 12
+  tensors per target, 60 total.
+
+### Batch H (v0.76.0 - v0.79.0): Decision Transformer (offline RL via sequence modeling)
+- v0.76.0 `DTEmbeddings`: 3-modality tokenization (rtg/state/action)
+  + timestep lookup. Per-token =
+  Linear_rtg(R_t) + Linear_state(s_t) + Linear_action(a_t) + Embed_ts(t).
+- v0.77.0 `DecisionTransformer`: full DT = DTEmbeddings + GTrXLBlock
+  backbone + action head.
+- v0.78.0 `TrajectoryBuffer`: offline RL replay + returns-to-go
+  (R_t = r_t + γ·R_{t+1}, terminal zeros bootstrap) +
+  `sample_trajectory_window` for window batching.
+- v0.79.0 `DecisionTransformerTrainer`: MSE loss + per-element gradient
+  + SGD step on action head only. Embeddings + backbone frozen (BPTT
+  through GTrXL deferred).
+
+### Batch I (v0.80.0 - v0.83.0): Trajectory Transformer (planning via conditional sequence modeling)
+- v0.80.0 `TTEmbeddings` + `TrajectoryTransformer`: 4-modality
+  (state/action/reward/done) + 4 prediction heads (next_state,
+  reward, done, value) on GTrXL backbone.
+- v0.81.0 `BeamSearchPlanner`: K-beam expansion via TT dynamics +
+  uniform-random action sampling + value scoring + top-K selection
+  over horizon H. Score = accumulated discounted reward + γ^t · value(t).
+- v0.82.0 `TrajectoryTransformerTrainer`: total MSE = MSE(next_state) +
+  MSE(reward) + MSE(done) + MSE(value); SGD on all 4 heads.
+- v0.83.0 `TrajectoryTransformerAgent`: full pipeline — append
+  transition → sliding history → `beam_search_plan` → return best
+  first action.
 
 ## Reference source
 
