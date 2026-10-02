@@ -6,7 +6,7 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.83.0, 2026-10-02)
+## Status (v0.84.0, 2026-10-02)
 
 | Component | Status | Notes |
 |---|---|---|
@@ -434,9 +434,10 @@ For each of these, a *scaled-down qualitative* port works
 (`afferent_response`, `festa2024`, etc.) but the Julia run-time
 parameters are not reproduced bit-for-bit.
 
-## Recent additions (v0.58.0 - v0.83.0, 2026-10-02)
+## Recent additions (v0.58.0 - v0.84.0, 2026-10-02)
 
-Six batches shipped between v0.57.0 and v0.83.0, all `moon check` clean
+Six batches shipped between v0.57.0 and v0.83.0 (v0.84.0 is the
+release-version bump — no new code), all `moon check` clean
 (0 errors, 0 diagnostics on new files). Tests blocked by Windows
 CreateProcessW 32K cmdline limit on `moon test` past v0.61.0; existing
 1801 test baseline verified working through v0.61.0.
