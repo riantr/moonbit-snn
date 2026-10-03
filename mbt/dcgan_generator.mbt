@@ -1,26 +1,31 @@
-// dcgan_generator.mbt -- DCGAN generator (v0.121.0).
+// dcgan_generator.mbt -- DCGAN generator (v0.125.0).
 //
 // The DCGAN generator (Radford et al. 2016 "Unsupervised Learning
 // with Deep Convolutional Generative Adversarial Networks") maps a
 // latent vector z to an image:
 //
-//   z [latent_dim] -> Linear -> [c_base*4*4]
-//   -> reshape to [c_base, 4, 4]
-//   -> deconv(c_base -> c_base*2, 4x4, stride 2) -> BN -> ReLU  [8x8]
-//   -> deconv(c_base*2 -> c_base, 4x4, stride 2) -> BN -> ReLU  [16x16]
-//   -> deconv(c_base -> c_out, 4x4, stride 2) -> Tanh          [32x32]
+//   z [latent_dim] -> Linear -> [c_base, 4, 4]
+//   -> up(4->8)  -> conv(c_base -> c_base*2) -> BN -> ReLU   [8x8]
+//   -> up(8->16) -> conv(c_base*2 -> c_base) -> BN -> ReLU  [16x16]
+//   -> up(16->32)-> conv(c_base -> c_out)   -> Tanh        [32x32]
 //
 // Rather than depending on a transposed-convolution primitive (which
 // this project does not yet ship), we use nearest-neighbour
 // upsampling followed by a regular convolution. This is the
 // "upconv" variant and is mathematically equivalent in expressiveness
-// while reusing the existing `conv2d_forward`.
+// while reusing the existing convolution pattern.
 //
-// Scope of v0.121.0:
+// v0.125.0 fix: the v0.121.0 forward pass upsampled twice up front and
+// then applied all three convolutions at 16x16, so it emitted 16x16
+// images while the paired discriminator (three stride-2 convs from a
+// 32x32 input) expected 32x32. Upsampling is now interleaved between
+// convolutions, giving the canonical 4 -> 8 -> 16 -> 32 progression.
+//
+// Scope of v0.125.0:
 //   - DCGANGenerator struct.
 //   - DCGANGenerator::new.
 //   - upsample2d: nearest-neighbour 2x upsampler.
-//   - dcgan_generator_forward: z -> image.
+//   - dcgan_generator_forward: z -> 32x32 image.
 //   - dcgan_generator_num_params.
 
 ///|
@@ -67,21 +72,17 @@ pub fn DCGANGenerator::new(
   let std0 = sqrtf(2.0F / Float::from_int(latent_dim))
   let fc_w = xavier_normal(proj_dim, latent_dim, std0, rng0)
   let fc_b : Array[Float] = Array::make(proj_dim, 0.0F)
-  // Conv 1.
-  let rng1 = Xoshiro::from_state(
-    seed + 11UL, seed + 12UL, seed + 13UL, seed + 14UL,
-  )
+  // Conv 1: c_base -> c_base*2, applied at 8x8.
   let conv1_w = xavier_normal_conv(c_base * 2, c_base, 3)
   let conv1_b : Array[Float] = Array::make(c_base * 2, 0.0F)
   let bn1_gamma : Array[Float] = Array::make(c_base * 2, 1.0F)
   let bn1_beta : Array[Float] = Array::make(c_base * 2, 0.0F)
-  let _ = rng1
-  // Conv 2.
-  let conv2_w = xavier_normal_conv(c_base, c_base, 3)
+  // Conv 2: c_base*2 -> c_base, applied at 16x16.
+  let conv2_w = xavier_normal_conv(c_base, c_base * 2, 3)
   let conv2_b : Array[Float] = Array::make(c_base, 0.0F)
   let bn2_gamma : Array[Float] = Array::make(c_base, 1.0F)
   let bn2_beta : Array[Float] = Array::make(c_base, 0.0F)
-  // Conv 3.
+  // Conv 3: c_base -> c_out, applied at 32x32.
   let conv3_w = xavier_normal_conv(c_out, c_base, 3)
   let conv3_b : Array[Float] = Array::make(c_out, 0.0F)
   { latent_dim, c_base, c_out, out_h, out_w, fc_w, fc_b, conv1_w, conv1_b, bn1_gamma, bn1_beta, conv2_w, conv2_b, bn2_gamma, bn2_beta, conv3_w, conv3_b }
@@ -209,12 +210,12 @@ fn batchnorm_channel(
 
 ///|
 /// Forward pass: latent vector z -> generated image
-/// [c_out, out_h, out_w].
+/// [c_out, out_h, out_w] where out_h = out_w = 32.
 pub fn dcgan_generator_forward(
   g : DCGANGenerator,
   z : Array[Float],
 ) -> Array[Float] {
-  // 1. Latent projection.
+  // 1. Latent projection: z [latent_dim] -> [c_base, 4, 4].
   let proj_dim = g.c_base * 4 * 4
   let feat : Array[Float] = Array::make(proj_dim, 0.0F)
   for o in 0..<proj_dim {
@@ -224,20 +225,19 @@ pub fn dcgan_generator_forward(
     }
     feat[o] = acc
   }
-  // 2. Reshape to [c_base, 4, 4] and upsample twice.
+  // 2. Upsample 4x4 -> 8x8, then Conv1 (c_base -> c_base*2) + BN + ReLU.
   let f1 = upsample2d(feat, g.c_base, 4, 4)
-  let f2 = upsample2d(f1, g.c_base, 8, 8)
-  // 3. Conv1 + BN + ReLU.
-  let c1 = conv3x3(f2, g.c_base, 16, 16, g.conv1_w, g.c_base * 2, g.conv1_b)
+  let c1 = conv3x3(f1, g.c_base, 8, 8, g.conv1_w, g.c_base * 2, g.conv1_b)
   let c1b = batchnorm_channel(
-    c1, g.c_base * 2, 16, 16, g.bn1_gamma, g.bn1_beta, 1.0e-5F,
+    c1, g.c_base * 2, 8, 8, g.bn1_gamma, g.bn1_beta, 1.0e-5F,
   )
   let c1r : Array[Float] = Array::make(c1b.length(), 0.0F)
   for i in 0..<c1b.length() {
     c1r[i] = if c1b[i] > 0.0F { c1b[i] } else { 0.0F }
   }
-  // 4. Conv2 + BN + ReLU.
-  let c2 = conv3x3(c1r, g.c_base * 2, 16, 16, g.conv2_w, g.c_base, g.conv2_b)
+  // 3. Upsample 8x8 -> 16x16, then Conv2 (c_base*2 -> c_base) + BN + ReLU.
+  let f2 = upsample2d(c1r, g.c_base * 2, 8, 8)
+  let c2 = conv3x3(f2, g.c_base * 2, 16, 16, g.conv2_w, g.c_base, g.conv2_b)
   let c2b = batchnorm_channel(
     c2, g.c_base, 16, 16, g.bn2_gamma, g.bn2_beta, 1.0e-5F,
   )
@@ -245,8 +245,9 @@ pub fn dcgan_generator_forward(
   for i in 0..<c2b.length() {
     c2r[i] = if c2b[i] > 0.0F { c2b[i] } else { 0.0F }
   }
-  // 5. Conv3 + Tanh.
-  let c3 = conv3x3(c2r, g.c_base, 16, 16, g.conv3_w, g.c_out, g.conv3_b)
+  // 4. Upsample 16x16 -> 32x32, then Conv3 (c_base -> c_out) + Tanh.
+  let f3 = upsample2d(c2r, g.c_base, 16, 16)
+  let c3 = conv3x3(f3, g.c_base, 32, 32, g.conv3_w, g.c_out, g.conv3_b)
   let out : Array[Float] = Array::make(c3.length(), 0.0F)
   for i in 0..<c3.length() {
     out[i] = tanhf(c3[i])
