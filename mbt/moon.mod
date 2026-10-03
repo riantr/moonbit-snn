@@ -1,5 +1,6 @@
 import {
   "riantr/moonbit_image@0.3.4",
+  "moonbit-community/sqlite3@0.2.3",
 }
 
 name = "riantr/snn_mbt"
