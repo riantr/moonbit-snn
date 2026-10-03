@@ -39,7 +39,7 @@ pub struct DCGANDiscriminator {
   conv3_b : Array[Float]
   // Classifier: (1 x (c_base*4*4*4*4)).
   fc_w : Array[Array[Float]]
-  fc_b : Float
+  mut fc_b : Float
 }
 
 ///|
