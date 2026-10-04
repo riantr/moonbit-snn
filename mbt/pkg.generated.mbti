@@ -1,10 +1,65 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "riantr/snn_mbt"
 
+import {
+  "moonbitlang/core/debug",
+  "riantr/moonbit_image",
+}
+
 // Values
 pub const M : Float = 1.0e6
 
 pub fn abs_f32(Float) -> Float
+
+pub fn actnorm_forward(ActNorm, Array[Float]) -> Array[Float]
+
+pub fn actnorm_init_from_data(ActNorm, Array[Float], Int) -> ActNorm
+
+pub fn actnorm_inverse(ActNorm, Array[Float]) -> Array[Float]
+
+pub fn actnorm_log_det(ActNorm) -> Float
+
+pub fn actor_critic_rollout(GridWorld, LinearSoftmaxPolicy, LinearValueNet, Int, Xoshiro) -> EpisodeWithValues
+
+pub fn actor_critic_update(LinearSoftmaxPolicy, LinearValueNet, EpisodeWithValues, Float, Float, Float) -> Float
+
+pub fn adafactor_update_1d(Array[Float], Array[Float], Adafactor1DState, Float, eps? : Float, beta2? : Float) -> Unit
+
+pub fn adafactor_update_2d(Array[Float], Array[Float], Adafactor2DState, Float, eps? : Float, beta2? : Float) -> Unit
+
+pub fn adafactor_update_linear(Array[Float], Array[Float], Array[Float], Array[Float], Adafactor2DState, Adafactor1DState, Float) -> Unit
+
+pub fn adagrad_init(Int, Int) -> AdaGradState
+
+pub fn adagrad_update_arrays(Array[Float], Array[Float], Array[Float], Array[Float], AdaGradState, Float, Float) -> (Array[Float], Array[Float], AdaGradState)
+
+pub fn adagrad_update_conv(Conv2dParam, Array[Float], Array[Float], AdaGradState, Float, Float) -> (Conv2dParam, AdaGradState)
+
+pub fn adagrad_update_linear(LinearParam, Array[Float], Array[Float], AdaGradState, Float, Float) -> (LinearParam, AdaGradState)
+
+pub fn adam_init(Int, Int) -> AdamState
+
+pub fn adam_next_step(AdamState) -> Int
+
+pub fn adam_update_arrays(Array[Float], Array[Float], Array[Float], Array[Float], AdamState, Float, Float, Float, Float) -> (Array[Float], Array[Float], AdamState)
+
+pub fn adam_update_conv(Conv2dParam, Array[Float], Array[Float], AdamState, Float, Float, Float, Float) -> (Conv2dParam, AdamState)
+
+pub fn adam_update_linear(LinearParam, Array[Float], Array[Float], AdamState, Float, Float, Float, Float) -> (LinearParam, AdamState)
+
+pub fn adamw_init(Int, Int) -> AdamWState
+
+pub fn adamw_update_arrays(Array[Float], Array[Float], Array[Float], Array[Float], AdamWState, Float, Float, Float, Float, Float) -> (Array[Float], Array[Float], AdamWState)
+
+pub fn adamw_update_conv(Conv2dParam, Array[Float], Array[Float], AdamWState, Float, Float, Float, Float, Float) -> (Conv2dParam, AdamWState)
+
+pub fn adamw_update_linear(LinearParam, Array[Float], Array[Float], AdamWState, Float, Float, Float, Float, Float) -> (LinearParam, AdamWState)
+
+pub fn add_backward(Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn add_forward(Array[Float], Array[Float]) -> Array[Float]
+
+pub fn add_into(Array[Float], Array[Float]) -> Unit
 
 pub fn adex_connect(SpikingSynapseAdEx, Int, Int, Float) -> Unit
 
@@ -30,11 +85,57 @@ pub let ampere : Float
 
 pub fn any_n_neurons(AnyPop) -> Int
 
+pub fn ar_fit_ols(Array[Float], Int) -> ArParam
+
+pub fn ar_fit_yule_walker(Array[Float], Int) -> ArParam
+
+pub fn ar_fitted(Array[Float], ArParam) -> Array[Float]
+
+pub fn ar_grad_coeffs(Array[Float], ArParam) -> Array[Float]
+
+pub fn ar_residual_loss(Array[Float], ArParam) -> Float
+
+pub fn ar_residuals(Array[Float], ArParam) -> Array[Float]
+
+pub fn argmax(Array[Float]) -> Int
+
+pub fn arima_fit(Array[Float], Int, Int, Int, Int, Float) -> ArimaFit
+
+pub fn arima_fitted_forecast(ArimaFittedModel, Int) -> Array[Float]
+
+pub fn arima_forecast(Array[Float], ArimaFit, Int) -> Array[Float]
+
+pub fn arima_forecast_variance(ArimaFittedModel, Int) -> Array[Float]
+
+pub fn arima_forecast_with_variance(ArimaFittedModel, Int) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn arima_mae(Array[Float], Array[Float]) -> Float
+
+pub fn arima_rmse(Array[Float], Array[Float]) -> Float
+
+pub fn arima_synthesize(Int, Int, Int, Int, Float, Array[Float], Array[Float], UInt64) -> Array[Float]
+
+pub fn arma_fit(Array[Float], Int, Int, Int, Float) -> ArmaParam
+
+pub fn arma_grad(Array[Float], ArmaParam) -> (Array[Float], Array[Float])
+
+pub fn arma_loss_value(Array[Float], Float, Array[Float], Array[Float]) -> Float
+
+pub fn arma_residual_loss(Array[Float], ArmaParam) -> Float
+
+pub fn arma_residuals(Array[Float], ArmaParam) -> Array[Float]
+
+pub fn ate_from_observational(ObservationalSample) -> Float
+
 pub fn average_conn_strength(Array[Array[Float]], Array[PopIndex], Float) -> Array[Array[Float]]
 
 pub fn average_weight(Array[Int], Array[Int], SpikingSynapse) -> Float
 
 pub fn average_weight_dynamics(Array[Int], Array[Int], SpikingSynapse, Array[Float], Int) -> Array[Float]
+
+pub fn avgpool2d_backward(Array[Float], Int, Int, Int, Int, AvgPool2dParam) -> Array[Float]
+
+pub fn avgpool2d_forward(Array[Float], Int, Int, Int, Int, AvgPool2dParam) -> Array[Float]
 
 pub fn ballandstick_dend_step_synapses(BallAndStick, Float) -> Unit
 
@@ -42,11 +143,91 @@ pub fn ballandstick_param_new() -> DendNeuronParameter
 
 pub fn ballandstick_soma_step_synapses(BallAndStick, Float) -> Unit
 
+pub fn batch_norm2d_backward(Array[Float], BatchNormCache, BatchNorm2d) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn batch_norm2d_forward(Array[Float], Int, Int, Int, Int, BatchNorm2d) -> (Array[Float], BatchNormCache)
+
+pub fn bce_with_logits(Float, Float) -> Float
+
+pub fn beam_search_plan(BeamSearchPlanner, Array[Float], Array[Float], Array[Float], Array[Float], Int, Xoshiro) -> Array[Float]
+
+pub fn bilstm_backward(Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], BiLstmCache, Array[Float], Array[Float], Array[Float], Array[Float], BiLstmParam) -> (Array[Array[Float]], Array[Float], Array[Float], Array[Float], Array[Float], LstmCellGrad, LstmCellGrad)
+
+pub fn bilstm_concat(Array[Array[Float]], Array[Array[Float]], Int) -> Array[Float]
+
+pub fn bilstm_forward(Array[Array[Float]], Array[Float], Array[Float], Array[Float], Array[Float], BiLstmParam) -> (Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], BiLstmCache)
+
+pub fn bilstm_identity_dataset(Int, Int, Int, UInt64) -> (Array[Array[Float]], Array[Array[Float]])
+
+pub fn bilstm_sequence_loss(Array[Array[Float]], Array[Array[Float]], Array[Array[Float]]) -> Float
+
+pub fn bilstm_sgd_step(BiLstmParam, LstmCellGrad, LstmCellGrad, Float) -> Unit
+
+pub fn bilstm_train_n_steps(Array[Array[Float]], Array[Array[Float]], Array[Float], Array[Float], Array[Float], Array[Float], BiLstmParam, Int, Float, Float) -> Float
+
+pub fn bootstrap_ate(ObservationalSample, Int, Float, Xoshiro) -> (Float, Float)
+
 pub fn box_muller(Xoshiro) -> (Double, Double)
+
+pub fn build_siamese_batch(Array[Array[Float]], Array[Int], Int, Xoshiro) -> SiameseBatch
+
+pub fn c51_forward(C51Net, Int) -> Array[Array[Float]]
+
+pub fn c51_greedy_action(C51, Int) -> Int
+
+pub fn c51_net_logits(C51Net, Int) -> Array[Array[Float]]
+
+pub fn c51_projected_target(C51, Float, Int, Bool) -> Array[Float]
+
+pub fn c51_q_value(Array[Float], Array[Float]) -> Float
+
+pub fn c51_soft_update(C51, Float) -> Unit
+
+pub fn c51_softmax_atoms(Array[Float]) -> Array[Float]
+
+pub fn c51_support(Float, Float, Int) -> Array[Float]
+
+pub fn c51_update(C51, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool]) -> Float
 
 pub fn c_mem(Float, Float, Float) -> Float
 
 pub fn ca_plasticity_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], CaPlasticityVariables, CaPlasticityParameter, Float, Float) -> Unit
+
+pub fn capsule_add_scalar(Array[Float], Float) -> Array[Float]
+
+pub fn capsule_dot(Array[Float], Array[Float]) -> Float
+
+pub fn capsule_eval_accuracy(CapsuleNetworkTrainer, Array[Array[Float]], Array[Int]) -> Float
+
+pub fn capsule_margin_loss(Array[Float], Int, Int, Int, Float, Float, Float) -> Float
+
+pub fn capsule_network_classify(CapsuleNetwork, Array[Float]) -> Int
+
+pub fn capsule_network_forward(CapsuleNetwork, Array[Float]) -> Array[Float]
+
+pub fn capsule_network_num_params(CapsuleNetwork) -> Int
+
+pub fn capsule_network_probs(CapsuleNetwork, Array[Float]) -> Array[Float]
+
+pub fn capsule_norm(Array[Float]) -> Float
+
+pub fn capsule_scale(Array[Float], Float) -> Array[Float]
+
+pub fn capsule_squash(Array[Float]) -> Capsule
+
+pub fn capsule_train_step(CapsuleNetworkTrainer, Array[Float], Int) -> (Float, Int)
+
+pub fn cate_at_covariate(ObservationalSample, Float, Float) -> Float
+
+pub fn causal_mask(Int) -> Array[Float]
+
+pub fn causal_mask_heads(Int, Int) -> Array[Float]
+
+pub fn chain_backward(Array[Layer], Array[LayerCache], Array[Float], Int, Int, Int, Int) -> (Array[Float], Array[LayerGrad])
+
+pub fn chain_forward(Array[Layer], Array[Float], Int, Int, Int, Int) -> (Array[Float], Array[LayerCache], Int, Int, Int, Int)
+
+pub fn classification_accuracy(Array[Int], Array[Int]) -> Float
 
 pub let cm : Float
 
@@ -54,9 +235,31 @@ pub let cm2 : Float
 
 pub fn coincident_fraction(Array[Float], Array[Float], Float) -> Float
 
+pub fn compare_float_traces(String, Array[Float], Array[Float], Float, Int) -> ParityResult
+
+pub fn compare_spike_trains(String, Array[Int], Array[Int], Int) -> ParityResult
+
 pub fn compose(Array[AnyPop], Array[SpikingSynapse], stims? : Array[AnyStim], monitors? : Array[Monitor], stdp? : Array[STDPEntryKind], stp? : Array[STPEntryKind]) -> HeterogeneousModel
 
+pub fn compute_returns(Array[Float], Float) -> Array[Float]
+
+pub fn compute_returns_to_go(Array[Float], Array[Float], Int, Float) -> Array[Float]
+
 pub fn conductance_synapse_current(SingleExpSynapseVars, SingleExpSynapse, Array[Float], Array[Float]) -> Unit
+
+pub fn[A] constant(A) -> Loc[A]
+
+pub fn contrastive_pair_loss(Array[Float], Array[Float], Float, Float) -> Float
+
+pub fn conv2d_backward(Array[Float], Array[Float], Int, Int, Int, Int, Conv2dParam) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn conv2d_forward(Array[Float], Int, Int, Int, Int, Conv2dParam) -> Array[Float]
+
+pub fn corridor_observation(CorridorEnv, Int) -> Array[Float]
+
+pub fn cosine_schedule(Int, Float) -> DiffusionSchedule
+
+pub fn cosine_similarity(Array[Float], Array[Float]) -> Float
 
 pub fn count_by_target(ReceptorsByTarget) -> Int
 
@@ -68,11 +271,83 @@ pub fn count_maxima(Array[Double], Double) -> Int
 
 pub fn count_nnz(Array[Float]) -> Int
 
+pub fn coupling_forward(AffineCouplingLayer, Array[Float]) -> (Array[Float], Float)
+
+pub fn coupling_inverse(AffineCouplingLayer, Array[Float]) -> Array[Float]
+
+pub fn coupling_log_det(AffineCouplingLayer, Array[Float]) -> Float
+
 pub fn critical_window(Array[Double], Double, Int, Array[Double]) -> Int
+
+pub fn cross_entropy_loss(Tensor, Tensor) -> CrossEntropyLoss
+
+pub fn cross_entropy_one(Array[Float], Array[Float]) -> Float
 
 pub fn current_synapse_current(CurrentSynapseVars, Array[Float]) -> Unit
 
 pub fn current_synapse_step(CurrentSynapseVars, CurrentSynapse, Array[Float], Array[Float], Float) -> Unit
+
+pub fn dcgan_d_loss(DCGAN, Array[Float], Array[Float]) -> Float
+
+pub fn dcgan_discriminator_forward(DCGANDiscriminator, Array[Float]) -> Float
+
+pub fn dcgan_discriminator_num_params(DCGANDiscriminator) -> Int
+
+pub fn dcgan_discriminator_prob(DCGANDiscriminator, Array[Float]) -> Float
+
+pub fn dcgan_eval(DCGANTrainer, Array[Array[Float]]) -> (Float, Float, Float)
+
+pub fn dcgan_g_loss(DCGAN, Array[Float]) -> Float
+
+pub fn dcgan_generate_batch(DCGAN, Int, Xoshiro) -> Array[Array[Float]]
+
+pub fn dcgan_generator_forward(DCGANGenerator, Array[Float]) -> Array[Float]
+
+pub fn dcgan_generator_num_params(DCGANGenerator) -> Int
+
+pub fn dcgan_num_params(DCGAN) -> Int
+
+pub fn dcgan_sample_grid_stats(DCGAN, Int, Xoshiro) -> (Float, Float, Float)
+
+pub fn dcgan_sample_latent(Int, Xoshiro) -> Array[Float]
+
+pub fn dcgan_step(DCGAN, Array[Float], Xoshiro) -> (Float, Float, Array[Float])
+
+pub fn dcgan_train_step(DCGANTrainer, Array[Array[Float]], Xoshiro) -> (Float, Float)
+
+pub fn ddpg_gru_compute_td_target_seq(DDPG_GRU, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn ddpg_gru_select_action(DDPG_GRU, Array[Float], Array[Float], Float, Xoshiro) -> (Array[Float], Array[Float])
+
+pub fn ddpg_gru_soft_update(DDPG_GRU) -> Unit
+
+pub fn ddpg_select_action(DDPG, Array[Float], Xoshiro) -> Array[Float]
+
+pub fn ddpg_select_action_eval(DDPG, Array[Float]) -> Array[Float]
+
+pub fn ddpg_soft_update(DDPG) -> Unit
+
+pub fn ddpg_update_actor(DDPG, (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float]), Float) -> Unit
+
+pub fn ddpg_update_critic(DDPG, (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float]), Float) -> Float
+
+pub fn ddpm_eval_loss(DDPMTrainer, Array[Array[Float]]) -> Float
+
+pub fn ddpm_loss(DDPM, Array[Float], Int, Array[Float]) -> Float
+
+pub fn ddpm_num_params(DDPM) -> Int
+
+pub fn ddpm_predict_x0(DDPM, Array[Float], Int, Array[Float]) -> Array[Float]
+
+pub fn ddpm_sample(DDPM, Xoshiro) -> Array[Float]
+
+pub fn ddpm_sample_step(DDPM, Array[Float], Int, Xoshiro) -> Array[Float]
+
+pub fn ddpm_train_batch(DDPMTrainer, Array[Array[Float]], Xoshiro) -> Float
+
+pub fn ddpm_train_step(DDPMTrainer, Array[Float], Xoshiro) -> Float
+
+pub fn degree_histogram(Graph, Int) -> Array[Int]
 
 pub fn deliver_pending_compartment_ball(CompartmentSynapseBall, Float) -> Unit
 
@@ -84,15 +359,143 @@ pub fn delta_synapse_current(DeltaSynapseVars, Array[Float]) -> Unit
 
 pub fn delta_synapse_step(DeltaSynapseVars, Array[Float], Array[Float]) -> Unit
 
+pub fn demo_ma1_loss(Array[Float], Float) -> Float
+
+pub fn demo_polynomial(Float) -> Float
+
+pub fn demo_rosenbrock(Float, Float) -> (Float, Float)
+
 pub fn dendrite_step(Dendrite, Array[Float], Array[Float], Array[Float]) -> Array[Float]
+
+pub fn deserialize_adam_state(String) -> AdamState
+
+pub fn deserialize_deterministic_policy(String) -> DeterministicPolicy
+
+pub fn deserialize_linear_qnet(String) -> LinearQNet
+
+pub fn deserialize_qnet_checkpoint(String) -> (LinearQNet, AdamState, Int)
+
+pub fn deserialize_qnetwork_continuous(String) -> QNetworkContinuous
+
+pub fn deterministic_policy_forward(DeterministicPolicy, Array[Float], Array[Float]) -> Array[Float]
+
+pub fn double_dqn_update_step(LinearQNet, LinearQNet, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Float, Float) -> Float
+
+pub fn double_dqn_vs_vanilla_diff(LinearQNet, LinearQNet, Array[Int], Float) -> Float
 
 pub fn double_exp_conductance_current(DoubleExpSynapseVars, DoubleExpSynapse, Array[Float], Array[Float]) -> Unit
 
+pub fn double_exp_synapse_current(DoubleExpSynapseVars, DoubleExpSynapse, Array[Float]) -> Array[Float]
+
 pub fn double_exp_synapse_step(DoubleExpSynapseVars, DoubleExpSynapse, Array[Float], Array[Float], Float) -> Unit
+
+pub fn dqn_update_step(LinearQNet, LinearQNet, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Float, Float) -> Float
+
+pub fn dqn_update_step_n_step(LinearQNet, LinearQNet, Array[Int], Array[Int], Array[Float], Array[Int], Array[Int], Array[Bool], Float, Float) -> Float
+
+pub fn dropout_backward(Array[Float], Array[Float], Dropout) -> Array[Float]
+
+pub fn dropout_forward(Array[Float], Dropout, Xoshiro) -> (Array[Float], Array[Float])
+
+pub fn dsac_critic_update(DSac, Array[Int], Array[Int], Array[Float], Float) -> Float
+
+pub fn dsac_sample_action(DSac, Int, Xoshiro) -> Int
+
+pub fn dsac_soft_target(LinearGaussianQNet, LinearGaussianQNet, LinearSoftmaxPolicy, Float, Int, Float, Bool, Float, Xoshiro) -> Float
+
+pub fn dsac_soft_update(DSac, Float) -> Unit
+
+pub fn dt_embed_single_token(DTEmbeddings, Float, Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn dt_embed_trajectory(DTEmbeddings, Array[Float], Array[Float], Array[Float], Array[Int], Int) -> Array[Float]
+
+pub fn dt_forward(DecisionTransformer, Array[Float], Array[Float], Array[Float], Array[Int], Int) -> (Array[Float], GTrXLBlockCache)
+
+pub fn dt_mse_loss(Array[Float], Array[Float], Int) -> Float
+
+pub fn dt_predict_next_action(DecisionTransformer, Array[Float], Array[Float], Array[Float], Array[Int], Int) -> Array[Float]
+
+pub fn dt_train_step(DecisionTransformer, Array[Float], Array[Float], Array[Float], Int, Float) -> (DecisionTransformer, Float)
 
 pub fn duarte_glu_soma() -> Receptor
 
+pub fn dueling_dqn_update_step(DuelingQNet, DuelingQNet, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Float, Float) -> Float
+
+pub fn dueling_eps_greedy_action(DuelingQNet, Int, Float, Xoshiro) -> Int
+
+pub fn dueling_q_argmax(Array[Float]) -> Int
+
+pub fn dueling_q_forward(DuelingQNet, Array[Float]) -> Array[Float]
+
+pub fn dueling_qnet_copy(DuelingQNet, DuelingQNet) -> Unit
+
+pub fn dump_weights(SpikingSynapse) -> Array[Float]
+
+pub fn dump_weights_count(SpikingSynapse) -> Int
+
+pub fn dump_weights_dense(SpikingSynapse) -> Array[Array[Float]]
+
+pub fn dump_weights_min_max(SpikingSynapse) -> (Float, Float)
+
+pub fn dump_weights_sum(SpikingSynapse) -> Float
+
+pub fn dump_weights_to_csv(SpikingSynapse) -> String
+
+pub fn dump_weights_with_indices(SpikingSynapse) -> Array[(Int, Int, Float)]
+
+pub fn dynamic_routing(Array[Float], Int, Array[Array[Float]], Int, Int, Int) -> Array[Float]
+
+pub fn ebm_energy(EBM, Array[Float]) -> Float
+
+pub fn ebm_eval_loss(EBMTrainer, Array[Array[Float]]) -> Float
+
+pub fn ebm_num_params(EBM) -> Int
+
+pub fn ebm_sample(EBM, Array[Float], Int, Xoshiro) -> Array[Float]
+
+pub fn ebm_sample_batch(EBM, Array[Array[Float]], Int, Xoshiro) -> Array[Array[Float]]
+
+pub fn ebm_score(EBM, Array[Float]) -> Array[Float]
+
+pub fn ebm_train_batch(EBMTrainer, Array[Array[Float]], Xoshiro) -> Float
+
+pub fn ebm_train_step(EBMTrainer, Array[Float], Xoshiro) -> Float
+
+pub fn edge_gnn_forward(EdgeGNN, EdgeGraph, Array[Float]) -> Array[Float]
+
+pub fn edge_gnn_num_params(EdgeGNN) -> Int
+
+pub fn edge_homophily(Graph, Array[Int], Int) -> Float
+
+pub fn edge_layer_forward(EdgeLayer, EdgeGraph, Array[Float]) -> Array[Float]
+
+pub fn edge_layer_num_params(EdgeLayer) -> Int
+
+pub fn elbo_kl_gaussian(Array[Float], Array[Float]) -> Float
+
+pub fn elbo_mean(Array[Float], Array[Float], Array[Float], Array[Float], Int, Int, Int) -> Float
+
+pub fn elbo_mean_loss(Array[Float], Array[Float], Array[Float], Array[Float], Int, Int, Int) -> Float
+
+pub fn elbo_neg_per_sample(Array[Float], Array[Float], Array[Float], Array[Float]) -> Float
+
+pub fn elbo_per_sample(Array[Float], Array[Float], Array[Float], Array[Float]) -> Float
+
+pub fn elbo_recon_log_likelihood(Array[Float], Array[Float]) -> Float
+
+pub fn elem_mul(Array[Float], Array[Float]) -> Array[Float]
+
+pub fn embedding_net_forward(EmbeddingNet, Array[Float]) -> Array[Float]
+
+pub fn embedding_net_num_params(EmbeddingNet) -> Int
+
 pub fn end_interval(Float, Array[Array[Float]]) -> Float
+
+pub fn energy_function_predict(EnergyFunction, Array[Float]) -> Float
+
+pub fn episode_return(Episode) -> Float
+
+pub fn eps_greedy_action(LinearQNet, Int, Float, Xoshiro) -> Int
 
 pub fn epsp_normalise(Array[Float], Int, Int, Int, Int) -> Array[Float]
 
@@ -103,6 +506,10 @@ pub fn epsp_normalise_windowed_by_compartment(Array[Float], Int, Int, Int, Int, 
 pub fn epsp_pair(Array[Float], Int, Int, Float, Int) -> (Float, Float)
 
 pub fn epsp_pair_window(Array[Float], Int, Int, Int, Float, Int) -> (Float, Float)
+
+pub fn erff(Float) -> Float
+
+pub fn eval_noisy_dqn(GridWorld, NoisyQNet, Int, Int) -> Float
 
 pub fn exc_peak(Array[Float], Int, Int, Float, Int) -> Float
 
@@ -128,13 +535,49 @@ pub fn f2l(String, Int) -> String
 
 pub fn f2l_default(String) -> String
 
+pub fn f_sign_sqrt(Float) -> Float
+
+pub fn fano_factor(Array[Int]) -> Float
+
 pub let farad : Float
+
+pub fn fast_sigmoid_forward(Float, Float) -> Float
+
+pub fn fast_sigmoid_forward_array(Array[Float], Float) -> Array[Float]
+
+pub fn fast_sigmoid_surrogate(Float, Float) -> Float
+
+pub fn fast_sigmoid_surrogate_array(Array[Float], Float) -> Array[Float]
 
 pub fn filter_items(Array[(String, Int)]) -> Array[(String, Int)]
 
 pub fn filter_items_with(Array[(String, Int)], FilterRule) -> Array[(String, Int)]
 
 pub fn find_pre_for_conn(Array[Int], Int) -> Int
+
+pub fn finite_diff((Float) -> Float, Float, Float) -> Float
+
+pub fn firing_rate_cv(Array[Array[Float]], Float, Float) -> Float
+
+pub fn firing_rate_dynamics(Array[Array[Float]], Float, Float) -> Array[Float]
+
+pub fn fit_ar_yule_walker(Array[Float], Int, Int) -> Array[Float]
+
+pub fn flatten_backward(Array[Float], Int, Int, Int, Int) -> Array[Float]
+
+pub fn flatten_forward(Array[Float], Int, Int, Int, Int) -> Array[Float]
+
+pub fn float32_close(Float, Float, Int) -> Bool
+
+pub fn float32_ulp_distance(Float, Float) -> Int
+
+pub fn floats_to_int_keys(Array[Float]) -> Array[Int]
+
+pub fn fnv1a_32(Array[Int]) -> Int
+
+pub fn fomaml_meta_step(TaskFamily, Int, Int, Int, Float, Float, UInt64) -> (TaskFamily, Float)
+
+pub fn fomaml_meta_step_multi(TaskFamily, Int, Int, Int, Int, Float, Float, UInt64) -> (TaskFamily, Float)
 
 pub fn forward_adex_synapse(SpikingSynapseAdEx) -> Unit
 
@@ -160,7 +603,59 @@ pub fn g_axial(Float, Float, Float) -> Float
 
 pub fn g_mem(Float, Float, Float) -> Float
 
+pub fn gae_advantages_returns(PpoGaeEpisode, Float, Float) -> (Array[Float], Array[Float])
+
+pub fn gat_elu(Float) -> Float
+
+pub fn gat_layer_forward(GATLayer, Graph, Array[Float]) -> Array[Float]
+
+pub fn gat_leaky_relu(Float) -> Float
+
+pub fn gaussian_nll(Float, Float, Float) -> Float
+
+pub fn gaussian_q_forward(LinearGaussianQNet, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn gaussian_qnet_copy(LinearGaussianQNet, LinearGaussianQNet) -> Unit
+
+pub fn gaussian_reparameterize(Array[Float], Array[Float], Array[Float]) -> ReparameterizedGaussian
+
+pub fn gaussian_reparameterize_log_prob(Array[Float]) -> Float
+
+pub fn gaussian_reparameterize_log_q(Array[Float], Array[Float], Array[Float]) -> Float
+
+pub fn gaussian_reparameterize_with_rng(Array[Float], Array[Float], Xoshiro) -> ReparameterizedGaussian
+
 pub fn gaussian_smooth(Array[Float], Array[Float], Float, SmoothSkew) -> Array[Float]
+
+pub fn gcn_backward(GCN, Graph, Array[Array[Float]], Array[Float]) -> (Array[Float], GCNGrad)
+
+pub fn gcn_forward(GCN, Graph, Array[Float]) -> Array[Float]
+
+pub fn gcn_forward_with_inputs(GCN, Graph, Array[Float]) -> (Array[Float], Array[Array[Float]])
+
+pub fn gcn_layer_backward(GCNLayer, Graph, Array[Float], Array[Float]) -> (Array[Float], GCNLayerGrad)
+
+pub fn gcn_layer_forward(GCNLayer, Graph, Array[Float]) -> Array[Float]
+
+pub fn gcn_layer_support(GCNLayer, Graph, Array[Float]) -> Array[Float]
+
+pub fn gcn_sgd_step(GCN, Graph, Array[Float], Array[Float], Float) -> (GCN, Array[Float])
+
+pub fn gelu(Float) -> Float
+
+pub fn gelu_backward(Array[Float], Array[Float]) -> Array[Float]
+
+pub fn gelu_forward(Array[Float]) -> Array[Float]
+
+pub fn gelu_grad(Float) -> Float
+
+pub fn gelu_sparse(Float) -> Float
+
+pub fn gelu_sparse_backward(Array[Float], Array[Float]) -> Array[Float]
+
+pub fn gelu_sparse_forward(Array[Float]) -> Array[Float]
+
+pub fn gelu_sparse_grad(Float) -> Float
 
 pub fn gerstner_kernel(Float, Float, Float, Float, Float) -> Float
 
@@ -178,11 +673,197 @@ pub fn get_time_heterogeneous(HeterogeneousModel) -> Float
 
 pub fn get_tt(Time) -> Int
 
+pub fn gin_aggregate(Graph, Array[Float]) -> Array[Float]
+
+pub fn gin_backward(GIN, Graph, Array[Array[Float]], Array[Float]) -> (Array[Float], GINGrad)
+
+pub fn gin_forward(GIN, Graph, Array[Float]) -> Array[Float]
+
+pub fn gin_forward_with_inputs(GIN, Graph, Array[Float]) -> (Array[Float], Array[Array[Float]])
+
+pub fn gin_layer_backward(GINLayer, Graph, Array[Float], Array[Float]) -> (Array[Float], GINLayerGrad)
+
+pub fn gin_layer_forward(GINLayer, Graph, Array[Float]) -> Array[Float]
+
+pub fn gin_layer_num_params(GINLayer) -> Int
+
+pub fn gin_num_params(GIN) -> Int
+
+pub fn gin_sgd_step(GIN, Graph, Array[Float], Array[Float], Float) -> (GIN, Array[Float])
+
+pub fn global_avg_pool2d_backward(Array[Float], Int, Int, Int, Int) -> Array[Float]
+
+pub fn global_avg_pool2d_forward(Array[Float], Int, Int, Int, Int) -> Array[Float]
+
 pub fn global_kde(Double, Array[Double], Array[Double]) -> Array[Double]
+
+pub fn glow_forward(Glow, Array[Float]) -> (Array[Float], Float)
+
+pub fn glow_init_from_data(Glow, Array[Float], Int) -> Glow
+
+pub fn glow_inverse(Glow, Array[Float]) -> Array[Float]
+
+pub fn glow_step_forward(GlowStep, Array[Float]) -> (Array[Float], Float)
+
+pub fn glow_step_init_from_data(GlowStep, Array[Float], Int) -> GlowStep
+
+pub fn glow_step_inverse(GlowStep, Array[Float]) -> Array[Float]
+
+pub fn glow_total_log_det(Glow, Array[Float]) -> Float
 
 pub let gohm : Float
 
+pub fn gp_grad_norm(Array[Float]) -> Float
+
+pub fn gp_input_gradient(WCritic, Array[Float], Float) -> Array[Float]
+
+pub fn gp_interpolate(Array[Float], Array[Float], Float) -> Array[Float]
+
+pub fn gp_sample_eps(Xoshiro) -> Float
+
+pub fn gradcheck_eps() -> Float
+
+pub fn gradcheck_input(String, TrainableGraphNet, Graph, Array[Float], Array[Int], Int, eps? : Float, tol? : Float) -> GradCheckReport
+
+pub fn gradcheck_make_report(String, Array[Float], Array[Float], Float) -> GradCheckReport
+
+pub fn gradcheck_negative_control(String, TrainableGraphNet, Graph, Array[Float], Array[Int], Int, tol? : Float) -> GradCheckReport
+
+pub fn gradcheck_param(String, TrainableGraphNet, Graph, Array[Float], Array[Int], Int, eps? : Float, tol? : Float) -> GradCheckReport
+
+pub fn gradcheck_relative(GradCheckReport, Array[Float]) -> Float
+
+pub fn gradcheck_tol() -> Float
+
+pub fn gradcheck_toy_graph() -> Graph
+
+pub fn gradcheck_toy_graph_gcn() -> Graph
+
+pub fn gradcheck_toy_labels() -> Array[Int]
+
+pub fn gradient_penalty(WCritic, Array[Float], Array[Float], Float, Xoshiro) -> Float
+
+pub fn gradient_penalty_diagnostic(WCritic, Array[Array[Float]], Array[Array[Float]], Float, Xoshiro) -> (Float, Float)
+
+pub fn graph_add_self_loops(Graph) -> Graph
+
+pub fn graph_attention_forward(GraphAttention, Graph, Array[Float]) -> Array[Float]
+
+pub fn graph_backbone_forward(GraphBackbone, Graph, Array[Float]) -> Array[Float]
+
+pub fn graph_backbone_node_dim(GraphBackbone) -> Int
+
+pub fn graph_batch_accuracy(GraphClassifier, Array[Graph], Array[Array[Float]], Array[Int]) -> Float
+
+pub fn graph_batch_loss(GraphClassifier, Array[Graph], Array[Array[Float]], Array[Int]) -> Float
+
+pub fn graph_classifier_forward(GraphClassifier, Graph, Array[Float]) -> Array[Float]
+
+pub fn graph_classifier_predict(GraphClassifier, Graph, Array[Float]) -> Int
+
+pub fn graph_cross_entropy(Array[Float], Int) -> Float
+
+pub fn graph_cross_entropy_grad(Array[Float], Int) -> Array[Float]
+
+pub fn graph_in_degree(Graph) -> Array[Int]
+
+pub fn graph_linear_backward(GraphLinear, Array[Float], Int, Array[Float]) -> (Array[Float], GraphLinearGrad)
+
+pub fn graph_linear_forward(GraphLinear, Array[Float], Int) -> Array[Float]
+
+pub fn graph_linear_num_params(GraphLinear) -> Int
+
+pub fn graph_linear_perturb_first(GraphLinear, Float) -> GraphLinear
+
+pub fn graph_linear_sgd_step(GraphLinear, GraphLinearGrad, Float) -> GraphLinear
+
+pub fn graph_net_graph_train_step(TrainableGraphNet, Graph, Array[Float], Int, Int, Float) -> (TrainableGraphNet, Float, Array[Float])
+
+pub fn graph_net_train_step(TrainableGraphNet, Graph, Array[Float], Array[Int], Int, Float) -> (TrainableGraphNet, Float, Array[Float])
+
+pub fn graph_out_degree(Graph) -> Array[Int]
+
+pub fn graph_relu(Array[Float]) -> Array[Float]
+
+pub fn graph_relu_one(Float) -> Float
+
+pub fn gru_cell_backward(GruCellCache, Array[Float], GruCellParam, GruCellGrad) -> (Array[Float], Array[Float])
+
+pub fn gru_cell_forward(Array[Float], Array[Float], GruCellParam) -> (Array[Float], GruCellCache)
+
+pub fn gru_cell_sgd_step(GruCellParam, GruCellGrad, Float) -> Unit
+
+pub fn gru_clip_grad(GruCellGrad, Float) -> Unit
+
+pub fn gru_ddpg_update_actor_seq(DDPG_GRU, Array[Float], Array[Float], Float, Float) -> Float
+
+pub fn gru_ddpg_update_critic_seq(DDPG_GRU, Array[Float], Array[Float], Array[Float], Array[Float], Float) -> Float
+
+pub fn gru_deterministic_policy_seq_forward(GRUDeterministicPolicy, Array[Float], Int, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn gru_deterministic_policy_step(GRUDeterministicPolicy, Array[Float], Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn gru_forecaster_mse_loss(Array[Float], Array[Float], Int, Int) -> Float
+
+pub fn gru_forecaster_seq_forward(GRUForecaster, Array[Float], Int, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn gru_forecaster_train_step(GRUForecaster, Array[Float], Array[Float], Int, Array[Float], Float) -> (GRUForecaster, Float)
+
+pub fn gru_identity_dataset(Int, Int, Int, UInt64) -> (Array[Array[Float]], Array[Array[Float]])
+
+pub fn gru_policy_forward(GruPolicy, Array[Array[Float]], Array[Float], Xoshiro) -> (Array[Int], GruPolicyCache)
+
+pub fn gru_policy_gradient_update(GruPolicy, Array[Int], Array[Float], GruPolicyCache, Float) -> Unit
+
+pub fn gru_qnetwork_continuous_seq_forward(GRUQNetworkContinuous, Array[Float], Array[Float], Int, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn gru_qnetwork_continuous_step(GRUQNetworkContinuous, Array[Float], Array[Float], Array[Float]) -> (Float, Array[Float])
+
+pub fn gru_sequence_backward(Array[Array[Float]], Array[Array[Float]], Array[GruCellCache], Array[Float], GruCellParam) -> (Array[Array[Float]], Array[Float], GruCellGrad)
+
+pub fn gru_sequence_forward(Array[Array[Float]], Array[Float], GruCellParam) -> (Array[Array[Float]], Array[GruCellCache])
+
+pub fn gru_sequence_loss(Array[Array[Float]], Array[Array[Float]]) -> Float
+
+pub fn gru_train_n_steps(Array[Array[Float]], Array[Array[Float]], Array[Float], GruCellParam, Int, Float, Float) -> Float
+
+pub fn gtrxl_actor_seq_forward(GTrXLDeterministicPolicy, Array[Float], Int) -> (Array[Float], GTrXLBlockCache)
+
+pub fn gtrxl_actor_step(GTrXLDeterministicPolicy, Array[Float]) -> (Array[Float], GTrXLTokenCache)
+
+pub fn gtrxl_block_seq_forward(GTrXLBlock, Array[Float], Int) -> (Array[Float], GTrXLBlockCache)
+
+pub fn gtrxl_block_token_step(GTrXLBlock, Array[Float]) -> (Array[Float], GTrXLTokenCache)
+
+pub fn gtrxl_ddpg_compute_td_target_seq(GTrXL_DDPG, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn gtrxl_ddpg_select_action(GTrXL_DDPG, Array[Float], Float, Xoshiro) -> Array[Float]
+
+pub fn gtrxl_ddpg_soft_update(GTrXL_DDPG) -> Unit
+
+pub fn gtrxl_qnetwork_continuous_seq_forward(GTrXLQNetworkContinuous, Array[Float], Array[Float], Int) -> (Array[Float], GTrXLBlockCache)
+
+pub fn gtrxl_qnetwork_continuous_step(GTrXLQNetworkContinuous, Array[Float], Array[Float]) -> (Float, GTrXLTokenCache)
+
+pub fn gtrxl_sac_actor_step(GTrXLSACActor, Array[Float], Xoshiro) -> (Array[Float], Float, GTrXLTokenCache)
+
+pub fn gtrxl_sac_select_action(GTrXLSACActor, Array[Float], Xoshiro) -> (Array[Float], GTrXLTokenCache, Float)
+
+pub fn h2gcn_forward(H2GCN, Graph, Array[Float]) -> Array[Float]
+
+pub fn h2gcn_layer_forward(H2GCNLayer, Graph, Array[Float], Array[Float], Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn h2gcn_layer_num_params(H2GCNLayer) -> Int
+
+pub fn h2gcn_num_params(H2GCN) -> Int
+
+pub fn hard_negative_triplet_loss(Array[Float], Array[Float], Array[Array[Float]], Float) -> Float
+
+pub fn heaviside_step(Float, Float) -> Float
+
 pub fn heterogeneous_sim_for(HeterogeneousModel, Float) -> Unit
+
+pub fn heterogeneous_sim_for_with_log(HeterogeneousModel, Float, Float) -> Array[SimLog]
 
 pub fn hetrec_refresh_random(HetRec, Xoshiro) -> Unit
 
@@ -191,6 +872,12 @@ pub fn hh_connect(SpikingSynapseHH, Int, Int, Float) -> Unit
 pub let hz : Float
 
 pub fn ifsinexp_step(IFSinExp, Float) -> Unit
+
+pub fn image_from_bytes(Bytes) -> Image raise @moonbit_image.DecodeError
+
+pub fn image_from_moonbit_image(@moonbit_image.Image) -> Image
+
+pub fn image_from_moonbit_image_rgba(@moonbit_image.Image) -> Image
 
 pub fn infer_receptors(Array[Receptor]) -> ReceptorsByTarget
 
@@ -224,6 +911,10 @@ pub fn istdp_potential_step(Array[Float], Array[Bool], Array[Bool], Array[Int], 
 
 pub fn istdp_rate_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], IstdpRateVariables, IstdpRate, Float, Float) -> Unit
 
+pub fn iwae_per_sample_bound(Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Float
+
+pub fn iwae_train_step(VAEModel, Array[Float], Int, Xoshiro) -> (VAEModel, Float)
+
 pub fn iz_connect(SpikingSynapseIZ, Int, Int, Float) -> Unit
 
 pub fn iz_reset(IZ) -> Unit
@@ -238,13 +929,97 @@ pub fn kei_balance_population(Array[Float], Int, Int, Float, Float) -> Int
 
 pub let khz : Float
 
+pub fn kl_divergence(Array[Float], Array[Float]) -> Float
+
+pub fn l2_normalize(Array[Float]) -> Array[Float]
+
+pub fn langevin_chain(EnergyFunction, Array[Float], Int, Float, Float, Xoshiro) -> Array[Float]
+
+pub fn langevin_gradient(EnergyFunction, Array[Float], Float) -> Array[Float]
+
+pub fn langevin_step(EnergyFunction, Array[Float], Float, Float, Xoshiro) -> Array[Float]
+
+pub fn layer_norm_backward(Array[Float], LayerNormCache, LayerNorm) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn layer_norm_forward(Array[Float], Int, Int, Int, Int, LayerNorm) -> (Array[Float], LayerNormCache)
+
+pub fn layer_scale_backward(Array[Float], Array[Float], LayerScale) -> (Array[Float], Array[Float])
+
+pub fn layer_scale_forward(Array[Float], LayerScale) -> Array[Float]
+
+pub fn lenet5_backward(LeNet5, Array[LayerCache], Array[Float], Int) -> (Array[Float], Array[LayerGrad])
+
+pub fn lenet5_forward(LeNet5, Array[Float], Int) -> (Array[Float], Array[LayerCache], Int, Int, Int, Int)
+
+pub fn linear_backward(Array[Float], Array[Float], Int, LinearParam) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn linear_forward(Array[Float], Int, LinearParam) -> Array[Float]
+
 pub fn linear_network(Int) -> Array[Float]
 
 pub fn linear_network_with(Int, Float, Float) -> Array[Float]
 
+pub fn linear_schedule(Int, Float, Float) -> DiffusionSchedule
+
+pub fn load_trajectory(TrajectoryBuffer, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Bool
+
 pub fn logf(Float) -> Float
 
 pub fn logrange(Float, Float, Int) -> Array[Float]
+
+pub fn lstm_cell_backward(LstmCellCache, Array[Float], Array[Float], LstmCellParam, LstmCellGrad) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn lstm_cell_forward(Array[Float], Array[Float], Array[Float], LstmCellParam) -> (Array[Float], LstmCellCache)
+
+pub fn lstm_cell_sgd_step(LstmCellParam, LstmCellGrad, Float) -> Unit
+
+pub fn lstm_clip_grad(LstmCellGrad, Float) -> Unit
+
+pub fn lstm_ddpg_compute_td_target_seq(LSTM_DDPG, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn lstm_ddpg_select_action(LSTM_DDPG, Array[Float], Array[Float], Array[Float], Float, Xoshiro) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn lstm_ddpg_soft_update(LSTM_DDPG) -> Unit
+
+pub fn lstm_ddpg_update_actor_seq(LSTM_DDPG, Array[Float], Array[Float], Array[Float], Float, Float) -> Float
+
+pub fn lstm_ddpg_update_critic_seq(LSTM_DDPG, Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Float) -> Float
+
+pub fn lstm_deterministic_policy_seq_forward(LSTMDeterministicPolicy, Array[Float], Int, Array[Float], Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn lstm_deterministic_policy_step(LSTMDeterministicPolicy, Array[Float], Array[Float], Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn lstm_episode_return(Array[Float]) -> Float
+
+pub fn lstm_forecaster_mse_loss(Array[Float], Array[Float], Int, Int) -> Float
+
+pub fn lstm_forecaster_seq_forward(LSTMForecaster, Array[Float], Int, Array[Float], Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn lstm_forecaster_train_step(LSTMForecaster, Array[Float], Array[Float], Int, Array[Float], Array[Float], Float) -> (LSTMForecaster, Float)
+
+pub fn lstm_identity_dataset(Int, Int, UInt64) -> (Array[Array[Float]], Array[Array[Float]])
+
+pub fn lstm_policy_forward(LstmPolicy, Array[Array[Float]], Array[Float], Array[Float], Xoshiro) -> (Array[Int], LstmPolicyCache)
+
+pub fn lstm_policy_gradient_update(LstmPolicy, Array[Int], Array[Float], LstmPolicyCache, Float) -> Unit
+
+pub fn lstm_ppo_collect_batch(Int, LstmPolicy, Int, Float, Int, UInt64) -> RecurrentPpoBatch
+
+pub fn lstm_ppo_update_step(LstmPolicy, RecurrentPpoBatch, Float, Float) -> Float
+
+pub fn lstm_qnet_forward(LstmQNet, Array[Array[Float]], Array[Float], Array[Float]) -> (Array[Array[Float]], LstmQNetCache)
+
+pub fn lstm_qnetwork_continuous_seq_forward(LSTMQNetworkContinuous, Array[Float], Array[Float], Int, Array[Float], Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn lstm_qnetwork_continuous_step(LSTMQNetworkContinuous, Array[Float], Array[Float], Array[Float], Array[Float]) -> (Float, Array[Float], Array[Float])
+
+pub fn lstm_sequence_backward(Array[Array[Float]], Array[Array[Float]], Array[LstmCellCache], Array[Float], Array[Float], LstmCellParam) -> (Array[Array[Float]], Array[Float], Array[Float], LstmCellGrad)
+
+pub fn lstm_sequence_forward(Array[Array[Float]], Array[Float], Array[Float], LstmCellParam) -> (Array[Array[Float]], Array[Float], Array[LstmCellCache])
+
+pub fn lstm_sequence_loss(Array[Array[Float]], Array[Array[Float]]) -> Float
+
+pub fn lstm_train_n_steps(Array[Array[Float]], Array[Array[Float]], Array[Float], Array[Float], LstmCellParam, Int, Float, Float) -> Float
 
 pub let m2 : Float
 
@@ -258,13 +1033,49 @@ pub let mS : Float
 
 pub let mV : Float
 
+pub fn ma1_loss_value(Array[Float], Float) -> Float
+
+pub fn ma_fit(Array[Float], Int, Int, Float) -> MaParam
+
+pub fn ma_grad_thetas(Array[Float], MaParam) -> Array[Float]
+
+pub fn ma_loss_value(Array[Float], Float, Array[Float]) -> Float
+
+pub fn ma_residual_loss(Array[Float], MaParam) -> Float
+
+pub fn ma_residuals(Array[Float], MaParam) -> Array[Float]
+
 pub fn make_random_weights(Int, Int, Float, Float, Xoshiro) -> Array[Float]
+
+pub fn maml_meta_step(TaskFamily, Int, Int, Int, Int, Float, Float, UInt64) -> (TaskFamily, Float)
 
 pub fn markram_stp_step(SpikingSynapse, MarkramSTPVariables, MarkramSTPParameter, Float) -> Unit
 
 pub fn markram_stp_step_het(SpikingSynapse, MarkramSTPVariables, MarkramSTPParameterHet, Float) -> Unit
 
 pub fn markram_stp_step_timestep(SpikingSynapse, MarkramSTPVariables, MarkramSTPParameterTimestep, Float, Float) -> Unit
+
+pub fn mask_broadcast(Array[Float], Int, Int) -> Array[Float]
+
+pub fn mask_from_allowed(Int, Array[Array[Bool]]) -> Array[Float]
+
+pub fn math_exp_f32(Float) -> Float
+
+pub fn math_log_f32(Float) -> Float
+
+pub fn max_abs_diff(Array[Float], Array[Float]) -> (Float, Int)
+
+pub fn max_pool(Array[Float], Int, Int) -> Array[Float]
+
+pub fn maxpool2d_backward(Array[Float], Array[Int], Int, Int, Int, Int, MaxPool2dParam) -> Array[Float]
+
+pub fn maxpool2d_forward(Array[Float], Int, Int, Int, Int, MaxPool2dParam) -> Array[Float]
+
+pub fn maxpool2d_forward_with_idx(Array[Float], Int, Int, Int, Int, MaxPool2dParam) -> (Array[Float], Array[Int])
+
+pub fn mean_pool(Array[Float], Int, Int) -> Array[Float]
+
+pub fn merge_heterogeneous(HeterogeneousModel, HeterogeneousModel) -> HeterogeneousModel
 
 pub fn metaplasticity_step(SynapseNormalization) -> Unit
 
@@ -278,6 +1089,32 @@ pub fn miles_gaba_dend() -> GABAergic
 
 pub fn miles_gaba_soma() -> Receptor
 
+pub fn mini_spike_former_backward(MiniSpikeFormerCache, MiniSpikeFormer) -> (Array[Float], Array[Float], Array[Float], Array[Float], SpikingTransformerBlockGrad, Array[Float], Array[Float])
+
+pub fn mini_spike_former_eval_accuracy(Array[Float], Array[Int], MiniSpikeFormer) -> Float
+
+pub fn mini_spike_former_eval_loss(Array[Float], Array[Int], MiniSpikeFormer) -> Float
+
+pub fn mini_spike_former_forward(Array[Float], Int, Int, MiniSpikeFormer) -> (Float, MiniSpikeFormerCache)
+
+pub fn mini_spike_former_predict(Array[Float], MiniSpikeFormer) -> Int
+
+pub fn mini_spike_former_train_n_steps(Array[Float], Int, Int, Float, MiniSpikeFormer) -> (Float, Float)
+
+pub fn mini_spike_former_train_step(Array[Float], Int, Float, MiniSpikeFormer) -> Float
+
+pub fn mlp_backward(MLP, Array[LayerCache], Array[Float], Int) -> (Array[Float], Array[LayerGrad])
+
+pub fn mlp_forward(MLP, Array[Float], Int) -> (Array[Float], Array[LayerCache], Int)
+
+pub fn mlp_model_forward(MLPModel, Array[Float]) -> Array[Float]
+
+pub fn mlp_model_mse_grad_batch(MLPModel, Array[Float], Array[Float], Int) -> MLPGrad
+
+pub fn mlp_model_mse_loss(MLPModel, Array[Float], Array[Float], Int) -> Float
+
+pub fn mlp_model_sgd_step(MLPModel, MLPGrad, Float) -> MLPModel
+
 pub let mm : Float
 
 pub let mohm : Float
@@ -286,9 +1123,27 @@ pub fn monitor_count_spikes(Array[Float]) -> Int
 
 pub fn monitor_firing_rate(Array[Float]) -> Float
 
+pub fn mpnn_backward(MPnn, Graph, Array[Array[Float]], Array[Float]) -> (Array[Float], MPnnGrad)
+
+pub fn mpnn_forward(MPnn, Graph, Array[Float]) -> Array[Float]
+
+pub fn mpnn_forward_with_inputs(MPnn, Graph, Array[Float]) -> (Array[Float], Array[Array[Float]])
+
+pub fn mpnn_layer_backward(MPnnLayer, Graph, Array[Float], Array[Float]) -> (Array[Float], MPnnLayerGrad)
+
+pub fn mpnn_layer_forward(MPnnLayer, Graph, Array[Float]) -> Array[Float]
+
+pub fn mpnn_sgd_step(MPnn, Graph, Array[Float], Array[Float], Float) -> (MPnn, Array[Float])
+
 pub let ms : Float
 
 pub let msiemens : Float
+
+pub fn multi_head_attention_backward(AttnCache, Array[Float], MultiHeadAttention) -> (Array[Float], MHAGrad)
+
+pub fn multi_head_attention_forward(Array[Float], MultiHeadAttention, Array[Float]) -> (Array[Float], AttnCache)
+
+pub fn multi_step_return(Array[Float], Array[Bool], Float, Float, Int, Int) -> Float
 
 pub let nA : Float
 
@@ -298,11 +1153,23 @@ pub let nM : Float
 
 pub let nS : Float
 
+pub fn n_pair_loss(Array[Float], Array[Array[Float]], Array[Array[Float]]) -> Float
+
 pub fn n_total(Array[AnyPop]) -> Int
 
 pub fn name(String, String, String) -> String
 
 pub fn name2(String, String) -> String
+
+pub fn network_summary(HeterogeneousModel) -> NetworkSummary
+
+pub fn neural_ode_forward(NeuralODEAgent, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn neural_ode_set_solver(NeuralODEAgent, NeuralODESolver) -> NeuralODEAgent
+
+pub fn neural_ode_train_step(NeuralODEAgent, Array[Float], Array[Float], Float) -> (NeuralODEAgent, Float)
+
+pub fn neuron_firing_rate(Array[Float], Float, Float) -> Float
 
 pub fn next_f32(Xoshiro) -> Float
 
@@ -318,11 +1185,77 @@ pub let nm2 : Float
 
 pub fn nmda_gating(Float, NMDAVoltageDependency) -> Float
 
+pub fn node_accuracy(Array[Int], Array[Int], Int) -> Float
+
+pub fn node_ce_grad(Array[Float], Array[Int], Int, Int) -> Array[Float]
+
+pub fn node_ce_loss(Array[Float], Array[Int], Int, Int) -> Float
+
+pub fn node_homophily(Graph, Array[Int], Int) -> Float
+
+pub fn noisy_dqn_select_action(NoisyQNet, Int, Xoshiro) -> Int
+
+pub fn noisy_dqn_select_action_eval(NoisyQNet, Int) -> Int
+
+pub fn noisy_dqn_update_step(NoisyQNet, NoisyQNet, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Float, Float, Xoshiro) -> Float
+
+pub fn noisy_linear_forward(Array[Float], Int, NoisyLinearParam, Xoshiro) -> Array[Float]
+
+pub fn noisy_linear_forward_eval(Array[Float], Int, NoisyLinearParam) -> Array[Float]
+
+pub fn noisy_linear_param_count(NoisyLinearParam) -> Int
+
+pub fn noisy_q_argmax(NoisyQNet, Array[Float], Xoshiro) -> Int
+
+pub fn noisy_q_argmax_eval(NoisyQNet, Array[Float]) -> Int
+
+pub fn noisy_q_forward(NoisyQNet, Array[Float], Xoshiro) -> Array[Float]
+
+pub fn noisy_q_forward_eval(NoisyQNet, Array[Float]) -> Array[Float]
+
+pub fn noisy_qnet_copy(NoisyQNet, NoisyQNet) -> Unit
+
+pub fn noisy_qnet_param_count(NoisyQNet) -> Int
+
 pub fn norm_synapse(Float, Float) -> Float
+
+pub fn normalise_adjacency(Graph) -> Graph
+
+pub fn normalizing_flow_forward(NormalizingFlowModel, Array[Float]) -> (Array[Float], Float)
+
+pub fn normalizing_flow_init_from_data(NormalizingFlowModel, Array[Float], Int) -> NormalizingFlowModel
+
+pub fn normalizing_flow_inverse(NormalizingFlowModel, Array[Float]) -> (Array[Float], Float)
+
+pub fn normalizing_flow_log_likelihood(NormalizingFlowModel, Array[Float]) -> Float
+
+pub fn normalizing_flow_mean_log_likelihood(NormalizingFlowModel, Array[Float], Int) -> Float
+
+pub fn normalizing_flow_sample(NormalizingFlowModel, Xoshiro) -> Array[Float]
 
 pub let nsiemens : Float
 
+pub fn numerical_gradient(Array[Float], Float, (Array[Float]) -> Float) -> Array[Float]
+
+pub fn observational_sample_push(ObservationalSample, Float, Float, Array[Float]) -> Unit
+
+pub fn ode_adjoint_gradients(ODEFunc, Array[Float], Float, Float, Int, Array[Float]) -> (Array[Array[Float]], Array[Float], Array[Array[Float]], Array[Float])
+
+pub fn ode_euler_solve(ODEFunc, Array[Float], Float, Float, Int) -> (Array[Float], Array[Float])
+
+pub fn ode_func_eval(ODEFunc, Array[Float], Float) -> Array[Float]
+
+pub fn ode_heun_solve(ODEFunc, Array[Float], Float, Float, Int) -> (Array[Float], Array[Float])
+
+pub fn ode_mse_grad_final(Array[Float], Array[Float]) -> Array[Float]
+
 pub let ohm : Float
+
+pub fn one_by_one_conv_forward(OneByOneConv, Array[Float]) -> Array[Float]
+
+pub fn one_by_one_conv_inverse(OneByOneConv, Array[Float]) -> Array[Float]
+
+pub fn one_hot(Int, Int) -> Array[Float]
 
 pub fn ornstein_uhlenbeck_step(Xoshiro, Float, Float, Float, Float, Float) -> Float
 
@@ -330,19 +1263,149 @@ pub let pA : Float
 
 pub let pF : Float
 
+pub fn pairwise_squared_distance(Array[Float], Array[Float]) -> Float
+
+pub fn parity_combined_hash(UInt64) -> Int
+
+pub fn parity_full_dump(UInt64) -> (Int, Int, Int)
+
+pub fn parity_hash_floats(Array[Float]) -> Int
+
+pub fn parity_hash_if_trajectory(Int, Float, Float, UInt64) -> Int
+
+pub fn parity_hash_sparse_matrix(Int, Int, Float, Float, Float, UInt64) -> Int
+
+pub fn parity_hash_xoshiro(UInt64, Int) -> Int
+
+pub fn parse_csv(String) -> Array[Array[Float]]
+
+pub fn parse_csv_row(String) -> Array[Float]
+
+pub fn parse_float(String) -> Float
+
+pub fn parse_int(String) -> Int
+
+pub fn parse_int_list(String) -> Array[Int]
+
+pub fn parse_parity_csv(String) -> ParityTrace
+
+pub fn patch_embed_image(PatchEmbedding, Array[Float]) -> Array[Float]
+
+pub fn patch_embed_patch(PatchEmbedding, Array[Float]) -> Array[Float]
+
+pub fn per_neuron_firing_rates(Array[Array[Float]], Float, Float) -> Array[Float]
+
+pub fn per_state_kl(Array[Float], Array[Float]) -> Float
+
 pub fn periodic_distance_scalar(Float, Float, Float) -> Float
 
 pub fn pinning_plasticity(PINningSparseSynapse, Float, Float) -> Unit
 
 pub fn place_populations_e_i(Int, Int, Float, Float, Xoshiro) -> PlacedPops
 
+pub fn pna_aggregate(Graph, Array[Float], PNAAggregator) -> Array[Float]
+
+pub fn pna_backward(PNA, Graph, Array[Array[Float]], Array[Float]) -> (Array[Float], PNAGrad)
+
+pub fn pna_degree_scale(PNAScaler, Int, Float) -> Float
+
+pub fn pna_forward(PNA, Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_forward_with_inputs(PNA, Graph, Array[Float]) -> (Array[Float], Array[Array[Float]])
+
+pub fn pna_layer_backward(PNALayer, Graph, Array[Float], Array[Float]) -> (Array[Float], PNALayerGrad)
+
+pub fn pna_layer_forward(PNALayer, Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_layer_num_params(PNALayer) -> Int
+
+pub fn pna_max(Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_max_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
+
+pub fn pna_max_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array[Int])
+
+pub fn pna_mean(Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_mean_backward(Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_mean_in_degree(Graph, Float) -> Float
+
+pub fn pna_min(Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_min_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
+
+pub fn pna_min_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array[Int])
+
+pub fn pna_num_aggregators() -> Int
+
+pub fn pna_num_params(PNA) -> Int
+
+pub fn pna_sgd_step(PNA, Graph, Array[Float], Array[Float], Float) -> (PNA, Array[Float])
+
+pub fn pna_std(Graph, Array[Float]) -> Array[Float]
+
+pub fn pna_std_backward(Graph, Array[Float], Array[Float], Array[Float], Array[Float]) -> Array[Float]
+
 pub fn poisson_input(Float, Float, Float, Int, Xoshiro) -> Array[Array[Bool]]
 
 pub fn poisson_input_single(Float, Float, Float, Xoshiro) -> Array[Bool]
 
+pub fn policy_copy(DeterministicPolicy, DeterministicPolicy) -> Unit
+
+pub fn policy_forward(LinearSoftmaxPolicy, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn policy_gradient_update(LinearSoftmaxPolicy, Episode, Array[Float], Float) -> Unit
+
+pub fn policy_rollout(GridWorld, LinearSoftmaxPolicy, Int, Xoshiro) -> Episode
+
+pub fn polynomial_value(Float) -> Float
+
+pub fn population_firing_rate(Array[Array[Float]], Float, Float) -> Float
+
 pub fn population_from_dend_neuron(DendNeuronParameter) -> DendNeuronParameter
 
 pub fn population_indices(Array[(String, Int)]) -> Array[PopIndex]
+
+pub fn population_total_rate(Array[Array[Float]], Float, Float) -> Float
+
+pub fn positional_embedding_backward(PositionalEmbedding, Array[Float], Int) -> Array[Float]
+
+pub fn positional_embedding_forward(PositionalEmbedding, Int) -> Array[Float]
+
+pub fn pow_fast(Float, Float) -> Float
+
+pub fn ppo_collect_batch(GridWorld, LinearSoftmaxPolicy, Int, Float, Int, UInt64) -> PpoBatch
+
+pub fn ppo_gae_collect_batch(GridWorld, LinearSoftmaxPolicy, LinearValueNet, Int, Int, UInt64) -> Array[PpoGaeEpisode]
+
+pub fn ppo_gae_update(LinearSoftmaxPolicy, LinearValueNet, Array[PpoGaeEpisode], Float, Float, Float, Float, Float) -> Unit
+
+pub fn ppo_kl_collect_batch(GridWorld, LinearSoftmaxPolicy, LinearValueNet, Int, Float, Int, UInt64) -> PpoKlBatch
+
+pub fn ppo_kl_update_step(LinearSoftmaxPolicy, PpoKlBatch, Float, Float) -> Float
+
+pub fn ppo_update_step(LinearSoftmaxPolicy, PpoBatch, Float, Float) -> Unit
+
+pub fn prediction(Array[Float]) -> Int
+
+pub fn primary_capsule_forward(PrimaryCapsule, Array[Float]) -> Array[Float]
+
+pub fn primary_capsule_num_params(PrimaryCapsule) -> Int
+
+pub fn q_argmax(Array[Float]) -> Int
+
+pub fn q_forward(LinearQNet, Array[Float]) -> Array[Float]
+
+pub fn q_sample(Array[Float], Array[Float], Int, DiffusionSchedule) -> Array[Float]
+
+pub fn q_sample_pair(Array[Float], Int, DiffusionSchedule, Xoshiro) -> (Array[Float], Array[Float])
+
+pub fn qnet_continuous_copy(QNetworkContinuous, QNetworkContinuous) -> Unit
+
+pub fn qnet_continuous_forward(QNetworkContinuous, Array[Float], Array[Float], Array[Float]) -> Float
+
+pub fn qnet_copy(LinearQNet, LinearQNet) -> Unit
 
 pub fn quantile_float(Array[Float], Float) -> Float
 
@@ -351,6 +1414,14 @@ pub fn rand_f32(Xoshiro, Int) -> Array[Float]
 pub fn rand_f64(Xoshiro, Int) -> Array[Double]
 
 pub fn rand_value(Int, Float, Float, Xoshiro) -> Array[Float]
+
+pub fn realnvp_forward(RealNVP, Array[Float]) -> (Array[Float], Float)
+
+pub fn realnvp_inverse(RealNVP, Array[Float]) -> Array[Float]
+
+pub fn realnvp_log_det(RealNVP, Array[Float]) -> Float
+
+pub fn recall_at_k(SiameseNet, Array[Array[Float]], Array[Array[Float]], Array[Int], Int) -> Float
 
 pub fn receptor_current(Array[Float], Array[Float], Receptor, NMDAVoltageDependency, Array[Float]) -> Unit
 
@@ -364,29 +1435,255 @@ pub fn record_one_sinexp(MonitorAdExSinExp, Float) -> Unit
 
 pub fn record_zero(Model) -> Unit
 
+pub fn recurrent_sac_actor_update(RecurrentSac, RecurrentSacEpisode, Float, Xoshiro) -> Unit
+
+pub fn recurrent_sac_critic_update(RecurrentSac, RecurrentSacEpisode, Float, Float, Xoshiro) -> Float
+
+pub fn recurrent_sac_get_alpha(RecurrentSac) -> Float
+
+pub fn recurrent_sac_rollout_episode(Int, RecurrentSac, Int, Xoshiro) -> RecurrentSacEpisode
+
+pub fn recurrent_sac_soft_target_seq(RecurrentSac, RecurrentSacEpisode, Float, Xoshiro) -> Array[Float]
+
+pub fn recurrent_sac_soft_update(RecurrentSac, Float) -> Unit
+
+pub fn recurrent_sac_update_alpha(RecurrentSac, RecurrentSacEpisode, Xoshiro) -> Float
+
+pub fn relu_backward(Array[Float], Array[Float]) -> Array[Float]
+
+pub fn relu_forward(Array[Float]) -> Array[Float]
+
+pub fn reptile_meta_step(TaskFamily, Int, Int, Int, Float, Float, UInt64) -> (TaskFamily, Float)
+
 pub fn reset_balanced(BalancedStimulus) -> Unit
+
+pub fn reset_heterogeneous_full(HeterogeneousModel) -> Unit
 
 pub fn reset_time(Time) -> Unit
 
 pub fn reset_time_heterogeneous(HeterogeneousModel) -> Unit
 
+pub fn residual_block_backward(ResidualBlock, ResidualCache, Array[Float]) -> (Array[Float], ResidualGrads)
+
+pub fn residual_block_forward(ResidualBlock, Array[Float], Int, Int, Int, Int) -> (Array[Float], ResidualCache)
+
+pub let rl_action_down : Int
+
+pub let rl_action_left : Int
+
+pub let rl_action_right : Int
+
+pub let rl_action_up : Int
+
+pub fn rl_one_hot(Int, Int) -> Array[Float]
+
+pub fn rmsprop_init(Int, Int) -> RMSpropState
+
+pub fn rmsprop_update_arrays(Array[Float], Array[Float], Array[Float], Array[Float], RMSpropState, Float, Float, Float) -> (Array[Float], Array[Float], RMSpropState)
+
+pub fn rmsprop_update_conv(Conv2dParam, Array[Float], Array[Float], RMSpropState, Float, Float, Float) -> (Conv2dParam, RMSpropState)
+
+pub fn rmsprop_update_linear(LinearParam, Array[Float], Array[Float], RMSpropState, Float, Float, Float) -> (LinearParam, RMSpropState)
+
+pub fn rosenbrock_value(Float, Float) -> Float
+
 pub fn route_pre_to_post(IF, AdExSinExp, Array[Float], Bool, Bool) -> Unit
+
+pub fn routing_coefficients(Array[Float], Int, Array[Array[Float]], Int, Int, Int) -> Array[Float]
 
 pub fn row_major_get(Array[Float], Int, Int, Int) -> Float
 
 pub let s : Float
 
+pub fn sac_actor_update(Sac, Array[Int], Float) -> Unit
+
+pub fn sac_auto_alpha_actor_update(SacAutoAlpha, Array[Int], Float) -> Unit
+
+pub fn sac_auto_alpha_critic_update(SacAutoAlpha, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Float, Float) -> Float
+
+pub fn sac_auto_alpha_get(SacAutoAlpha) -> Float
+
+pub fn sac_auto_alpha_sample_action(LinearSoftmaxPolicy, Int, Xoshiro) -> Int
+
+pub fn sac_auto_alpha_soft_target(SacAutoAlpha, Int, Float, Bool, Float) -> Float
+
+pub fn sac_auto_alpha_soft_update(SacAutoAlpha, Float) -> Unit
+
+pub fn sac_auto_alpha_update_alpha(SacAutoAlpha, Array[Int]) -> Float
+
+pub fn sac_critic_update(Sac, Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Float, Float) -> Float
+
+pub fn sac_gru_act(SAC_GRU, Array[Float], Array[Float], Xoshiro) -> (Array[Float], Array[Float], Float)
+
+pub fn sac_gru_actor_step(GRUSACActor, Array[Float], Array[Float], Xoshiro) -> (Array[Float], Float, Array[Float])
+
+pub fn sac_gru_compute_td_target_seq(SAC_GRU, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn sac_gru_get_alpha(SAC_GRU) -> Float
+
+pub fn sac_gru_select_action(GRUSACActor, Array[Float], Array[Float], Xoshiro) -> (Array[Float], Array[Float], Float)
+
+pub fn sac_gru_soft_update(SAC_GRU) -> Unit
+
+pub fn sac_gru_update_alpha(SAC_GRU, Float, Float) -> Unit
+
+pub fn sac_gtrxl_act(SAC_GTrXL, Array[Float], Xoshiro) -> (Array[Float], GTrXLTokenCache, Float)
+
+pub fn sac_gtrxl_compute_td_target_seq(SAC_GTrXL, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn sac_gtrxl_get_alpha(SAC_GTrXL) -> Float
+
+pub fn sac_gtrxl_soft_update(SAC_GTrXL) -> Unit
+
+pub fn sac_gtrxl_update_alpha(SAC_GTrXL, Float, Float) -> Unit
+
+pub fn sac_lstm_act(SAC_LSTM, Array[Float], Array[Float], Array[Float], Xoshiro) -> (Array[Float], Array[Float], Array[Float], Float)
+
+pub fn sac_lstm_actor_step(LSTMSACActor, Array[Float], Array[Float], Array[Float], Xoshiro) -> (Array[Float], Float, Array[Float], Array[Float])
+
+pub fn sac_lstm_compute_td_target_seq(SAC_LSTM, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn sac_lstm_get_alpha(SAC_LSTM) -> Float
+
+pub fn sac_lstm_select_action(LSTMSACActor, Array[Float], Array[Float], Array[Float], Xoshiro) -> (Array[Float], Array[Float], Array[Float], Float)
+
+pub fn sac_lstm_soft_update(SAC_LSTM) -> Unit
+
+pub fn sac_lstm_update_alpha(SAC_LSTM, Float, Float) -> Unit
+
+pub fn sac_sample_action(LinearSoftmaxPolicy, Int, Xoshiro) -> Int
+
+pub fn sac_soft_target(Sac, Int, Float, Bool, Float) -> Float
+
+pub fn sac_soft_update(Sac, Float) -> Unit
+
+pub fn sample_categorical(Array[Float], Xoshiro) -> (Int, Float)
+
+pub fn sample_gaussians(Int, Xoshiro) -> Array[Float]
+
 pub fn sample_julia_initial_ge_gi(Int, Xoshiro) -> (Array[Float], Array[Float])
+
+pub fn sample_meta_batch(TaskFamily, Int, Int, Int, UInt64) -> Array[MetaTask]
 
 pub fn sample_poisson(Xoshiro, Float) -> Int
 
+pub fn sample_task(TaskFamily, Int, Int, UInt64) -> MetaTask
+
+pub fn sample_trajectory_window(TrajectoryBuffer, Int, Int, Xoshiro) -> (Array[Float], Array[Float], Array[Float], Array[Int])
+
+pub fn scatter_max(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_max_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
+
+pub fn scatter_max_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array[Int])
+
+pub fn scatter_mean(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_mean_backward(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_min(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_min_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
+
+pub fn scatter_min_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array[Int])
+
+pub fn scatter_sum(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_sum_backward(Graph, Array[Float]) -> Array[Float]
+
+pub fn scm_abduct_noise(LinearGaussianSCM, Array[Float]) -> Array[Float]
+
+pub fn scm_counterfactual(LinearGaussianSCM, Array[Float], Int, Float) -> Array[Float]
+
+pub fn scm_counterfactual_query(LinearGaussianSCM, Array[Float], Int, Float, Int) -> Float
+
+pub fn scm_do_expectation(LinearGaussianSCM, Int, Float, Int, Int, Xoshiro) -> Float
+
+pub fn scm_estimate_ate(LinearGaussianSCM, Int, Float, Float, Int, Int, Xoshiro) -> (Float, Float, Float)
+
+pub fn scm_intervene(LinearGaussianSCM, Int, Float) -> MutilatedSCM
+
+pub fn scm_intervened_sample(MutilatedSCM, Xoshiro) -> Array[Float]
+
+pub fn scm_log_likelihood(LinearGaussianSCM, Array[Float]) -> Float
+
+pub fn scm_predict_counterfactual(MutilatedSCM, Array[Float]) -> Array[Float]
+
+pub fn scm_sample(LinearGaussianSCM, Xoshiro) -> Array[Float]
+
+pub fn scnn_accuracy(Array[Float], Array[Int], Int, Int) -> Float
+
+pub fn scnn_deterministic_forward() -> Bool
+
+pub fn scnn_loss_is_reasonable() -> Bool
+
+pub fn scnn_predict_batch(Array[Float], Int, Int) -> Array[Int]
+
+pub fn scnn_single_step() -> (Float, Int)
+
+pub fn scnn_train_n_steps(Int, Float, UInt64) -> (Float, Float, Float, Float)
+
+pub fn scnn_train_step_with_sgd(SimpleCNN, Array[Float], Array[Int], Int, Int, Float) -> (Float, Float)
+
+pub fn score_network_predict(ScoreNetwork, Array[Float], Int) -> Array[Float]
+
 pub let second : Float
+
+pub fn serialize_adam_state(AdamState) -> String
+
+pub fn serialize_deterministic_policy(DeterministicPolicy) -> String
+
+pub fn serialize_linear_qnet(LinearQNet) -> String
+
+pub fn serialize_qnet_checkpoint(LinearQNet, AdamState, Int) -> String
+
+pub fn serialize_qnetwork_continuous(QNetworkContinuous) -> String
+
+pub fn set2set_classifier_accuracy(Set2SetClassifier, Array[Graph], Array[Array[Float]], Array[Int]) -> Float
+
+pub fn set2set_classifier_forward(Set2SetClassifier, Graph, Array[Float]) -> Array[Float]
+
+pub fn set2set_classifier_loss(Set2SetClassifier, Array[Graph], Array[Array[Float]], Array[Int]) -> Float
+
+pub fn set2set_classifier_predict(Set2SetClassifier, Graph, Array[Float]) -> Int
+
+pub fn set2set_forward(Set2Set, Set2SetState, Array[Float], Int, Int) -> (Array[Float], Set2SetState)
+
+pub fn set2set_num_params(Set2Set) -> Int
 
 pub fn set_dt(Time, Float) -> Unit
 
 pub fn set_time(Time, Float) -> Unit
 
 pub fn set_tt(Time, Int) -> Unit
+
+pub fn sgd_momentum_init(Int, Int) -> SGDMomentumState
+
+pub fn sgd_momentum_update_arrays(Array[Float], Array[Float], Array[Float], Array[Float], SGDMomentumState, Float, Float) -> (Array[Float], Array[Float], SGDMomentumState)
+
+pub fn sgd_momentum_update_conv(Conv2dParam, Array[Float], Array[Float], SGDMomentumState, Float, Float) -> (Conv2dParam, SGDMomentumState)
+
+pub fn sgd_momentum_update_linear(LinearParam, Array[Float], Array[Float], SGDMomentumState, Float, Float) -> (LinearParam, SGDMomentumState)
+
+pub fn sgd_update_arrays(Array[Float], Array[Float], Array[Float], Array[Float], Float) -> (Array[Float], Array[Float])
+
+pub fn sgd_update_conv(Conv2dParam, Array[Float], Array[Float], Float) -> Conv2dParam
+
+pub fn sgd_update_linear(LinearParam, Array[Float], Array[Float], Float) -> LinearParam
+
+pub fn siamese_distances(Array[Array[Float]]) -> Array[Float]
+
+pub fn siamese_embed(SiameseNet, Array[Float]) -> Array[Float]
+
+pub fn siamese_embed_pair(SiameseNet, Array[Float], Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn siamese_embed_triplet(SiameseNet, Array[Float], Array[Float], Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn siamese_num_params(SiameseNet) -> Int
+
+pub fn siamese_train_step(SiameseTrainer, Array[Array[Float]], Array[Int], Xoshiro) -> (Float, Float, Float)
+
+pub fn siamese_triplet_step(SiameseNet, SiameseBatch) -> (Float, Float, Float)
 
 pub let siemens : Float
 
@@ -398,9 +1695,23 @@ pub fn sim_any_pops_for(Array[AnyPop], Float, Float) -> Unit
 
 pub fn sim_for(Model, Float) -> Unit
 
+pub fn simple_cnn_backward(SimpleCNN, Array[LayerCache], Array[Float], Int) -> (Array[Float], Array[LayerGrad])
+
+pub fn simple_cnn_forward(SimpleCNN, Array[Float], Int) -> (Array[Float], Array[LayerCache], Int, Int, Int, Int)
+
 pub fn simulate_step_if(IF, Float) -> Unit
 
 pub fn single_exp_synapse_step(SingleExpSynapseVars, SingleExpSynapse, Array[Float], Array[Float], Float) -> Unit
+
+pub fn sinusoidal_position_encoding(Int, Int) -> Array[Float]
+
+pub fn sinusoidal_time_embedding(Int, Int) -> Array[Float]
+
+pub fn softmax(Array[Float]) -> Array[Float]
+
+pub fn softmax_row(Array[Float]) -> Array[Float]
+
+pub fn solve_linear(Array[Array[Float]], Array[Float]) -> Array[Float]
 
 pub fn soma_gaba() -> GABAergic
 
@@ -410,7 +1721,73 @@ pub fn soma_nmda() -> NMDAVoltageDependency
 
 pub fn soma_receptors() -> Receptors
 
+pub fn spectral_norm_power_iteration(Array[Array[Float]], Array[Float]) -> Float
+
+pub fn spike_surrogate(Array[Float], Float, Float) -> SpikeSurrogate
+
+pub fn spikeformer_argmax(Array[Float]) -> Int
+
+pub fn spikeformer_dataset_build(UInt64) -> (Array[Float], Array[Int])
+
+pub fn spikeformer_extract_patches(Array[Float], Int, Int, Int, Int, Int, Int) -> Array[Float]
+
+pub fn spikeformer_one_hot(Int, Int) -> Array[Float]
+
+pub fn spikeformer_softmax(Array[Float]) -> Array[Float]
+
+pub fn spikeformer_xent(Array[Float], Int) -> Float
+
+pub fn spiking_attention_backward(SpikingMultiHeadAttnCache, Array[Float], SpikingMultiHeadAttention) -> (Array[Float], MHAGrad)
+
+pub fn spiking_attention_forward(Array[Float], SpikingMultiHeadAttention, Array[Float]) -> (Array[Float], SpikingMultiHeadAttnCache)
+
 pub fn spiking_connect(SpikingSynapse, Int, Int, Float) -> Unit
+
+pub fn spiking_cross_attention_backward(SpikingCrossAttnCache, Array[Float], SpikingCrossAttention) -> (Array[Float], Array[Float], MHAGrad)
+
+pub fn spiking_cross_attention_forward(Array[Float], Array[Float], SpikingCrossAttention, Array[Float]) -> (Array[Float], SpikingCrossAttnCache)
+
+pub fn spiking_multi_head_attention_backward(SpikingMultiHeadAttnCache, Array[Float], SpikingMultiHeadAttention) -> (Array[Float], MHAGrad)
+
+pub fn spiking_multi_head_attention_forward(Array[Float], SpikingMultiHeadAttention, Array[Float]) -> (Array[Float], SpikingMultiHeadAttnCache)
+
+pub fn spiking_self_attention_new(Int, Float, UInt64) -> SpikingMultiHeadAttention
+
+pub fn spiking_transformer_block_backward(SpikingTransformerBlockCache, Array[Float], SpikingTransformerBlock) -> (Array[Float], SpikingTransformerBlockGrad)
+
+pub fn spiking_transformer_block_forward(Array[Float], SpikingTransformerBlock, Array[Float]) -> (Array[Float], SpikingTransformerBlockCache)
+
+pub fn sqrtf(Float) -> Float
+
+pub fn srnn_backward(SRNNCache, SRNN) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float])
+
+pub fn srnn_dataset_build(UInt64) -> (Array[Float], Array[Int])
+
+pub fn srnn_eval_loss(Array[Float], Array[Int], Int, Float, SRNN, UInt64) -> Float
+
+pub fn srnn_forward(Array[Float], Int, Int, SRNN, Float) -> (Float, SRNNCache)
+
+pub fn srnn_poisson_encode(Array[Float], Int, Float, Float, Xoshiro) -> Array[Float]
+
+pub fn srnn_train_step(Array[Float], Int, Int, Float, Float, SRNN, Xoshiro) -> Float
+
+pub fn st_image_concat_t(STImage, STImage) -> STImage raise Failure
+
+pub fn st_image_repeat_t(Image, Int) -> STImage
+
+pub fn stacked_lstm_backward(Array[Array[Array[Float]]], Array[Array[Float]], StackedLstmCache, Array[Array[Float]], Array[Array[Float]], StackedLstmParam) -> (Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], Array[LstmCellGrad])
+
+pub fn stacked_lstm_forward(Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], StackedLstmParam) -> (Array[Array[Array[Float]]], Array[Array[Array[Float]]], StackedLstmCache)
+
+pub fn stacked_lstm_identity_dataset(Int, Int, Int, UInt64) -> (Array[Array[Float]], Array[Array[Float]])
+
+pub fn stacked_lstm_sequence_loss(Array[Array[Array[Float]]], Array[Array[Float]]) -> Float
+
+pub fn stacked_lstm_sgd_step(StackedLstmParam, Array[LstmCellGrad], Float) -> Unit
+
+pub fn stacked_lstm_train_n_steps(Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], StackedLstmParam, Int, Float, Float) -> Float
+
+pub fn stacked_lstm_zero_init(Int, Int) -> (Array[Array[Float]], Array[Array[Float]])
 
 pub fn start_interval(Float, Array[Array[Float]]) -> Float
 
@@ -419,6 +1796,10 @@ pub fn stdp_antisymmetric_plot(STDPAntiSymmetric, y_max? : Float, width? : Int, 
 pub fn stdp_antisymmetric_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], STDPAntiSymmetricVariables, STDPAntiSymmetric, Float) -> Unit
 
 pub fn stdp_confavreux_step(Array[Float], Array[Bool], Array[Bool], Array[Int], Array[Int], STDPVariables, STDPConfavreux2025, Float, Float) -> Unit
+
+pub fn stdp_confraveux2025_step(StdpConfavreux2025State, StdpConfavreux2025Param, Array[Bool], Array[Bool], Array[Float], Float) -> Unit
+
+pub fn stdp_gerstner_step(StdpGerstnerState, StdpGerstnerParam, Array[Bool], Array[Bool], Array[Float], Float) -> Unit
 
 pub fn stdp_kernel_plot(STDPGerstner, t_max? : Float, width? : Int, height? : Int) -> Unit
 
@@ -443,6 +1824,8 @@ pub fn step_adex_sinexp(AdExSinExp, Float) -> Unit
 pub fn step_ballandstick(BallAndStick, Float) -> Unit
 
 pub fn step_heterogeneous(HeterogeneousModel, Float) -> Unit
+
+pub fn step_heterogeneous_with_record(HeterogeneousModel, Float, (Float) -> Unit) -> Unit
 
 pub fn step_hetrec(HetRec, Float) -> Unit
 
@@ -512,6 +1895,8 @@ pub fn sttc_pair(Array[Float], Array[Float], Float, Float, Float) -> Float
 
 pub fn sttc_pair_sorted(Array[Float], Array[Float], Float, Float, Float) -> Float
 
+pub fn sum_pool(Array[Float], Int, Int) -> Array[Float]
+
 pub fn synaptic_current(IF) -> Unit
 
 pub fn synaptic_current_adex_multi(AdExMultiTimescale, AdExMultiTimescaleParameter) -> Unit
@@ -530,11 +1915,109 @@ pub fn synaptic_turnover(SpikingSynapse, p_rewire? : Float, mu? : Float, p_value
 
 pub fn synaptic_variables_for(String, Int) -> Array[Float]
 
+pub fn synthetic_mnist_build() -> (Array[Array[Float]], Array[Int])
+
+pub fn t5_backward(T5RelativePosition, Array[Float], Int) -> Array[Float]
+
+pub fn t5_compute_bias(T5RelativePosition, Int) -> Array[Float]
+
 pub fn tanhf(Float) -> Float
+
+pub fn task_family_set_meta_model(TaskFamily, MLPModel) -> TaskFamily
+
+pub fn td3_select_action(TD3, Array[Float], Xoshiro) -> Array[Float]
+
+pub fn td3_select_action_eval(TD3, Array[Float]) -> Array[Float]
+
+pub fn td3_soft_update(TD3) -> Unit
+
+pub fn td3_update_step(TD3, (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float]), Float, Float, Int, Xoshiro) -> Float
+
+pub fn tensor_add(Tensor, Tensor) -> Tensor
+
+pub fn tensor_div(Tensor, Tensor) -> Tensor
+
+pub fn tensor_log_softmax(Tensor) -> Tensor
+
+pub fn tensor_matmul(Tensor, Tensor) -> Tensor
+
+pub fn tensor_mul(Tensor, Tensor) -> Tensor
+
+pub fn tensor_softmax(Tensor) -> Tensor
+
+pub fn tensor_sub(Tensor, Tensor) -> Tensor
 
 pub fn tile_fraction(Array[Float], Float, Float, Float) -> Float
 
 pub fn time_in_interval(Float, Array[Array[Float]]) -> Bool
+
+pub fn top_k(Array[Float], Int) -> Array[Int]
+
+pub fn top_k_prediction(Array[Float], Int) -> Array[Int]
+
+pub fn train_actor_critic(GridWorld, LinearSoftmaxPolicy, LinearValueNet, Int, Float, Float, Float, Int, UInt64) -> Float
+
+pub fn train_ddpg(Int, Int, (Array[Float], Array[Float]) -> (Array[Float], Float, Bool), DDPG, Int, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_double_dqn(GridWorld, LinearQNet, LinearQNet, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_dqn(GridWorld, LinearQNet, LinearQNet, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_dqn_n_step(GridWorld, LinearQNet, LinearQNet, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_dueling_dqn(GridWorld, DuelingQNet, DuelingQNet, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_gru_reinforce(Int, GruPolicy, Int, Float, Float, Int, UInt64) -> Float
+
+pub fn train_lstm_ppo(Int, LstmPolicy, Int, Int, Float, Float, Float, Int, UInt64) -> Float
+
+pub fn train_lstm_reinforce(Int, LstmPolicy, Int, Float, Float, Int, UInt64) -> Float
+
+pub fn train_noisy_dqn(GridWorld, NoisyQNet, NoisyQNet, Int, Float, Float, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_ppo(GridWorld, LinearSoftmaxPolicy, Int, Int, Float, Float, Float, Int, UInt64) -> Float
+
+pub fn train_ppo_gae(GridWorld, LinearSoftmaxPolicy, LinearValueNet, Int, Int, Float, Float, Float, Float, Float, Int, UInt64) -> Float
+
+pub fn train_ppo_kl(GridWorld, LinearSoftmaxPolicy, LinearValueNet, Int, Int, Float, Float, Float, Int, UInt64) -> Float
+
+pub fn train_recurrent_sac(Int, RecurrentSac, Int, Float, Float, Float, Float, Int, UInt64) -> Float
+
+pub fn train_reinforce(GridWorld, LinearSoftmaxPolicy, Int, Float, Float, Int, UInt64) -> Float
+
+pub fn train_sac(GridWorld, Sac, Int, Float, Float, Float, Float, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_sac_auto_alpha(GridWorld, SacAutoAlpha, Int, Float, Float, Float, Float, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn train_td3(Int, Int, (Array[Float], Array[Float]) -> (Array[Float], Float, Bool), TD3, Int, Int, Int, Int, Int, UInt64) -> Float
+
+pub fn trainable_net_first_linear(TrainableGraphNet) -> GraphLinear
+
+pub fn trainable_net_forward(TrainableGraphNet, Graph, Array[Float]) -> Array[Float]
+
+pub fn trainable_net_input_grad(TrainableGraphNet, Graph, Array[Float], Array[Int], Int) -> (Array[Float], Float)
+
+pub fn trainable_net_loss(TrainableGraphNet, Graph, Array[Float], Array[Int], Int) -> Float
+
+pub fn trainable_net_node_dim(TrainableGraphNet) -> Int
+
+pub fn trainable_net_num_params(TrainableGraphNet) -> Int
+
+pub fn trainable_net_param_grad(TrainableGraphNet, Graph, Array[Float], Array[Int], Int) -> Array[Float]
+
+pub fn trainable_net_perturb_first(TrainableGraphNet, Float) -> TrainableGraphNet
+
+pub fn trainable_net_sgd_step(TrainableGraphNet, Graph, Array[Float], Array[Float], Float) -> (TrainableGraphNet, Array[Float])
+
+pub fn trajectory_buffer_num_loaded(TrajectoryBuffer) -> Int
+
+pub fn trajectory_buffer_reset(TrajectoryBuffer) -> Unit
+
+pub fn transformer_block_backward(TransformerBlockCache, Array[Float], TransformerBlock) -> (Array[Float], TransformerBlockGrad)
+
+pub fn transformer_block_forward(Array[Float], TransformerBlock, Array[Float]) -> (Array[Float], TransformerBlockCache)
+
+pub fn triplet_loss(Array[Float], Array[Float], Array[Float], Float) -> Float
 
 pub fn tripod_dend_receptors() -> Receptors
 
@@ -557,6 +2040,48 @@ pub fn tripod_soma_step_synapses(Tripod, Float) -> Unit
 pub fn tripod_syn_curr_dends(Tripod) -> Unit
 
 pub fn tripod_syn_curr_soma(Tripod) -> Unit
+
+pub fn ts_acf(Array[Float], Int) -> Array[Float]
+
+pub fn ts_cumsum(Array[Float]) -> Array[Float]
+
+pub fn ts_diff(Array[Float]) -> Array[Float]
+
+pub fn ts_diff_n(Array[Float], Int) -> Array[Float]
+
+pub fn ts_ensemble_evaluate(TimeSeriesEnsemble, Array[Float]) -> (Float, Float, Float, Float)
+
+pub fn ts_ensemble_forecast(TimeSeriesEnsemble, Int) -> Array[Float]
+
+pub fn ts_ensemble_set_window(TimeSeriesEnsemble, Array[Float]) -> TimeSeriesEnsemble
+
+pub fn ts_ensemble_update_weights_inverse_rmse(TimeSeriesEnsemble, Array[Float], Float) -> TimeSeriesEnsemble
+
+pub fn ts_mean(Array[Float]) -> Float
+
+pub fn ts_pacf(Array[Float], Int) -> Array[Float]
+
+pub fn ts_std(Array[Float]) -> Float
+
+pub fn ts_var(Array[Float]) -> Float
+
+pub fn tt_agent_reset(TrajectoryTransformerAgent) -> Unit
+
+pub fn tt_agent_step(TrajectoryTransformerAgent, Array[Float], Array[Float], Float, Float, Xoshiro) -> Array[Float]
+
+pub fn tt_embed_single_token(TTEmbeddings, Array[Float], Array[Float], Float, Float, Int) -> Array[Float]
+
+pub fn tt_embed_trajectory(TTEmbeddings, Array[Float], Array[Float], Array[Float], Array[Float], Array[Int], Int) -> Array[Float]
+
+pub fn tt_forward(TrajectoryTransformer, Array[Float], Array[Float], Array[Float], Array[Float], Array[Int], Int) -> (Array[Float], Array[Float], Array[Float], Array[Float], GTrXLBlockCache)
+
+pub fn tt_mse_loss_4heads(Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Int, Int) -> Float
+
+pub fn tt_predict_next(TrajectoryTransformer, Array[Float], Array[Float], Array[Float], Array[Float], Array[Int], Int) -> (Array[Float], Float, Float, Float)
+
+pub fn tt_predict_value(TrajectoryTransformer, Array[Float], Array[Float], Array[Float], Array[Float], Array[Int], Int) -> Float
+
+pub fn tt_train_step(TrajectoryTransformer, Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Int, Float) -> (TrajectoryTransformer, Float)
 
 pub fn turnover_plasticity(Turnover, Int, Float) -> Unit
 
@@ -594,17 +2119,84 @@ pub fn update_time(Time, Float) -> Unit
 
 pub fn update_weight(Array[Int], Array[Int], Float, SpikingSynapse) -> Unit
 
+pub fn vae_decode(VAEDecoder, Array[Float]) -> Array[Float]
+
+pub fn vae_elbo(Array[Float], Array[Float], Array[Float], Array[Float]) -> Float
+
+pub fn vae_encode(VAEEncoder, Array[Float]) -> (Array[Float], Array[Float])
+
+pub fn vae_forward(VAEModel, Array[Float], Xoshiro) -> (Array[Float], Array[Float], Array[Float], Array[Float])
+
+pub fn vae_train_step(VAEModel, Array[Float], Int, Xoshiro, Float) -> (VAEModel, Float)
+
+pub fn value_forward(LinearValueNet, Array[Float]) -> Float
+
+pub fn vit_block_apply_layernorm(Array[Float], Int, Int, Array[Float], Array[Float], Float) -> Array[Float]
+
+pub fn vit_block_forward(ViTBlock, Array[Float], Int) -> Array[Float]
+
+pub fn vit_block_mlp(ViTBlock, Array[Float], Int) -> Array[Float]
+
+pub fn vit_classify(ViT, Array[Float]) -> Int
+
+pub fn vit_cross_entropy(Array[Float], Int) -> Float
+
+pub fn vit_eval_loss(ViT, Array[Array[Float]], Array[Int]) -> Float
+
+pub fn vit_extract_cls(ViT, Array[Float]) -> Array[Float]
+
+pub fn vit_forward(ViT, Array[Float]) -> Array[Float]
+
+pub fn vit_num_params(ViT) -> Int
+
+pub fn vit_softmax(Array[Float]) -> Array[Float]
+
+pub fn vit_train_step(ViT, Array[Float], Int, Float) -> Float
+
+pub fn vit_train_step_head(ViT, Array[Float], Array[Float], Int, Float) -> Float
+
 pub let voltage : Float
+
+pub fn vstdp_clopath_step(VStdpState, VStdpParam, Array[Bool], Array[Bool], Array[Float], Float) -> Unit
 
 pub fn vstdp_plot(VstdpParameter, width? : Int, height? : Int) -> Unit
 
 pub fn vstdp_step(VstdpVariables, VstdpParameter, Array[Float], Array[Float], Array[Bool], Array[Bool]) -> Unit
 
+pub fn w_critic_clip_weights(WCritic, Float) -> Unit
+
+pub fn w_critic_disc(WCritic) -> DCGANDiscriminator
+
+pub fn w_critic_loss(WCritic, Array[Float], Array[Float]) -> Float
+
+pub fn w_critic_score(WCritic, Array[Float]) -> Float
+
+pub fn w_critic_score_batch(WCritic, Array[Array[Float]]) -> Array[Float]
+
 pub fn weights_indices(Array[Int], Array[Int], SpikingSynapse) -> Array[Int]
+
+pub fn wgan_critic_step(WGAN, Array[Float], Float, Float, Xoshiro) -> (Float, Float, Array[Float])
+
+pub fn wgan_eval(WGANTrainer, Array[Array[Float]]) -> (Float, Float, Float)
+
+pub fn wgan_generator_step(WGAN, Xoshiro) -> (Float, Array[Float])
+
+pub fn wgan_gp_critic_loss(WCritic, Array[Float], Array[Float], Float, Float, Xoshiro) -> Float
+
+pub fn wgan_num_params(WGAN) -> Int
+
+pub fn wgan_train_step(WGANTrainer, Array[Array[Float]], Xoshiro) -> (Float, Float, Float)
 
 // Errors
 
 // Types and methods
+pub struct ActNorm {
+  dim : Int
+  scale : Array[Float]
+  bias : Array[Float]
+}
+pub fn ActNorm::new(Int) -> Self
+
 pub struct ActivityDependentTurnover {
   rate : Float
   tau : Float
@@ -800,10 +2392,51 @@ pub(all) struct AdExSinExpParameter {
 pub fn AdExSinExpParameter::lkd_adex() -> Self
 pub fn AdExSinExpParameter::new() -> Self
 
+pub struct AdaGradState {
+  v_w : Array[Float]
+  v_b : Array[Float]
+}
+
+pub struct Adafactor1DState {
+  v : Array[Float]
+}
+pub fn Adafactor1DState::new(Int) -> Self
+
+pub struct Adafactor2DState {
+  v_row : Array[Float]
+  v_col : Array[Float]
+}
+pub fn Adafactor2DState::new(Int, Int) -> Self
+
+pub struct AdamState {
+  m_w : Array[Float]
+  v_w : Array[Float]
+  m_b : Array[Float]
+  v_b : Array[Float]
+  step : Int
+}
+
+pub struct AdamWState {
+  m_w : Array[Float]
+  v_w : Array[Float]
+  m_b : Array[Float]
+  v_b : Array[Float]
+  step : Int
+}
+
 pub struct AdditiveNorm {
   tau : Float
 }
 pub fn AdditiveNorm::new(Float) -> Self
+
+pub struct AffineCouplingLayer {
+  half_dim : Int
+  scale_w : Array[Array[Float]]
+  scale_b : Array[Float]
+  trans_w : Array[Array[Float]]
+  trans_b : Array[Float]
+}
+pub fn AffineCouplingLayer::new(Int, UInt64) -> Self
 
 pub struct AggregateScaling {
   param : AggregateScalingParameter
@@ -840,6 +2473,7 @@ pub(all) enum AnyPop {
   Poisson_(Poisson)
   WC_(WilsonCowan)
   HetRec_(HetRec)
+  IFCANAHP_(IFCANAHP)
 }
 
 pub(all) enum AnyStim {
@@ -850,6 +2484,66 @@ pub(all) enum AnyStim {
   CurrentArr_(CurrentStimulusArray)
   TimedStim_(SpikeTimeStimulus, Float)
 }
+
+pub struct ArParam {
+  p : Int
+  intercept : Float
+  coeffs : Array[Float]
+}
+pub fn ArParam::new(Int, Float, Array[Float]) -> Self
+
+pub struct ArimaFit {
+  p : Int
+  d : Int
+  q : Int
+  intercept : Float
+  ar_coeffs : Array[Float]
+  ma_thetas : Array[Float]
+}
+
+pub struct ArimaFittedModel {
+  p : Int
+  d : Int
+  q : Int
+  ar_coef : Array[Float]
+  ma_coef : Array[Float]
+  intercept : Float
+  diff_init : Array[Float]
+  residuals : Array[Float]
+  residual_variance : Float
+}
+pub fn ArimaFittedModel::from_ar(Int, Int, Int, Array[Float], Float, Array[Float], Array[Float], Float) -> Self
+pub fn ArimaFittedModel::from_arma_fit(ArimaFit, Array[Float], Float, Array[Float]) -> Self
+
+pub struct ArmaParam {
+  p : Int
+  q : Int
+  intercept : Float
+  ar_coeffs : Array[Float]
+  ma_thetas : Array[Float]
+}
+pub fn ArmaParam::new(Int, Int, Float, Array[Float], Array[Float]) -> Self
+
+pub struct AttnCache {
+  seq_len : Int
+  x : Array[Float]
+  q : Array[Float]
+  k : Array[Float]
+  v : Array[Float]
+  scores : Array[Float]
+  weights : Array[Float]
+  out_pre : Array[Float]
+  mask : Array[Float]
+  scale : Float
+}
+
+pub struct AvgPool2dParam {
+  kh : Int
+  kw : Int
+  stride : Int
+  pad : Int
+}
+pub fn AvgPool2dParam::new(Int, Int, stride? : Int, pad? : Int) -> Self
 
 pub(all) struct BalancedParameter {
   kIE : Float
@@ -909,6 +2603,100 @@ pub struct BallAndStick {
 }
 pub fn BallAndStick::new(Int, AdExParameter, Xoshiro) -> Self
 
+pub struct BasicPrims[A] {
+  tape : Tape[A]
+  neg : (Loc[A]) -> Loc[A]
+  add : (Loc[A], Loc[A]) -> Loc[A]
+  sub : (Loc[A], Loc[A]) -> Loc[A]
+  mul : (Loc[A], Loc[A]) -> Loc[A]
+  div : (Loc[A], Loc[A]) -> Loc[A]
+}
+pub fn[A : Neg + Add + Sub + Mul + Div] BasicPrims::on(Tape[A]) -> Self[A]
+
+pub struct BatchNorm2d {
+  gamma : Array[Float]
+  beta : Array[Float]
+  running_mean : Array[Float]
+  running_var : Array[Float]
+  momentum : Float
+  eps : Float
+  mut training : Bool
+}
+pub fn BatchNorm2d::new(Int, momentum? : Float, eps? : Float) -> Self
+pub fn BatchNorm2d::set_training(Self, Bool) -> Unit
+pub fn BatchNorm2d::with_gamma_beta(Array[Float], Array[Float], momentum? : Float, eps? : Float) -> Self
+
+pub struct BatchNormCache {
+  mean : Array[Float]
+  inv_std : Array[Float]
+  x_centered : Array[Float]
+  nhw : Int
+  n : Int
+  c : Int
+  h : Int
+  w : Int
+}
+
+pub struct Beam {
+  state_seq : Array[Float]
+  action_seq : Array[Float]
+  reward_seq : Array[Float]
+  done_seq : Array[Float]
+  length : Int
+  score : Float
+}
+
+pub struct BeamSearchPlanner {
+  tt : TrajectoryTransformer
+  beam_width : Int
+  horizon : Int
+  gamma : Float
+  action_low : Float
+  action_high : Float
+}
+pub fn BeamSearchPlanner::new(TrajectoryTransformer, Int, Int, Float, Float, Float) -> Self
+
+pub struct BiLstmCache {
+  caches_f : Array[LstmCellCache]
+  caches_b : Array[LstmCellCache]
+  hs_f : Array[Array[Float]]
+  hs_b : Array[Array[Float]]
+  cs_f : Array[Array[Float]]
+  cs_b : Array[Array[Float]]
+}
+
+pub struct BiLstmParam {
+  d_x : Int
+  d_h : Int
+  fwd : LstmCellParam
+  bwd : LstmCellParam
+}
+pub fn BiLstmParam::new(Int, Int, UInt64) -> Self
+
+pub struct C51 {
+  net : C51Net
+  net_target : C51Net
+  gamma : Float
+  lr : Float
+  n_atoms : Int
+  v_min : Float
+  v_max : Float
+  support : Array[Float]
+  delta_z : Float
+}
+pub fn C51::new(Int, Int, Int, Float, Float, Float, Float, UInt64) -> Self
+
+pub struct C51Net {
+  w : Array[Array[Array[Float]]]
+  b : Array[Array[Float]]
+  n_states : Int
+  n_actions : Int
+  n_atoms : Int
+  v_min : Float
+  v_max : Float
+}
+pub fn C51Net::new(Int, Int, Int, Float, Float, UInt64) -> Self
+
 pub struct CaPlasticityEntry {
   conn_index : Int
   n_pre : Int
@@ -940,6 +2728,40 @@ pub(all) struct CaPlasticityVariables {
   active : Array[Bool]
 }
 pub fn CaPlasticityVariables::new(Int, Int) -> Self
+
+pub struct Capsule {
+  dim : Int
+  v : Array[Float]
+  prob : Float
+}
+
+pub struct CapsuleNetwork {
+  c_in : Int
+  in_h : Int
+  in_w : Int
+  ch : Int
+  conv_k : Int
+  c1_h : Int
+  c1_w : Int
+  primary : PrimaryCapsule
+  n_low : Int
+  n_classes : Int
+  capsule_dim : Int
+  n_routing : Int
+  conv_w : Array[Array[Float]]
+  conv_b : Array[Float]
+  route_w : Array[Array[Float]]
+}
+pub fn CapsuleNetwork::new(Int, Int, Int, Int, Int, Int, Int, Int, Int, UInt64) -> Self
+
+pub struct CapsuleNetworkTrainer {
+  net : CapsuleNetwork
+  lr : Float
+  m_pos : Float
+  m_neg : Float
+  absent_weight : Float
+}
+pub fn CapsuleNetworkTrainer::new(CapsuleNetwork, Float, Float, Float, Float) -> Self
 
 pub(all) struct ClopathSTDP {
   a_ltd : Float
@@ -1015,6 +2837,61 @@ pub(all) enum ConnectRule {
   FixedOut
 }
 
+pub struct ContinuousReplayBuffer {
+  capacity : Int
+  state_dim : Int
+  action_dim : Int
+  states : Array[Float]
+  actions : Array[Float]
+  rewards : Array[Float]
+  next_states : Array[Float]
+  dones : Array[Float]
+  mut size : Int
+  mut cursor : Int
+}
+pub fn ContinuousReplayBuffer::len(Self) -> Int
+pub fn ContinuousReplayBuffer::new(Int, Int, Int) -> Self
+pub fn ContinuousReplayBuffer::push(Self, Array[Float], Array[Float], Float, Array[Float], Bool) -> Unit
+pub fn ContinuousReplayBuffer::sample(Self, Int, Xoshiro) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float])
+
+pub struct Conv2dParam {
+  weight : Array[Float]
+  bias : Array[Float]
+  c_out : Int
+  c_in : Int
+  kh : Int
+  kw : Int
+  stride : Int
+  pad : Int
+}
+pub fn Conv2dParam::new(Array[Float], Array[Float], Int, Int, Int, Int, stride? : Int, pad? : Int) -> Self
+
+pub(all) struct CorridorEnv {
+  n_cells : Int
+  goal_side : Int
+  step_penalty : Float
+  goal_reward : Float
+  max_steps : Int
+}
+pub fn CorridorEnv::goal_cell(Self) -> Int
+pub fn CorridorEnv::new(Int, Int) -> Self
+pub fn CorridorEnv::step(Self, Int, Int) -> (Int, Float, Bool)
+
+pub struct CosineAnnealingLR {
+  eta_max : Float
+  eta_min : Float
+  t_max : Int
+  current_step : Int
+}
+pub fn CosineAnnealingLR::new(Float, Float, Int) -> Self
+pub fn CosineAnnealingLR::next(Self) -> Self
+pub fn CosineAnnealingLR::step(Self) -> Float
+
+pub struct CrossEntropyLoss {
+  mean : Tensor
+  per_batch : Tensor
+}
+
 pub struct CurrentNoise {
   n : Int
   i_base : Array[Float]
@@ -1060,11 +2937,138 @@ pub struct CurrentSynapseVars {
 }
 pub fn CurrentSynapseVars::new(Int) -> Self
 
+pub struct DCGAN {
+  g : DCGANGenerator
+  d : DCGANDiscriminator
+  latent_dim : Int
+}
+pub fn DCGAN::new(DCGANGenerator, DCGANDiscriminator) -> Self
+
+pub struct DCGANDiscriminator {
+  c_in : Int
+  c_base : Int
+  h : Int
+  w : Int
+  conv1_w : Array[Array[Float]]
+  conv1_b : Array[Float]
+  conv2_w : Array[Array[Float]]
+  conv2_b : Array[Float]
+  conv3_w : Array[Array[Float]]
+  conv3_b : Array[Float]
+  fc_w : Array[Array[Float]]
+  mut fc_b : Float
+}
+pub fn DCGANDiscriminator::new(Int, Int, Int, Int, UInt64) -> Self
+
+pub struct DCGANGenerator {
+  latent_dim : Int
+  c_base : Int
+  c_out : Int
+  out_h : Int
+  out_w : Int
+  fc_w : Array[Array[Float]]
+  fc_b : Array[Float]
+  conv1_w : Array[Array[Float]]
+  conv1_b : Array[Float]
+  bn1_gamma : Array[Float]
+  bn1_beta : Array[Float]
+  conv2_w : Array[Array[Float]]
+  conv2_b : Array[Float]
+  bn2_gamma : Array[Float]
+  bn2_beta : Array[Float]
+  conv3_w : Array[Array[Float]]
+  conv3_b : Array[Float]
+}
+pub fn DCGANGenerator::new(Int, Int, Int, Int, Int, UInt64) -> Self
+
+pub struct DCGANTrainer {
+  gan : DCGAN
+  lr_g : Float
+  lr_d : Float
+  batch_size : Int
+}
+pub fn DCGANTrainer::new(DCGAN, Float, Float, Int) -> Self
+
+pub struct DDPG {
+  actor : DeterministicPolicy
+  critic1 : QNetworkContinuous
+  critic2 : QNetworkContinuous
+  actor_target : DeterministicPolicy
+  critic1_target : QNetworkContinuous
+  critic2_target : QNetworkContinuous
+  gamma : Float
+  tau : Float
+  exploration_noise : Float
+}
+pub fn DDPG::new(Int, Int, Int, Float, Float, Float, Float, Float, UInt64) -> Self
+
+pub(all) struct DDPG_GRU {
+  actor : GRUDeterministicPolicy
+  critic1 : GRUQNetworkContinuous
+  critic2 : GRUQNetworkContinuous
+  actor_target : GRUDeterministicPolicy
+  critic1_target : GRUQNetworkContinuous
+  critic2_target : GRUQNetworkContinuous
+  gamma : Float
+  mut tau : Float
+  exploration_noise : Float
+  hidden : Int
+}
+pub fn DDPG_GRU::new(Int, Int, Int, Float, Float, Float, Float, Float, UInt64) -> Self
+
+pub struct DDPM {
+  input_dim : Int
+  schedule : DiffusionSchedule
+  net : ScoreNetwork
+}
+pub fn DDPM::new(Int, DiffusionSchedule, ScoreNetwork) -> Self
+
+pub struct DDPMTrainer {
+  ddpm : DDPM
+  lr : Float
+}
+pub fn DDPMTrainer::new(DDPM, Float) -> Self
+
+pub struct DSac {
+  policy : LinearSoftmaxPolicy
+  q1 : LinearGaussianQNet
+  q2 : LinearGaussianQNet
+  q1_target : LinearGaussianQNet
+  q2_target : LinearGaussianQNet
+  alpha : Float
+}
+pub fn DSac::new(Int, Int, Float, UInt64) -> Self
+
+pub struct DTEmbeddings {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  max_timestep : Int
+  rtg_w : Array[Array[Float]]
+  state_w : Array[Array[Float]]
+  action_w : Array[Array[Float]]
+  timestep_emb : Array[Array[Float]]
+}
+pub fn DTEmbeddings::new(Int, Int, Int, Int, UInt64) -> Self
+
+pub struct DecisionTransformer {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  d_ff : Int
+  max_timestep : Int
+  embeddings : DTEmbeddings
+  backbone : GTrXLBlock
+  action_w : Array[Array[Float]]
+  action_b : Array[Float]
+}
+pub fn DecisionTransformer::new(Int, Int, Int, Int, Int, UInt64) -> Self
+
 pub(all) struct DeltaSynapse {
 }
 pub fn DeltaSynapse::new() -> Self
 
-pub struct DeltaSynapseVars {
+pub(all) struct DeltaSynapseVars {
   n : Int
   ge : Array[Float]
   gi : Array[Float]
@@ -1099,6 +3103,28 @@ pub enum DendriticTreeType {
   Multipod
 }
 
+pub struct DeterministicPolicy {
+  state_dim : Int
+  action_dim : Int
+  hidden : Int
+  w1 : Array[Array[Float]]
+  b1 : Array[Float]
+  w2 : Array[Array[Float]]
+  b2 : Array[Float]
+  action_low : Float
+  action_high : Float
+}
+pub fn DeterministicPolicy::new(Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub struct DiffusionSchedule {
+  num_steps : Int
+  betas : Array[Float]
+  alphas : Array[Float]
+  alpha_bars : Array[Float]
+  sqrt_alpha_bars : Array[Float]
+  sqrt_one_minus_alpha_bars : Array[Float]
+}
+
 pub struct DoubleExpCurrentParameter {
   tau_re : Float
   tau_de : Float
@@ -1128,7 +3154,7 @@ pub(all) struct DoubleExpSynapse {
 }
 pub fn DoubleExpSynapse::new() -> Self
 
-pub struct DoubleExpSynapseVars {
+pub(all) struct DoubleExpSynapseVars {
   n : Int
   ge : Array[Float]
   gi : Array[Float]
@@ -1136,6 +3162,16 @@ pub struct DoubleExpSynapseVars {
   hi : Array[Float]
 }
 pub fn DoubleExpSynapseVars::new(Int) -> Self
+
+pub(all) struct Dropout {
+  p : Float
+  mut training : Bool
+}
+pub fn Dropout::new(p? : Float) -> Self
+
+pub struct DropoutCache {
+  mask : Array[Float]
+}
 
 pub struct Duarte2019 {
   pv_tm : Float
@@ -1163,6 +3199,74 @@ pub struct Duarte2019 {
 }
 pub fn Duarte2019::new() -> Self
 
+pub struct DuelingQNet {
+  n_states : Int
+  n_actions : Int
+  value : LinearQNet
+  advantage : LinearQNet
+}
+pub fn DuelingQNet::new(Int, Int, UInt64) -> Self
+
+pub struct EBM {
+  net : EnergyFunction
+  step_size : Float
+  fd_eps : Float
+}
+pub fn EBM::new(EnergyFunction, Float, Float) -> Self
+
+pub struct EBMTrainer {
+  ebm : EBM
+  lr : Float
+  sigma : Float
+}
+pub fn EBMTrainer::new(EBM, Float, Float) -> Self
+
+pub struct EdgeGNN {
+  layers : Array[EdgeLayer]
+  num_layers : Int
+  edge_dim : Int
+  out_dim : Int
+}
+pub fn EdgeGNN::new(Array[Int], Int, UInt64) -> Self
+
+pub struct EdgeGraph {
+  n_nodes : Int
+  feat_dim : Int
+  features : Array[Float]
+  n_edges : Int
+  edge_src : Array[Int]
+  edge_dst : Array[Int]
+  edge_feat_dim : Int
+  edge_features : Array[Float]
+}
+pub fn EdgeGraph::new(Int, Int, Array[Float], Array[Int], Array[Int], Int, Array[Float]) -> Self
+pub fn EdgeGraph::to_graph(Self) -> Graph
+
+pub struct EdgeLayer {
+  in_dim : Int
+  edge_dim : Int
+  out_dim : Int
+  w_neigh : GraphLinear
+  w_edge : GraphLinear
+  w_self : GraphLinear
+}
+pub fn EdgeLayer::new(Int, Int, Int, UInt64) -> Self
+
+pub struct EmbeddingNet {
+  input_dim : Int
+  hidden_dim : Int
+  embed_dim : Int
+  num_layers : Int
+  normalize : Bool
+  w1 : Array[Array[Float]]
+  b1 : Array[Float]
+  hidden_w : Array[Array[Array[Float]]]
+  hidden_b : Array[Array[Float]]
+  w_out : Array[Array[Float]]
+  b_out : Array[Float]
+}
+pub fn EmbeddingNet::new(Int, Int, Int, Int, Bool, UInt64) -> Self
+
 pub struct EmptyConnection {
   name : String
 }
@@ -1182,6 +3286,43 @@ pub struct EmptyStimulus {
 }
 pub fn EmptyStimulus::new() -> Self
 pub fn EmptyStimulus::with_param(EmptyParam) -> Self
+
+pub struct EnergyFunction {
+  input_dim : Int
+  hidden_dim : Int
+  num_layers : Int
+  w1 : Array[Array[Float]]
+  b1 : Array[Float]
+  hidden_w : Array[Array[Array[Float]]]
+  hidden_b : Array[Array[Float]]
+  w_out : Array[Array[Float]]
+  b_out : Float
+}
+pub fn EnergyFunction::new(Int, Int, Int, UInt64) -> Self
+
+pub(all) struct Episode {
+  states : Array[Int]
+  actions : Array[Int]
+  rewards : Array[Float]
+}
+
+pub(all) struct EpisodeWithValues {
+  states : Array[Int]
+  actions : Array[Int]
+  rewards : Array[Float]
+  values : Array[Float]
+  next_values : Array[Float]
+  dones : Array[Bool]
+}
+
+pub struct ExponentialLR {
+  base_lr : Float
+  gamma : Float
+  current_step : Int
+}
+pub fn ExponentialLR::new(Float, Float) -> Self
+pub fn ExponentialLR::next(Self) -> Self
+pub fn ExponentialLR::step(Self) -> Float
 
 pub(all) struct ExtendedIF {
   n : Int
@@ -1226,6 +3367,41 @@ pub struct GABAergic {
 pub fn GABAergic::custom(gabaa~ : Receptor, gabab~ : Receptor) -> Self
 pub fn GABAergic::new(gabaa? : Receptor, gabab? : Receptor) -> Self
 
+pub struct GATLayer {
+  in_dim : Int
+  out_dim : Int
+  w : Array[Array[Float]]
+  a_src : Array[Float]
+  a_dst : Array[Float]
+}
+pub fn GATLayer::new(Int, Int, UInt64) -> Self
+
+pub struct GCN {
+  layers : Array[GCNLayer]
+  num_layers : Int
+  hidden_dim : Int
+  out_dim : Int
+}
+pub fn GCN::new(Array[Int], Float, UInt64) -> Self
+
+pub struct GCNGrad {
+  layers : Array[GCNLayerGrad]
+  num_layers : Int
+}
+pub fn GCNGrad::zero(GCN) -> Self
+
+pub struct GCNLayer {
+  in_dim : Int
+  out_dim : Int
+  alpha : Float
+  w : GraphLinear
+}
+pub fn GCNLayer::new(Int, Int, Float, UInt64) -> Self
+
+pub struct GCNLayerGrad {
+  w : GraphLinearGrad
+}
+
 pub(all) struct GIF {
   n : Int
   param : GIFParameter
@@ -1257,12 +3433,361 @@ pub struct GIFParameter {
 pub fn GIFParameter::adex() -> Self
 pub fn GIFParameter::new() -> Self
 
+pub struct GIN {
+  layers : Array[GINLayer]
+  num_layers : Int
+  eps : Float
+  out_dim : Int
+}
+pub fn GIN::new(Array[Int], Float, UInt64) -> Self
+
+pub struct GINGrad {
+  layers : Array[GINLayerGrad]
+  num_layers : Int
+}
+pub fn GINGrad::zero(GIN) -> Self
+
+pub struct GINLayer {
+  in_dim : Int
+  hidden_dim : Int
+  out_dim : Int
+  eps : Float
+  mlp1 : GraphLinear
+  mlp2 : GraphLinear
+}
+pub fn GINLayer::new(Int, Int, Int, Float, UInt64) -> Self
+
+pub struct GINLayerGrad {
+  mlp1 : GraphLinearGrad
+  mlp2 : GraphLinearGrad
+}
+
+pub struct GRUDDPGActorGrad {
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  mlp_w2 : Array[Array[Float]]
+  mlp_b2 : Array[Float]
+  gru_grad : GruCellGrad
+}
+pub fn GRUDDPGActorGrad::zero(GRUDeterministicPolicy) -> Self
+
+pub struct GRUDDPGCriticGrad {
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  mlp_w2 : Array[Array[Float]]
+  mut mlp_b2 : Float
+  gru_grad : GruCellGrad
+}
+pub fn GRUDDPGCriticGrad::zero(GRUQNetworkContinuous) -> Self
+
+pub struct GRUDeterministicPolicy {
+  state_dim : Int
+  action_dim : Int
+  gru_hidden : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  gru : GruCellParam
+  mlp_w2 : Array[Array[Float]]
+  mlp_b2 : Array[Float]
+  action_low : Float
+  action_high : Float
+}
+pub fn GRUDeterministicPolicy::new(Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub struct GRUForecaster {
+  input_dim : Int
+  hidden_dim : Int
+  output_dim : Int
+  in_w : Array[Array[Float]]
+  in_b : Array[Float]
+  gru : GruCellParam
+  out_w : Array[Array[Float]]
+  out_b : Array[Float]
+}
+pub fn GRUForecaster::new(Int, Int, Int, UInt64) -> Self
+
+pub struct GRUQNetworkContinuous {
+  state_dim : Int
+  action_dim : Int
+  hidden : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  gru : GruCellParam
+  mlp_w2 : Array[Array[Float]]
+  mut mlp_b2 : Float
+}
+pub fn GRUQNetworkContinuous::new(Int, Int, Int, UInt64) -> Self
+
+pub struct GRUSACActor {
+  state_dim : Int
+  action_dim : Int
+  gru_hidden : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  gru : GruCellParam
+  mlp_w_mean : Array[Array[Float]]
+  mlp_b_mean : Array[Float]
+  mlp_w_log_std : Array[Array[Float]]
+  mlp_b_log_std : Array[Float]
+  action_low : Float
+  action_high : Float
+  log_std_min : Float
+  log_std_max : Float
+}
+pub fn GRUSACActor::new(Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub struct GTrXLBlock {
+  d_model : Int
+  d_ff : Int
+  ffn_w1 : Array[Array[Float]]
+  ffn_b1 : Array[Float]
+  ffn_w2 : Array[Array[Float]]
+  ffn_b2 : Array[Float]
+  ffn_gate_w : Array[Array[Float]]
+  ffn_gate_b : Array[Float]
+}
+pub fn GTrXLBlock::new(Int, Int, UInt64) -> Self
+
+pub struct GTrXLBlockCache {
+  seq_len : Int
+  x_input : Array[Float]
+  ffn_gate_pre : Array[Float]
+  ffn_hidden_pre : Array[Float]
+  ffn_hidden_post : Array[Float]
+  gated_ffn : Array[Float]
+  y_seq : Array[Float]
+}
+
+pub struct GTrXLDeterministicPolicy {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  d_ff : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  block : GTrXLBlock
+  mlp_w2 : Array[Array[Float]]
+  mlp_b2 : Array[Float]
+  action_low : Float
+  action_high : Float
+}
+pub fn GTrXLDeterministicPolicy::new(Int, Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub struct GTrXLQNetworkContinuous {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  d_ff : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  block : GTrXLBlock
+  mlp_w2 : Array[Array[Float]]
+  mut mlp_b2 : Float
+}
+pub fn GTrXLQNetworkContinuous::new(Int, Int, Int, Int, UInt64) -> Self
+
+pub struct GTrXLSACActor {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  d_ff : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  block : GTrXLBlock
+  mlp_w_mean : Array[Array[Float]]
+  mlp_b_mean : Array[Float]
+  mlp_w_log_std : Array[Array[Float]]
+  mlp_b_log_std : Array[Float]
+  action_low : Float
+  action_high : Float
+  log_std_min : Float
+  log_std_max : Float
+}
+pub fn GTrXLSACActor::new(Int, Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub struct GTrXLTokenCache {
+  x_input : Array[Float]
+  ffn_gate_pre : Array[Float]
+  ffn_hidden_pre : Array[Float]
+  ffn_hidden_post : Array[Float]
+  gated_ffn : Array[Float]
+}
+
+pub(all) struct GTrXL_DDPG {
+  actor : GTrXLDeterministicPolicy
+  critic1 : GTrXLQNetworkContinuous
+  critic2 : GTrXLQNetworkContinuous
+  actor_target : GTrXLDeterministicPolicy
+  critic1_target : GTrXLQNetworkContinuous
+  critic2_target : GTrXLQNetworkContinuous
+  gamma : Float
+  mut tau : Float
+  exploration_noise : Float
+  d_model : Int
+  d_ff : Int
+}
+pub fn GTrXL_DDPG::new(Int, Int, Int, Int, Float, Float, Float, Float, Float, UInt64) -> Self
+
+pub struct Glow {
+  n_steps : Int
+  steps : Array[GlowStep]
+  dim : Int
+}
+pub fn Glow::new(Int, Int, UInt64) -> Self
+
+pub struct GlowStep {
+  actnorm : ActNorm
+  conv : OneByOneConv
+  coupling : AffineCouplingLayer
+}
+pub fn GlowStep::new(Int, UInt64) -> Self
+
 pub struct Glutamatergic {
   ampa : Receptor
   nmda : Receptor
 }
 pub fn Glutamatergic::custom(ampa~ : Receptor, nmda~ : Receptor) -> Self
 pub fn Glutamatergic::new(ampa? : Receptor, nmda? : Receptor) -> Self
+
+pub struct GradCheckReport {
+  name : String
+  max_diff : Float
+  tol : Float
+  worst_index : Int
+  passed : Bool
+}
+
+pub struct Graph {
+  n_nodes : Int
+  feat_dim : Int
+  features : Array[Float]
+  n_edges : Int
+  edge_src : Array[Int]
+  edge_dst : Array[Int]
+  edge_weight : Array[Float]
+}
+pub fn Graph::new(Int, Int, Array[Float], Array[Int], Array[Int], Array[Float]) -> Self
+pub fn Graph::zeros(Int, Int, Array[Int], Array[Int]) -> Self
+
+pub struct GraphAttention {
+  num_heads : Int
+  num_layers : Int
+  hidden_dim : Int
+  out_dim : Int
+  layers : Array[Array[GATLayer]]
+}
+pub fn GraphAttention::new(Array[Int], Int, UInt64) -> Self
+
+pub(all) enum GraphBackbone {
+  Gin(GIN)
+  Pna(PNA)
+}
+
+pub struct GraphClassifier {
+  gcn : GCN
+  readout : GraphReadout
+  head1 : GraphLinear
+  head2 : GraphLinear
+  node_dim : Int
+  hidden_dim : Int
+  num_classes : Int
+}
+pub fn GraphClassifier::new(GCN, GraphReadout, Int, Int, UInt64) -> Self
+
+pub struct GraphLinear {
+  in_dim : Int
+  out_dim : Int
+  w : Array[Array[Float]]
+  b : Array[Float]
+}
+pub fn GraphLinear::new(Int, Int, UInt64) -> Self
+
+pub struct GraphLinearGrad {
+  d_w : Array[Array[Float]]
+  d_b : Array[Float]
+}
+pub fn GraphLinearGrad::zero(GraphLinear) -> Self
+
+pub(all) enum GraphReadout {
+  Mean
+  Sum
+  Max
+} derive(Eq, @debug.Debug)
+
+pub struct GridWorld {
+  n_rows : Int
+  n_cols : Int
+  start : Int
+  goal : Int
+  step_penalty : Float
+  goal_reward : Float
+  max_steps : Int
+}
+pub fn GridWorld::n_states(Self) -> Int
+pub fn GridWorld::new(Int, Int, Int) -> Self
+pub fn GridWorld::step(Self, Int, Int) -> (Int, Float, Bool)
+
+pub struct GruCellCache {
+  x : Array[Float]
+  h_prev : Array[Float]
+  z : Array[Float]
+  r : Array[Float]
+  s : Array[Float]
+  n : Array[Float]
+  h_t : Array[Float]
+}
+
+pub struct GruCellGrad {
+  d_w_z : Array[Array[Float]]
+  d_w_r : Array[Array[Float]]
+  d_w_n : Array[Array[Float]]
+  d_b_z : Array[Float]
+  d_b_r : Array[Float]
+  d_b_n : Array[Float]
+}
+pub fn GruCellGrad::zero(GruCellParam) -> Self
+
+pub struct GruCellParam {
+  d_x : Int
+  d_h : Int
+  w_z : Array[Array[Float]]
+  w_r : Array[Array[Float]]
+  w_n : Array[Array[Float]]
+  b_z : Array[Float]
+  b_r : Array[Float]
+  b_n : Array[Float]
+}
+pub fn GruCellParam::new(Int, Int, UInt64) -> Self
+
+pub struct GruPolicy {
+  cell : GruCellParam
+  w_out : Array[Array[Float]]
+  b_out : Array[Float]
+}
+pub fn GruPolicy::new(Int, Int, UInt64) -> Self
+
+pub struct GruPolicyCache {
+  cell_caches : Array[GruCellCache]
+  probs : Array[Array[Float]]
+  hs : Array[Array[Float]]
+}
+
+pub struct H2GCN {
+  layers : Array[H2GCNLayer]
+  num_layers : Int
+  out_dim : Int
+  combine : GraphLinear
+}
+pub fn H2GCN::new(Array[Int], Int, UInt64) -> Self
+
+pub struct H2GCNLayer {
+  in_dim : Int
+  out_dim : Int
+  w_ego : GraphLinear
+  w_neigh : GraphLinear
+  w_high : GraphLinear
+}
+pub fn H2GCNLayer::new(Int, Int, UInt64) -> Self
 
 pub struct HH {
   param : HHParameter
@@ -1533,6 +4058,17 @@ pub(all) struct IdentityParameter {
   dummy : Float
 }
 
+pub struct Image {
+  data : Array[Float]
+  n : Int
+  c : Int
+  h : Int
+  w : Int
+}
+pub fn Image::numel(Self) -> Int
+pub fn Image::shape(Self) -> (Int, Int, Int, Int)
+pub fn Image::zeros(Int, Int, Int, Int) -> Self
+
 pub(all) struct InhomogeneousPoisson {
   n : Int
   param : InhomogeneousPoissonParam
@@ -1552,6 +4088,12 @@ pub(all) struct InhomogeneousPoissonParam {
 pub fn InhomogeneousPoissonParam::custom(Float, Float, Float) -> Self
 pub fn InhomogeneousPoissonParam::new() -> Self
 
+pub enum Inst[A] {
+  Var(A)
+  Unary((A) -> A, (A, A) -> A, Loc[A])
+  Binary((A, A) -> A, (A, A, A) -> A, (A, A, A) -> A, Loc[A], Loc[A])
+}
+
 pub(all) struct IstdpPotential {
   eta : Float
   v0 : Float
@@ -1561,7 +4103,7 @@ pub(all) struct IstdpPotential {
 }
 pub fn IstdpPotential::new() -> Self
 
-pub struct IstdpPotentialEntry {
+pub(all) struct IstdpPotentialEntry {
   conn_index : Int
   n_pre : Int
   n_post : Int
@@ -1572,7 +4114,7 @@ pub struct IstdpPotentialEntry {
 pub fn IstdpPotentialEntry::change_plasticity(Self, IstdpPotential) -> Unit
 pub fn IstdpPotentialEntry::new(Int, Int, Int, param? : IstdpPotential) -> Self
 
-pub struct IstdpPotentialVariables {
+pub(all) struct IstdpPotentialVariables {
   tpre : Array[Float]
   tpost : Array[Float]
 }
@@ -1587,7 +4129,7 @@ pub(all) struct IstdpRate {
 }
 pub fn IstdpRate::new() -> Self
 
-pub struct IstdpRateEntry {
+pub(all) struct IstdpRateEntry {
   conn_index : Int
   n_pre : Int
   n_post : Int
@@ -1598,7 +4140,7 @@ pub struct IstdpRateEntry {
 pub fn IstdpRateEntry::change_plasticity(Self, IstdpRate) -> Unit
 pub fn IstdpRateEntry::new(Int, Int, Int, param? : IstdpRate) -> Self
 
-pub struct IstdpRateVariables {
+pub(all) struct IstdpRateVariables {
   tpre : Array[Float]
   tpost : Array[Float]
 }
@@ -1641,7 +4183,350 @@ pub struct LKD2014Soma {
 }
 pub fn LKD2014Soma::new() -> Self
 
-pub struct MarkramSTPEntry {
+pub struct LSTMDDPGActorGrad {
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  mlp_w2 : Array[Array[Float]]
+  mlp_b2 : Array[Float]
+  lstm_grad : LstmCellGrad
+}
+pub fn LSTMDDPGActorGrad::zero(LSTMDeterministicPolicy) -> Self
+
+pub struct LSTMDDPGCriticGrad {
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  mlp_w2 : Array[Array[Float]]
+  mut mlp_b2 : Float
+  lstm_grad : LstmCellGrad
+}
+pub fn LSTMDDPGCriticGrad::zero(LSTMQNetworkContinuous) -> Self
+
+pub struct LSTMDeterministicPolicy {
+  state_dim : Int
+  action_dim : Int
+  lstm_hidden : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  lstm : LstmCellParam
+  mlp_w2 : Array[Array[Float]]
+  mlp_b2 : Array[Float]
+  action_low : Float
+  action_high : Float
+}
+pub fn LSTMDeterministicPolicy::new(Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub struct LSTMForecaster {
+  input_dim : Int
+  hidden_dim : Int
+  output_dim : Int
+  in_w : Array[Array[Float]]
+  in_b : Array[Float]
+  lstm : LstmCellParam
+  out_w : Array[Array[Float]]
+  out_b : Array[Float]
+}
+pub fn LSTMForecaster::new(Int, Int, Int, UInt64) -> Self
+
+pub struct LSTMQNetworkContinuous {
+  state_dim : Int
+  action_dim : Int
+  hidden : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  lstm : LstmCellParam
+  mlp_w2 : Array[Array[Float]]
+  mut mlp_b2 : Float
+}
+pub fn LSTMQNetworkContinuous::new(Int, Int, Int, UInt64) -> Self
+
+pub struct LSTMSACActor {
+  state_dim : Int
+  action_dim : Int
+  lstm_hidden : Int
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  lstm : LstmCellParam
+  mlp_w_mean : Array[Array[Float]]
+  mlp_b_mean : Array[Float]
+  mlp_w_log_std : Array[Array[Float]]
+  mlp_b_log_std : Array[Float]
+  action_low : Float
+  action_high : Float
+  log_std_min : Float
+  log_std_max : Float
+}
+pub fn LSTMSACActor::new(Int, Int, Int, Float, Float, UInt64) -> Self
+
+pub(all) struct LSTM_DDPG {
+  actor : LSTMDeterministicPolicy
+  critic1 : LSTMQNetworkContinuous
+  critic2 : LSTMQNetworkContinuous
+  actor_target : LSTMDeterministicPolicy
+  critic1_target : LSTMQNetworkContinuous
+  critic2_target : LSTMQNetworkContinuous
+  gamma : Float
+  mut tau : Float
+  exploration_noise : Float
+  hidden : Int
+}
+pub fn LSTM_DDPG::new(Int, Int, Int, Float, Float, Float, Float, Float, UInt64) -> Self
+
+pub enum Layer {
+  Conv2d(Conv2dParam)
+  ReLU
+  MaxPool2d(MaxPool2dParam)
+  Flatten
+  Linear(LinearParam)
+  BatchNorm2d(BatchNorm2d)
+  LayerNorm(LayerNorm)
+}
+pub fn Layer::batch_norm2d(BatchNorm2d) -> Self
+pub fn Layer::conv2d(Conv2dParam) -> Self
+pub fn Layer::flatten() -> Self
+pub fn Layer::layer_norm(LayerNorm) -> Self
+pub fn Layer::linear(LinearParam) -> Self
+pub fn Layer::max_pool2d(MaxPool2dParam) -> Self
+pub fn Layer::relu() -> Self
+
+pub enum LayerCache {
+  Conv2d(Array[Float], Int, Int, Int, Int)
+  ReLU(Array[Float])
+  MaxPool2d(Array[Int], Int, Int, Int, Int, Int, Int, Int, Int)
+  Flatten
+  Linear(Array[Float], Int)
+  BatchNorm2d(BatchNormCache)
+  LayerNorm(LayerNormCache)
+}
+
+pub enum LayerGrad {
+  Empty
+  Conv2d(Array[Float], Array[Float])
+  Linear(Array[Float], Array[Float])
+  BatchNorm2d(Array[Float], Array[Float])
+  LayerNorm(Array[Float], Array[Float])
+  MaxPool2d
+}
+
+pub struct LayerNorm {
+  gamma : Array[Float]
+  beta : Array[Float]
+  eps : Float
+  c : Int
+  h : Int
+  w : Int
+}
+pub fn LayerNorm::new(Int, Int, Int, eps? : Float) -> Self
+pub fn LayerNorm::with_gamma_beta(Array[Float], Array[Float], Int, Int, Int, eps? : Float) -> Self
+
+pub struct LayerNormCache {
+  mean : Array[Float]
+  inv_std : Array[Float]
+  x_centered : Array[Float]
+  n : Int
+  c : Int
+  h : Int
+  w : Int
+  chw : Int
+}
+
+pub struct LayerScale {
+  dim : Int
+  gamma : Array[Float]
+}
+pub fn LayerScale::new(Int, init_value? : Float) -> Self
+
+pub struct LeNet5 {
+  layers : Array[Layer]
+}
+pub fn LeNet5::new(UInt64) -> Self
+
+pub struct LinearGaussianQNet {
+  n_states : Int
+  n_actions : Int
+  w_mu : Array[Array[Float]]
+  b_mu : Array[Float]
+  w_sigma : Array[Array[Float]]
+  b_sigma : Array[Float]
+}
+pub fn LinearGaussianQNet::new(Int, Int, UInt64) -> Self
+
+pub struct LinearGaussianSCM {
+  n : Int
+  b : Array[Array[Float]]
+  sigma_sq : Array[Float]
+  topo_order : Array[Int]
+}
+pub fn LinearGaussianSCM::new(Array[Array[Float]], Array[Float], Array[Int]) -> Self
+
+pub struct LinearParam {
+  weight : Array[Float]
+  bias : Array[Float]
+  in_features : Int
+  out_features : Int
+}
+pub fn LinearParam::new(Array[Float], Array[Float], Int, Int) -> Self
+
+pub struct LinearQNet {
+  n_states : Int
+  n_actions : Int
+  w : Array[Array[Float]]
+  b : Array[Float]
+}
+pub fn LinearQNet::new(Int, Int, UInt64) -> Self
+
+pub struct LinearSoftmaxPolicy {
+  n_states : Int
+  n_actions : Int
+  w : Array[Array[Float]]
+}
+pub fn LinearSoftmaxPolicy::new(Int, Int, UInt64) -> Self
+
+pub struct LinearValueNet {
+  n_states : Int
+  w : Array[Float]
+}
+pub fn LinearValueNet::new(Int, UInt64) -> Self
+
+pub enum Loc[A] {
+  Const(A)
+  Memory(Int)
+}
+
+pub struct LstmCellCache {
+  x : Array[Float]
+  h_prev : Array[Float]
+  c_prev : Array[Float]
+  f : Array[Float]
+  ig : Array[Float]
+  c_tilde : Array[Float]
+  o : Array[Float]
+  c_t : Array[Float]
+  tanh_c_t : Array[Float]
+  h_t : Array[Float]
+}
+
+pub struct LstmCellGrad {
+  d_w_f : Array[Array[Float]]
+  d_w_i : Array[Array[Float]]
+  d_w_c : Array[Array[Float]]
+  d_w_o : Array[Array[Float]]
+  d_b_f : Array[Float]
+  d_b_i : Array[Float]
+  d_b_c : Array[Float]
+  d_b_o : Array[Float]
+}
+pub fn LstmCellGrad::zero(LstmCellParam) -> Self
+
+pub struct LstmCellParam {
+  d_x : Int
+  d_h : Int
+  w_f : Array[Array[Float]]
+  w_i : Array[Array[Float]]
+  w_c : Array[Array[Float]]
+  w_o : Array[Array[Float]]
+  b_f : Array[Float]
+  b_i : Array[Float]
+  b_c : Array[Float]
+  b_o : Array[Float]
+}
+pub fn LstmCellParam::new(Int, Int, UInt64) -> Self
+
+pub struct LstmPolicy {
+  cell : LstmCellParam
+  w_out : Array[Array[Float]]
+  b_out : Array[Float]
+}
+pub fn LstmPolicy::new(Int, Int, UInt64) -> Self
+
+pub struct LstmPolicyCache {
+  cell_caches : Array[LstmCellCache]
+  probs : Array[Array[Float]]
+  hs : Array[Array[Float]]
+}
+
+pub struct LstmQNet {
+  cell : LstmCellParam
+  w_out : Array[Array[Float]]
+  b_out : Array[Float]
+}
+pub fn LstmQNet::new(Int, Int, Int, UInt64) -> Self
+
+pub struct LstmQNetCache {
+  cell_caches : Array[LstmCellCache]
+  qs : Array[Array[Float]]
+  hs : Array[Array[Float]]
+}
+
+pub struct MHAGrad {
+  d_w_q : Array[Float]
+  d_b_q : Array[Float]
+  d_w_k : Array[Float]
+  d_b_k : Array[Float]
+  d_w_v : Array[Float]
+  d_b_v : Array[Float]
+  d_w_o : Array[Float]
+  d_b_o : Array[Float]
+}
+
+pub struct MLP {
+  layers : Array[Layer]
+  sizes : Array[Int]
+}
+pub fn MLP::new(Array[Int], UInt64) -> Self
+pub fn MLP::num_params(Self) -> Int
+
+pub struct MLPGrad {
+  d_w1 : Array[Array[Float]]
+  d_b1 : Array[Float]
+  d_w2 : Array[Array[Float]]
+  d_b2 : Array[Float]
+}
+
+pub struct MLPModel {
+  input_dim : Int
+  hidden_dim : Int
+  output_dim : Int
+  w1 : Array[Array[Float]]
+  b1 : Array[Float]
+  w2 : Array[Array[Float]]
+  b2 : Array[Float]
+}
+pub fn MLPModel::new(Int, Int, Int, UInt64) -> Self
+
+pub struct MPnn {
+  layers : Array[MPnnLayer]
+  num_layers : Int
+  out_dim : Int
+}
+pub fn MPnn::new(Array[Int], UInt64) -> Self
+
+pub struct MPnnGrad {
+  layers : Array[MPnnLayerGrad]
+  num_layers : Int
+}
+pub fn MPnnGrad::zero(MPnn) -> Self
+
+pub struct MPnnLayer {
+  in_dim : Int
+  out_dim : Int
+  w_self : GraphLinear
+  w_neigh : GraphLinear
+}
+pub fn MPnnLayer::new(Int, Int, UInt64) -> Self
+
+pub struct MPnnLayerGrad {
+  w_self : GraphLinearGrad
+  w_neigh : GraphLinearGrad
+}
+
+pub struct MaParam {
+  q : Int
+  intercept : Float
+  thetas : Array[Float]
+}
+pub fn MaParam::new(Int, Float, Array[Float]) -> Self
+
+pub(all) struct MarkramSTPEntry {
   conn_index : Int
   vars : MarkramSTPVariables
   param : MarkramSTPParameter
@@ -1649,7 +4534,7 @@ pub struct MarkramSTPEntry {
 pub fn MarkramSTPEntry::new(Int, Int, Int, param? : MarkramSTPParameter) -> Self
 pub fn MarkramSTPEntry::set_stp_active(Self, Bool) -> Unit
 
-pub struct MarkramSTPEntryHet {
+pub(all) struct MarkramSTPEntryHet {
   conn_index : Int
   vars : MarkramSTPVariables
   param : MarkramSTPParameterHet
@@ -1657,7 +4542,7 @@ pub struct MarkramSTPEntryHet {
 pub fn MarkramSTPEntryHet::new(Int, Int, Int, MarkramSTPParameterHet) -> Self
 pub fn MarkramSTPEntryHet::set_stp_active(Self, Bool) -> Unit
 
-pub struct MarkramSTPEntryTimestep {
+pub(all) struct MarkramSTPEntryTimestep {
   conn_index : Int
   vars : MarkramSTPVariables
   param : MarkramSTPParameterTimestep
@@ -1702,6 +4587,61 @@ pub(all) struct MarkramSTPVariables {
   active : Array[Bool]
 }
 pub fn MarkramSTPVariables::new(Int, Int, MarkramSTPParameter) -> Self
+
+pub struct MathPrims {
+  tape : Tape[Float]
+  exp : (Loc[Float]) -> Loc[Float]
+  ln : (Loc[Float]) -> Loc[Float]
+  sin : (Loc[Float]) -> Loc[Float]
+  cos : (Loc[Float]) -> Loc[Float]
+  tanh : (Loc[Float]) -> Loc[Float]
+  sigmoid : (Loc[Float]) -> Loc[Float]
+}
+pub fn MathPrims::on(Tape[Float]) -> Self
+
+pub struct MaxPool2dParam {
+  kh : Int
+  kw : Int
+  stride : Int
+  pad : Int
+}
+pub fn MaxPool2dParam::new(Int, Int, stride? : Int, pad? : Int) -> Self
+
+pub struct MetaTask {
+  model : MLPModel
+  support_inputs : Array[Float]
+  support_targets : Array[Float]
+  query_inputs : Array[Float]
+  query_targets : Array[Float]
+  n_support : Int
+  n_query : Int
+}
+
+pub struct MiniSpikeFormer {
+  d_model : Int
+  n_classes : Int
+  patch_dim : Int
+  n_patches : Int
+  patch_w : Array[Float]
+  patch_b : Array[Float]
+  class_token : Array[Float]
+  pos_weight : Array[Float]
+  pos_d_model : Int
+  block : SpikingTransformerBlock
+  cls_w : Array[Float]
+  cls_b : Array[Float]
+}
+pub fn MiniSpikeFormer::new(Int, Int, Float, Int, UInt64) -> Self
+
+pub struct MiniSpikeFormerCache {
+  pre_block : Array[Float]
+  block_out : Array[Float]
+  class_out : Array[Float]
+  logits : Array[Float]
+  probs : Array[Float]
+  target : Int
+  block_cache : SpikingTransformerBlockCache
+}
 
 pub(all) struct Model {
   pops : Array[IF]
@@ -1786,6 +4726,17 @@ pub struct MorrisLecarParameter {
 }
 pub fn MorrisLecarParameter::new() -> Self
 
+pub struct MultiHeadAttention {
+  d_model : Int
+  num_heads : Int
+  d_k : Int
+  w_q : LinearParam
+  w_k : LinearParam
+  w_v : LinearParam
+  w_o : LinearParam
+}
+pub fn MultiHeadAttention::new(Int, Int, UInt64) -> Self
+
 pub struct MultiplicativeNorm {
   tau : Float
 }
@@ -1830,6 +4781,14 @@ pub struct MultipodParameter {
 pub fn MultipodParameter::new(Array[Dendrite]) -> Self
 pub fn MultipodParameter::uniform(Dendrite, Int) -> Self
 
+pub struct MutilatedSCM {
+  n : Int
+  b : Array[Array[Float]]
+  sigma_sq : Array[Float]
+  topo_order : Array[Int]
+  intercept : Array[Float]
+}
+
 pub(all) struct NLTAH {
   tau : Float
   lambda_ : Float
@@ -1845,15 +4804,106 @@ pub fn NMDAVoltageDependency::custom(Float, Float, Float) -> Self
 pub fn NMDAVoltageDependency::eyal() -> Self
 pub fn NMDAVoltageDependency::soma() -> Self
 
+pub struct NStepBuffer {
+  n : Int
+  records : Array[StepRecord]
+  mut count : Int
+  mut head : Int
+}
+pub fn NStepBuffer::at(Self, Int) -> StepRecord
+pub fn NStepBuffer::capacity(Self) -> Int
+pub fn NStepBuffer::len(Self) -> Int
+pub fn NStepBuffer::n_step_return(Self, Int, Float) -> (Float, Int, Int, Int, Bool)
+pub fn NStepBuffer::new(Int) -> Self
+pub fn NStepBuffer::push(Self, Int, Int, Float, Int, Bool) -> Bool
+pub fn NStepBuffer::reset(Self) -> Unit
+
 pub struct NetworkModel {
   is_valid : Bool
 }
 pub fn NetworkModel::new() -> Self
 
+pub struct NetworkSummary {
+  n_populations : Int
+  n_connections : Int
+  n_stimuli : Int
+  n_monitors : Int
+  n_stdp_entries : Int
+  n_stp_entries : Int
+  current_time : Float
+  total_neurons : Int
+}
+
+pub struct NeuralODEAgent {
+  func : ODEFunc
+  t0 : Float
+  t1 : Float
+  n_steps : Int
+  solver : NeuralODESolver
+}
+pub fn NeuralODEAgent::new(ODEFunc, Float, Float, Int) -> Self
+
+pub enum NeuralODESolver {
+  Euler
+  Heun
+}
+
+pub struct NoisyLinearParam {
+  weight_mu : Array[Float]
+  weight_sigma : Array[Float]
+  bias_mu : Array[Float]
+  bias_sigma : Array[Float]
+  in_features : Int
+  out_features : Int
+}
+pub fn NoisyLinearParam::init(Int, Int, Xoshiro) -> Self
+pub fn NoisyLinearParam::new(Array[Float], Array[Float], Array[Float], Array[Float], Int, Int) -> Self
+
+pub struct NoisyQNet {
+  layer1 : NoisyLinearParam
+  layer2 : NoisyLinearParam
+  n_states : Int
+  hidden : Int
+  n_actions : Int
+}
+pub fn NoisyQNet::new(Int, Int, Int, UInt64) -> Self
+
 pub(all) enum NormParam {
   Multiplicative_(MultiplicativeNorm)
   Additive_(AdditiveNorm)
 }
+
+pub struct NormalizingFlowModel {
+  dim : Int
+  flow : Glow
+}
+pub fn NormalizingFlowModel::new(Int, Int, UInt64) -> Self
+
+pub struct ODEFunc {
+  state_dim : Int
+  hidden_dim : Int
+  w1 : Array[Array[Float]]
+  b1 : Array[Float]
+  w2 : Array[Array[Float]]
+  b2 : Array[Float]
+}
+pub fn ODEFunc::new(Int, Int, UInt64) -> Self
+
+pub struct ObservationalSample {
+  n_samples : Int
+  n_covariates : Int
+  x : Array[Float]
+  y : Array[Float]
+  covariates : Array[Float]
+}
+pub fn ObservationalSample::new(Int, Int) -> Self
+
+pub struct OneByOneConv {
+  dim : Int
+  w : Array[Array[Float]]
+  log_det_w : Float
+}
+pub fn OneByOneConv::new(Int, UInt64) -> Self
 
 pub(all) struct PINningSparseSynapse {
   pre : WilsonCowan
@@ -1868,6 +4918,82 @@ pub(all) struct PINningSparseSynapse {
 }
 pub fn PINningSparseSynapse::new(WilsonCowan, WilsonCowan, Float, Float, Float, Xoshiro) -> Self
 pub fn PINningSparseSynapse::set_target(Self, Int, Float) -> Unit
+
+pub struct PNA {
+  layers : Array[PNALayer]
+  num_layers : Int
+  scaler : PNAScaler
+  delta : Float
+  out_dim : Int
+}
+pub fn PNA::new(Array[Int], Int, Float, PNAScaler, UInt64) -> Self
+
+pub(all) enum PNAAggregator {
+  Mean
+  Max
+  Min
+  Std
+} derive(Eq, @debug.Debug)
+
+pub struct PNAGrad {
+  layers : Array[PNALayerGrad]
+  num_layers : Int
+}
+pub fn PNAGrad::zero(PNA) -> Self
+
+pub struct PNALayer {
+  in_dim : Int
+  hidden_dim : Int
+  out_dim : Int
+  delta : Float
+  scaler : PNAScaler
+  pre_lin : GraphLinear
+  post_lin : GraphLinear
+}
+pub fn PNALayer::new(Int, Int, Int, Float, PNAScaler, UInt64) -> Self
+
+pub struct PNALayerGrad {
+  pre_lin : GraphLinearGrad
+  post_lin : GraphLinearGrad
+}
+
+pub(all) enum PNAScaler {
+  Identity
+  Amplification
+  Attenuation
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ParamProbe {
+  GcnWeight
+  GinMlp1
+  PnaPre
+  MpnnSelf
+} derive(Eq, @debug.Debug)
+
+pub struct ParityResult {
+  name : String
+  n_compared : Int
+  max_error : Float
+  max_ulp : Int
+  passed : Bool
+}
+
+pub struct ParityTrace {
+  kind : String
+  values : Array[Float]
+}
+
+pub struct PatchEmbedding {
+  c : Int
+  h : Int
+  w : Int
+  p : Int
+  d_model : Int
+  proj : Array[Array[Float]]
+  bias : Array[Float]
+  n_patches : Int
+}
+pub fn PatchEmbedding::new(Int, Int, Int, Int, Int, UInt64) -> Self
 
 pub(all) struct Physiology {
   ri : Float
@@ -1973,10 +5099,112 @@ pub(all) struct PopIndex {
 }
 pub fn PopIndex::length(Self) -> Int
 
+pub struct PositionalEmbedding {
+  max_len : Int
+  d_model : Int
+  weight : Array[Float]
+}
+pub fn PositionalEmbedding::new(Int, Int, UInt64) -> Self
+
 pub struct PostSpike {
   tabs_const : Float
 }
 pub fn PostSpike::new() -> Self
+
+pub(all) struct PpoBatch {
+  states : Array[Int]
+  actions : Array[Int]
+  returns : Array[Float]
+  old_probs : Array[Float]
+  n_episodes : Int
+}
+
+pub(all) struct PpoGaeEpisode {
+  states : Array[Int]
+  actions : Array[Int]
+  rewards : Array[Float]
+  values : Array[Float]
+  next_values : Array[Float]
+  dones : Array[Bool]
+}
+
+pub(all) struct PpoKlBatch {
+  states : Array[Int]
+  actions : Array[Int]
+  advantages : Array[Float]
+  old_probs : Array[Float]
+  old_dist : Array[Array[Float]]
+}
+
+pub struct PrimaryCapsule {
+  c_in : Int
+  c_out : Int
+  capsule_dim : Int
+  kernel : Int
+  stride : Int
+  in_h : Int
+  in_w : Int
+  n_patches : Int
+  w : Array[Array[Float]]
+  b : Array[Float]
+}
+pub fn PrimaryCapsule::new(Int, Int, Int, Int, Int, Int, Int, UInt64) -> Self
+
+pub struct PrioritizedBuffer {
+  capacity : Int
+  states : Array[Int]
+  actions : Array[Int]
+  rewards : Array[Float]
+  next_states : Array[Int]
+  dones : Array[Bool]
+  priorities : Array[Float]
+  alpha : Float
+  beta : Float
+  epsilon : Float
+  mut size : Int
+  mut cursor : Int
+  mut total_priority : Float
+}
+pub fn PrioritizedBuffer::len(Self) -> Int
+pub fn PrioritizedBuffer::new(Int, Float, Float, Float) -> Self
+pub fn PrioritizedBuffer::push(Self, Int, Int, Float, Int, Bool) -> Unit
+pub fn PrioritizedBuffer::sample(Self, Int, Xoshiro) -> (Array[Int], Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Array[Float])
+pub fn PrioritizedBuffer::update_priority(Self, Int, Float) -> Unit
+
+pub struct PrioritizedReplayBuffer {
+  capacity : Int
+  states : Array[Int]
+  actions : Array[Int]
+  rewards : Array[Float]
+  next_states : Array[Int]
+  dones : Array[Bool]
+  tree : SumTree
+  mut max_priority : Float
+  alpha : Float
+  beta : Float
+  epsilon : Float
+  mut size : Int
+  mut cursor : Int
+}
+pub fn PrioritizedReplayBuffer::capacity(Self) -> Int
+pub fn PrioritizedReplayBuffer::len(Self) -> Int
+pub fn PrioritizedReplayBuffer::max_priority(Self) -> Float
+pub fn PrioritizedReplayBuffer::new(Int, Float, Float, Float) -> Self
+pub fn PrioritizedReplayBuffer::push(Self, Int, Int, Float, Int, Bool) -> Unit
+pub fn PrioritizedReplayBuffer::sample(Self, Int, Xoshiro) -> (Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Array[Int], Array[Float], Array[Float])
+pub fn PrioritizedReplayBuffer::total_priority(Self) -> Float
+pub fn PrioritizedReplayBuffer::update_priorities(Self, Array[Int], Array[Float]) -> Unit
+
+pub struct QNetworkContinuous {
+  state_dim : Int
+  action_dim : Int
+  hidden : Int
+  w1 : Array[Array[Float]]
+  b1 : Array[Float]
+  w2 : Array[Float]
+  mut b2 : Float
+}
+pub fn QNetworkContinuous::new(Int, Int, Int, UInt64) -> Self
 
 pub struct Quaresima2023Dend {
   e_to_ed_p : Float
@@ -2007,6 +5235,11 @@ pub struct Quaresima2024UpDown {
 }
 pub fn Quaresima2024UpDown::new(Float, Float) -> Self
 
+pub struct RMSpropState {
+  v_w : Array[Float]
+  v_b : Array[Float]
+}
+
 pub struct RandomTurnover {
   rate : Float
   tau : Float
@@ -2021,6 +5254,14 @@ pub struct RateSynapse {
   matrix : SparseMatrixCSR
 }
 pub fn RateSynapse::new(WilsonCowan, WilsonCowan, Float, Float, Float, Xoshiro) -> Self
+
+pub struct RealNVP {
+  n_layers : Int
+  layers : Array[AffineCouplingLayer]
+  perm : Array[Int]
+  dim : Int
+}
+pub fn RealNVP::new(Int, Int, UInt64) -> Self
 
 pub struct Receptor {
   e_rev : Float
@@ -2077,6 +5318,201 @@ pub fn Receptors::new(Receptor, Receptor, Receptor, Receptor) -> Self
 pub struct ReceptorsByTarget {
   glu : Array[Int]
   gaba : Array[Int]
+}
+
+pub(all) struct RecurrentPpoBatch {
+  states : Array[Int]
+  actions : Array[Int]
+  advantages : Array[Float]
+  old_probs : Array[Float]
+  cur_probs : Array[Float]
+  cur_dist : Array[Array[Float]]
+  old_dist : Array[Array[Float]]
+}
+
+pub struct RecurrentSac {
+  policy : LstmPolicy
+  q1 : LstmQNet
+  q2 : LstmQNet
+  q1_target : LstmQNet
+  q2_target : LstmQNet
+  mut log_alpha : Float
+  target_entropy : Float
+  alpha_lr : Float
+}
+pub fn RecurrentSac::new(Int, Int, Float, Float, Float, UInt64) -> Self
+
+pub(all) struct RecurrentSacEpisode {
+  obs_seq : Array[Array[Float]]
+  next_obs_seq : Array[Array[Float]]
+  actions : Array[Int]
+  rewards : Array[Float]
+  dones : Array[Bool]
+  initial_pos : Int
+  goal_side : Int
+}
+pub fn RecurrentSacEpisode::new(Array[Array[Float]], Array[Array[Float]], Array[Int], Array[Float], Array[Bool], Int, Int) -> Self
+
+pub struct ReduceLROnPlateau {
+  base_lr : Float
+  factor : Float
+  patience : Int
+  threshold : Float
+  best_metric : Float
+  num_bad_epochs : Int
+  current_lr : Float
+}
+pub fn ReduceLROnPlateau::new(Float, Float, Int, Float) -> Self
+pub fn ReduceLROnPlateau::step(Self, Float) -> (Float, Self)
+
+pub struct ReparameterizedGaussian {
+  mu : Array[Float]
+  log_var : Array[Float]
+  z : Array[Float]
+  dim : Int
+}
+
+pub struct ReplayBuffer {
+  capacity : Int
+  states : Array[Int]
+  actions : Array[Int]
+  rewards : Array[Float]
+  next_states : Array[Int]
+  dones : Array[Bool]
+  mut size : Int
+  mut cursor : Int
+}
+pub fn ReplayBuffer::len(Self) -> Int
+pub fn ReplayBuffer::new(Int) -> Self
+pub fn ReplayBuffer::push(Self, Int, Int, Float, Int, Bool) -> Unit
+pub fn ReplayBuffer::sample(Self, Int, Xoshiro) -> (Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool])
+
+pub struct ResidualBlock {
+  conv1 : Conv2dParam
+  bn1 : BatchNorm2d
+  conv2 : Conv2dParam
+  bn2 : BatchNorm2d
+  shortcut_conv : Conv2dParam?
+  shortcut_bn : BatchNorm2d?
+  stride : Int
+}
+pub fn ResidualBlock::identity(Int, UInt64) -> Self
+pub fn ResidualBlock::projection(Int, Int, Int, UInt64) -> Self
+
+pub struct ResidualCache {
+  x : Array[Float]
+  sum : Array[Float]
+  bn1_out : Array[Float]
+  bn1_cache : BatchNormCache
+  bn2_cache : BatchNormCache
+  shortcut_bn_cache : BatchNormCache?
+  shortcut_output : Array[Float]
+  conv2_input : Array[Float]
+  conv2_input_n : Int
+  conv2_input_c : Int
+  conv2_input_h : Int
+  conv2_input_w : Int
+  n : Int
+  c : Int
+  h : Int
+  w : Int
+}
+
+pub struct ResidualGrads {
+  conv1_d_weight : Array[Float]
+  conv1_d_bias : Array[Float]
+  bn1_d_gamma : Array[Float]
+  bn1_d_beta : Array[Float]
+  conv2_d_weight : Array[Float]
+  conv2_d_bias : Array[Float]
+  bn2_d_gamma : Array[Float]
+  bn2_d_beta : Array[Float]
+  shortcut_conv_d_weight : Array[Float]?
+  shortcut_conv_d_bias : Array[Float]?
+  shortcut_bn_d_gamma : Array[Float]?
+  shortcut_bn_d_beta : Array[Float]?
+}
+
+pub(all) struct SAC_GRU {
+  actor : GRUSACActor
+  critic1 : GRUQNetworkContinuous
+  critic2 : GRUQNetworkContinuous
+  actor_target : GRUSACActor
+  critic1_target : GRUQNetworkContinuous
+  critic2_target : GRUQNetworkContinuous
+  gamma : Float
+  mut tau : Float
+  hidden : Int
+  mut log_alpha : Float
+  target_entropy : Float
+}
+pub fn SAC_GRU::new(Int, Int, Int, Float, Float, Float, Float, UInt64) -> Self
+
+pub(all) struct SAC_GTrXL {
+  actor : GTrXLSACActor
+  critic1 : GTrXLQNetworkContinuous
+  critic2 : GTrXLQNetworkContinuous
+  actor_target : GTrXLSACActor
+  critic1_target : GTrXLQNetworkContinuous
+  critic2_target : GTrXLQNetworkContinuous
+  gamma : Float
+  mut tau : Float
+  d_model : Int
+  d_ff : Int
+  mut log_alpha : Float
+  target_entropy : Float
+}
+pub fn SAC_GTrXL::new(Int, Int, Int, Int, Float, Float, Float, Float, UInt64) -> Self
+
+pub(all) struct SAC_LSTM {
+  actor : LSTMSACActor
+  critic1 : LSTMQNetworkContinuous
+  critic2 : LSTMQNetworkContinuous
+  actor_target : LSTMSACActor
+  critic1_target : LSTMQNetworkContinuous
+  critic2_target : LSTMQNetworkContinuous
+  gamma : Float
+  mut tau : Float
+  hidden : Int
+  mut log_alpha : Float
+  target_entropy : Float
+}
+pub fn SAC_LSTM::new(Int, Int, Int, Float, Float, Float, Float, UInt64) -> Self
+
+pub struct SGDMomentumState {
+  v_w : Array[Float]
+  v_b : Array[Float]
+}
+
+pub struct SRNN {
+  n_in : Int
+  n_hidden : Int
+  n_classes : Int
+  dt : Float
+  alpha : Float
+  v_thresh : Float
+  w_in : Array[Float]
+  w_rec : Array[Float]
+  w_out : Array[Float]
+  b_in : Array[Float]
+  b_out : Array[Float]
+}
+pub fn SRNN::new(Int, Int, Int, UInt64) -> Self
+
+pub struct SRNNCache {
+  n_steps : Int
+  n_in : Int
+  n_hidden : Int
+  n_classes : Int
+  x : Array[Float]
+  v : Array[Float]
+  spikes : Array[Float]
+  y : Array[Float]
+  probs : Array[Float]
+  target : Int
+  alpha : Float
+  v_thresh : Float
+  beta : Float
 }
 
 pub(all) struct STDPAntiSymmetric {
@@ -2226,11 +5662,152 @@ pub struct STDPVariables {
 }
 pub fn STDPVariables::new(Int, Int) -> Self
 
+pub struct STImage {
+  data : Array[Float]
+  t : Int
+  b : Int
+  c : Int
+  h : Int
+  w : Int
+}
+pub fn STImage::batch_slice(Self) -> Int
+pub fn STImage::frame_block(Self) -> Int
+pub fn STImage::from_frames(Array[Image]) -> Self raise Failure
+pub fn STImage::get(Self, Int, Int, Int, Int, Int) -> Float
+pub fn STImage::get_batch(Self, Int) -> Image
+pub fn STImage::get_frame(Self, Int) -> Image
+pub fn STImage::numel(Self) -> Int
+pub fn STImage::offset(Self, Int, Int, Int, Int, Int) -> Int
+pub fn STImage::set(Self, Int, Int, Int, Int, Int, Float) -> Unit
+pub fn STImage::shape(Self) -> (Int, Int, Int, Int, Int)
+pub fn STImage::zeros(Int, Int, Int, Int, Int) -> Self
+
 pub(all) enum STPEntryKind {
   MarkramSTP_(MarkramSTPEntry)
   MarkramSTPHet_(MarkramSTPEntryHet)
   MarkramSTPTimestep_(MarkramSTPEntryTimestep)
 }
+
+pub struct Sac {
+  policy : LinearSoftmaxPolicy
+  q1 : LinearQNet
+  q2 : LinearQNet
+  q1_target : LinearQNet
+  q2_target : LinearQNet
+  alpha : Float
+}
+pub fn Sac::new(Int, Int, Float, UInt64) -> Self
+
+pub struct SacAutoAlpha {
+  policy : LinearSoftmaxPolicy
+  q1 : LinearQNet
+  q2 : LinearQNet
+  q1_target : LinearQNet
+  q2_target : LinearQNet
+  mut log_alpha : Float
+  target_entropy : Float
+  alpha_lr : Float
+}
+pub fn SacAutoAlpha::new(Int, Int, Float, Float, Float, UInt64) -> Self
+
+pub struct ScoreNetwork {
+  input_dim : Int
+  time_dim : Int
+  hidden_dim : Int
+  num_layers : Int
+  w_in : Array[Array[Float]]
+  b_in : Array[Float]
+  hidden_w : Array[Array[Array[Float]]]
+  hidden_b : Array[Array[Float]]
+  w_out : Array[Array[Float]]
+  b_out : Array[Float]
+}
+pub fn ScoreNetwork::new(Int, Int, Int, Int, UInt64) -> Self
+
+pub struct SequenceReplayBuffer {
+  capacity : Int
+  state_dim : Int
+  action_dim : Int
+  states : Array[Float]
+  actions : Array[Float]
+  rewards : Array[Float]
+  next_states : Array[Float]
+  dones : Array[Float]
+  mut size : Int
+  mut cursor : Int
+}
+pub fn SequenceReplayBuffer::len(Self) -> Int
+pub fn SequenceReplayBuffer::new(Int, Int, Int) -> Self
+pub fn SequenceReplayBuffer::push(Self, Array[Float], Array[Float], Float, Array[Float], Bool) -> Unit
+pub fn SequenceReplayBuffer::reset(Self) -> Unit
+pub fn SequenceReplayBuffer::sample_seq_batch(Self, Int, Int, Xoshiro) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float])
+pub fn SequenceReplayBuffer::sample_seq_batch_at(Self, Int, Int, Array[Int]) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float])
+
+pub struct Set2Set {
+  in_dim : Int
+  processing_steps : Int
+  lstm : LstmCellParam
+  w_source : GraphLinear
+  w_query : GraphLinear
+}
+pub fn Set2Set::new(Int, Int, UInt64) -> Self
+
+pub struct Set2SetClassifier {
+  backbone : GraphBackbone
+  readout : Set2Set
+  head1 : GraphLinear
+  head2 : GraphLinear
+  node_dim : Int
+  hidden_dim : Int
+  num_classes : Int
+}
+pub fn Set2SetClassifier::new(GraphBackbone, Int, Int, Int, UInt64) -> Self
+
+pub struct Set2SetState {
+  q : Array[Float]
+  c : Array[Float]
+}
+pub fn Set2SetState::new(Int) -> Self
+
+pub struct SiameseBatch {
+  anchors : Array[Array[Float]]
+  positives : Array[Array[Float]]
+  negatives : Array[Array[Float]]
+  size : Int
+}
+
+pub(all) enum SiameseLoss {
+  Contrastive
+  Triplet
+} derive(Eq, @debug.Debug)
+
+pub struct SiameseNet {
+  net : EmbeddingNet
+  margin : Float
+  loss_type : SiameseLoss
+}
+pub fn SiameseNet::new(EmbeddingNet, Float, SiameseLoss) -> Self
+
+pub struct SiameseTrainer {
+  s : SiameseNet
+  lr : Float
+  batch_size : Int
+}
+pub fn SiameseTrainer::new(SiameseNet, Float, Int) -> Self
+
+pub struct SimLog {
+  t : Float
+  active_monitors : Int
+  total_spikes : Int
+}
+
+pub struct SimpleCNN {
+  layers : Array[Layer]
+  in_c : Int
+  c1 : Int
+  c2 : Int
+}
+pub fn SimpleCNN::new(Int, Int, Int, UInt64) -> Self
 
 pub struct SingleExpParameter {
   tau_e : Float
@@ -2283,6 +5860,11 @@ pub fn SparseMatrixCSR::random_with_rule(Int, Int, Float, Float, Float, ConnectR
 pub fn SparseMatrixCSR::row_nnz(Self, Int) -> Int
 pub fn SparseMatrixCSR::set(Self, Int, Int, Float) -> Unit
 
+pub struct SpikeSurrogate {
+  spike : Array[Float]
+  grad : Array[Float]
+}
+
 pub struct SpikeTimeParameter {
   spiketimes : Array[Float]
   neurons : Array[Int]
@@ -2298,6 +5880,86 @@ pub struct SpikeTimeStimulus {
   g : Array[Float]
 }
 pub fn SpikeTimeStimulus::new(IF, String, Array[Float], Array[Int]) -> Self
+
+pub struct SpikingAttention {
+  d_model : Int
+  num_heads : Int
+  d_k : Int
+  beta : Float
+  w_q : LinearParam
+  w_k : LinearParam
+  w_v : LinearParam
+  w_o : LinearParam
+}
+pub fn SpikingAttention::new(Int, Int, Float, UInt64) -> SpikingMultiHeadAttention
+
+pub struct SpikingAttnCache {
+  seq_len : Int
+  x : Array[Float]
+  q : Array[Float]
+  k : Array[Float]
+  v : Array[Float]
+  scores : Array[Float]
+  weights : Array[Float]
+  out_pre : Array[Float]
+  mask : Array[Float]
+  scale : Float
+  beta : Float
+}
+
+pub struct SpikingCrossAttention {
+  d_model : Int
+  num_heads : Int
+  d_k : Int
+  beta : Float
+  w_q : LinearParam
+  w_k : LinearParam
+  w_v : LinearParam
+  w_o : LinearParam
+}
+pub fn SpikingCrossAttention::new(Int, Int, Float, UInt64) -> Self
+
+pub struct SpikingCrossAttnCache {
+  seq_len_q : Int
+  seq_len_kv : Int
+  x_q : Array[Float]
+  x_kv : Array[Float]
+  q : Array[Float]
+  k : Array[Float]
+  v : Array[Float]
+  scores : Array[Float]
+  weights : Array[Float]
+  out_pre : Array[Float]
+  mask : Array[Float]
+  scale : Float
+  beta : Float
+}
+
+pub struct SpikingMultiHeadAttention {
+  d_model : Int
+  num_heads : Int
+  d_k : Int
+  beta : Float
+  w_q : LinearParam
+  w_k : LinearParam
+  w_v : LinearParam
+  w_o : LinearParam
+}
+pub fn SpikingMultiHeadAttention::new(Int, Int, Float, UInt64) -> Self
+
+pub struct SpikingMultiHeadAttnCache {
+  seq_len : Int
+  x : Array[Float]
+  q : Array[Float]
+  k : Array[Float]
+  v : Array[Float]
+  scores : Array[Float]
+  weights : Array[Float]
+  out_pre : Array[Float]
+  mask : Array[Float]
+  scale : Float
+  beta : Float
+}
 
 pub struct SpikingSynapse {
   pre : IF
@@ -2348,6 +6010,120 @@ pub struct SpikingSynapseIZ {
 pub fn SpikingSynapseIZ::new(IZ, IZ, String) -> Self
 pub fn SpikingSynapseIZ::random(IZ, IZ, String, Float, Float, Float, Xoshiro) -> Self
 
+pub struct SpikingTransformerBlock {
+  d_model : Int
+  num_heads : Int
+  d_ff : Int
+  beta : Float
+  ln_1 : LayerNorm
+  ln_2 : LayerNorm
+  sa : SpikingMultiHeadAttention
+  ffn_w1 : LinearParam
+  ffn_w2 : LinearParam
+}
+pub fn SpikingTransformerBlock::new(Int, Int, Float, UInt64, d_ff? : Int) -> Self
+
+pub struct SpikingTransformerBlockCache {
+  seq_len : Int
+  x : Array[Float]
+  x2 : Array[Float]
+  x_norm1 : Array[Float]
+  x_norm2 : Array[Float]
+  ln1_cache : LayerNormCache
+  sa_cache : SpikingMultiHeadAttnCache
+  ln2_cache : LayerNormCache
+  ffn_hidden_pre_gelu : Array[Float]
+  ffn_hidden_post_gelu : Array[Float]
+  mask : Array[Float]
+}
+
+pub struct SpikingTransformerBlockGrad {
+  ln1_d_gamma : Array[Float]
+  ln1_d_beta : Array[Float]
+  sa_grad : MHAGrad
+  ln2_d_gamma : Array[Float]
+  ln2_d_beta : Array[Float]
+  ffn_d_w1 : Array[Float]
+  ffn_d_b1 : Array[Float]
+  ffn_d_w2 : Array[Float]
+  ffn_d_b2 : Array[Float]
+}
+
+pub struct StackedLstmCache {
+  caches : Array[Array[LstmCellCache]]
+  hs : Array[Array[Array[Float]]]
+  cs : Array[Array[Array[Float]]]
+}
+
+pub struct StackedLstmParam {
+  d_x : Int
+  d_h : Int
+  n_layers : Int
+  layers : Array[LstmCellParam]
+}
+pub fn StackedLstmParam::new(Int, Int, Int, UInt64) -> Self
+
+pub(all) struct StdpConfavreux2025Param {
+  eta : Float
+  alpha : Float
+  gamma : Float
+  mu : Float
+  nu : Float
+  tau_pre : Float
+  tau_post : Float
+  w_min : Float
+  w_max : Float
+}
+pub fn StdpConfavreux2025Param::new() -> Self
+
+pub struct StdpConfavreux2025State {
+  n_pre : Int
+  n_post : Int
+  tpre : Array[Float]
+  tpost : Array[Float]
+  last_pre : Array[Float]
+  last_post : Array[Float]
+}
+pub fn StdpConfavreux2025State::new(Int, Int) -> Self
+
+pub(all) struct StdpGerstnerParam {
+  a_pre : Float
+  a_post : Float
+  tau_pre : Float
+  tau_post : Float
+  w_min : Float
+  w_max : Float
+}
+pub fn StdpGerstnerParam::new() -> Self
+
+pub struct StdpGerstnerState {
+  n_pre : Int
+  n_post : Int
+  tpre : Array[Float]
+  tpost : Array[Float]
+  last_pre : Array[Float]
+  last_post : Array[Float]
+}
+pub fn StdpGerstnerState::new(Int, Int) -> Self
+
+pub struct StepLR {
+  base_lr : Float
+  step_size : Int
+  gamma : Float
+  current_step : Int
+}
+pub fn StepLR::new(Float, Int, Float) -> Self
+pub fn StepLR::next(Self) -> Self
+pub fn StepLR::step(Self) -> Float
+
+pub struct StepRecord {
+  s : Int
+  a : Int
+  r : Float
+  s_next : Int
+  done : Bool
+}
+
 pub struct StimulusGroup {
   name : String
   elements : Array[String]
@@ -2359,6 +6135,22 @@ pub fn StimulusGroup::new(String, Array[String]) -> Self
 pub fn StimulusGroup::set_active_all(Self, Bool) -> Unit
 pub fn StimulusGroup::set_active_one(Self, Int, Bool) -> Unit
 pub fn StimulusGroup::tag(Self, Int) -> String
+
+pub struct SumTree {
+  capacity : Int
+  tree : Array[Float]
+  mut data_count : Int
+}
+pub fn SumTree::add(Self, Float) -> Int
+pub fn SumTree::capacity(Self) -> Int
+pub fn SumTree::find_prefix(Self, Float) -> (Int, Float)
+pub fn SumTree::find_prefix_batch(Self, Array[Float]) -> Array[(Int, Float)]
+pub fn SumTree::get_leaf(Self, Int) -> Float
+pub fn SumTree::len(Self) -> Int
+pub fn SumTree::new(Int) -> Self
+pub fn SumTree::set_at(Self, Int, Float) -> Unit
+pub fn SumTree::set_priority(Self, Int, Float) -> Unit
+pub fn SumTree::total(Self) -> Float
 
 pub struct SynapseNormalization {
   param : NormParam
@@ -2376,6 +6168,71 @@ pub(all) struct SynapseTarget {
   rowptr : Array[Int]
 }
 
+pub struct T5RelativePosition {
+  num_heads : Int
+  max_distance : Int
+  weight : Array[Float]
+}
+pub fn T5RelativePosition::new(Int, Int, UInt64) -> Self
+
+pub struct TD3 {
+  actor : DeterministicPolicy
+  critic1 : QNetworkContinuous
+  critic2 : QNetworkContinuous
+  actor_target : DeterministicPolicy
+  critic1_target : QNetworkContinuous
+  critic2_target : QNetworkContinuous
+  gamma : Float
+  tau : Float
+  exploration_noise : Float
+  target_noise_std : Float
+  target_noise_clip : Float
+  policy_delay : Int
+}
+pub fn TD3::new(Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Int, UInt64) -> Self
+
+pub struct TTEmbeddings {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  max_timestep : Int
+  state_w : Array[Array[Float]]
+  action_w : Array[Array[Float]]
+  reward_w : Array[Array[Float]]
+  done_w : Array[Array[Float]]
+  timestep_emb : Array[Array[Float]]
+}
+pub fn TTEmbeddings::new(Int, Int, Int, Int, UInt64) -> Self
+
+pub struct Tape[A] {
+  insts : Array[Inst[A]]
+  names : Array[String]
+}
+pub fn[A : Diffable] Tape::diff_backward(Self[A], Array[A]) -> Array[A]
+pub fn[A : Diffable + Mul + Add] Tape::diff_forward(Self[A], Array[A], wrt? : Int) -> Array[A]
+pub fn[A : Diffable] Tape::eval(Self[A]) -> Array[A]
+pub fn[A] Tape::new() -> Self[A]
+pub fn[A] Tape::op1(Self[A], String, (A) -> A, (A, A) -> A) -> (Loc[A]) -> Loc[A]
+pub fn[A] Tape::op2(Self[A], String, (A, A) -> A, (A, A, A) -> A, (A, A, A) -> A) -> (Loc[A], Loc[A]) -> Loc[A]
+pub fn[A] Tape::variable(Self[A], A) -> Loc[A]
+
+pub struct TaskFamily {
+  meta_model : MLPModel
+  task_noise_std : Float
+  input_noise_std : Float
+}
+pub fn TaskFamily::new(MLPModel, Float, Float) -> Self
+
+pub struct Tensor {
+  data : Array[Float]
+  shape : Array[Int]
+}
+pub fn Tensor::from(Array[Float], Array[Int]) -> Self
+pub fn Tensor::numel(Self) -> Int
+pub fn Tensor::ones(Array[Int]) -> Self
+pub fn Tensor::reshape(Self, Array[Int]) -> Self
+pub fn Tensor::zeros(Array[Int]) -> Self
+
 pub struct Time {
   t : Array[Float]
   tt : Array[Int]
@@ -2383,6 +6240,116 @@ pub struct Time {
 }
 pub fn Time::from_ms(Float) -> Self
 pub fn Time::new() -> Self
+
+pub struct TimeSeriesEnsemble {
+  arima : ArimaFittedModel
+  lstm : LSTMForecaster
+  gru : GRUForecaster
+  w_arima : Float
+  w_lstm : Float
+  w_gru : Float
+  last_input_window : Array[Float]
+}
+pub fn TimeSeriesEnsemble::new(ArimaFittedModel, LSTMForecaster, GRUForecaster) -> Self
+
+pub(all) enum TrainableGraphNet {
+  Gcn(GCN)
+  Gin(GIN)
+  Pna(PNA)
+  Mpnn(MPnn)
+}
+
+pub struct Trajectory {
+  state_dim : Int
+  action_dim : Int
+  state_seq : Array[Float]
+  action_seq : Array[Float]
+  reward_seq : Array[Float]
+  done_seq : Array[Float]
+  rtg_seq : Array[Float]
+  length : Int
+}
+
+pub(all) struct TrajectoryBuffer {
+  capacity : Int
+  state_dim : Int
+  action_dim : Int
+  gamma : Float
+  mut trajectories : Array[Trajectory]
+  mut num_loaded : Int
+}
+pub fn TrajectoryBuffer::new(Int, Int, Int, Float) -> Self
+
+pub struct TrajectoryTransformer {
+  state_dim : Int
+  action_dim : Int
+  d_model : Int
+  d_ff : Int
+  max_timestep : Int
+  embeddings : TTEmbeddings
+  backbone : GTrXLBlock
+  state_w : Array[Array[Float]]
+  state_b : Array[Float]
+  reward_w : Array[Array[Float]]
+  reward_b : Float
+  done_w : Array[Array[Float]]
+  done_b : Float
+  value_w : Array[Array[Float]]
+  value_b : Float
+}
+pub fn TrajectoryTransformer::new(Int, Int, Int, Int, Int, UInt64) -> Self
+
+pub(all) struct TrajectoryTransformerAgent {
+  tt : TrajectoryTransformer
+  planner : BeamSearchPlanner
+  context_length : Int
+  action_dim : Int
+  state_dim : Int
+  mut history_states : Array[Float]
+  mut history_actions : Array[Float]
+  mut history_rewards : Array[Float]
+  mut history_dones : Array[Float]
+  mut history_len : Int
+}
+pub fn TrajectoryTransformerAgent::new(TrajectoryTransformer, BeamSearchPlanner, Int) -> Self
+
+pub struct TransformerBlock {
+  d_model : Int
+  num_heads : Int
+  d_ff : Int
+  ln_1 : LayerNorm
+  ln_2 : LayerNorm
+  mha : MultiHeadAttention
+  ffn_w1 : LinearParam
+  ffn_w2 : LinearParam
+}
+pub fn TransformerBlock::new(Int, Int, UInt64, d_ff? : Int) -> Self
+
+pub struct TransformerBlockCache {
+  seq_len : Int
+  x : Array[Float]
+  x2 : Array[Float]
+  x_norm1 : Array[Float]
+  x_norm2 : Array[Float]
+  ln1_cache : LayerNormCache
+  attn_cache : AttnCache
+  ln2_cache : LayerNormCache
+  ffn_hidden_pre_gelu : Array[Float]
+  ffn_hidden_post_gelu : Array[Float]
+  mask : Array[Float]
+}
+
+pub struct TransformerBlockGrad {
+  ln1_d_gamma : Array[Float]
+  ln1_d_beta : Array[Float]
+  mha_grad : MHAGrad
+  ln2_d_gamma : Array[Float]
+  ln2_d_beta : Array[Float]
+  ffn_d_w1 : Array[Float]
+  ffn_d_b1 : Array[Float]
+  ffn_d_w2 : Array[Float]
+  ffn_d_b2 : Array[Float]
+}
 
 pub(all) struct TripletRule {
   a2_ltp : Float
@@ -2498,6 +6465,89 @@ pub(all) enum TurnoverParam {
   ActivityDependentTurnover_(ActivityDependentTurnover)
 }
 
+pub struct VAEDecoder {
+  latent_dim : Int
+  hidden_dim : Int
+  x_dim : Int
+  in_w : Array[Array[Float]]
+  in_b : Array[Float]
+  out_w : Array[Array[Float]]
+  out_b : Array[Float]
+}
+pub fn VAEDecoder::new(Int, Int, Int, UInt64) -> Self
+
+pub struct VAEEncoder {
+  x_dim : Int
+  hidden_dim : Int
+  latent_dim : Int
+  in_w : Array[Array[Float]]
+  in_b : Array[Float]
+  mu_w : Array[Array[Float]]
+  mu_b : Array[Float]
+  logvar_w : Array[Array[Float]]
+  logvar_b : Array[Float]
+}
+pub fn VAEEncoder::new(Int, Int, Int, UInt64) -> Self
+
+pub struct VAEModel {
+  x_dim : Int
+  latent_dim : Int
+  hidden_dim : Int
+  encoder : VAEEncoder
+  decoder : VAEDecoder
+}
+pub fn VAEModel::new(Int, Int, Int, UInt64) -> Self
+
+pub(all) struct VStdpParam {
+  a_ltp : Float
+  a_ltd : Float
+  v_rest : Float
+  delta_v : Float
+  tau_pre : Float
+  tau_post : Float
+  w_min : Float
+  w_max : Float
+}
+pub fn VStdpParam::new() -> Self
+
+pub struct VStdpState {
+  n_pre : Int
+  n_post : Int
+  tpre : Array[Float]
+  tpost : Array[Float]
+  v_post : Array[Float]
+}
+pub fn VStdpState::new(Int, Int, Array[Float]) -> Self
+
+pub struct ViT {
+  patch_embed : PatchEmbedding
+  cls_token : Array[Float]
+  pos_embed : Array[Float]
+  blocks : Array[ViTBlock]
+  head_w : Array[Array[Float]]
+  head_b : Array[Float]
+  num_classes : Int
+  d_model : Int
+  n_patches : Int
+}
+pub fn ViT::new(Int, Int, Int, Int, Int, Int, Int, Int, Int, UInt64) -> Self
+
+pub struct ViTBlock {
+  d_model : Int
+  num_heads : Int
+  ln1_gamma : Array[Float]
+  ln1_beta : Array[Float]
+  ln2_gamma : Array[Float]
+  ln2_beta : Array[Float]
+  mha : MultiHeadAttention
+  mlp_w1 : Array[Array[Float]]
+  mlp_b1 : Array[Float]
+  mlp_w2 : Array[Array[Float]]
+  mlp_b2 : Array[Float]
+  mlp_hidden : Int
+}
+pub fn ViTBlock::new(Int, Int, Int, UInt64) -> Self
+
 pub(all) struct VstdpParameter {
   a_ltd : Float
   a_ltp : Float
@@ -2519,6 +6569,27 @@ pub(all) struct WCParameter {
   dummy : Float
 }
 pub fn WCParameter::new() -> Self
+
+pub struct WCritic {
+  d : DCGANDiscriminator
+}
+pub fn WCritic::new(DCGANDiscriminator) -> Self
+
+pub struct WGAN {
+  g : DCGANGenerator
+  c : WCritic
+  latent_dim : Int
+}
+pub fn WGAN::new(DCGANGenerator, WCritic) -> Self
+
+pub struct WGANTrainer {
+  wgan : WGAN
+  n_critic : Int
+  lambda_gp : Float
+  fd_eps : Float
+  batch_size : Int
+}
+pub fn WGANTrainer::new(WGAN, Int, Float, Float, Int) -> Self
 
 pub struct WilsonCowan {
   param : WCParameter
@@ -2543,3 +6614,9 @@ pub fn Xoshiro::new(UInt64) -> Self
 // Type aliases
 
 // Traits
+pub(open) trait Diffable : Add + Sub {
+  fn zero() -> Self
+  fn one() -> Self
+}
+pub impl Diffable for Float
+pub impl Diffable for Double
