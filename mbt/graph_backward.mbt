@@ -264,14 +264,19 @@ pub struct GraphLinearGrad {
 
 ///|
 /// Zero-initialised gradients matching a GraphLinear's shapes.
+///
+/// The rows are built EXPLICITLY rather than with
+/// `Array::make(out_dim, Array::make(in_dim, 0.0F))`. MoonBit arrays
+/// are reference types, so the latter hands back `out_dim` aliases of
+/// one shared inner array -- every row of `d_w` would be the same
+/// memory, and accumulating into row o would corrupt all of them. The
+/// symptom is a `d_w` that is right only in row 0.
 pub fn GraphLinearGrad::zero(lin : GraphLinear) -> GraphLinearGrad {
-  let dw : Array[Array[Float]] = Array::make(
-    lin.out_dim, Array::make(lin.in_dim, 0.0F),
-  )
-  {
-    d_w: dw,
-    d_b: Array::make(lin.out_dim, 0.0F),
+  let dw : Array[Array[Float]] = Array::make(lin.out_dim, [])
+  for o in 0..<lin.out_dim {
+    dw[o] = Array::make(lin.in_dim, 0.0F)
   }
+  { d_w: dw, d_b: Array::make(lin.out_dim, 0.0F), }
 }
 
 ///|
