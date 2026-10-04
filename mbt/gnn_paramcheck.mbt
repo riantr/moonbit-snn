@@ -66,6 +66,9 @@ pub fn trainable_net_first_linear(
     Gin(m) => m.layers[0].mlp1
     Pna(m) => m.layers[0].pre_lin
     Mpnn(m) => m.layers[0].w_self
+    // GATLayer stores `w` as a bare array rather than a GraphLinear,
+    // so head 0 of layer 0 is exposed as a zero-bias view of it.
+    Gat(m) => gat_layer_as_linear(m.layers[0][0])
   }
 }
 
@@ -104,6 +107,13 @@ pub fn trainable_net_param_grad_from_dout(
       let (_, inputs) = mpnn_forward_with_inputs(m, g, h)
       let (_, grads) = mpnn_backward(m, g, inputs, d_out)
       out[0] = grads.layers[0].w_self.d_w[0][0]
+    }
+    Gat(m) => {
+      let (_, inputs) = graph_attention_forward_with_inputs(m, g, h)
+      let (_, grads) = graph_attention_backward(m, g, inputs, d_out)
+      // Head 0 of layer 0 -- the probed parameter, for the same reason
+      // every other architecture probes its first layer's projection.
+      out[0] = grads.layers[0][0].d_w[0][0]
     }
   }
   out
@@ -196,6 +206,13 @@ pub fn trainable_net_param_grad(
       let (_, grads) = mpnn_backward(m, g, inputs, d_logits)
       out[0] = grads.layers[0].w_self.d_w[0][0]
     }
+    Gat(m) => {
+      let (_, inputs) = graph_attention_forward_with_inputs(m, g, h)
+      let logits = graph_attention_forward(m, g, h)
+      let d_logits = node_ce_grad(logits, labels, g.n_nodes, num_classes)
+      let (_, grads) = graph_attention_backward(m, g, inputs, d_logits)
+      out[0] = grads.layers[0][0].d_w[0][0]
+    }
   }
   out
 }
@@ -251,6 +268,26 @@ pub fn trainable_net_perturb_first(
         w_self: graph_linear_perturb_first(m.layers[0].w_self, delta),
       }
       Mpnn({ ..m, layers, })
+    }
+    Gat(m) => {
+      let layers : Array[Array[GATLayer]] = Array::make(m.num_layers, [])
+      for l in 0..<m.num_layers {
+        let heads : Array[GATLayer] = Array::make(m.num_heads, m.layers[l][0])
+        for hd in 0..<m.num_heads {
+          // A fresh copy per head: sharing one perturbed layer across
+          // heads would move `num_heads` parameters at once and make
+          // the finite difference a different quantity.
+          heads[hd] = { ..m.layers[l][hd], }
+        }
+        layers[l] = heads
+      }
+      let heads0 : Array[GATLayer] = Array::make(m.num_heads, m.layers[0][0])
+      for hd in 0..<m.num_heads {
+        heads0[hd] = { ..m.layers[0][hd], }
+      }
+      heads0[0] = gat_layer_perturb_first(m.layers[0][0], delta)
+      layers[0] = heads0
+      Gat({ ..m, layers, })
     }
   }
 }

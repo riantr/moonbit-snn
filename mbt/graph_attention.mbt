@@ -183,31 +183,64 @@ pub struct GraphAttention {
 }
 
 ///|
-/// Build a multi-head GAT stack. `dims` must have `num_layers + 1`
-/// entries describing the per-head output width of each layer.
+/// Build a multi-head GAT stack. `dims` has `num_layers + 1` entries:
+///
+///   dims[0]        the raw INPUT width
+///   dims[l]        the PER-HEAD output width of layer l-1, for l >= 1
+///
+/// The per-head qualifier is the whole point. Multi-head attention
+/// CONCATENATES its heads, so layer l does not read `dims[l]` -- it
+/// reads `num_heads * dims[l]`. Feeding layer l a bare `dims[l]` built
+/// a stack whose declared input width was `num_heads` times too small;
+/// `gat_layer_forward` then re-strided the concatenated buffer with the
+/// layer's own (small) `in_dim` and read the wrong elements, silently,
+/// for every layer past the first. With `num_heads == 1` the two agree,
+/// which is why this only ever bit multi-layer multi-head stacks --
+/// the one shape nothing in the package had built until now.
 pub fn GraphAttention::new(
   dims : Array[Int],
   num_heads : Int,
   seed : UInt64,
 ) -> GraphAttention {
   let num_layers = dims.length() - 1
-  let layers : Array[Array[GATLayer]] = Array::make(
-    num_layers, Array::make(0, GATLayer::new(dims[0], dims[1], seed)),
-  )
+  let layers : Array[Array[GATLayer]] = Array::make(num_layers, [])
   for l in 0..<num_layers {
+    // Concatenation, not averaging: layer l's input width is the
+    // concatenated width of layer l-1, not its per-head width.
+    let in_dim = if l == 0 { dims[0] } else { num_heads * dims[l] }
+    let out_dim = dims[l + 1]
     let heads : Array[GATLayer] = Array::make(
-      num_heads, GATLayer::new(dims[l], dims[l + 1], seed),
+      num_heads, GATLayer::new(in_dim, out_dim, seed),
     )
     for hd in 0..<num_heads {
       heads[hd] = GATLayer::new(
-        dims[l],
-        dims[l + 1],
+        in_dim,
+        out_dim,
         seed + (l * num_heads + hd + 1).to_uint64() * 1000UL,
       )
     }
     layers[l] = heads
   }
   { num_heads, num_layers, hidden_dim: dims[1], out_dim: dims[num_layers], layers, }
+}
+
+///|
+/// Per-head output width of stack layer `l`. Every stride in the stack
+/// goes through here, because "the width of layer l's output" has two
+/// different answers -- `out_dim` for one head, `num_heads * out_dim`
+/// for the concatenated row -- and picking the wrong one is invisible:
+/// the arithmetic still runs, the factors still look orthonormal, and
+/// the loss still decreases. (That is what happened in Batch X.)
+pub fn gat_stack_out_width(net : GraphAttention, l : Int) -> Int {
+  net.layers[l][0].out_dim
+}
+
+///|
+/// Node-embedding width of a multi-head GAT stack: the heads are
+/// concatenated, so the node row is `num_heads` times the last layer's
+/// per-head width.
+pub fn gat_stack_node_dim(net : GraphAttention) -> Int {
+  net.num_heads * gat_stack_out_width(net, net.num_layers - 1)
 }
 
 ///|
@@ -218,64 +251,76 @@ pub fn gat_elu(x : Float) -> Float {
 }
 
 ///|
+/// Forward the multi-head GAT stack, caching each layer's input.
+/// Returns `(output, inputs)` where `inputs[l]` is the buffer layer l
+/// reads -- the concatenated output of layer l-1.
+///
+/// This is the real implementation; `graph_attention_forward` is a
+/// wrapper over it. Having one body rather than two is deliberate: the
+/// backward pass slices `d_out` by the same per-layer widths this
+/// function writes, and a second copy of the layout arithmetic is
+/// exactly how a backward ends up disagreeing with its own forward.
+pub fn graph_attention_forward_with_inputs(
+  net : GraphAttention,
+  g : Graph,
+  h : Array[Float],
+) -> (Array[Float], Array[Array[Float]]) {
+  let heads = net.num_heads
+  let n_layers = net.num_layers
+  let inputs : Array[Array[Float]] = Array::make(n_layers, [])
+  let mut acc = h
+  let mut i = 0
+  while i < n_layers {
+    let layer = net.layers[i][0]
+    let d = gat_stack_out_width(net, i)
+    // The LAST layer is linear so its output can be read as logits;
+    // every earlier layer concatenates its heads and applies ELU.
+    let last = i == n_layers - 1
+    inputs[i] = acc
+    let out : Array[Float] = Array::make(g.n_nodes * heads * d, 0.0F)
+    for hd in 0..<heads {
+      let ho = gat_layer_forward(net.layers[i][hd], g, acc)
+      for v in 0..<g.n_nodes {
+        // `ho` is this head's OWN output, laid out with the head's
+        // out_dim as its row stride. It is emphatically not the layer's
+        // in_dim and not the concatenated width: indexing it by either
+        // reads the wrong elements, and reads the wrong ones SILENTLY
+        // whenever out_dim happens to differ from them -- which is why
+        // a 1-head stack whose in_dim equals its out_dim passed while
+        // every real multi-head width failed.
+        let src = v * d
+        let dst = v * heads * d + hd * d
+        for k in 0..<d {
+          let hv = ho[src + k]
+          if last {
+            out[dst + k] = hv
+          } else {
+            out[dst + k] = gat_elu(hv)
+          }
+        }
+      }
+    }
+    acc = out
+    i = i + 1
+  }
+  (acc, inputs)
+}
+
+///|
 /// Forward the multi-head GAT stack. Hidden layers apply ELU to the
 /// concatenated head outputs; the final layer is linear so its output
 /// can be used directly as logits.
 ///
 /// Concatenation means a layer's output width is `num_heads * dim_l`,
 /// so the input width of layer l+1 must equal `num_heads * dim_l`.
+/// `GraphAttention::new` builds exactly that; this function does not
+/// have to know the rule because every stride is read off the layer it
+/// is slicing.
 pub fn graph_attention_forward(
   net : GraphAttention,
   g : Graph,
   h : Array[Float],
 ) -> Array[Float] {
-  let heads = net.num_heads
-  let d0 = net.layers[0][0].out_dim
-  // Concatenate the K heads of the first layer, then ELU.
-  let first : Array[Float] = Array::make(g.n_nodes * heads * d0, 0.0F)
-  for hd in 0..<heads {
-    let ho = gat_layer_forward(net.layers[0][hd], g, h)
-    for v in 0..<g.n_nodes {
-      let src = v * d0
-      let dst = v * heads * d0 + hd * d0
-      for k in 0..<d0 {
-        first[dst + k] = gat_elu(ho[src + k])
-      }
-    }
-  }
-  // Middle layers, if any. `prev` is the concatenated input width.
-  let mut acc = first
-  let mut prev = heads * d0
-  for l in 1..<net.num_layers {
-    let d = net.layers[l][0].out_dim
-    let next : Array[Float] = Array::make(g.n_nodes * heads * d, 0.0F)
-    for hd in 0..<heads {
-      let ho = gat_layer_forward(net.layers[l][hd], g, acc)
-      for v in 0..<g.n_nodes {
-        let src = v * prev
-        let dst = v * heads * d + hd * d
-        for k in 0..<d {
-          next[dst + k] = gat_elu(ho[src + k])
-        }
-      }
-    }
-    acc = next
-    prev = heads * d
-  }
-  // Final layer: linear (no activation), so the output is usable as
-  // logits directly.
-  let last = net.num_layers - 1
-  let d_last = net.layers[last][0].out_dim
-  let out : Array[Float] = Array::make(g.n_nodes * heads * d_last, 0.0F)
-  for hd in 0..<heads {
-    let ho = gat_layer_forward(net.layers[last][hd], g, acc)
-    for v in 0..<g.n_nodes {
-      let src = v * prev
-      let dst = v * heads * d_last + hd * d_last
-      for k in 0..<d_last {
-        out[dst + k] = ho[src + k]
-      }
-    }
-  }
+  let (out, _) = graph_attention_forward_with_inputs(net, g, h)
   out
 }

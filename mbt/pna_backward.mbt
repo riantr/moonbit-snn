@@ -415,13 +415,14 @@ pub fn pna_sgd_step(
 
 ///|
 /// A trainable message-passing network, dispatched by tag. One
-/// training-loop signature therefore covers all four backward-enabled
+/// training-loop signature therefore covers all five backward-enabled
 /// architectures.
 pub(all) enum TrainableGraphNet {
   Gcn(GCN)
   Gin(GIN)
   Pna(PNA)
   Mpnn(MPnn)
+  Gat(GraphAttention)
 }
 
 ///|
@@ -436,6 +437,7 @@ pub fn trainable_net_forward(
     Gin(m) => gin_forward(m, g, h)
     Pna(m) => pna_forward(m, g, h)
     Mpnn(m) => mpnn_forward(m, g, h)
+    Gat(m) => graph_attention_forward(m, g, h)
   }
 }
 
@@ -447,6 +449,13 @@ pub fn trainable_net_node_dim(net : TrainableGraphNet) -> Int {
     Gin(m) => m.out_dim
     Pna(m) => m.out_dim
     Mpnn(m) => m.out_dim
+    // GAT CONCATENATES its heads, so the node row is heads times the
+    // last layer's per-head width. Reading `m.out_dim` here would tell
+    // every downstream caller (readouts, pooled readouts, the node
+    // cross-entropy) that the embedding is `num_heads` times too
+    // narrow -- and every one of those would then read the wrong
+    // elements rather than fail.
+    Gat(m) => gat_stack_node_dim(m)
   }
 }
 
@@ -471,6 +480,7 @@ pub fn trainable_net_num_params(net : TrainableGraphNet) -> Int {
       }
       t
     }
+    Gat(m) => graph_attention_num_params(m)
   }
 }
 
@@ -500,6 +510,10 @@ pub fn trainable_net_sgd_step(
     Mpnn(m) => {
       let (m2, d) = mpnn_sgd_step(m, g, h, d_out, lr)
       (Mpnn(m2), d)
+    }
+    Gat(m) => {
+      let (m2, d) = graph_attention_sgd_step(m, g, h, d_out, lr)
+      (Gat(m2), d)
     }
   }
 }

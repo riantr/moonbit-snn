@@ -242,6 +242,16 @@ pub fn scatter_add_by_dst(
 /// sits in a hidden layer of a multi-head stack (whose concatenated
 /// output is passed through ELU) and false for the final layer, whose
 /// output is linear and therefore needs no derivative mask.
+///
+/// The mask is applied HERE, not by the caller, because it needs the
+/// head's own PRE-activation -- the same value `gat_layer_forward`
+/// produces -- and a caller that had to recompute it would be one more
+/// place for the forward and the backward to disagree. It also means
+/// `elu = true` cannot silently degrade to a no-op, which is what this
+/// parameter used to be: the single-head caller below reached the tail
+/// of this function, found a placeholder, and returned an UNMASKED
+/// gradient for every hidden head. An unmasked gradient is not a small
+/// error -- it is the gradient of a different network.
 pub fn gat_layer_backward(
   layer : GATLayer,
   g : Graph,
@@ -255,6 +265,9 @@ pub fn gat_layer_backward(
   let p = gat_project(layer, h, n)
   let (t_src, t_dst) = gat_attn_terms(layer, p, n)
   let alpha = gat_alpha(g, t_src, t_dst)
+  // ELU mask on the incoming gradient. `d_out` belongs to the caller,
+  // so the masked copy is a fresh buffer; `d_out` is never mutated.
+  let eff = if elu { gat_apply_elu_mask(layer, g, h, d_out) } else { d_out }
   // 1. Weighted sum: out[d] += alpha_e * p[s]. The gradient goes to
   //    the SOURCE (that is the only node the sum reads), and the
   //    coefficient's gradient is the inner product with p[s].
@@ -271,8 +284,8 @@ pub fn gat_layer_backward(
     let dst_off = dst * d
     let mut dot = 0.0F
     for o in 0..<d {
-      dot = dot + d_out[dst_off + o] * p[src_off + o]
-      d_p[src_off + o] = d_p[src_off + o] + a * d_out[dst_off + o]
+      dot = dot + eff[dst_off + o] * p[src_off + o]
+      d_p[src_off + o] = d_p[src_off + o] + a * eff[dst_off + o]
     }
     d_alpha[e] = dot
   }
@@ -317,14 +330,29 @@ pub fn gat_layer_backward(
       }
     }
   }
-  // The ELU mask, applied last: the multi-head stack passes the
-  // concatenated head outputs through ELU for hidden layers, so the
-  // incoming gradient is the one already masked by the caller's
-  // derivative -- here we only need to publish the derivative itself.
-  if elu {
-    ignore(d_out)
-  }
+  // The ELU mask was applied to `eff` at the top, before any of this.
   (d_h, grad)
+}
+
+///|
+/// Apply the ELU derivative to an upstream gradient: the multi-head
+/// stack passes every hidden layer's concatenated head output through
+/// ELU, so the gradient a head must differentiate is its pre-activation
+/// gradient scaled by `gat_elu_grad` AT THE HEAD'S OWN PRE-ACTIVATION.
+///
+/// Returns a fresh buffer; `d_out` is the caller's and is left alone.
+pub fn gat_apply_elu_mask(
+  layer : GATLayer,
+  g : Graph,
+  h : Array[Float],
+  d_out : Array[Float],
+) -> Array[Float] {
+  let raw = gat_layer_forward(layer, g, h)
+  let out : Array[Float] = Array::make(d_out.length(), 0.0F)
+  for i in 0..<d_out.length() {
+    out[i] = d_out[i] * gat_elu_grad(raw[i])
+  }
+  out
 }
 
 ///|
