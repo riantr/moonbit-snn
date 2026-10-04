@@ -144,6 +144,40 @@ fn main {
       "  " + pctl_msg,
     )
   }
+  println("--- GAT single head (the two-endpoint fan-out) ---")
+  {
+    let gl = GATLayer::new(2, 2, 2024UL)
+    let out = gat_layer_forward(gl, raw, h)
+    let (da, _) = gat_layer_backward(gl, raw, h, out, false)
+    let num = numerical_gradient(h, gradcheck_eps(), fn(x) {
+      let o2 = gat_layer_forward(gl, raw, x)
+      let mut acc = 0.0F
+      for i in 0..<o2.length() { acc = acc + o2[i] * o2[i] }
+      0.5F * acc
+    })
+    let (mx, worst) = max_abs_diff(da, num)
+    let mut sc = 0.0F
+    for i in 0..<da.length() {
+      let a = if da[i] < 0.0F { 0.0F - da[i] } else { da[i] }
+      if a > sc { sc = a }
+    }
+    let over = gradcheck_over_fraction(da, num, 0.01F)
+    let rel = mx / sc
+    let ok = rel <= 0.01F && over == 0
+    let vd = if ok { "PASS" } else { "FAIL" }
+    println(
+      "  GAT-head  REL=" + Float::to_string(rel) +
+      "  over1%=" + over.to_string() + "/" + da.length().to_string() +
+      "  worst=" + worst.to_string() + "  " + vd,
+    )
+    if !ok { fails = fails + 1 }
+    // Negative control for GAT specifically.
+    let bad : Array[Float] = Array::make(da.length(), 0.0F)
+    for i in 0..<da.length() { bad[i] = da[i] * 1.5F }
+    let bo = gradcheck_over_fraction(bad, num, 0.01F)
+    let bm = if bo > 0 { "checker has teeth" } else { "CHECKER IS VACUOUS" }
+    println("  GAT control over1%=" + bo.to_string() + "  " + bm)
+  }
   println("")
   if fails == 0 && ctrl_ok {
     println("VERDICT: PASS")
