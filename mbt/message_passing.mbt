@@ -235,8 +235,11 @@ pub fn mpnn_layer_forward(
 }
 
 ///|
-/// helper: scalar ReLU (kept separate so the layer body reads cleanly).
-fn graph_relu_one(x : Float) -> Float {
+/// helper: scalar ReLU. Public because the GNN families that add
+/// their own terms to a pre-activation array (GIN's MLP, H2GCN's
+/// three separated spaces) need the elementwise rule without
+/// allocating a whole output array per call.
+pub fn graph_relu_one(x : Float) -> Float {
   if x > 0.0F { x } else { 0.0F }
 }
 
