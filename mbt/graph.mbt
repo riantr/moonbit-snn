@@ -154,12 +154,19 @@ pub fn scatter_mean(
 ///|
 /// Scatter-max: element-wise maximum of the incoming messages per
 /// destination node. Nodes with no incoming edge keep a zero row.
+///
+/// The accumulator is seeded from each node's FIRST incoming message,
+/// not from 0.0. A separate `seeded` flag is required rather than the
+/// static in-degree: in-degree is non-zero for every node that has an
+/// edge at all, so testing it would leave the accumulator at its 0.0
+/// initial value and silently clamp any all-negative neighbourhood
+/// to 0 instead of reporting its (negative) maximum.
 pub fn scatter_max(
   g : Graph,
   messages : Array[Float],
 ) -> Array[Float] {
   let out = alloc_features(g.n_nodes, g.feat_dim)
-  let deg = graph_in_degree(g)
+  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
     let d = g.edge_dst[e]
@@ -169,10 +176,42 @@ pub fn scatter_max(
     let w = g.edge_weight[e]
     let src_off = s * g.feat_dim
     let dst_off = d * g.feat_dim
+    let first = seeded[d] == 0
+    seeded[d] = 1
     for k in 0..<g.feat_dim {
       let m = w * messages[src_off + k]
-      // First incoming message seeds the max for a fresh node.
-      if deg[d] == 0 || m > out[dst_off + k] {
+      if first || m > out[dst_off + k] {
+        out[dst_off + k] = m
+      }
+    }
+  }
+  out
+}
+
+///|
+/// Scatter-min: element-wise minimum of the incoming messages per
+/// destination node. Nodes with no incoming edge keep a zero row.
+/// Uses the same first-message seeding as `scatter_max`.
+pub fn scatter_min(
+  g : Graph,
+  messages : Array[Float],
+) -> Array[Float] {
+  let out = alloc_features(g.n_nodes, g.feat_dim)
+  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    let w = g.edge_weight[e]
+    let src_off = s * g.feat_dim
+    let dst_off = d * g.feat_dim
+    let first = seeded[d] == 0
+    seeded[d] = 1
+    for k in 0..<g.feat_dim {
+      let m = w * messages[src_off + k]
+      if first || m < out[dst_off + k] {
         out[dst_off + k] = m
       }
     }
