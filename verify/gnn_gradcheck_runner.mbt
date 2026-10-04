@@ -105,6 +105,45 @@ fn main {
     "  (forward is consistent)",
   )
   if !zz_row("PNAx2", TrainableGraphNet::Pna(pna2), raw, h) { fails = fails + 1 }
+  println("--- dL/dW[0][0] parameter gradients (first-layer projection) ---")
+  let gin1 = TrainableGraphNet::Gin(GIN::new([2, 2], 0.0F, 2024UL))
+  let gin2 = TrainableGraphNet::Gin(GIN::new([2, 4, 2], 0.0F, 2024UL))
+  let gcn1 = TrainableGraphNet::Gcn(GCN::new([2, 2], 0.0F, 2024UL))
+  let gcn2 = TrainableGraphNet::Gcn(GCN::new([2, 4, 2], 0.0F, 2024UL))
+  let mpnn1 = TrainableGraphNet::Mpnn(MPnn::new([2, 2], 2024UL))
+  let mpnn2 = TrainableGraphNet::Mpnn(MPnn::new([2, 4, 2], 2024UL))
+  let pna1 = TrainableGraphNet::Pna(
+    PNA::new([2, 2], 4, 0.001F, PNAScaler::Amplification, 2024UL),
+  )
+  let pna2b = TrainableGraphNet::Pna(
+    PNA::new([2, 4, 2], 4, 0.001F, PNAScaler::Amplification, 2024UL),
+  )
+  let pn = ["GINx1", "GINx2", "GCNx1", "GCNx2", "MPNNx1", "MPNNx2", "PNAx1", "PNAx2"]
+  let pg = [gin1, gin2, gcn1, gcn2, mpnn1, mpnn2, pna1, pna2b]
+  let pp = [raw, raw, norm, norm, raw, raw, raw, raw]
+  for i in 0..<8 {
+    let pr = gradcheck_param_relative(pn[i], pg[i], pp[i], h)
+    let v = if pr.passed { "PASS" } else { "FAIL" }
+    println(
+      "  " + pn[i] +
+      "  max_diff=" + Float::to_string(pr.max_diff) +
+      "  tol=" + Float::to_string(pr.tol) +
+      "  " + v,
+    )
+    if !pr.passed {
+      fails = fails + 1
+    }
+  }
+  println("--- negative control on dL/dW (must FAIL) ---")
+  {
+    let pctl = gradcheck_param_relative("pctl", gin1, raw, h, corrupt=1.5F)
+    let pctl_msg = if pctl.passed { "SUSPECT" } else { "checker has teeth" }
+    println(
+      "  control max_diff=" + Float::to_string(pctl.max_diff) +
+      "  tol=" + Float::to_string(pctl.tol) +
+      "  " + pctl_msg,
+    )
+  }
   println("")
   if fails == 0 && ctrl_ok {
     println("VERDICT: PASS")
