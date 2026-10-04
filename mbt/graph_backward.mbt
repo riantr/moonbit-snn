@@ -280,6 +280,15 @@ pub fn graph_linear_backward(
 }
 
 ///|
+/// Parameter count of a GraphLinear: in_dim * out_dim weights plus
+/// out_dim biases. Defined once here because the per-layer and
+/// per-stack counters all need it, and four hand-inlined copies of
+/// `in_dim * out_dim + out_dim` will drift.
+pub fn graph_linear_num_params(lin : GraphLinear) -> Int {
+  lin.in_dim * lin.out_dim + lin.out_dim
+}
+
+///|
 /// One vanilla SGD step on a GraphLinear. Returns a FRESH GraphLinear
 /// (the input is not mutated) so a parameter can be threaded through a
 /// `for` loop the same way the forward outputs are.

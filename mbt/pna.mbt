@@ -228,6 +228,76 @@ pub fn pna_aggregate(
 }
 
 ///|
+/// Max over the in-neighbour multiset, ALSO recording which incoming
+/// edge won per (node, feature). The backward (pna_backward.mbt,
+/// v0.148.0) needs this index and cannot recover it from the forward's
+/// value alone -- two different neighbourhoods can share a maximum.
+///
+/// Ties go to the FIRST edge in list order, matching the `first ||
+/// m > out[...]` tie-break above, so the recorded index and the
+/// returned value always agree.
+pub fn pna_max_forward_with_idx(
+  g : Graph,
+  h : Array[Float],
+) -> (Array[Float], Array[Int]) {
+  let dim = g.feat_dim
+  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let argmax : Array[Int] = Array::make(g.n_nodes * dim, -1)
+  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    let src_off = s * dim
+    let dst_off = d * dim
+    let first = seeded[d] == 0
+    seeded[d] = 1
+    for k in 0..<dim {
+      let m = h[src_off + k]
+      if first || m > out[dst_off + k] {
+        out[dst_off + k] = m
+        argmax[dst_off + k] = e
+      }
+    }
+  }
+  (out, argmax)
+}
+
+///|
+/// Min over the in-neighbour multiset, ALSO recording which incoming
+/// edge won. Same first-edge tie-break as `pna_max_forward_with_idx`.
+pub fn pna_min_forward_with_idx(
+  g : Graph,
+  h : Array[Float],
+) -> (Array[Float], Array[Int]) {
+  let dim = g.feat_dim
+  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let argmin : Array[Int] = Array::make(g.n_nodes * dim, -1)
+  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    let src_off = s * dim
+    let dst_off = d * dim
+    let first = seeded[d] == 0
+    seeded[d] = 1
+    for k in 0..<dim {
+      let m = h[src_off + k]
+      if first || m < out[dst_off + k] {
+        out[dst_off + k] = m
+        argmin[dst_off + k] = e
+      }
+    }
+  }
+  (out, argmin)
+}
+
+///|
 /// Mean in-degree over the graph, floored at `delta`. The paper uses
 /// a small delta (0.001 by default) to stop the normalisation from
 /// blowing up on a near-empty graph.
