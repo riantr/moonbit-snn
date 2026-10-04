@@ -361,6 +361,20 @@ pub fn add_into(a : Array[Float], b : Array[Float]) -> Unit {
 }
 
 ///|
+/// Elementwise sum `a + b` into a fresh array, up to the shorter
+/// length. Used to rebuild a pre-activation that a forward formed by
+/// adding two branches, so the backward can take its ReLU derivative
+/// mask on the SUM rather than on one branch.
+pub fn elem_add(a : Array[Float], b : Array[Float]) -> Array[Float] {
+  let n = if a.length() < b.length() { a.length() } else { b.length() }
+  let out : Array[Float] = Array::make(n, 0.0F)
+  for i in 0..<n {
+    out[i] = a[i] + b[i]
+  }
+  out
+}
+
+///|
 /// Elementwise product `a .* b` into a fresh array, used to apply a
 /// ReLU derivative mask to an upstream gradient.
 pub fn elem_mul(a : Array[Float], b : Array[Float]) -> Array[Float] {

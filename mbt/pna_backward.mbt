@@ -272,7 +272,13 @@ pub fn pna_layer_backward(
   h : Array[Float],
   d_out : Array[Float],
 ) -> (Array[Float], PNALayerGrad) {
-  let dim = g.feat_dim
+  // MUST be the layer's input width, matching
+  // `pna_layer_backward_state`. Leaving this as `g.feat_dim` sizes the
+  // d_input buffer and the reducer-gradient stride to the NODE feature
+  // width, which for a hidden layer under-allocates it; the previous
+  // layer then receives a gradient that is too narrow and reads out of
+  // bounds one layer up. That is exactly the PanicError this fixed.
+  let dim = layer.in_dim
   let n_agg = pna_num_aggregators()
   let (z, scales, argmax, argmin, mean, sigma) =
     pna_layer_backward_state(layer, g, h)

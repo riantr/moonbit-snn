@@ -1,64 +1,114 @@
-// zz_gradcheck_runner.mbt -- TEMPORARY in-package gradient-check
-// diagnostic (v0.149.0 follow-up).
+// zz_gradcheck_runner.mbt -- the canonical GNN gradient gate
+// (Batch AA, v0.151.0).
 //
-// Layer-count isolation: run the SAME check on 1-layer and 2-layer
-// stacks of each architecture. A 1-layer stack has no composition to
-// get wrong, so a failure there is a single-layer backward bug while
-// a failure that only appears at 2 layers is a stack bug.
+// WHY IT LIVES HERE AND NOT IN examples/ -- see the header of
+// ../verify_gnn_grads.ps1. A fresh sub-package cannot resolve any
+// symbol from the parent module in moon 0.1.20260920 (not even
+// `Graph`), and `moon test` cannot link with 511 .mbt files on a 32K
+// Windows command line, so the gate runs inside the library package
+// behind a temporary `is-main` flip that the driver script reverts.
 //
-// Also prints analytic-vs-numeric side by side for the first few
-// components, because "max_diff = 1.39" does not say whether the
-// analytic side is too big, too small, or has the wrong sign.
+// Criteria, and why each one is here:
+//   REL = max|analytic - numeric| / max|analytic|   -> scale-free, so
+//     six architectures whose gradients span three orders of magnitude
+//     are judged on the same footing. (Judging them by absolute
+//     max_diff made GIN look 10x worse than GCN when GIN's relative
+//     error was the smallest of all six.)
+//   over 1% = components deviating by >1% of the gradient scale -> the
+//     kink-vs-bug discriminator. A ReLU kink touches 1-2 indices; a
+//     wrong routing touches nearly all of them.
+//   objective = 0.5 * sum(out^2) -> gradient w.r.t. out is exactly
+//     `out`, and the loss is O(|out|^2) so it does not blow up when a
+//     network's logits are unnormalised.
+//   negative control -> the checker must FAIL a deliberately corrupted
+//     gradient, or every PASS above is meaningless.
 
-fn zz_dump(
-  name : String,
-  net : TrainableGraphNet,
-  g : Graph,
-  h : Array[Float],
-  n : Int,
-) -> Unit {
-  let (analytic, loss) = trainable_net_l2_input_grad(net, g, h)
+///| One row per configuration.
+fn zz_row(name : String, net : TrainableGraphNet, g : Graph, h : Array[Float]) -> Bool {
+  let (analytic, _) = trainable_net_l2_input_grad(net, g, h)
   let numeric = numerical_gradient(h, gradcheck_eps(), fn(x) {
     trainable_net_l2_loss(net, g, x)
   })
-  let (mx, _) = max_abs_diff(analytic, numeric)
+  let (mx, worst) = max_abs_diff(analytic, numeric)
+  let over = gradcheck_over_fraction(analytic, numeric, 0.01F)
   let mut scale = 0.0F
   for i in 0..<analytic.length() {
     let a = if analytic[i] < 0.0F { 0.0F - analytic[i] } else { analytic[i] }
-    if a > scale { scale = a }
-  }
-  let rel = mx / scale
-  let verdict = if rel <= 0.01F { "PASS" } else { "FAIL" }
-  println(
-    "  " + name + "  L2=" + Float::to_string(loss) +
-    "  |grad|max=" + Float::to_string(scale) +
-    "  max_diff=" + Float::to_string(mx) +
-    "  REL=" + Float::to_string(rel) +
-    "  " + verdict,
-  )
-  for i in 0..<n {
-    if i < analytic.length() && i < numeric.length() {
-      println(
-        "    i=" + i.to_string() +
-        "  analytic=" + Float::to_string(analytic[i]) +
-        "  numeric=" + Float::to_string(numeric[i]),
-      )
+    if a > scale {
+      scale = a
     }
   }
+  let rel = mx / scale
+  // PASS requires both a small relative error AND that it is not
+  // spread across the vector.
+  let ok = rel <= 0.01F && over == 0
+  let verdict = if ok { "PASS" } else { "FAIL" }
+  println(
+    "  " + name +
+    "  REL=" + Float::to_string(rel) +
+    "  over1%=" + over.to_string() + "/" + analytic.length().to_string() +
+    "  worst=" + worst.to_string() +
+    "  " + verdict,
+  )
+  ok
 }
 
 fn main {
   let raw = gradcheck_toy_graph()
   let norm = gradcheck_toy_graph_gcn()
-  let feats = raw.features
-  println("=== quadratic objective, RELATIVE tolerance (tol=1e-2) ===")
-  zz_dump("GINx1", TrainableGraphNet::Gin(GIN::new([2, 2], 0.0F, 2024UL)), raw, feats, 3)
-  zz_dump("GINx2", TrainableGraphNet::Gin(GIN::new([2, 4, 2], 0.0F, 2024UL)), raw, feats, 3)
-  zz_dump("GCNx1", TrainableGraphNet::Gcn(GCN::new([2, 2], 0.0F, 2024UL)), norm, feats, 3)
-  zz_dump("GCNx2", TrainableGraphNet::Gcn(GCN::new([2, 4, 2], 0.0F, 2024UL)), norm, feats, 3)
-  zz_dump("MPNNx1", TrainableGraphNet::Mpnn(MPnn::new([2, 2], 2024UL)), raw, feats, 3)
-  zz_dump("MPNNx2", TrainableGraphNet::Mpnn(MPnn::new([2, 4, 2], 2024UL)), raw, feats, 3)
-  zz_dump("PNAx1", TrainableGraphNet::Pna(PNA::new([2, 2], 4, 0.001F, PNAScaler::Amplification, 2024UL)), raw, feats, 3)
-  zz_dump("PNAx2", TrainableGraphNet::Pna(PNA::new([2, 4, 2], 4, 0.001F, PNAScaler::Amplification, 2024UL)), raw, feats, 3)
-  println("done")
+  let h = raw.features
+  println("=== GNN gradient gate: quadratic objective, RELATIVE tol 1e-2 ===")
+  println("--- 1 layer (no composition) ---")
+  let mut fails = 0
+  if !zz_row("GINx1", TrainableGraphNet::Gin(GIN::new([2, 2], 0.0F, 2024UL)), raw, h) { fails = fails + 1 }
+  if !zz_row("GCNx1", TrainableGraphNet::Gcn(GCN::new([2, 2], 0.0F, 2024UL)), norm, h) { fails = fails + 1 }
+  if !zz_row("MPNNx1", TrainableGraphNet::Mpnn(MPnn::new([2, 2], 2024UL)), raw, h) { fails = fails + 1 }
+  println("--- 2 layers, width-changing [2,4,2] (composition) ---")
+  if !zz_row("GINx2", TrainableGraphNet::Gin(GIN::new([2, 4, 2], 0.0F, 2024UL)), raw, h) { fails = fails + 1 }
+  if !zz_row("GCNx2", TrainableGraphNet::Gcn(GCN::new([2, 4, 2], 0.0F, 2024UL)), norm, h) { fails = fails + 1 }
+  if !zz_row("MPNNx2", TrainableGraphNet::Mpnn(MPnn::new([2, 4, 2], 2024UL)), raw, h) { fails = fails + 1 }
+  println("--- PNA 1 layer ---")
+  if !zz_row(
+    "PNAx1",
+    TrainableGraphNet::Pna(
+      PNA::new([2, 2], 4, 0.001F, PNAScaler::Amplification, 2024UL),
+    ),
+    raw, h,
+  ) { fails = fails + 1 }
+  println("--- negative control (must FAIL) ---")
+  let gin = TrainableGraphNet::Gin(GIN::new([2, 2], 0.0F, 2024UL))
+  let (a_ok, _) = trainable_net_l2_input_grad(gin, raw, h)
+  let corrupt : Array[Float] = Array::make(a_ok.length(), 0.0F)
+  for i in 0..<a_ok.length() {
+    corrupt[i] = a_ok[i] * 1.5F
+  }
+  let n_ok = numerical_gradient(h, gradcheck_eps(), fn(x) {
+    trainable_net_l2_loss(gin, raw, x)
+  })
+  let (c_max, _) = max_abs_diff(corrupt, n_ok)
+  let c_over = gradcheck_over_fraction(corrupt, n_ok, 0.01F)
+  let ctrl_ok = c_over > 0
+  let ctrl_msg = if ctrl_ok { "checker has teeth" } else { "CHECKER IS VACUOUS" }
+  println(
+    "  control  max_diff=" + Float::to_string(c_max) +
+    "  over1%=" + c_over.to_string() +
+    "  " + ctrl_msg,
+  )
+  println("--- PNA 2 layers: separate probe (known crash) ---")
+  let pna2 = PNA::new([2, 4, 2], 4, 0.001F, PNAScaler::Amplification, 2024UL)
+  let fwd = pna_forward(pna2, raw, h)
+  let (_, ins) = pna_forward_with_inputs(pna2, raw, h)
+  println(
+    "  widths: out=" + fwd.length().to_string() +
+    "  in0=" + ins[0].length().to_string() +
+    "  in1=" + ins[1].length().to_string() +
+    "  (forward is consistent)",
+  )
+  if !zz_row("PNAx2", TrainableGraphNet::Pna(pna2), raw, h) { fails = fails + 1 }
+  println("")
+  if fails == 0 && ctrl_ok {
+    println("VERDICT: PASS")
+  } else {
+    println("VERDICT: FAIL (" + fails.to_string() + " configs failed)")
+  }
 }

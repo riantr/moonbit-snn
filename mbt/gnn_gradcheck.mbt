@@ -275,6 +275,53 @@ pub fn gradcheck_input_relative(
 }
 
 ///|
+/// THE kink-vs-bug discriminator: what fraction of components deviate
+/// by more than `frac` of the gradient scale.
+///
+/// This is the number that actually settles "is this a ReLU kink or a
+/// real error", and it is cheap. Measured on the toy graph:
+///
+///   MPNN 2 layers   9/12 over 1%   -> REAL ERROR
+///   GIN  2 layers   0/12 over 1%   -> clean (residual 1.5e-3 is Float32
+///   GCN  2 layers   0/12 over 1%      precision on a 2.3e7 gradient)
+///
+/// A ReLU kink perturbs the central difference at the ONE index whose
+/// pre-activation sits within eps of zero, so it shows up as 1-2 of N.
+/// A wrong routing shows up nearly everywhere. `max_diff` alone cannot
+/// tell these apart -- it is the same 4e-2 whether one index is off by
+/// a factor of two or nine are off by 4% -- and `max_diff` is also
+/// scale-invariant for BOTH, so a scale sweep cannot tell them apart
+/// either. Only the count can.
+pub fn gradcheck_over_fraction(
+  analytic : Array[Float],
+  numeric : Array[Float],
+  frac : Float,
+) -> Int {
+  let n = if analytic.length() < numeric.length() {
+    analytic.length()
+  } else {
+    numeric.length()
+  }
+  let mut scale = 0.0F
+  for i in 0..<n {
+    let a = if analytic[i] < 0.0F { 0.0F - analytic[i] } else { analytic[i] }
+    if a > scale {
+      scale = a
+    }
+  }
+  let thr = frac * scale
+  let mut count = 0
+  for i in 0..<n {
+    let d = analytic[i] - numeric[i]
+    let ad = if d < 0.0F { 0.0F - d } else { d }
+    if ad > thr {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
 /// Negative control: scale a gradient and confirm the checker notices.
 ///
 /// The point is that `gradcheck_input` must FAIL on a deliberately

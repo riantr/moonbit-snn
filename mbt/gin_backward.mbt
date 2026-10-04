@@ -263,7 +263,7 @@ pub fn mpnn_layer_backward(
   let d_input : Array[Float] = Array::make(g.n_nodes * layer.in_dim, 0.0F)
   // The two branches sum before the activation, so both receive the
   // same masked upstream gradient.
-  let mask = relu_mask(self_pre)
+  let mask = relu_mask(elem_add(self_pre, neigh_pre))
   let d_self_branch = elem_mul(d_out, mask)
   let d_neigh_branch = elem_mul(d_out, mask)
   // d_h from the self branch. The branch width is layer.in_dim.
