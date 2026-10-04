@@ -112,26 +112,10 @@ pub fn gcn_layer_forward(
   g : Graph,
   h : Array[Float],
 ) -> Array[Float] {
-  // Self contribution (alpha * h).
-  let self_size = g.n_nodes * layer.in_dim
-  let support = Array::make(self_size, 0.0F)
-  for i in 0..<self_size {
-    support[i] = layer.alpha * h[i]
-  }
-  // Neighbour contribution, accumulated with the normalised weights.
-  for e in 0..<g.n_edges {
-    let s = g.edge_src[e]
-    let d = g.edge_dst[e]
-    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
-      continue
-    }
-    let w = g.edge_weight[e]
-    let src_off = s * layer.in_dim
-    let dst_off = d * layer.in_dim
-    for k in 0..<layer.in_dim {
-      support[dst_off + k] = support[dst_off + k] + w * h[src_off + k]
-    }
-  }
+  // Self contribution (alpha * h) plus the weighted neighbour sum.
+  // `gcn_layer_support` (gcn_backward.mbt, v0.147.0) owns that
+  // computation so the forward and the backward cannot drift apart.
+  let support = gcn_layer_support(layer, g, h)
   let projected = graph_linear_forward(layer.w, support, g.n_nodes)
   graph_relu(projected)
 }
