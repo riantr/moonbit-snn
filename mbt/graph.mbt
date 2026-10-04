@@ -130,25 +130,56 @@ pub fn scatter_sum(
 }
 
 ///|
-/// Scatter-mean: scatter_sum divided by the in-degree. Nodes with
-/// zero in-degree keep a zero row (they receive no messages).
-pub fn scatter_mean(
+/// Scatter-mean with an EXPLICIT message width.
+///
+/// The width parameter exists because a GNN layer's internal tensors
+/// are not the node-feature width. For layer l > 0 the incoming
+/// activations are `dims[l]` wide while `g.feat_dim` is still
+/// `dims[0]`, so any reduction that assumes feat_dim strides over the
+/// wrong length and silently returns a truncated result. Every layer
+/// forward must pass `layer.in_dim` here, not `g.feat_dim`.
+pub fn scatter_mean_w(
   g : Graph,
   messages : Array[Float],
+  width : Int,
 ) -> Array[Float] {
-  let out = scatter_sum(g, messages)
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    let w = g.edge_weight[e]
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
+      out[dst_off + k] = out[dst_off + k] + w * messages[src_off + k]
+    }
+  }
   let deg = graph_in_degree(g)
   for d in 0..<g.n_nodes {
     if deg[d] == 0 {
       continue
     }
     let inv = 1.0F / Float::from_int(deg[d])
-    let off = d * g.feat_dim
-    for k in 0..<g.feat_dim {
+    let off = d * width
+    for k in 0..<width {
       out[off + k] = out[off + k] * inv
     }
   }
   out
+}
+
+///|
+/// Scatter-mean, assuming messages are `g.feat_dim` wide. Correct when
+/// the tensors being reduced ARE the node features (and for layer 0 of
+/// any stack); use `scatter_mean_w` inside deeper layers.
+pub fn scatter_mean(
+  g : Graph,
+  messages : Array[Float],
+) -> Array[Float] {
+  scatter_mean_w(g, messages, g.feat_dim)
 }
 
 ///|

@@ -45,12 +45,23 @@
 /// Note this is the same edge-list walk as the forward, so a node
 /// accumulates one contribution per incoming edge. Nodes with no
 /// outgoing contribution keep a zero row.
-pub fn scatter_sum_backward(
+///|
+/// Backward of `scatter_sum` with an EXPLICIT message width.
+///
+/// The width parameter exists because a GNN layer's internal tensors
+/// are not the node-feature width. `gcn_layer_support` produces
+/// `[n_nodes x layer.in_dim]`, which for a hidden layer is wider than
+/// `g.feat_dim`; reading it with `g.feat_dim` silently truncates the
+/// gradient routed back to the previous layer, and the truncation
+/// surfaces one layer later as an out-of-bounds read.
+///
+/// `scatter_sum_backward` below is the `g.feat_dim` special case.
+pub fn scatter_sum_backward_w(
   g : Graph,
   d_out : Array[Float],
+  width : Int,
 ) -> Array[Float] {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
     let d = g.edge_dst[e]
@@ -58,10 +69,49 @@ pub fn scatter_sum_backward(
       continue
     }
     let w = g.edge_weight[e]
-    let src_off = s * dim
-    let dst_off = d * dim
-    for k in 0..<dim {
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
       out[src_off + k] = out[src_off + k] + w * d_out[dst_off + k]
+    }
+  }
+  out
+}
+
+///|
+/// Backward of `scatter_sum`, assuming messages are `g.feat_dim` wide.
+pub fn scatter_sum_backward(
+  g : Graph,
+  d_out : Array[Float],
+) -> Array[Float] {
+  scatter_sum_backward_w(g, d_out, g.feat_dim)
+}
+
+///|
+/// Backward of `scatter_mean` with an EXPLICIT message width. See
+/// `scatter_sum_backward_w` for why the width cannot be assumed.
+pub fn scatter_mean_backward_w(
+  g : Graph,
+  d_out : Array[Float],
+  width : Int,
+) -> Array[Float] {
+  let deg = graph_in_degree(g)
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    if deg[d] == 0 {
+      continue
+    }
+    let w = g.edge_weight[e]
+    let scale = w / Float::from_int(deg[d])
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
+      out[src_off + k] = out[src_off + k] + scale * d_out[dst_off + k]
     }
   }
   out
@@ -82,27 +132,7 @@ pub fn scatter_mean_backward(
   g : Graph,
   d_out : Array[Float],
 ) -> Array[Float] {
-  let dim = g.feat_dim
-  let deg = graph_in_degree(g)
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
-  for e in 0..<g.n_edges {
-    let s = g.edge_src[e]
-    let d = g.edge_dst[e]
-    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
-      continue
-    }
-    if deg[d] == 0 {
-      continue
-    }
-    let w = g.edge_weight[e]
-    let scale = w / Float::from_int(deg[d])
-    let src_off = s * dim
-    let dst_off = d * dim
-    for k in 0..<dim {
-      out[src_off + k] = out[src_off + k] + scale * d_out[dst_off + k]
-    }
-  }
-  out
+  scatter_mean_backward_w(g, d_out, g.feat_dim)
 }
 
 ///|

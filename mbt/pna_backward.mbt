@@ -34,9 +34,18 @@
 /// Backward of `pna_mean`: the unweighted analogue of
 /// `scatter_mean_backward`, with no `edge_weight` factor.
 pub fn pna_mean_backward(g : Graph, d_out : Array[Float]) -> Array[Float] {
-  let dim = g.feat_dim
+  pna_mean_backward_w(g, d_out, g.feat_dim)
+}
+
+///|
+/// `pna_mean_backward` at an EXPLICIT message width.
+pub fn pna_mean_backward_w(
+  g : Graph,
+  d_out : Array[Float],
+  width : Int,
+) -> Array[Float] {
   let deg = graph_in_degree(g)
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
     let d = g.edge_dst[e]
@@ -47,9 +56,9 @@ pub fn pna_mean_backward(g : Graph, d_out : Array[Float]) -> Array[Float] {
       continue
     }
     let scale = 1.0F / Float::from_int(deg[d])
-    let src_off = s * dim
-    let dst_off = d * dim
-    for k in 0..<dim {
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
       out[src_off + k] = out[src_off + k] + scale * d_out[dst_off + k]
     }
   }
@@ -65,11 +74,21 @@ pub fn pna_max_backward(
   d_out : Array[Float],
   argmax : Array[Int],
 ) -> Array[Float] {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  pna_max_backward_w(g, d_out, argmax, g.feat_dim)
+}
+
+///|
+/// `pna_max_backward` at an EXPLICIT message width.
+pub fn pna_max_backward_w(
+  g : Graph,
+  d_out : Array[Float],
+  argmax : Array[Int],
+  width : Int,
+) -> Array[Float] {
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for d in 0..<g.n_nodes {
-    let dst_off = d * dim
-    for k in 0..<dim {
+    let dst_off = d * width
+    for k in 0..<width {
       let e = argmax[dst_off + k]
       if e < 0 || e >= g.n_edges {
         continue
@@ -78,7 +97,7 @@ pub fn pna_max_backward(
       if s < 0 || s >= g.n_nodes {
         continue
       }
-      let src_off = s * dim
+      let src_off = s * width
       out[src_off + k] = out[src_off + k] + d_out[dst_off + k]
     }
   }
@@ -93,7 +112,18 @@ pub fn pna_min_backward(
   d_out : Array[Float],
   argmin : Array[Int],
 ) -> Array[Float] {
-  pna_max_backward(g, d_out, argmin)
+  pna_max_backward_w(g, d_out, argmin, g.feat_dim)
+}
+
+///|
+/// `pna_min_backward` at an EXPLICIT message width.
+pub fn pna_min_backward_w(
+  g : Graph,
+  d_out : Array[Float],
+  argmin : Array[Int],
+  width : Int,
+) -> Array[Float] {
+  pna_max_backward_w(g, d_out, argmin, width)
 }
 
 ///|
@@ -113,9 +143,26 @@ pub fn pna_std_backward(
   mean : Array[Float],
   sigma : Array[Float],
 ) -> Array[Float] {
-  let dim = g.feat_dim
+  let width = if g.n_nodes == 0 {
+    0
+  } else {
+    mean.length() / g.n_nodes
+  }
+  pna_std_backward_w(g, h, d_out, mean, sigma, width)
+}
+
+///|
+/// `pna_std_backward` at an EXPLICIT message width.
+pub fn pna_std_backward_w(
+  g : Graph,
+  h : Array[Float],
+  d_out : Array[Float],
+  mean : Array[Float],
+  sigma : Array[Float],
+  width : Int,
+) -> Array[Float] {
   let deg = graph_in_degree(g)
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
     let d = g.edge_dst[e]
@@ -125,10 +172,10 @@ pub fn pna_std_backward(
     if deg[d] == 0 {
       continue
     }
-    let src_off = s * dim
-    let dst_off = d * dim
+    let src_off = s * width
+    let dst_off = d * width
     let inv = 1.0F / Float::from_int(deg[d])
-    for k in 0..<dim {
+    for k in 0..<width {
       let sdst = sigma[dst_off + k]
       if sdst <= 0.0F {
         continue
@@ -184,12 +231,12 @@ fn pna_layer_backward_state(
   g : Graph,
   h : Array[Float],
 ) -> (Array[Float], Array[Float], Array[Int], Array[Int], Array[Float], Array[Float]) {
-  let dim = g.feat_dim
+  let dim = layer.in_dim
   let n_agg = pna_num_aggregators()
-  let mean = pna_mean(g, h)
-  let (mx, argmax) = pna_max_forward_with_idx(g, h)
-  let (mn, argmin) = pna_min_forward_with_idx(g, h)
-  let sigma = pna_std(g, h)
+  let mean = pna_mean_w(g, h, dim)
+  let (mx, argmax) = pna_max_forward_with_idx_w(g, h, dim)
+  let (mn, argmin) = pna_min_forward_with_idx_w(g, h, dim)
+  let sigma = pna_std_w(g, h, dim)
   let aggs = [mean, mx, mn, sigma]
   let in_deg = graph_in_degree(g)
   let mean_deg = pna_mean_in_degree(g, layer.delta)
@@ -255,18 +302,24 @@ pub fn pna_layer_backward(
   // Split d_z into its five blocks, undo the degree scaling, and
   // route each reducer's share back to the input embeddings.
   let concat_dim = dim * (n_agg + 1)
-  let d_mean = Array::make(dim, 0.0F)
-  let d_max = Array::make(dim, 0.0F)
-  let d_min = Array::make(dim, 0.0F)
-  let d_std = Array::make(dim, 0.0F)
+  // Each reducer's gradient is a FULL [n_nodes x dim] tensor, because
+  // the forward aggregate `aggs[a]` is per-node. Writing a single
+  // node's row into a `dim`-wide buffer and overwriting it per v
+  // silently keeps only the last node's share.
+  let per_node = g.n_nodes * dim
+  let d_mean : Array[Float] = Array::make(per_node, 0.0F)
+  let d_max : Array[Float] = Array::make(per_node, 0.0F)
+  let d_min : Array[Float] = Array::make(per_node, 0.0F)
+  let d_std : Array[Float] = Array::make(per_node, 0.0F)
   for v in 0..<g.n_nodes {
     let sc = scales[v]
+    let src_off = v * dim
     let dst_off = v * concat_dim
     for k in 0..<dim {
-      d_mean[k] = sc * d_z[dst_off + dim + k]
-      d_max[k] = sc * d_z[dst_off + 2 * dim + k]
-      d_min[k] = sc * d_z[dst_off + 3 * dim + k]
-      d_std[k] = sc * d_z[dst_off + 4 * dim + k]
+      d_mean[src_off + k] = sc * d_z[dst_off + dim + k]
+      d_max[src_off + k] = sc * d_z[dst_off + 2 * dim + k]
+      d_min[src_off + k] = sc * d_z[dst_off + 3 * dim + k]
+      d_std[src_off + k] = sc * d_z[dst_off + 4 * dim + k]
     }
   }
   // The self block is a direct (scaled) copy to the node's own row.
@@ -279,10 +332,10 @@ pub fn pna_layer_backward(
       d_input[off + k] = sc * d_z[zoff + k]
     }
   }
-  add_into(d_input, pna_mean_backward(g, d_mean))
-  add_into(d_input, pna_max_backward(g, d_max, argmax))
-  add_into(d_input, pna_min_backward(g, d_min, argmin))
-  add_into(d_input, pna_std_backward(g, h, d_std, mean, sigma))
+  add_into(d_input, pna_mean_backward_w(g, d_mean, dim))
+  add_into(d_input, pna_max_backward_w(g, d_max, argmax, dim))
+  add_into(d_input, pna_min_backward_w(g, d_min, argmin, dim))
+  add_into(d_input, pna_std_backward_w(g, h, d_std, mean, sigma, dim))
   (d_input, PNALayerGrad::{ pre_lin: g_pre, post_lin: g_post, })
 }
 
@@ -304,6 +357,7 @@ pub fn pna_forward_with_inputs(
 
 ///|
 /// Backward of a whole PNA stack. Returns `(d_input, grads)`.
+/// REVERSE layer order, for the reason given on `gin_backward`.
 pub fn pna_backward(
   net : PNA,
   g : Graph,
@@ -312,7 +366,8 @@ pub fn pna_backward(
 ) -> (Array[Float], PNAGrad) {
   let grads = PNAGrad::zero(net)
   let mut d = d_out
-  for l in 0..<net.num_layers {
+  for i in 0..<net.num_layers {
+    let l = net.num_layers - 1 - i
     let (d_prev, gl) = pna_layer_backward(
       net.layers[l], g, inputs[l], d,
     )

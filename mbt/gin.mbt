@@ -46,17 +46,28 @@
 ///
 /// Nodes with in-degree 0 keep a zero row.
 pub fn gin_aggregate(g : Graph, h : Array[Float]) -> Array[Float] {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  gin_aggregate_w(g, h, g.feat_dim)
+}
+
+///|
+/// `gin_aggregate` with an EXPLICIT message width. A GIN layer l > 0
+/// receives `dims[l]`-wide activations while `g.feat_dim` is still
+/// `dims[0]`, so the layer forward must pass `layer.in_dim` here.
+pub fn gin_aggregate_w(
+  g : Graph,
+  h : Array[Float],
+  width : Int,
+) -> Array[Float] {
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
     let d = g.edge_dst[e]
     if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
       continue
     }
-    let src_off = s * dim
-    let dst_off = d * dim
-    for k in 0..<dim {
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
       out[dst_off + k] = out[dst_off + k] + h[src_off + k]
     }
   }
@@ -104,8 +115,11 @@ pub fn gin_layer_forward(
   g : Graph,
   h : Array[Float],
 ) -> Array[Float] {
-  let dim = g.feat_dim
-  let agg = gin_aggregate(g, h)
+  // The message width is the layer's INPUT width. Using g.feat_dim
+  // here is only correct for layer 0; for a hidden layer the incoming
+  // activations are wider and the aggregate would be truncated.
+  let dim = layer.in_dim
+  let agg = gin_aggregate_w(g, h, dim)
   // Combine self (scaled by 1 + eps) with the neighbour sum.
   let comb_size = g.n_nodes * dim
   let comb : Array[Float] = Array::make(comb_size, 0.0F)

@@ -209,7 +209,9 @@ pub fn mpnn_layer_forward(
   h : Array[Float],
 ) -> Array[Float] {
   let self_out = graph_linear_forward(layer.w_self, h, g.n_nodes)
-  let neigh_mean = scatter_mean(g, h)
+  // The mean is over the layer's INPUT width, not g.feat_dim -- the
+  // two differ for any hidden layer.
+  let neigh_mean = scatter_mean_w(g, h, layer.in_dim)
   let neigh_out = graph_linear_forward(layer.w_neigh, neigh_mean, g.n_nodes)
   let out : Array[Float] = Array::make(g.n_nodes * layer.out_dim, 0.0F)
   for i in 0..<out.length() {

@@ -80,8 +80,8 @@ fn gin_layer_intermediates(
   g : Graph,
   h : Array[Float],
 ) -> (Array[Float], Array[Float]) {
-  let dim = g.feat_dim
-  let agg = gin_aggregate(g, h)
+  let dim = layer.in_dim
+  let agg = gin_aggregate_w(g, h, dim)
   let comb_size = g.n_nodes * dim
   let comb : Array[Float] = Array::make(comb_size, 0.0F)
   for i in 0..<comb_size {
@@ -127,9 +127,12 @@ pub fn gin_layer_backward(
   let d_z1 = elem_mul(d_mid, relu_mask(z1_pre))
   let (d_comb, g1) = graph_linear_backward(layer.mlp1, d_z1, g.n_nodes, comb)
   // Stage 1: the self/neighbour split, and the edge-list scatter.
-  let d_from_agg = scatter_sum_backward(g, d_comb)
-  let dim = g.feat_dim
-  let d_input : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  // The message width is `layer.in_dim`, not `g.feat_dim`: a hidden
+  // layer's aggregate is wider than the node features, and using
+  // feat_dim truncates the gradient handed to the previous layer.
+  let width = layer.in_dim
+  let d_from_agg = scatter_sum_backward_w(g, d_comb, width)
+  let d_input : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for i in 0..<d_input.length() {
     d_input[i] = (1.0F + layer.eps) * d_comb[i] + d_from_agg[i]
   }
@@ -160,6 +163,12 @@ pub fn gin_forward_with_inputs(
 ///|
 /// Backward of a whole GIN stack, given the per-layer inputs from
 /// `gin_forward_with_inputs`. Returns `(d_input, grads)`.
+///
+/// REVERSE layer order: the upstream gradient belongs to the last
+/// layer's output, so the walk starts at num_layers-1. Iterating
+/// forward feeds the final gradient to layer 0, which reads it with
+/// the wrong width for any stack deeper than one layer -- and is
+/// silently correct for a one-layer stack.
 pub fn gin_backward(
   net : GIN,
   g : Graph,
@@ -168,7 +177,8 @@ pub fn gin_backward(
 ) -> (Array[Float], GINGrad) {
   let grads = GINGrad::zero(net)
   let mut d = d_out
-  for l in 0..<net.num_layers {
+  for i in 0..<net.num_layers {
+    let l = net.num_layers - 1 - i
     let (d_prev, gl) = gin_layer_backward(
       net.layers[l], g, inputs[l], d,
     )
@@ -248,26 +258,27 @@ pub fn mpnn_layer_backward(
 ) -> (Array[Float], MPnnLayerGrad) {
   // Recompute the two pre-ReLU branches.
   let self_pre = graph_linear_forward(layer.w_self, h, g.n_nodes)
-  let neigh_mean = scatter_mean(g, h)
+  let neigh_mean = scatter_mean_w(g, h, layer.in_dim)
   let neigh_pre = graph_linear_forward(layer.w_neigh, neigh_mean, g.n_nodes)
-  let dim = g.feat_dim
-  let d_input : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let d_input : Array[Float] = Array::make(g.n_nodes * layer.in_dim, 0.0F)
   // The two branches sum before the activation, so both receive the
   // same masked upstream gradient.
   let mask = relu_mask(self_pre)
   let d_self_branch = elem_mul(d_out, mask)
   let d_neigh_branch = elem_mul(d_out, mask)
-  // d_h from the self branch.
+  // d_h from the self branch. The branch width is layer.in_dim.
+  let width = layer.in_dim
   let (d_from_self, g_self) = graph_linear_backward(
     layer.w_self, d_self_branch, g.n_nodes, h,
   )
   add_into(d_input, d_from_self)
   // d_h from the neighbour branch: two hops -- through the Linear,
-  // then back through the mean aggregation.
+  // then back through the mean aggregation. The mean backward needs
+  // the same explicit width, for the same reason.
   let (d_from_neigh_pre, g_neigh) = graph_linear_backward(
     layer.w_neigh, d_neigh_branch, g.n_nodes, neigh_mean,
   )
-  let d_from_agg = scatter_mean_backward(g, d_from_neigh_pre)
+  let d_from_agg = scatter_mean_backward_w(g, d_from_neigh_pre, width)
   add_into(d_input, d_from_agg)
   (d_input, MPnnLayerGrad::{ w_self: g_self, w_neigh: g_neigh, })
 }
@@ -290,6 +301,7 @@ pub fn mpnn_forward_with_inputs(
 
 ///|
 /// Backward of a whole MPNN stack. Returns `(d_input, grads)`.
+/// REVERSE layer order, for the reason given on `gin_backward`.
 pub fn mpnn_backward(
   net : MPnn,
   g : Graph,
@@ -298,7 +310,8 @@ pub fn mpnn_backward(
 ) -> (Array[Float], MPnnGrad) {
   let grads = MPnnGrad::zero(net)
   let mut d = d_out
-  for l in 0..<net.num_layers {
+  for i in 0..<net.num_layers {
+    let l = net.num_layers - 1 - i
     let (d_prev, gl) = mpnn_layer_backward(
       net.layers[l], g, inputs[l], d,
     )

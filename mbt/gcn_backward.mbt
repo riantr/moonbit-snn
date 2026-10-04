@@ -113,10 +113,13 @@ pub fn gcn_layer_backward(
     layer.w, d_pre, g.n_nodes, support,
   )
   // Route d_support back to the input: the self term is a plain
-  // scaling, the edge term is the shared scatter backward.
-  let d_from_edges = scatter_sum_backward(g, d_support)
-  let dim = g.feat_dim
-  let d_input : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  // scaling, the edge term is the shared scatter backward. The width
+  // is `layer.in_dim`, NOT `g.feat_dim` -- for a hidden layer the
+  // support tensor is wider than the node features, and using
+  // feat_dim truncates the gradient handed to the previous layer.
+  let width = layer.in_dim
+  let d_from_edges = scatter_sum_backward_w(g, d_support, width)
+  let d_input : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for i in 0..<d_input.length() {
     d_input[i] = layer.alpha * d_support[i] + d_from_edges[i]
   }
@@ -141,6 +144,13 @@ pub fn gcn_forward_with_inputs(
 
 ///|
 /// Backward of a whole GCN stack. Returns `(d_input, grads)`.
+///
+/// The walk is in REVERSE layer order: the upstream gradient belongs
+/// to the LAST layer's output, so layer num_layers-1 consumes it and
+/// hands its own input gradient back to num_layers-2. Iterating 0, 1,
+/// 2... instead feeds the final gradient to layer 0, which reads it
+/// with the wrong width as soon as the stack is more than one layer
+/// deep -- and is silently correct when it is exactly one.
 pub fn gcn_backward(
   net : GCN,
   g : Graph,
@@ -149,7 +159,8 @@ pub fn gcn_backward(
 ) -> (Array[Float], GCNGrad) {
   let grads = GCNGrad::zero(net)
   let mut d = d_out
-  for l in 0..<net.num_layers {
+  for i in 0..<net.num_layers {
+    let l = net.num_layers - 1 - i
     let (d_prev, gl) = gcn_layer_backward(
       net.layers[l], g, inputs[l], d,
     )

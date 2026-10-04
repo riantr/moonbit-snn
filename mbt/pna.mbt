@@ -71,12 +71,12 @@ pub fn pna_num_aggregators() -> Int {
 ///|
 /// helper: raw (unweighted) sums of the in-neighbour features, plus
 /// the per-node in-degree. Shared by the mean and std reducers.
-fn pna_sum_and_deg(
+fn pna_sum_and_deg_w(
   g : Graph,
   h : Array[Float],
+  width : Int,
 ) -> (Array[Float], Array[Int]) {
-  let dim = g.feat_dim
-  let sum : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let sum : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   let deg : Array[Int] = Array::make(g.n_nodes, 0)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
@@ -84,9 +84,9 @@ fn pna_sum_and_deg(
     if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
       continue
     }
-    let src_off = s * dim
-    let dst_off = d * dim
-    for k in 0..<dim {
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
       sum[dst_off + k] = sum[dst_off + k] + h[src_off + k]
     }
     deg[d] = deg[d] + 1
@@ -95,17 +95,35 @@ fn pna_sum_and_deg(
 }
 
 ///|
+/// helper: raw (unweighted) sums of the in-neighbour features, plus
+/// the per-node in-degree, at `g.feat_dim` width.
+fn pna_sum_and_deg(
+  g : Graph,
+  h : Array[Float],
+) -> (Array[Float], Array[Int]) {
+  pna_sum_and_deg_w(g, h, g.feat_dim)
+}
+
+///|
 /// Mean over the in-neighbour multiset. Isolated nodes get a zero row.
 pub fn pna_mean(g : Graph, h : Array[Float]) -> Array[Float] {
-  let dim = g.feat_dim
-  let (sum, deg) = pna_sum_and_deg(g, h)
+  pna_mean_w(g, h, g.feat_dim)
+}
+
+///|
+/// `pna_mean` with an EXPLICIT message width. A PNA layer l > 0
+/// receives `dims[l]`-wide activations, so the layer forward must pass
+/// `layer.in_dim`, never `g.feat_dim`.
+pub fn pna_mean_w(g : Graph, h : Array[Float], width : Int) -> Array[Float] {
+  let (sum, deg) = pna_sum_and_deg_w(g, h, width)
+  let deg = graph_in_degree(g)
   for v in 0..<g.n_nodes {
     if deg[v] == 0 {
       continue
     }
     let inv = 1.0F / Float::from_int(deg[v])
-    let off = v * dim
-    for k in 0..<dim {
+    let off = v * width
+    for k in 0..<width {
       sum[off + k] = sum[off + k] * inv
     }
   }
@@ -120,8 +138,19 @@ pub fn pna_mean(g : Graph, h : Array[Float]) -> Array[Float] {
 // still reports its (negative) maximum. Initialising to 0.0 instead
 // would silently clamp every all-negative neighbourhood to 0.
 pub fn pna_max(g : Graph, h : Array[Float]) -> Array[Float] {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  pna_max_w(g, h, g.feat_dim)
+}
+
+///|
+/// `pna_max` at an EXPLICIT message width. Layer l > 0 receives
+/// `dims[l]`-wide activations, so the layer forward passes
+/// `layer.in_dim` here, never `g.feat_dim`.
+pub fn pna_max_w(
+  g : Graph,
+  h : Array[Float],
+  width : Int,
+) -> Array[Float] {
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   let seeded : Array[Int] = Array::make(g.n_nodes, 0)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
@@ -129,11 +158,11 @@ pub fn pna_max(g : Graph, h : Array[Float]) -> Array[Float] {
     if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
       continue
     }
-    let src_off = s * dim
-    let dst_off = d * dim
+    let src_off = s * width
+    let dst_off = d * width
     let first = seeded[d] == 0
     seeded[d] = 1
-    for k in 0..<dim {
+    for k in 0..<width {
       let m = h[src_off + k]
       if first || m > out[dst_off + k] {
         out[dst_off + k] = m
@@ -146,8 +175,17 @@ pub fn pna_max(g : Graph, h : Array[Float]) -> Array[Float] {
 ///|
 /// Min over the in-neighbour multiset. Isolated nodes get a zero row.
 pub fn pna_min(g : Graph, h : Array[Float]) -> Array[Float] {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  pna_min_w(g, h, g.feat_dim)
+}
+
+///|
+/// `pna_min` at an EXPLICIT message width.
+pub fn pna_min_w(
+  g : Graph,
+  h : Array[Float],
+  width : Int,
+) -> Array[Float] {
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   let seeded : Array[Int] = Array::make(g.n_nodes, 0)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
@@ -155,11 +193,11 @@ pub fn pna_min(g : Graph, h : Array[Float]) -> Array[Float] {
     if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
       continue
     }
-    let src_off = s * dim
-    let dst_off = d * dim
+    let src_off = s * width
+    let dst_off = d * width
     let first = seeded[d] == 0
     seeded[d] = 1
-    for k in 0..<dim {
+    for k in 0..<width {
       let m = h[src_off + k]
       if first || m < out[dst_off + k] {
         out[dst_off + k] = m
@@ -174,33 +212,41 @@ pub fn pna_min(g : Graph, h : Array[Float]) -> Array[Float] {
 ///   sqrt( E[x^2] - E[x]^2 )
 /// and clamped at 0, because the two moments are subtracted in
 /// Float32 and can land a few ULP below zero. Isolated nodes get a
-/// zero row (a single-element neighbourhood has zero spread, and an
-/// empty one is defined as 0 to match the other reducers).
+/// zero row.
 pub fn pna_std(g : Graph, h : Array[Float]) -> Array[Float] {
-  let dim = g.feat_dim
-  let (sum, deg) = pna_sum_and_deg(g, h)
-  let sq : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  pna_std_w(g, h, g.feat_dim)
+}
+
+///|
+/// `pna_std` at an EXPLICIT message width.
+pub fn pna_std_w(
+  g : Graph,
+  h : Array[Float],
+  width : Int,
+) -> Array[Float] {
+  let (sum, deg) = pna_sum_and_deg_w(g, h, width)
+  let sq : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for e in 0..<g.n_edges {
     let s = g.edge_src[e]
     let d = g.edge_dst[e]
     if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
       continue
     }
-    let src_off = s * dim
-    let dst_off = d * dim
-    for k in 0..<dim {
+    let src_off = s * width
+    let dst_off = d * width
+    for k in 0..<width {
       let x = h[src_off + k]
       sq[dst_off + k] = sq[dst_off + k] + x * x
     }
   }
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
   for v in 0..<g.n_nodes {
     if deg[v] == 0 {
       continue
     }
     let inv = 1.0F / Float::from_int(deg[v])
-    let off = v * dim
-    for k in 0..<dim {
+    let off = v * width
+    for k in 0..<width {
       let m = sum[off + k] * inv
       let e2 = sq[off + k] * inv
       let variance = e2 - m * m
@@ -212,6 +258,91 @@ pub fn pna_std(g : Graph, h : Array[Float]) -> Array[Float] {
   out
 }
 
+///|
+/// pna_max at an EXPLICIT message width, ALSO recording which incoming
+/// edge won per (node, feature). The backward needs this index and
+/// cannot recover it from the forward's value alone.
+///
+/// Ties go to the FIRST edge in list order, matching the `first ||
+/// m > out[...]` tie-break, so the recorded index and the returned
+/// value always agree.
+pub fn pna_max_forward_with_idx_w(
+  g : Graph,
+  h : Array[Float],
+  width : Int,
+) -> (Array[Float], Array[Int]) {
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
+  let argmax : Array[Int] = Array::make(g.n_nodes * width, -1)
+  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    let src_off = s * width
+    let dst_off = d * width
+    let first = seeded[d] == 0
+    seeded[d] = 1
+    for k in 0..<width {
+      let m = h[src_off + k]
+      if first || m > out[dst_off + k] {
+        out[dst_off + k] = m
+        argmax[dst_off + k] = e
+      }
+    }
+  }
+  (out, argmax)
+}
+
+///|
+/// pna_min at an EXPLICIT message width, recording the argmin.
+pub fn pna_min_forward_with_idx_w(
+  g : Graph,
+  h : Array[Float],
+  width : Int,
+) -> (Array[Float], Array[Int]) {
+  let out : Array[Float] = Array::make(g.n_nodes * width, 0.0F)
+  let argmin : Array[Int] = Array::make(g.n_nodes * width, -1)
+  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
+  for e in 0..<g.n_edges {
+    let s = g.edge_src[e]
+    let d = g.edge_dst[e]
+    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
+      continue
+    }
+    let src_off = s * width
+    let dst_off = d * width
+    let first = seeded[d] == 0
+    seeded[d] = 1
+    for k in 0..<width {
+      let m = h[src_off + k]
+      if first || m < out[dst_off + k] {
+        out[dst_off + k] = m
+        argmin[dst_off + k] = e
+      }
+    }
+  }
+  (out, argmin)
+}
+
+///|
+/// pna_max at `g.feat_dim` width, also recording the argmax.
+pub fn pna_max_forward_with_idx(
+  g : Graph,
+  h : Array[Float],
+) -> (Array[Float], Array[Int]) {
+  pna_max_forward_with_idx_w(g, h, g.feat_dim)
+}
+
+///|
+/// pna_min at `g.feat_dim` width, also recording the argmin.
+pub fn pna_min_forward_with_idx(
+  g : Graph,
+  h : Array[Float],
+) -> (Array[Float], Array[Int]) {
+  pna_min_forward_with_idx_w(g, h, g.feat_dim)
+}
 ///|
 /// Reduce the in-neighbour multiset with the chosen aggregator.
 pub fn pna_aggregate(
@@ -236,67 +367,6 @@ pub fn pna_aggregate(
 /// Ties go to the FIRST edge in list order, matching the `first ||
 /// m > out[...]` tie-break above, so the recorded index and the
 /// returned value always agree.
-pub fn pna_max_forward_with_idx(
-  g : Graph,
-  h : Array[Float],
-) -> (Array[Float], Array[Int]) {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
-  let argmax : Array[Int] = Array::make(g.n_nodes * dim, -1)
-  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
-  for e in 0..<g.n_edges {
-    let s = g.edge_src[e]
-    let d = g.edge_dst[e]
-    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
-      continue
-    }
-    let src_off = s * dim
-    let dst_off = d * dim
-    let first = seeded[d] == 0
-    seeded[d] = 1
-    for k in 0..<dim {
-      let m = h[src_off + k]
-      if first || m > out[dst_off + k] {
-        out[dst_off + k] = m
-        argmax[dst_off + k] = e
-      }
-    }
-  }
-  (out, argmax)
-}
-
-///|
-/// Min over the in-neighbour multiset, ALSO recording which incoming
-/// edge won. Same first-edge tie-break as `pna_max_forward_with_idx`.
-pub fn pna_min_forward_with_idx(
-  g : Graph,
-  h : Array[Float],
-) -> (Array[Float], Array[Int]) {
-  let dim = g.feat_dim
-  let out : Array[Float] = Array::make(g.n_nodes * dim, 0.0F)
-  let argmin : Array[Int] = Array::make(g.n_nodes * dim, -1)
-  let seeded : Array[Int] = Array::make(g.n_nodes, 0)
-  for e in 0..<g.n_edges {
-    let s = g.edge_src[e]
-    let d = g.edge_dst[e]
-    if s < 0 || s >= g.n_nodes || d < 0 || d >= g.n_nodes {
-      continue
-    }
-    let src_off = s * dim
-    let dst_off = d * dim
-    let first = seeded[d] == 0
-    seeded[d] = 1
-    for k in 0..<dim {
-      let m = h[src_off + k]
-      if first || m < out[dst_off + k] {
-        out[dst_off + k] = m
-        argmin[dst_off + k] = e
-      }
-    }
-  }
-  (out, argmin)
-}
-
 ///|
 /// Mean in-degree over the graph, floored at `delta`. The paper uses
 /// a small delta (0.001 by default) to stop the normalisation from
@@ -390,13 +460,16 @@ pub fn pna_layer_forward(
   g : Graph,
   h : Array[Float],
 ) -> Array[Float] {
-  let dim = g.feat_dim
+  // The reductions run at the layer's INPUT width, not g.feat_dim --
+  // the two differ for any hidden layer, and using feat_dim here
+  // truncates the concat so it no longer matches pre_lin's in_dim.
+  let dim = layer.in_dim
   let n_agg = pna_num_aggregators()
   let aggs = [
-    pna_mean(g, h),
-    pna_max(g, h),
-    pna_min(g, h),
-    pna_std(g, h),
+    pna_mean_w(g, h, dim),
+    pna_max_w(g, h, dim),
+    pna_min_w(g, h, dim),
+    pna_std_w(g, h, dim),
   ]
   let in_deg = graph_in_degree(g)
   let mean_deg = pna_mean_in_degree(g, layer.delta)
