@@ -2,7 +2,7 @@
 
 ///|
 test "STDPGerstner::new defaults are sensible" {
-  let p = STDPGerstner::new()
+  let p = @snn_mbt.STDPGerstner::new()
   assert_eq(p.tau_pre, 20.0F)
   assert_eq(p.tau_post, 20.0F)
   assert_eq(p.w_min, 0.0F)
@@ -10,7 +10,7 @@ test "STDPGerstner::new defaults are sensible" {
 
 ///|
 test "STDPVariables::new initializes to zeros" {
-  let vars = STDPVariables::new(5, 7)
+  let vars = @snn_mbt.STDPVariables::new(5, 7)
   assert_eq(vars.tpre.length(), 5)
   assert_eq(vars.tpost.length(), 7)
   for j in 0..<5 {
@@ -30,12 +30,12 @@ test "stdp_step: pre-then-post potentiation" {
   let rowptr : Array[Int] = [0, 1, 2]  // row 0 -> [0], row 1 -> [1]
   let pre_fire : Array[Bool] = [true, false]
   let post_fire : Array[Bool] = [true, false]
-  let vars = STDPVariables::new(2, 2)
-  let param = STDPGerstner::new()
+  let vars = @snn_mbt.STDPVariables::new(2, 2)
+  let param = @snn_mbt.STDPGerstner::new()
   // Pre fires at t=0, post fires at t=1.
   vars.tpre[0] = 1.0F  // pre trace already at 1.0 from pre spike
   vars.tpost[0] = 0.0F
-  stdp_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 1.0F, 0.125F)
+  @snn_mbt.stdp_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 1.0F, 0.125F)
   // Pre spike first: w[0] += A_post * tpost[0] = 0.01 * 0 = 0 -> no change
   // Post spike now: w[0] += A_pre * tpre[0] = 0.01 * 1.0 = 0.01 -> potentiation
   if w[0] < 1.01F - 0.001F || w[0] > 1.01F + 0.001F {
@@ -51,12 +51,12 @@ test "stdp_step: post-then-pre depression" {
   let rowptr : Array[Int] = [0, 1]
   let pre_fire : Array[Bool] = [true]
   let post_fire : Array[Bool] = [true]
-  let vars = STDPVariables::new(1, 1)
-  let param = STDPGerstner::new()
+  let vars = @snn_mbt.STDPVariables::new(1, 1)
+  let param = @snn_mbt.STDPGerstner::new()
   // tpre already high from previous pre-spike.
   vars.tpre[0] = 1.0F
   vars.tpost[0] = 1.0F
-  stdp_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.0F, 0.125F)
+  @snn_mbt.stdp_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.0F, 0.125F)
   // Pre fires: w[0] += A_post * tpost[0] = 0.01 * 1 = 0.01 (LTP)
   // Post fires: w[0] += A_pre * tpre[0] = 0.01 * 1 = 0.01 (LTP)
   // Both LTP here, net = 1.02.
@@ -76,19 +76,19 @@ test "stdp_step: weight clamp prevents runaway" {
   let rowptr : Array[Int] = [0, 1]
   let pre_fire : Array[Bool] = [false]
   let post_fire : Array[Bool] = [false]
-  let vars = STDPVariables::new(1, 1)
-  let param = STDPGerstner::new()
+  let vars = @snn_mbt.STDPVariables::new(1, 1)
+  let param = @snn_mbt.STDPGerstner::new()
   vars.tpre[0] = 100.0F  // huge trace
   vars.tpost[0] = 100.0F
   // No spikes this step -> no weight update.
-  stdp_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.0F, 0.125F)
+  @snn_mbt.stdp_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.0F, 0.125F)
   // Weight unchanged (no spikes).
   assert_eq(w[0], 29.0F)
 }
 
 ///|
 test "STDPEntry::new constructs a valid entry" {
-  let entry = STDPEntry::new(0, 3, 4)
+  let entry = @snn_mbt.STDPEntry::new(0, 3, 4)
   assert_eq(entry.conn_index, 0)
   assert_eq(entry.n_pre, 3)
   assert_eq(entry.n_post, 4)
@@ -103,15 +103,15 @@ test "STDPEntry::new constructs a valid entry" {
 test "compose with stdp applies plasticity automatically" {
   // 2x2 IF net with identity EE synapse. Force-fire pre/post pair
   // at t=0 -> step the model for a few ms and verify weight changed.
-  let rng = Xoshiro::default()
-  let pre = IF::new(2, IFParameter::new(), rng)
-  let post = IF::new(2, IFParameter::new(), rng)
-  let ee = SpikingSynapse::new(pre, post, "ge")
+  let rng = @snn_mbt.Xoshiro::default()
+  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
   // STDP entry for the connection at conns[0].
-  let entry = @snn_mbt.Gerstner_(STDPEntry::new(0, 2, 2))
-  let model = compose(
+  let entry = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(0, 2, 2))
+  let model = @snn_mbt.compose(
     [@snn_mbt.IF_(pre), @snn_mbt.IF_(post)],
     [ee],
     stdp=[entry],
@@ -121,7 +121,7 @@ test "compose with stdp applies plasticity automatically" {
   post.v[0] = 100.0F
   // Run a few steps.
   for _ in 0..<10 {
-    step_heterogeneous(model, 0.125F)
+    @snn_mbt.step_heterogeneous(model, 0.125F)
   }
   // After pre+post firing, the w[0] (Pre 0 -> Post 0) should have
   // increased from its initial 1.0 due to LTP.
@@ -136,7 +136,7 @@ test "compose with stdp applies plasticity automatically" {
 ///|
 test "gerstner_kernel: LTP for dt > 0" {
   // a_pre = 0.01, tau_pre = 20, so dt=20 -> 0.01 * exp(-1) ~ 0.00368
-  let w = gerstner_kernel(20.0F, 20.0F, 20.0F, 0.01F, 0.01F)
+  let w = @snn_mbt.gerstner_kernel(20.0F, 20.0F, 20.0F, 0.01F, 0.01F)
   if w < 0.0036F || w > 0.0038F {
     fail("dW(20) expected ~0.00368, got " + w.to_string())
   }
@@ -145,7 +145,7 @@ test "gerstner_kernel: LTP for dt > 0" {
 ///|
 test "gerstner_kernel: LTD for dt < 0" {
   // For dt = -20: dW = -0.01 * exp(-1) ~ -0.00368
-  let w = gerstner_kernel(-20.0F, 20.0F, 20.0F, 0.01F, 0.01F)
+  let w = @snn_mbt.gerstner_kernel(-20.0F, 20.0F, 20.0F, 0.01F, 0.01F)
   if w > -0.0036F || w < -0.0038F {
     fail("dW(-20) expected ~-0.00368, got " + w.to_string())
   }
@@ -153,16 +153,16 @@ test "gerstner_kernel: LTD for dt < 0" {
 
 ///|
 test "gerstner_kernel: zero at dt = 0" {
-  let w = gerstner_kernel(0.0F, 20.0F, 20.0F, 0.01F, 0.01F)
+  let w = @snn_mbt.gerstner_kernel(0.0F, 20.0F, 20.0F, 0.01F, 0.01F)
   assert_eq(w, 0.0F)
 }
 
 ///|
 test "gerstner_kernel: decays with distance" {
   // dW(20) > dW(40) > dW(100) (positive side)
-  let w_20 = gerstner_kernel(20.0F, 20.0F, 20.0F, 0.01F, 0.01F)
-  let w_40 = gerstner_kernel(40.0F, 20.0F, 20.0F, 0.01F, 0.01F)
-  let w_100 = gerstner_kernel(100.0F, 20.0F, 20.0F, 0.01F, 0.01F)
+  let w_20 = @snn_mbt.gerstner_kernel(20.0F, 20.0F, 20.0F, 0.01F, 0.01F)
+  let w_40 = @snn_mbt.gerstner_kernel(40.0F, 20.0F, 20.0F, 0.01F, 0.01F)
+  let w_100 = @snn_mbt.gerstner_kernel(100.0F, 20.0F, 20.0F, 0.01F, 0.01F)
   if w_20 < w_40 || w_40 < w_100 {
     fail("kernel should decay: w(20)=" + w_20.to_string() +
       " w(40)=" + w_40.to_string() + " w(100)=" + w_100.to_string())
@@ -172,14 +172,14 @@ test "gerstner_kernel: decays with distance" {
 ///|
 test "stdp_weight_decorrelated returns A_pre*tau_pre - A_post*tau_post" {
   // Default params: a_pre=a_post=0.01, tau_pre=tau_post=20 -> 0.01*20 - 0.01*20 = 0.
-  let p = STDPGerstner::new()
-  assert_eq(stdp_weight_decorrelated(p), 0.0F)
+  let p = @snn_mbt.STDPGerstner::new()
+  assert_eq(@snn_mbt.stdp_weight_decorrelated(p), 0.0F)
   // Asymmetric: a_pre=0.05, a_post=0.01, tau_pre=15, tau_post=25 -> 0.05*15 - 0.01*25 = 0.5.
-  let asym : STDPGerstner = {
+  let asym : @snn_mbt.STDPGerstner = {
     a_pre: 0.05F, a_post: 0.01F, tau_pre: 15.0F, tau_post: 25.0F,
     w_max: 1000.0F, w_min: -1000.0F,
   }
-  let dw = stdp_weight_decorrelated(asym)
+  let dw = @snn_mbt.stdp_weight_decorrelated(asym)
   if dw < 0.499F || dw > 0.501F {
     fail("expected ~0.5, got " + dw.to_string())
   }
@@ -191,7 +191,7 @@ test "stdp_weight_decorrelated returns A_pre*tau_pre - A_post*tau_post" {
 
 ///|
 test "STDPMexicanHat::new defaults are sensible" {
-  let p = STDPMexicanHat::new()
+  let p = @snn_mbt.STDPMexicanHat::new()
   assert_eq(p.a, 0.1F)
   assert_eq(p.tau, 20.0F)
   assert_eq(p.w_max, 30.0F)
@@ -201,7 +201,7 @@ test "STDPMexicanHat::new defaults are sensible" {
 ///|
 test "mexican_hat_kernel: x=0 -> 1" {
   // MexicanHat(0) = (1 - 0) * exp(0) = 1.0
-  let v = mexican_hat_kernel(0.0F)
+  let v = @snn_mbt.mexican_hat_kernel(0.0F)
   if v < 0.999F || v > 1.001F {
     fail("mexican_hat_kernel(0) expected 1.0, got " + v.to_string())
   }
@@ -210,7 +210,7 @@ test "mexican_hat_kernel: x=0 -> 1" {
 ///|
 test "mexican_hat_kernel: x=1 -> 0" {
   // MexicanHat(1) = (1 - 1) * exp(-1/sqrt(2)) = 0
-  let v = mexican_hat_kernel(1.0F)
+  let v = @snn_mbt.mexican_hat_kernel(1.0F)
   if v.abs() > 1.0e-6F {
     fail("mexican_hat_kernel(1) expected 0, got " + v.to_string())
   }
@@ -218,7 +218,7 @@ test "mexican_hat_kernel: x=1 -> 0" {
 
 ///|
 test "mexican_hat_kernel: x>1 -> negative (LTD regime)" {
-  let v = mexican_hat_kernel(2.0F)
+  let v = @snn_mbt.mexican_hat_kernel(2.0F)
   if v >= 0.0F {
     fail("mexican_hat_kernel(2) expected negative, got " + v.to_string())
   }
@@ -229,7 +229,7 @@ test "mexican_hat_kernel: NaN guard returns 0" {
   // Float::NaN propagates through some computations; guard should
   // catch it and return 0.
   let nan = 0.0F / 0.0F
-  let v = mexican_hat_kernel(nan)
+  let v = @snn_mbt.mexican_hat_kernel(nan)
   assert_eq(v, 0.0F)
 }
 
@@ -263,8 +263,8 @@ test "stdp_mexican_hat_step: pre-then-post potentiation (small)" {
   let post_fire : Array[Bool] = [false]
   let tpre : Array[Float] = [0.0F]
   let tpost : Array[Float] = [0.0F]
-  let param = STDPMexicanHat::new()
-  stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
+  let param = @snn_mbt.STDPMexicanHat::new()
+  @snn_mbt.stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
   // Pre spike pass: tpost[i]=0 -> log(1/0)=+Inf -> kernel=NaN->0.
   // So no weight change from pre spike. Post spike pass: post didn't fire.
   // Weight should be unchanged at 1.0.
@@ -288,8 +288,8 @@ test "stdp_mexican_hat_step: both fire -> both spike passes apply" {
   let post_fire : Array[Bool] = [true]
   let tpre : Array[Float] = [0.0F]
   let tpost : Array[Float] = [0.0F]
-  let param = STDPMexicanHat::new()
-  stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
+  let param = @snn_mbt.STDPMexicanHat::new()
+  @snn_mbt.stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
   if w[0] < 1.18F || w[0] > 1.22F {
     fail("expected w[0] ~1.2, got " + w[0].to_string())
   }
@@ -305,8 +305,8 @@ test "stdp_mexican_hat_step: trace decay with dt" {
   let post_fire : Array[Bool] = [false]
   let tpre : Array[Float] = [2.0F]
   let tpost : Array[Float] = [2.0F]
-  let param = STDPMexicanHat::new()
-  stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 1.0F)
+  let param = @snn_mbt.STDPMexicanHat::new()
+  @snn_mbt.stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 1.0F)
   // After dt=1.0, tau=20: tpre = 2 + 1*(-2)/20 = 2 - 0.1 = 1.9
   if tpre[0] < 1.85F || tpre[0] > 1.95F {
     fail("expected tpre ~1.9 after 1ms decay, got " + tpre[0].to_string())
@@ -323,12 +323,12 @@ test "stdp_mexican_hat_step: clamp at w_max" {
   let post_fire : Array[Bool] = [true]
   let tpre : Array[Float] = [0.0F]
   let tpost : Array[Float] = [0.0F]
-  let param = STDPMexicanHat::new()
-  stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
+  let param = @snn_mbt.STDPMexicanHat::new()
+  @snn_mbt.stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
   // w += 0.2 -> 29.7, well within bounds. Try again with bigger amplitude.
   // Run a few more steps to verify clamping kicks in eventually.
   for _ in 0..<200 {
-    stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
+    @snn_mbt.stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
   }
   // After many steps, w should saturate at w_max = 30.0.
   if w[0] > 30.0F + 0.01F {
@@ -342,7 +342,7 @@ test "stdp_mexican_hat_step: clamp at w_max" {
 
 ///|
 test "STDPAntiSymmetric::new defaults are sensible" {
-  let p = STDPAntiSymmetric::new()
+  let p = @snn_mbt.STDPAntiSymmetric::new()
   assert_eq(p.a_x, 0.03F)
   assert_eq(p.a_y, 0.03F)
   assert_eq(p.tau_x, 50.0F)
@@ -353,7 +353,7 @@ test "STDPAntiSymmetric::new defaults are sensible" {
 
 ///|
 test "STDPAntiSymmetricVariables::new initializes to zeros" {
-  let v = STDPAntiSymmetricVariables::new(4, 5)
+  let v = @snn_mbt.STDPAntiSymmetricVariables::new(4, 5)
   assert_eq(v.tr_x.length(), 4)
   assert_eq(v.to_y.length(), 5)
   for j in 0..<4 {
@@ -375,9 +375,9 @@ test "stdp_antisymmetric_step: pre spike reduces W via to_y trace" {
   let rowptr : Array[Int] = [0, 1]
   let pre_fire : Array[Bool] = [true]
   let post_fire : Array[Bool] = [false]
-  let vars = STDPAntiSymmetricVariables::new(1, 1)
-  let param = STDPAntiSymmetric::new()
-  stdp_antisymmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.125F)
+  let vars = @snn_mbt.STDPAntiSymmetricVariables::new(1, 1)
+  let param = @snn_mbt.STDPAntiSymmetric::new()
+  @snn_mbt.stdp_antisymmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.125F)
   // dw from pre spike = 0 (to_y=0). Trace: tr_x[0] += 1 = 1.0
   assert_eq(w[0], 10.0F)
   assert_eq(vars.tr_x[0], 1.0F)
@@ -393,10 +393,10 @@ test "stdp_antisymmetric_step: post spike increases W via tr_x trace" {
   let rowptr : Array[Int] = [0, 1]
   let pre_fire : Array[Bool] = [false]
   let post_fire : Array[Bool] = [true]
-  let vars = STDPAntiSymmetricVariables::new(1, 1)
-  let param = STDPAntiSymmetric::new()
+  let vars = @snn_mbt.STDPAntiSymmetricVariables::new(1, 1)
+  let param = @snn_mbt.STDPAntiSymmetric::new()
   vars.tr_x[0] = 1.0F // simulate a previous pre spike
-  stdp_antisymmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.125F)
+  @snn_mbt.stdp_antisymmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.125F)
   // dw = 0 + (0.03 / 50) * 1.0 = 6e-4. After decay with dt=0.125/tau=0.0025,
   // tr_x[0] = 1 + 0.125*(-1)/50 = 1 - 0.0025 = 0.9975. Then post spike
   // increments to_y[0] = 0.9975. Wait - order: decay before increment.
@@ -425,11 +425,11 @@ test "stdp_antisymmetric_step: both fire -> both updates apply" {
   let rowptr : Array[Int] = [0, 1]
   let pre_fire : Array[Bool] = [true]
   let post_fire : Array[Bool] = [true]
-  let vars = STDPAntiSymmetricVariables::new(1, 1)
-  let param = STDPAntiSymmetric::new()
+  let vars = @snn_mbt.STDPAntiSymmetricVariables::new(1, 1)
+  let param = @snn_mbt.STDPAntiSymmetric::new()
   vars.tr_x[0] = 1.0F
   vars.to_y[0] = 1.0F
-  stdp_antisymmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.125F)
+  @snn_mbt.stdp_antisymmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, param, 0.125F)
   if w[0] < 9.999F || w[0] > 10.001F {
     fail("expected w[0] ~10.0 (balanced), got " + w[0].to_string())
   }
@@ -442,12 +442,12 @@ test "find_pre_for_conn: binary search rowptr" {
   //   row 1 owns s in [2, 3, 4]
   //   row 2 owns s in [5, 6]
   let rowptr : Array[Int] = [0, 2, 5, 7]
-  assert_eq(find_pre_for_conn(rowptr, 0), 0)
-  assert_eq(find_pre_for_conn(rowptr, 1), 0)
-  assert_eq(find_pre_for_conn(rowptr, 2), 1)
-  assert_eq(find_pre_for_conn(rowptr, 4), 1)
-  assert_eq(find_pre_for_conn(rowptr, 5), 2)
-  assert_eq(find_pre_for_conn(rowptr, 6), 2)
+  assert_eq(@snn_mbt.find_pre_for_conn(rowptr, 0), 0)
+  assert_eq(@snn_mbt.find_pre_for_conn(rowptr, 1), 0)
+  assert_eq(@snn_mbt.find_pre_for_conn(rowptr, 2), 1)
+  assert_eq(@snn_mbt.find_pre_for_conn(rowptr, 4), 1)
+  assert_eq(@snn_mbt.find_pre_for_conn(rowptr, 5), 2)
+  assert_eq(@snn_mbt.find_pre_for_conn(rowptr, 6), 2)
 }
 
 ///|
@@ -470,8 +470,8 @@ test "stdp_mexican_hat_step: 2x2 all-to-all post-spike path" {
   let post_fire : Array[Bool] = [true, false]
   let tpre : Array[Float] = [0.0F, 2.0F]
   let tpost : Array[Float] = [2.0F, 0.0F]
-  let param = STDPMexicanHat::new()
-  stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
+  let param = @snn_mbt.STDPMexicanHat::new()
+  @snn_mbt.stdp_mexican_hat_step(w, pre_fire, post_fire, colptr, rowptr, tpre, tpost, param, 0.125F)
   // All weights should still be finite and within [0, 30].
   let mut s = 0
   while s < 4 {
@@ -493,17 +493,17 @@ test "stdp_mexican_hat_step: 2x2 all-to-all post-spike path" {
 test "compose dispatches STDPMexicanHat entry automatically" {
   // 2x2 IF net, identity EE synapse, force-fire pre+post pair.
   // STDPMexicanHat entry should be auto-applied by step_heterogeneous.
-  let rng = Xoshiro::default()
-  let pre = IF::new(2, IFParameter::new(), rng)
-  let post = IF::new(2, IFParameter::new(), rng)
-  let ee = SpikingSynapse::new(pre, post, "ge")
+  let rng = @snn_mbt.Xoshiro::default()
+  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
   // Use both pre and post firing to drive MexicanHat (tpre=tpost=1 → log(1)=0 → mex=1).
   let entry = @snn_mbt.MexicanHat_(
-    STDPEntryMexicanHat::new(0, 2, 2, param=STDPMexicanHat::new()),
+    @snn_mbt.STDPEntryMexicanHat::new(0, 2, 2, param=@snn_mbt.STDPMexicanHat::new()),
   )
-  let model = compose(
+  let model = @snn_mbt.compose(
     [@snn_mbt.IF_(pre), @snn_mbt.IF_(post)],
     [ee],
     stdp=[entry],
@@ -511,7 +511,7 @@ test "compose dispatches STDPMexicanHat entry automatically" {
   pre.v[0] = 100.0F
   post.v[0] = 100.0F
   for _ in 0..<10 {
-    step_heterogeneous(model, 0.125F)
+    @snn_mbt.step_heterogeneous(model, 0.125F)
   }
   // After pre+post firing (tpre=tpost=1 → dw = A * 1 = 0.1 on each pass),
   // w[0] should have increased from 1.0. Both pre-spike and post-spike
@@ -528,16 +528,16 @@ test "compose dispatches STDPMexicanHat entry automatically" {
 test "compose dispatches STDPAntiSymmetric entry automatically" {
   // 2x2 IF net, identity EE synapse, force-fire pre+post pair.
   // STDPAntiSymmetric auto-applied.
-  let rng = Xoshiro::default()
-  let pre = IF::new(2, IFParameter::new(), rng)
-  let post = IF::new(2, IFParameter::new(), rng)
-  let ee = SpikingSynapse::new(pre, post, "ge")
+  let rng = @snn_mbt.Xoshiro::default()
+  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
   let entry = @snn_mbt.AntiSymmetric_(
-    STDPEntryAntiSymmetric::new(0, 2, 2, param=STDPAntiSymmetric::new()),
+    @snn_mbt.STDPEntryAntiSymmetric::new(0, 2, 2, param=@snn_mbt.STDPAntiSymmetric::new()),
   )
-  let model = compose(
+  let model = @snn_mbt.compose(
     [@snn_mbt.IF_(pre), @snn_mbt.IF_(post)],
     [ee],
     stdp=[entry],
@@ -548,7 +548,7 @@ test "compose dispatches STDPAntiSymmetric entry automatically" {
   // Initial tr_x=0 → post-spike pass: dw_post = 0 + 0.03/50 * 0 = 0
   // Step a few times to let traces accumulate.
   for _ in 0..<10 {
-    step_heterogeneous(model, 0.125F)
+    @snn_mbt.step_heterogeneous(model, 0.125F)
   }
   // w[0] is in [0, 30] (clamped). No specific magnitude expected since
   // tr_x/to_y are both 0 at start → balanced update gives 0.
@@ -566,12 +566,12 @@ test "compose dispatches STDPAntiSymmetric entry automatically" {
 ///|
 test "STDPEntryKind variants are pub(all)" {
   // Smoke test: ensure all three constructors are accessible cross-package.
-  let _g : STDPEntryKind = @snn_mbt.Gerstner_(STDPEntry::new(0, 1, 1))
-  let _m : STDPEntryKind = @snn_mbt.MexicanHat_(
-    STDPEntryMexicanHat::new(0, 1, 1),
+  let _g : @snn_mbt.STDPEntryKind = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(0, 1, 1))
+  let _m : @snn_mbt.STDPEntryKind = @snn_mbt.MexicanHat_(
+    @snn_mbt.STDPEntryMexicanHat::new(0, 1, 1),
   )
-  let _a : STDPEntryKind = @snn_mbt.AntiSymmetric_(
-    STDPEntryAntiSymmetric::new(0, 1, 1),
+  let _a : @snn_mbt.STDPEntryKind = @snn_mbt.AntiSymmetric_(
+    @snn_mbt.STDPEntryAntiSymmetric::new(0, 1, 1),
   )
   // Suppress unused warnings by referencing them.
   ignore(_g)

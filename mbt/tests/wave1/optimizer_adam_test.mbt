@@ -2,7 +2,7 @@
 
 ///|
 test "adam_init / zero state, step=0" {
-  let s = adam_init(3, 2)
+  let s = @snn_mbt.adam_init(3, 2)
   for i in 0..<3 {
     if s.m_w[i] != 0.0F { fail("m_w[\{i}] should be 0") }
     if s.v_w[i] != 0.0F { fail("v_w[\{i}] should be 0") }
@@ -16,10 +16,10 @@ test "adam_init / zero state, step=0" {
 
 ///|
 test "adam_next_step / returns state.step + 1 without mutation" {
-  let s = adam_init(1, 1)
-  let t1 = adam_next_step(s)
+  let s = @snn_mbt.adam_init(1, 1)
+  let t1 = @snn_mbt.adam_next_step(s)
   // `state.step` is read-only; passing `s` again gives the same +1.
-  let t2 = adam_next_step(s)
+  let t2 = @snn_mbt.adam_next_step(s)
   if t1 != 1 { fail("first next_step should be 1, got \{t1}") }
   if t2 != 1 { fail("adam_next_step does not mutate state, t2 should still be 1, got \{t2}") }
   // Original state.step must not be mutated.
@@ -43,8 +43,8 @@ test "adam_update_arrays / first step reduces loss for linear regression" {
   }
   dw = dw / 4.0F
   db_acc = db_acc / 4.0F
-  let state0 = adam_init(1, 1)
-  let (w_arr, b_arr, state1) = adam_update_arrays(
+  let state0 = @snn_mbt.adam_init(1, 1)
+  let (w_arr, b_arr, state1) = @snn_mbt.adam_update_arrays(
     [0.0F], [0.0F], [dw], [db_acc], state0,
     0.1F, 0.9F, 0.999F, 0.00000001F,
   )
@@ -66,7 +66,7 @@ test "adam_update_arrays / loss decreases over 600 Adam steps on linear regressi
   let mut w = 0.0F
   let mut b = 0.0F
   let lr = 0.1F
-  let mut state = adam_init(1, 1)
+  let mut state = @snn_mbt.adam_init(1, 1)
   let mut initial_loss = 0.0F
   let mut final_loss = 0.0F
   let n_pts = 4
@@ -83,7 +83,7 @@ test "adam_update_arrays / loss decreases over 600 Adam steps on linear regressi
     loss = loss / Float::from_int(n_pts)
     dw = dw / Float::from_int(n_pts)
     db_acc = db_acc / Float::from_int(n_pts)
-    let (w_arr, b_arr, state2) = adam_update_arrays(
+    let (w_arr, b_arr, state2) = @snn_mbt.adam_update_arrays(
       [w], [b], [dw], [db_acc], state,
       lr, 0.9F, 0.999F, 0.00000001F,
     )
@@ -103,14 +103,14 @@ test "adam_update_arrays / loss decreases over 600 Adam steps on linear regressi
 
 ///|
 test "adam_update_arrays / step counter increments monotonically" {
-  let state0 = adam_init(1, 1)
-  let (_, _, s1) = adam_update_arrays(
+  let state0 = @snn_mbt.adam_init(1, 1)
+  let (_, _, s1) = @snn_mbt.adam_update_arrays(
     [0.0F], [0.0F], [1.0F], [0.5F], state0, 0.01F, 0.9F, 0.999F, 0.00000001F,
   )
-  let (_, _, s2) = adam_update_arrays(
+  let (_, _, s2) = @snn_mbt.adam_update_arrays(
     [0.0F], [0.0F], [1.0F], [0.5F], s1, 0.01F, 0.9F, 0.999F, 0.00000001F,
   )
-  let (_, _, s3) = adam_update_arrays(
+  let (_, _, s3) = @snn_mbt.adam_update_arrays(
     [0.0F], [0.0F], [1.0F], [0.5F], s2, 0.01F, 0.9F, 0.999F, 0.00000001F,
   )
   if s1.step != 1 { fail("step 1, got \{s1.step}") }
@@ -122,8 +122,8 @@ test "adam_update_arrays / step counter increments monotonically" {
 test "adam_update_arrays / zero gradient yields zero first moment" {
   // m = beta1 * 0 + (1 - beta1) * 0 = 0; v likewise; step is zero.
   // Step is param - lr * 0 / (sqrt(0) + eps) = param - 0 = param.
-  let state0 = adam_init(2, 1)
-  let (w, b, s1) = adam_update_arrays(
+  let state0 = @snn_mbt.adam_init(2, 1)
+  let (w, b, s1) = @snn_mbt.adam_update_arrays(
     [1.0F, -2.0F], [0.5F], [0.0F, 0.0F], [0.0F],
     state0, 0.1F, 0.9F, 0.999F, 0.00000001F,
   )
@@ -142,11 +142,11 @@ test "adam_update_arrays / zero gradient yields zero first moment" {
 
 ///|
 test "adam_update_linear / preserves LinearParam shape" {
-  let p = LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
+  let p = @snn_mbt.LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
   let dw : Array[Float] = [0.1F, 0.1F, 0.1F, 0.1F]
   let db : Array[Float] = [0.05F, 0.05F]
-  let state0 = adam_init(4, 2)
-  let (p2, _s2) = adam_update_linear(
+  let state0 = @snn_mbt.adam_init(4, 2)
+  let (p2, _s2) = @snn_mbt.adam_update_linear(
     p, dw, db, state0, 0.01F, 0.9F, 0.999F, 0.00000001F,
   )
   if p2.in_features != 2 || p2.out_features != 2 {
@@ -159,15 +159,15 @@ test "adam_update_linear / preserves LinearParam shape" {
 
 ///|
 test "adam_update_conv / preserves Conv2dParam shape" {
-  let p = Conv2dParam::new(
+  let p = @snn_mbt.Conv2dParam::new(
     [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F],
     [0.0F, 0.1F],
     2, 2, 2, 2, stride=1, pad=0,
   )
   let dw : Array[Float] = [0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F]
   let db : Array[Float] = [0.02F, 0.02F]
-  let state0 = adam_init(8, 2)
-  let (p2, _s2) = adam_update_conv(
+  let state0 = @snn_mbt.adam_init(8, 2)
+  let (p2, _s2) = @snn_mbt.adam_update_conv(
     p, dw, db, state0, 0.01F, 0.9F, 0.999F, 0.00000001F,
   )
   if p2.c_out != 2 || p2.c_in != 2 || p2.kh != 2 || p2.kw != 2 {

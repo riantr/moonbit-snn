@@ -9,9 +9,9 @@ test "linear_forward / single-batch matvec + bias" {
   //   y[1] = 4*10 + 5*20 + 6*30 + 200 = 40 + 100 + 180 + 200 = 520
   let weight : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F]
   let bias : Array[Float] = [100.0F, 200.0F]
-  let param = LinearParam::new(weight, bias, 3, 2)
+  let param = @snn_mbt.LinearParam::new(weight, bias, 3, 2)
   let input : Array[Float] = [10.0F, 20.0F, 30.0F]
-  let out = linear_forward(input, 1, param)
+  let out = @snn_mbt.linear_forward(input, 1, param)
   if out.length() != 2 { fail("expected length 2, got \{out.length()}") }
   if (out[0] - 240.0F).abs() > 1.0e-5 { fail("out[0] expected 240, got \{out[0]}") }
   if (out[1] - 520.0F).abs() > 1.0e-5 { fail("out[1] expected 520, got \{out[1]}") }
@@ -26,13 +26,13 @@ test "linear_forward / batch N=3 each row independent" {
   // Batch 2 x=[5,6] -> y=[15, 26]
   let weight : Array[Float] = [1.0F, 0.0F, 0.0F, 1.0F]
   let bias : Array[Float] = [10.0F, 20.0F]
-  let param = LinearParam::new(weight, bias, 2, 2)
+  let param = @snn_mbt.LinearParam::new(weight, bias, 2, 2)
   let input : Array[Float] = [
     1.0F, 2.0F,
     3.0F, 4.0F,
     5.0F, 6.0F,
   ]
-  let out = linear_forward(input, 3, param)
+  let out = @snn_mbt.linear_forward(input, 3, param)
   if out.length() != 6 { fail("expected length 6, got \{out.length()}") }
   let expected : Array[Float] = [
     11.0F, 22.0F,
@@ -55,8 +55,8 @@ test "linear_forward / zero input gives just bias" {
   let input : Array[Float] = Array::make(n * in_f, 0.0F)
   let weight : Array[Float] = Array::make(out_f * in_f, 0.5F)
   let bias : Array[Float] = [1.0F, -1.0F, 2.5F, 0.0F, 100.0F]
-  let param = LinearParam::new(weight, bias, in_f, out_f)
-  let out = linear_forward(input, n, param)
+  let param = @snn_mbt.LinearParam::new(weight, bias, in_f, out_f)
+  let out = @snn_mbt.linear_forward(input, n, param)
   if out.length() != n * out_f {
     fail("expected length \{n * out_f}, got \{out.length()}")
   }
@@ -79,9 +79,9 @@ test "linear_forward / zero weight gives just bias" {
   let out_f = 3
   let weight : Array[Float] = Array::make(out_f * in_f, 0.0F)
   let bias : Array[Float] = [10.0F, 20.0F, 30.0F]
-  let param = LinearParam::new(weight, bias, in_f, out_f)
+  let param = @snn_mbt.LinearParam::new(weight, bias, in_f, out_f)
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
-  let out = linear_forward(input, n, param)
+  let out = @snn_mbt.linear_forward(input, n, param)
   for o in 0..<out_f {
     if (out[o] - bias[o]).abs() > 1.0e-5 {
       fail("out[\{o}] expected \{bias[o]}, got \{out[o]}")
@@ -94,12 +94,12 @@ test "linear_forward / single-output scalar projection" {
   // N=2, in=3, out=1. Equivalent to: y[n] = sum_i W[0, i] * x[n, i] + b[0].
   let weight : Array[Float] = [2.0F, 3.0F, 5.0F]  // [out=0, in=0..2]
   let bias : Array[Float] = [7.0F]
-  let param = LinearParam::new(weight, bias, 3, 1)
+  let param = @snn_mbt.LinearParam::new(weight, bias, 3, 1)
   let input : Array[Float] = [
     1.0F, 1.0F, 1.0F,   // batch 0: y = 2+3+5 + 7 = 17
     2.0F, 0.0F, 1.0F,   // batch 1: y = 4+0+5 + 7 = 16
   ]
-  let out = linear_forward(input, 2, param)
+  let out = @snn_mbt.linear_forward(input, 2, param)
   if out.length() != 2 { fail("expected length 2, got \{out.length()}") }
   if (out[0] - 17.0F).abs() > 1.0e-5 { fail("out[0] expected 17, got \{out[0]}") }
   if (out[1] - 16.0F).abs() > 1.0e-5 { fail("out[1] expected 16, got \{out[1]}") }

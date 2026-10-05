@@ -2,7 +2,7 @@
 
 ///|
 test "HHParameter defaults" {
-  let p = HHParameter::new()
+  let p = @snn_mbt.HHParameter::new()
   // Cm = 1uF * cm^(-2) * 20000um^2 = 1e6 * 1 * 2e-4 = 200
   assert_eq(p.cm, 200.0F)
   // gl = 5e-5siemens * cm^(-2) * 20000um^2 = 5e4 nS * 2e-4 = 10
@@ -21,9 +21,9 @@ test "HHParameter defaults" {
 
 ///|
 test "HH::new initial state" {
-  let param = HHParameter::new()
-  let rng = Xoshiro::default()
-  let p = HH::new(3, param, rng)
+  let param = @snn_mbt.HHParameter::new()
+  let rng = @snn_mbt.Xoshiro::default()
+  let p = @snn_mbt.HH::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.m[k], 0.0F)
     assert_eq(p.n_gate[k], 0.0F)

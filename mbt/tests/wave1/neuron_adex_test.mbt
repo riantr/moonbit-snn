@@ -2,9 +2,9 @@
 
 ///|
 test "AdEx::new initialises v in [Vr, Vt)" {
-  let param = AdExParameter::new()
-  let rng = Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let p = AdEx::new(5, param, rng)
+  let param = @snn_mbt.AdExParameter::new()
+  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let p = @snn_mbt.AdEx::new(5, param, rng)
   for k in 0..<5 {
     let v = p.v[k]
     if v < param.vr || v >= param.vt {
@@ -15,9 +15,9 @@ test "AdEx::new initialises v in [Vr, Vt)" {
 
 ///|
 test "AdEx::new initialises threshold to Vt" {
-  let param = AdExParameter::new()
-  let rng = Xoshiro::default()
-  let p = AdEx::new(3, param, rng)
+  let param = @snn_mbt.AdExParameter::new()
+  let rng = @snn_mbt.Xoshiro::default()
+  let p = @snn_mbt.AdEx::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.threshold[k], param.vt)
   }
@@ -25,9 +25,9 @@ test "AdEx::new initialises threshold to Vt" {
 
 ///|
 test "AdEx::new initialises tabs to 1" {
-  let param = AdExParameter::new()
-  let rng = Xoshiro::default()
-  let p = AdEx::new(3, param, rng)
+  let param = @snn_mbt.AdExParameter::new()
+  let rng = @snn_mbt.Xoshiro::default()
+  let p = @snn_mbt.AdEx::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.tabs[k], 1)
   }
@@ -35,7 +35,7 @@ test "AdEx::new initialises tabs to 1" {
 
 ///|
 test "AdExParameter defaults match Julia" {
-  let p = AdExParameter::new()
+  let p = @snn_mbt.AdExParameter::new()
   assert_eq(p.c, 281.0F)
   assert_eq(p.gl, 40.0F)
   assert_eq(p.vt, -50.0F)

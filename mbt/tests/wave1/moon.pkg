@@ -1,0 +1,14 @@
+// moon.pkg for the wave-1 test sub-package.
+//
+// Every test file in here was moved out of the root package so that the root
+// package's test target no longer has to codegen as a single C translation
+// unit. Access to the package under test is via the blackbox import below;
+// `moon.pkg` (not `moon.pkg.json`) is the per-directory manifest name.
+
+import {
+  "riantr/snn_mbt",
+}
+
+options(
+  "is-test": true,
+)

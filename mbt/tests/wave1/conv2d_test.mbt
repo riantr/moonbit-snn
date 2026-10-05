@@ -7,8 +7,8 @@ test "conv2d_forward / 1x1 conv is per-channel scalar + bias" {
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let weight : Array[Float] = [2.0F]
   let bias : Array[Float] = [1.0F]
-  let param = Conv2dParam::new(weight, bias, 1, 1, 1, 1, stride=1, pad=0)
-  let out = conv2d_forward(input, 1, 1, 2, 2, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 1, 1, 1, 1, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 1, 1, 2, 2, param)
   if out.length() != 4 { fail("expected length 4, got \{out.length()}") }
   // Expected: [1*2+1, 2*2+1, 3*2+1, 4*2+1] = [3, 5, 7, 9]
   let expected : Array[Float] = [3.0F, 5.0F, 7.0F, 9.0F]
@@ -27,8 +27,8 @@ test "conv2d_forward / 3x3 conv on 5x5 valid -> 3x3 output (sum-of-window)" {
   let input : Array[Float] = Array::make(25, 1.0F)
   let weight : Array[Float] = Array::make(9, 1.0F)
   let bias : Array[Float] = [0.0F]
-  let param = Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=0)
-  let out = conv2d_forward(input, 1, 1, 5, 5, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 1, 1, 5, 5, param)
   if out.length() != 9 { fail("expected length 9, got \{out.length()}") }
   for i in 0..<9 {
     if (out[i] - 9.0F).abs() > 1.0e-4 {
@@ -48,14 +48,14 @@ test "conv2d_forward / 3x3 conv on 5x5 with pad=1 (same) -> 5x5 output" {
     0.0F, 0.0F, 0.0F,
   ]
   let bias : Array[Float] = [0.0F]
-  let param = Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=1)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=1)
   // 3x3 input (use single-channel for simplicity).
   let input : Array[Float] = [
     1.0F, 2.0F, 3.0F,
     4.0F, 5.0F, 6.0F,
     7.0F, 8.0F, 9.0F,
   ]
-  let out = conv2d_forward(input, 1, 1, 3, 3, param)
+  let out = @snn_mbt.conv2d_forward(input, 1, 1, 3, 3, param)
   if out.length() != 9 { fail("expected length 9, got \{out.length()}") }
   // With delta kernel + same pad, output should reproduce the input.
   for i in 0..<9 {
@@ -73,8 +73,8 @@ test "conv2d_forward / multi-channel input + output, stride=2 downsample" {
   // Weight: 3 outputs x 2 input channels x 2x2 kernel. Set bias only.
   let weight : Array[Float] = Array::make(3 * 2 * 2 * 2, 0.0F)
   let bias : Array[Float] = [10.0F, 20.0F, 30.0F]
-  let param = Conv2dParam::new(weight, bias, 3, 2, 2, 2, stride=2, pad=0)
-  let out = conv2d_forward(input, 1, 2, 4, 4, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 3, 2, 2, 2, stride=2, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 1, 2, 4, 4, param)
   // N*C_out*ho*wo = 1*3*2*2 = 12.
   if out.length() != 12 { fail("expected length 12, got \{out.length()}") }
   // All-zero weight means output == bias (broadcasted across spatial).
@@ -98,8 +98,8 @@ test "conv2d_forward / batch N=2, output shape correct" {
   let input : Array[Float] = Array::make(2 * 1 * 3 * 3, 0.0F)
   let weight : Array[Float] = Array::make(1 * 1 * 2 * 2, 0.0F)
   let bias : Array[Float] = [7.0F]
-  let param = Conv2dParam::new(weight, bias, 1, 1, 2, 2, stride=1, pad=0)
-  let out = conv2d_forward(input, 2, 1, 3, 3, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 1, 1, 2, 2, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 2, 1, 3, 3, param)
   // 2*1*2*2 = 8
   if out.length() != 8 { fail("expected length 8, got \{out.length()}") }
   for i in 0..<8 {
@@ -121,8 +121,8 @@ test "conv2d_forward / 1x1 conv with explicit weight * input + bias (3x3x3, 2 ou
     4.0F, 5.0F, 6.0F, // c_out=1, c_in=0..2
   ]
   let bias : Array[Float] = [10.0F, 20.0F]
-  let param = Conv2dParam::new(weight, bias, 2, 3, 1, 1, stride=1, pad=0)
-  let out = conv2d_forward(input, 1, 3, 3, 3, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 2, 3, 1, 1, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 1, 3, 3, 3, param)
   if out.length() != 1 * 2 * 3 * 3 {
     fail("expected length 18, got \{out.length()}")
   }
@@ -155,8 +155,8 @@ test "conv2d_forward / all-zero input gives just bias" {
   let input : Array[Float] = Array::make(n * c_in * h * w, 0.0F)
   let weight : Array[Float] = Array::make(c_out * c_in * 2 * 2, 0.5F)
   let bias : Array[Float] = [1.0F, -1.0F, 2.5F, 0.0F]
-  let param = Conv2dParam::new(weight, bias, c_out, c_in, 2, 2, stride=1, pad=0)
-  let out = conv2d_forward(input, n, c_in, h, w, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, c_out, c_in, 2, 2, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, n, c_in, h, w, param)
   // Output shape: n*c_out*(h-1)*(w-1) = 1*4*2*2 = 16
   if out.length() != 16 { fail("expected length 16, got \{out.length()}") }
   for co in 0..<c_out {
@@ -192,8 +192,8 @@ test "conv2d_forward / 3x3 stride-1 on 4x4 valid -> 2x2 output (known values)" {
     0.0F, 0.0F, 0.0F,
   ]
   let bias : Array[Float] = [100.0F]
-  let param = Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=0)
-  let out = conv2d_forward(input, 1, 1, 4, 4, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 1, 1, 4, 4, param)
   if out.length() != 4 { fail("expected length 4, got \{out.length()}") }
   let expected : Array[Float] = [106.0F, 107.0F, 110.0F, 111.0F]
   for i in 0..<4 {
@@ -214,8 +214,8 @@ test "conv2d_forward / kernel 'box-blur' sums 3x3 window" {
   ]
   let weight : Array[Float] = Array::make(9, 1.0F)
   let bias : Array[Float] = [0.0F]
-  let param = Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=0)
-  let out = conv2d_forward(input, 1, 1, 3, 3, param)
+  let param = @snn_mbt.Conv2dParam::new(weight, bias, 1, 1, 3, 3, stride=1, pad=0)
+  let out = @snn_mbt.conv2d_forward(input, 1, 1, 3, 3, param)
   if out.length() != 1 { fail("expected length 1, got \{out.length()}") }
   if (out[0] - 45.0F).abs() > 1.0e-4 {
     fail("sum expected 45.0, got \{out[0]}")
