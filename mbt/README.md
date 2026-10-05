@@ -6,14 +6,12 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.84.0, 2026-10-02)
+## Status (v0.155.0, 2026-10-05)
 
-The version in `moon.mod` is the last **published** version. The source
-tree is ahead of it: the built state is v0.155.0, and everything from
-Batch J onward is described in the batch sections at the end of this
-file. Publishing is a separate step (`moon publish` after a
-`moon.mod` bump), so a published version below the built version is
-expected, not a mismatch.
+`moon.mod` carries the version that is published to mooncakes.io, and
+this header tracks it. The batch sections at the end of this file run
+from Batch C (v0.58.0) through Batch AC (v0.155.0) and describe what
+changed in each.
 
 | Component | Status | Notes |
 |---|---|---|
@@ -441,13 +439,15 @@ For each of these, a *scaled-down qualitative* port works
 (`afferent_response`, `festa2024`, etc.) but the Julia run-time
 parameters are not reproduced bit-for-bit.
 
-## Recent additions (v0.58.0 - v0.84.0, 2026-10-02)
+## Recent additions (v0.58.0 - v0.155.0, 2026-10-05)
 
-Six batches shipped between v0.57.0 and v0.83.0 (v0.84.0 is the
-release-version bump — no new code), all `moon check` clean
-(0 errors, 0 diagnostics on new files). Tests blocked by Windows
-CreateProcessW 32K cmdline limit on `moon test` past v0.61.0; existing
-1801 test baseline verified working through v0.61.0.
+Sixteen batches shipped between v0.57.0 and v0.155.0, all `moon check`
+clean (0 errors). Tests are blocked by the Windows CreateProcessW 32K
+command-line limit on `moon test`: the package has grown from 511 to 998
+`.mbt` files, so the limit is now hit harder than when it first
+appeared past v0.61.0. Verification runs through `moon check` plus the
+two harnesses in the Verification harness section below; the package
+holds 1939 test blocks across 383 test files and 77 examples.
 
 ### Batch C follow-up (v0.58.0 - v0.61.0): BPTT boundary handling
 - `sample_seq_batch_at` helper for arbitrary-window sequence replay

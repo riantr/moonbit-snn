@@ -483,6 +483,8 @@ pub fn elbo_per_sample(Array[Float], Array[Float], Array[Float], Array[Float]) -
 
 pub fn elbo_recon_log_likelihood(Array[Float], Array[Float]) -> Float
 
+pub fn elem_add(Array[Float], Array[Float]) -> Array[Float]
+
 pub fn elem_mul(Array[Float], Array[Float]) -> Array[Float]
 
 pub fn embedding_net_forward(EmbeddingNet, Array[Float]) -> Array[Float]
@@ -605,11 +607,35 @@ pub fn g_mem(Float, Float, Float) -> Float
 
 pub fn gae_advantages_returns(PpoGaeEpisode, Float, Float) -> (Array[Float], Array[Float])
 
+pub fn gat_alpha(Graph, Array[Float], Array[Float]) -> Array[Float]
+
+pub fn gat_apply_elu_mask(GATLayer, Graph, Array[Float], Array[Float]) -> Array[Float]
+
+pub fn gat_attn_terms(GATLayer, Array[Float], Int) -> (Array[Float], Array[Float])
+
 pub fn gat_elu(Float) -> Float
+
+pub fn gat_elu_coverage(GraphAttention, Graph, Array[Float]) -> (Int, Float, Float)
+
+pub fn gat_elu_grad(Float) -> Float
+
+pub fn gat_layer_as_linear(GATLayer) -> GraphLinear
+
+pub fn gat_layer_backward(GATLayer, Graph, Array[Float], Array[Float], Bool) -> (Array[Float], GATLayerGrad)
 
 pub fn gat_layer_forward(GATLayer, Graph, Array[Float]) -> Array[Float]
 
+pub fn gat_layer_perturb_first(GATLayer, Float) -> GATLayer
+
+pub fn gat_layer_sgd_step(GATLayer, GATLayerGrad, Float) -> GATLayer
+
 pub fn gat_leaky_relu(Float) -> Float
+
+pub fn gat_project(GATLayer, Array[Float], Int) -> Array[Float]
+
+pub fn gat_stack_node_dim(GraphAttention) -> Int
+
+pub fn gat_stack_out_width(GraphAttention, Int) -> Int
 
 pub fn gaussian_nll(Float, Float, Float) -> Float
 
@@ -675,6 +701,8 @@ pub fn get_tt(Time) -> Int
 
 pub fn gin_aggregate(Graph, Array[Float]) -> Array[Float]
 
+pub fn gin_aggregate_w(Graph, Array[Float], Int) -> Array[Float]
+
 pub fn gin_backward(GIN, Graph, Array[Array[Float]], Array[Float]) -> (Array[Float], GINGrad)
 
 pub fn gin_forward(GIN, Graph, Array[Float]) -> Array[Float]
@@ -711,6 +739,34 @@ pub fn glow_step_inverse(GlowStep, Array[Float]) -> Array[Float]
 
 pub fn glow_total_log_det(Glow, Array[Float]) -> Float
 
+pub fn gnn_linear_probe_curve(Graph, Array[Float], Array[Int], Array[Bool], Int, Int, Float, UInt64) -> (Array[Float], Array[Float])
+
+pub fn gnn_train_backbones(Int, UInt64) -> (Array[TrainableGraphNet], Array[Graph])
+
+pub fn gnn_train_curve(TrainableGraphNet, GraphLinear, Graph, Array[Float], Array[Int], Array[Bool], Int, Int, Float) -> (TrainableGraphNet, GraphLinear, Array[Float], Array[Float], Array[Float])
+
+pub fn gnn_train_fixture_separability() -> (Float, Float)
+
+pub fn gnn_train_graph() -> Graph
+
+pub fn gnn_train_head(TrainableGraphNet, Int, UInt64) -> GraphLinear
+
+pub fn gnn_train_in_degree() -> Int
+
+pub fn gnn_train_labels() -> Array[Int]
+
+pub fn gnn_train_mask() -> Array[Bool]
+
+pub fn gnn_train_n() -> Int
+
+pub fn gnn_train_per_community() -> Int
+
+pub fn gnn_train_per_community_train() -> Int
+
+pub fn gnn_train_shuffled_labels() -> Array[Int]
+
+pub fn gnn_train_step(TrainableGraphNet, GraphLinear, Graph, Array[Float], Array[Int], Array[Bool], Int, Float) -> (TrainableGraphNet, GraphLinear, Float, Float, Float)
+
 pub let gohm : Float
 
 pub fn gp_grad_norm(Array[Float]) -> Float
@@ -721,15 +777,33 @@ pub fn gp_interpolate(Array[Float], Array[Float], Float) -> Array[Float]
 
 pub fn gp_sample_eps(Xoshiro) -> Float
 
+pub fn gradcheck_ce_consistency(String, Array[Float], Int, eps? : Float, tol? : Float) -> GradCheckReport
+
+pub fn gradcheck_ce_fd_rows() -> Array[Int]
+
+pub fn gradcheck_ce_probe_expected() -> Array[Float]
+
+pub fn gradcheck_ce_probe_logits() -> Array[Array[Float]]
+
+pub fn gradcheck_ce_probe_targets() -> Array[Int]
+
 pub fn gradcheck_eps() -> Float
 
 pub fn gradcheck_input(String, TrainableGraphNet, Graph, Array[Float], Array[Int], Int, eps? : Float, tol? : Float) -> GradCheckReport
+
+pub fn gradcheck_input_relative(String, TrainableGraphNet, Graph, Array[Float], eps? : Float, tol? : Float) -> GradCheckReport
 
 pub fn gradcheck_make_report(String, Array[Float], Array[Float], Float) -> GradCheckReport
 
 pub fn gradcheck_negative_control(String, TrainableGraphNet, Graph, Array[Float], Array[Int], Int, tol? : Float) -> GradCheckReport
 
+pub fn gradcheck_over_count(Array[Float], Array[Float], Float) -> Int
+
+pub fn gradcheck_over_fraction(Array[Float], Array[Float], Float) -> Int
+
 pub fn gradcheck_param(String, TrainableGraphNet, Graph, Array[Float], Array[Int], Int, eps? : Float, tol? : Float) -> GradCheckReport
+
+pub fn gradcheck_param_relative(String, TrainableGraphNet, Graph, Array[Float], eps? : Float, tol? : Float, corrupt? : Float) -> GradCheckReport
 
 pub fn gradcheck_relative(GradCheckReport, Array[Float]) -> Float
 
@@ -747,7 +821,17 @@ pub fn gradient_penalty_diagnostic(WCritic, Array[Array[Float]], Array[Array[Flo
 
 pub fn graph_add_self_loops(Graph) -> Graph
 
+pub fn graph_attention_backward(GraphAttention, Graph, Array[Array[Float]], Array[Float]) -> (Array[Float], GraphAttentionGrad)
+
 pub fn graph_attention_forward(GraphAttention, Graph, Array[Float]) -> Array[Float]
+
+pub fn graph_attention_forward_with_inputs(GraphAttention, Graph, Array[Float]) -> (Array[Float], Array[Array[Float]])
+
+pub fn graph_attention_layer_backward(GraphAttention, Int, Graph, Array[Float], Array[Float], Bool) -> (Array[Float], Array[GATLayerGrad])
+
+pub fn graph_attention_num_params(GraphAttention) -> Int
+
+pub fn graph_attention_sgd_step(GraphAttention, Graph, Array[Float], Array[Float], Float) -> (GraphAttention, Array[Float])
 
 pub fn graph_backbone_forward(GraphBackbone, Graph, Array[Float]) -> Array[Float]
 
@@ -756,6 +840,8 @@ pub fn graph_backbone_node_dim(GraphBackbone) -> Int
 pub fn graph_batch_accuracy(GraphClassifier, Array[Graph], Array[Array[Float]], Array[Int]) -> Float
 
 pub fn graph_batch_loss(GraphClassifier, Array[Graph], Array[Array[Float]], Array[Int]) -> Float
+
+pub fn graph_class_accuracy(Array[Float], Array[Int], Int, Int) -> Float
 
 pub fn graph_classifier_forward(GraphClassifier, Graph, Array[Float]) -> Array[Float]
 
@@ -1193,6 +1279,12 @@ pub fn node_ce_loss(Array[Float], Array[Int], Int, Int) -> Float
 
 pub fn node_homophily(Graph, Array[Int], Int) -> Float
 
+pub fn node_mask_accuracy(Array[Float], Array[Int], Array[Bool], Int, Int) -> Float
+
+pub fn node_mask_ce_grad(Array[Float], Array[Int], Array[Bool], Int, Int) -> Array[Float]
+
+pub fn node_mask_ce_loss(Array[Float], Array[Int], Array[Bool], Int, Int) -> Float
+
 pub fn noisy_dqn_select_action(NoisyQNet, Int, Xoshiro) -> Int
 
 pub fn noisy_dqn_select_action_eval(NoisyQNet, Int) -> Int
@@ -1323,19 +1415,35 @@ pub fn pna_max(Graph, Array[Float]) -> Array[Float]
 
 pub fn pna_max_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
 
+pub fn pna_max_backward_w(Graph, Array[Float], Array[Int], Int) -> Array[Float]
+
 pub fn pna_max_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array[Int])
+
+pub fn pna_max_forward_with_idx_w(Graph, Array[Float], Int) -> (Array[Float], Array[Int])
+
+pub fn pna_max_w(Graph, Array[Float], Int) -> Array[Float]
 
 pub fn pna_mean(Graph, Array[Float]) -> Array[Float]
 
 pub fn pna_mean_backward(Graph, Array[Float]) -> Array[Float]
 
+pub fn pna_mean_backward_w(Graph, Array[Float], Int) -> Array[Float]
+
 pub fn pna_mean_in_degree(Graph, Float) -> Float
+
+pub fn pna_mean_w(Graph, Array[Float], Int) -> Array[Float]
 
 pub fn pna_min(Graph, Array[Float]) -> Array[Float]
 
 pub fn pna_min_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
 
+pub fn pna_min_backward_w(Graph, Array[Float], Array[Int], Int) -> Array[Float]
+
 pub fn pna_min_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array[Int])
+
+pub fn pna_min_forward_with_idx_w(Graph, Array[Float], Int) -> (Array[Float], Array[Int])
+
+pub fn pna_min_w(Graph, Array[Float], Int) -> Array[Float]
 
 pub fn pna_num_aggregators() -> Int
 
@@ -1346,6 +1454,10 @@ pub fn pna_sgd_step(PNA, Graph, Array[Float], Array[Float], Float) -> (PNA, Arra
 pub fn pna_std(Graph, Array[Float]) -> Array[Float]
 
 pub fn pna_std_backward(Graph, Array[Float], Array[Float], Array[Float], Array[Float]) -> Array[Float]
+
+pub fn pna_std_backward_w(Graph, Array[Float], Array[Float], Array[Float], Array[Float], Int) -> Array[Float]
+
+pub fn pna_std_w(Graph, Array[Float], Int) -> Array[Float]
 
 pub fn poisson_input(Float, Float, Float, Int, Xoshiro) -> Array[Array[Bool]]
 
@@ -1571,6 +1683,10 @@ pub fn sample_task(TaskFamily, Int, Int, UInt64) -> MetaTask
 
 pub fn sample_trajectory_window(TrajectoryBuffer, Int, Int, Xoshiro) -> (Array[Float], Array[Float], Array[Float], Array[Int])
 
+pub fn scatter_add_by_dst(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_add_by_src(Graph, Array[Float]) -> Array[Float]
+
 pub fn scatter_max(Graph, Array[Float]) -> Array[Float]
 
 pub fn scatter_max_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
@@ -1581,6 +1697,10 @@ pub fn scatter_mean(Graph, Array[Float]) -> Array[Float]
 
 pub fn scatter_mean_backward(Graph, Array[Float]) -> Array[Float]
 
+pub fn scatter_mean_backward_w(Graph, Array[Float], Int) -> Array[Float]
+
+pub fn scatter_mean_w(Graph, Array[Float], Int) -> Array[Float]
+
 pub fn scatter_min(Graph, Array[Float]) -> Array[Float]
 
 pub fn scatter_min_backward(Graph, Array[Float], Array[Int]) -> Array[Float]
@@ -1590,6 +1710,8 @@ pub fn scatter_min_forward_with_idx(Graph, Array[Float]) -> (Array[Float], Array
 pub fn scatter_sum(Graph, Array[Float]) -> Array[Float]
 
 pub fn scatter_sum_backward(Graph, Array[Float]) -> Array[Float]
+
+pub fn scatter_sum_backward_w(Graph, Array[Float], Int) -> Array[Float]
 
 pub fn scm_abduct_noise(LinearGaussianSCM, Array[Float]) -> Array[Float]
 
@@ -1997,6 +2119,10 @@ pub fn trainable_net_forward(TrainableGraphNet, Graph, Array[Float]) -> Array[Fl
 
 pub fn trainable_net_input_grad(TrainableGraphNet, Graph, Array[Float], Array[Int], Int) -> (Array[Float], Float)
 
+pub fn trainable_net_l2_input_grad(TrainableGraphNet, Graph, Array[Float]) -> (Array[Float], Float)
+
+pub fn trainable_net_l2_loss(TrainableGraphNet, Graph, Array[Float]) -> Float
+
 pub fn trainable_net_loss(TrainableGraphNet, Graph, Array[Float], Array[Int], Int) -> Float
 
 pub fn trainable_net_node_dim(TrainableGraphNet) -> Int
@@ -2004,6 +2130,8 @@ pub fn trainable_net_node_dim(TrainableGraphNet) -> Int
 pub fn trainable_net_num_params(TrainableGraphNet) -> Int
 
 pub fn trainable_net_param_grad(TrainableGraphNet, Graph, Array[Float], Array[Int], Int) -> Array[Float]
+
+pub fn trainable_net_param_grad_from_dout(TrainableGraphNet, Graph, Array[Float], Array[Float]) -> Array[Float]
 
 pub fn trainable_net_perturb_first(TrainableGraphNet, Float) -> TrainableGraphNet
 
@@ -3376,6 +3504,13 @@ pub struct GATLayer {
 }
 pub fn GATLayer::new(Int, Int, UInt64) -> Self
 
+pub struct GATLayerGrad {
+  d_w : Array[Array[Float]]
+  d_a_src : Array[Float]
+  d_a_dst : Array[Float]
+}
+pub fn GATLayerGrad::zero(GATLayer) -> Self
+
 pub struct GCN {
   layers : Array[GCNLayer]
   num_layers : Int
@@ -3677,6 +3812,12 @@ pub struct GraphAttention {
   layers : Array[Array[GATLayer]]
 }
 pub fn GraphAttention::new(Array[Int], Int, UInt64) -> Self
+
+pub struct GraphAttentionGrad {
+  layers : Array[Array[GATLayerGrad]]
+  num_layers : Int
+}
+pub fn GraphAttentionGrad::zero(GraphAttention) -> Self
 
 pub(all) enum GraphBackbone {
   Gin(GIN)
@@ -6257,6 +6398,7 @@ pub(all) enum TrainableGraphNet {
   Gin(GIN)
   Pna(PNA)
   Mpnn(MPnn)
+  Gat(GraphAttention)
 }
 
 pub struct Trajectory {
