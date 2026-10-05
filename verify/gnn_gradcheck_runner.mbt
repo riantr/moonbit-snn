@@ -338,6 +338,75 @@ fn main {
     println("  GATelu  " + tmsg)
     if !teeth_ok { fails = fails + 1 }
   }
+  println("--- cross-entropy loss vs its own gradient (the SECOND objective) ---")
+  // Until v0.155.0 this gate exercised a bounded quadratic objective
+  // only, and `graph_cross_entropy` carried an inverted sign on its
+  // `logf(sum_exp)` term for six versions because nothing in the package
+  // ever trained on it. A gate that checks one objective cannot see a
+  // bug in another.
+  //
+  // Two separate checks, because they are valid on different rows:
+  //   VALUE  -- loss vs a hand-computed expectation. Runs on ALL rows,
+  //            including the saturated one that exposed the bug.
+  //   FD     -- loss vs its own gradient by central difference. Only on
+  //            rows whose gradient is O(1); see `gradcheck_ce_fd_rows`
+  //            for why the saturated row is unmeasurable this way.
+  {
+    let cl = gradcheck_ce_probe_logits()
+    let ct = gradcheck_ce_probe_targets()
+    let ce = gradcheck_ce_probe_expected()
+    let fd_rows = gradcheck_ce_fd_rows()
+    let mut ce_fails = 0
+    for i in 0..<cl.length() {
+      let got = graph_cross_entropy(cl[i], ct[i])
+      let vdiff = if got - ce[i] < 0.0F {
+        0.0F - (got - ce[i])
+      } else {
+        got - ce[i]
+      }
+      let vscale = if ce[i] < 0.0F { 0.0F - ce[i] } else { ce[i] }
+      let vtol = 0.0001F * vscale
+      let vok = vdiff <= vtol
+      // Is this row also finite-difference checkable?
+      let mut fd_rep = GradCheckReport::{ name: "", max_diff: 0.0F, tol: 0.0F, worst_index: 0, passed: true }
+      let mut fd_done = false
+      for j in 0..<fd_rows.length() {
+        if fd_rows[j] == i {
+          fd_rep = gradcheck_ce_consistency("ce" + i.to_string(), cl[i], ct[i])
+          fd_done = true
+        }
+      }
+      let verdict = if vok && fd_rep.passed { "PASS" } else { "FAIL" }
+      let fd_note = if fd_done {
+        "  fd_max_diff=" + Float::to_string(fd_rep.max_diff) +
+        "/" + Float::to_string(fd_rep.tol)
+      } else {
+        "  fd=skipped (gradient is O(1e-4) here; see the doc)"
+      }
+      println(
+        "  " + verdict + "  L=" + Float::to_string(got) +
+        " expected=" + Float::to_string(ce[i]) + fd_note,
+      )
+      if !vok || !fd_rep.passed { ce_fails = ce_fails + 1 }
+    }
+    if ce_fails > 0 { fails = fails + ce_fails }
+    // Negative control: the pre-v0.155.0 formula. This is the exact
+    // expression that shipped, and the check must reject it.
+    let cl0 = cl[0]
+    let m0 = cl0[0]
+    let mut se = 0.0F
+    for j in 0..<cl0.length() { se = se + expf(cl0[j] - m0) }
+    let broken = m0 - cl0[ct[0]] - logf(se)
+    let se_ok = broken < 0.0F
+    let se_msg = if se_ok {
+      "checker has teeth: the old sign gives " +
+      Float::to_string(broken) + " (< 0, impossible for a cross-entropy)"
+    } else {
+      "SUSPECT: old sign gives " + Float::to_string(broken)
+    }
+    println("  control old-sign loss = " + Float::to_string(broken) + "  " + se_msg)
+    if !se_ok { fails = fails + 1 }
+  }
   println("--- GAT multi-head dL/dW[0][0] (head 0, layer 0) ---")
   {
     let gn = ["GATx1h", "GATx3h", "GATx2h2L", "GATx3h2L"]

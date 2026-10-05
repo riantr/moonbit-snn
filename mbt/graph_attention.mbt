@@ -271,7 +271,6 @@ pub fn graph_attention_forward_with_inputs(
   let mut acc = h
   let mut i = 0
   while i < n_layers {
-    let layer = net.layers[i][0]
     let d = gat_stack_out_width(net, i)
     // The LAST layer is linear so its output can be read as logits;
     // every earlier layer concatenates its heads and applies ELU.

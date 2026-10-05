@@ -353,6 +353,167 @@ pub fn gradcheck_negative_control(
 }
 
 ///|
+/// THE SECOND OBJECTIVE. Check `graph_cross_entropy` against central
+/// differences of ITSELF, so the loss and `graph_cross_entropy_grad`
+/// are pinned to each other.
+///
+/// This exists because of a bug the gate structurally could not see.
+/// v0.149.0 - v0.154.0 checked dL/dh and dL/dW for a bounded quadratic
+/// objective, chosen because cross-entropy's loss grows with the logit
+/// magnitude and made an absolute tolerance meaningless. That was the
+/// right call for those checks -- and it left `graph_cross_entropy`
+/// carrying an inverted sign on its `logf(sum_exp)` term for six
+/// versions, because nothing in the package ever TRAINED on it. The
+/// `+`/`-` is invisible to a value-based test of a DIFFERENT function
+/// and to a gradient check of a DIFFERENT objective.
+///
+/// The end-to-end training demo (v0.155.0) found it in one run: the
+/// reported loss was NEGATIVE (-0.48) for a network at 100% training
+/// accuracy, which is impossible for a cross-entropy. Note that the
+/// gradient was correct throughout, so accuracy kept rising and the
+/// training "worked" -- only the number being minimised was inverted.
+///
+/// So the criterion here is deliberately a CONSISTENCY one, not an
+/// absolute tolerance: the analytic gradient must match the numerical
+/// derivative of the loss the training loop actually reports. A wrong
+/// sign in either function fails it. Reported RELATIVELY, judged
+/// against `max|analytic|`, for the same reason as every other check.
+pub fn gradcheck_ce_consistency(
+  name : String,
+  logits : Array[Float],
+  target : Int,
+  eps~ : Float = gradcheck_eps(),
+  tol~ : Float = gradcheck_tol(),
+) -> GradCheckReport {
+  let analytic = graph_cross_entropy_grad(logits, target)
+  let numeric = numerical_gradient(logits, eps, fn(x) {
+    graph_cross_entropy(x, target)
+  })
+  let (max_diff, worst) = max_abs_diff(analytic, numeric)
+  let mut scale = 0.0F
+  for i in 0..<analytic.length() {
+    let a = if analytic[i] < 0.0F { 0.0F - analytic[i] } else { analytic[i] }
+    if a > scale {
+      scale = a
+    }
+  }
+  let eff = if scale < 0.000001F { tol } else { tol * scale }
+  {
+    name,
+    max_diff,
+    tol: eff,
+    worst_index: worst,
+    passed: max_diff <= eff,
+  }
+}
+
+///|
+/// A set of logit vectors that between them reach both regimes the
+/// inverted sign broke. The bug was largest where the prediction is
+/// CONFIDENT AND CORRECT (`p` is the argmax, so `sum_exp -> 1` and
+/// `logf(sum_exp) -> 0`), which is why a demo reporting a negative loss
+/// was the thing that exposed it. `nearly_saturated_wrong` is the
+/// mirror image: very confident and very wrong, where the true loss is
+/// huge and the broken one is `2 * m` -- off by orders of magnitude, not
+/// by a sign.
+///
+/// Hand-picked rather than random because the sizes are the point: a
+/// random `N(0,1)` logit vector is nearly uniform, `logf(sum_exp)` is
+/// ~0.7, and the check would pass on a sign-flipped function for a
+/// large fraction of draws.
+pub fn gradcheck_ce_probe_logits() -> Array[Array[Float]] {
+  let out : Array[Array[Float]] = Array::make(4, [])
+  let confident_right = Array::make(3, 0.0F)
+  confident_right[0] = 9.0F
+  confident_right[1] = 0.0F
+  confident_right[2] = 0.0F
+  let confident_wrong = Array::make(3, 0.0F)
+  confident_wrong[0] = 9.0F
+  confident_wrong[1] = 0.0F
+  confident_wrong[2] = 0.0F
+  let mild = Array::make(3, 0.0F)
+  mild[0] = 0.4F
+  mild[1] = -0.2F
+  mild[2] = 0.1F
+  let tied = Array::make(4, 0.0F)
+  tied[0] = 1.0F
+  tied[1] = 1.0F
+  tied[2] = 1.0F
+  tied[3] = 1.0F
+  out[0] = confident_right
+  out[1] = confident_wrong
+  out[2] = mild
+  out[3] = tied
+  out
+}
+
+///|
+/// The target paired with each row of `gradcheck_ce_probe_logits`, and
+/// the loss that row must produce. The expected values are the
+/// textbook ones, computed by hand, and they are what makes this a
+/// check of the FUNCTION rather than only of the loss/gradient pair --
+/// a pair can be consistently wrong together, and here they were not
+/// (the gradient was right), so the absolute values are pinned too.
+///
+///   row 0  [9,0,0] y=0 : confident correct ->  -log(1 + 2e-4) ~ 2e-4
+///   row 1  [9,0,0] y=1 : confident wrong    ->  9 + 4.5e-5
+///   row 2  [0.4,-0.2,0.1] y=1              :  0.95
+///   row 3  [1,1,1,1] y=2 : uniform           ->  log 4
+pub fn gradcheck_ce_probe_expected() -> Array[Float] {
+  let out : Array[Float] = Array::make(4, 0.0F)
+  // -log(exp(0)/(1 + 2*exp(-9))) = log(1 + 2*exp(-9))
+  out[0] = logf(1.0F + 2.0F * expf(0.0F - 9.0F))
+  // (9 - 0) + log(1 + exp(-9) + exp(-9))
+  out[1] = 9.0F + logf(1.0F + 2.0F * expf(0.0F - 9.0F))
+  // m = 0.4; sum = 1 + exp(-0.6) + exp(-0.3)
+  out[2] = 0.4F - (0.0F - 0.2F) + logf(
+    1.0F + expf(0.0F - 0.6F) + expf(0.0F - 0.3F),
+  )
+  // all equal -> uniform softmax -> -log(1/4) = log 4
+  out[3] = logf(4.0F)
+  out
+}
+
+///|
+/// The target paired with each probe row.
+pub fn gradcheck_ce_probe_targets() -> Array[Int] {
+  let out : Array[Int] = Array::make(4, 0)
+  out[0] = 0
+  out[1] = 1
+  out[2] = 1
+  out[3] = 2
+  out
+}
+
+///|
+/// Which probe rows can be checked by FINITE DIFFERENCE, and why not the
+/// others.
+///
+/// Row 0 (`[9,0,0]`, target 0) is the row that exposed the inverted
+/// sign, and it is excluded here for a specific numerical reason rather
+/// than a convenience one. It sits at the MINIMUM of the loss, where
+/// the max-subtraction makes the value nearly independent of the largest
+/// logit: `L = m - logits[p] + log(sum_exp)` with `p` the argmax has
+/// `m - logits[p] == 0`, and perturbing `logits[0]` by +/-eps moves
+/// `sum_exp` by about `2*e^-9` -- a relative change of 2.5e-4 on a
+/// quantity `logf` then has to resolve near 1, where Float32's spacing
+/// is 1.2e-7. The two evaluations are the same number after rounding, so
+/// the central difference returns ~0 for a true derivative of -2.5e-4 and
+/// the check cannot distinguish "correct" from "wrong" at all.
+///
+/// The VALUE check still runs on row 0, and that is the check that
+/// matters for it: the inverted sign turned its expected 2.47e-4 into
+/// -2.47e-4, which is unmissable. So the row is not dropped, it is
+/// checked by the instrument that can actually see there.
+pub fn gradcheck_ce_fd_rows() -> Array[Int] {
+  let out : Array[Int] = Array::make(3, 0)
+  out[0] = 1
+  out[1] = 2
+  out[2] = 3
+  out
+}
+
+///|
 /// helper: a small deterministic graph for the checks. A ring of 6
 /// nodes with 2 input features and an extra chord, so every node has
 /// an in-degree of 1 or 2 -- enough for the degree scalers, the

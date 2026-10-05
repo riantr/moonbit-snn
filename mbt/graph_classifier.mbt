@@ -166,8 +166,39 @@ pub fn graph_classifier_predict(
 
 ///|
 /// Cross-entropy loss on one graph.
+///
+///   -log softmax(logits)[target]
+///     = -(logits[p] - m) + log(sum_exp)          (max-subtracted)
+///     =  m - logits[p] + logf(sum_exp)
+///
+/// The `logf` term is ADDED. It was SUBTRACTED until v0.155.0, which
+/// made this return a negative number for every confident and correct
+/// prediction: with `p` the argmax, `sum_exp` is just above 1, so
+/// `logf(sum_exp)` is a small positive number and the whole expression
+/// came out as minus it. The magnitude was right and only the sign was
+/// wrong, which is the worst possible shape for this bug:
+///
+///   * `graph_cross_entropy_grad` was (and still is) the correct
+///     `softmax - onehot`, so TRAINING WORKED. Accuracy went up, the
+///     optimiser's direction was right.
+///   * The REPORTED loss therefore moved the wrong way, and a loop
+///     that early-stops, schedules, or simply asserts "the loss fell"
+///     on this function was reading a number with the wrong sign.
+///
+/// It survived v0.149.0 - v0.154.0 because the gradient gate
+/// deliberately checks a bounded QUADRATIC objective instead of
+/// cross-entropy (CE's loss grows with the logit scale, which made an
+/// absolute tolerance meaningless). A gate that exercises one
+/// objective cannot see a bug in another. The end-to-end training demo
+/// found this in a single run because it is the first thing in the
+/// package to actually TRAIN on this function, and
+/// `gradcheck_ce_consistency` in gnn_gradcheck.mbt now pins the loss
+/// against its own gradient by finite difference so it cannot come back.
 pub fn graph_cross_entropy(logits : Array[Float], target : Int) -> Float {
   let n = logits.length()
+  if n == 0 {
+    return 0.0F
+  }
   let mut m = logits[0]
   for i in 1..<n {
     if logits[i] > m {
@@ -178,9 +209,8 @@ pub fn graph_cross_entropy(logits : Array[Float], target : Int) -> Float {
   for i in 0..<n {
     sum_exp = sum_exp + expf(logits[i] - m)
   }
-  // -log softmax(logits)[target] = m - logits[target] - log(sum_exp)
   let p = if target >= 0 && target < n { target } else { 0 }
-  m - logits[p] - logf(sum_exp)
+  m - logits[p] + logf(sum_exp)
 }
 
 ///|
