@@ -620,3 +620,54 @@ pub fn gnn_train_backbones(
   graphs[0] = norm
   (nets, graphs)
 }
+
+///|
+/// The same five backbones with a HIDDEN layer: dims `[4, hidden,
+/// emb_dim]`, so the node-embedding width is still `emb_dim` and the
+/// head built by `gnn_train_head` is unchanged.
+///
+/// This exists because v0.155.0 turned up a structural limit of the
+/// single-layer configurations rather than a bug. GCN, GIN and MPNN
+/// apply a ReLU to their LAST layer (GAT does not, its final layer is
+/// linear), so their output is non-negative by construction and a linear
+/// head on top of it can only ever push a class up. Measured against a
+/// linear probe on hand-smoothed features, a single-layer backbone is
+/// therefore STRICTLY WEAKER than a 1-parameter sign rule on a smoothed
+/// feature, however long it trains. Depth moves the ReLU off the
+/// readout, which is the obvious way to test whether that handicap is
+/// what the accuracy ceiling is made of.
+///
+/// It is also the first time the training path drives a multi-layer
+/// backward. The gradient gate already composes two layers (GINx2,
+/// GCNx2, MPNNx2, PNAx2, GATx2h2L) but under the bounded QUADRATIC
+/// objective; this runs the same composition under cross-entropy with a
+/// learned head, which is a different code path through
+/// `node_mask_ce_grad` and a different failure mode.
+pub fn gnn_train_backbones_2layer(
+  emb_dim : Int,
+  hidden : Int,
+  seed : UInt64,
+) -> (Array[TrainableGraphNet], Array[Graph]) {
+  let raw = gnn_train_graph()
+  let norm = normalise_adjacency(raw)
+  let gcn = GCN::new([4, hidden, emb_dim], 0.0F, seed)
+  let gin = GIN::new([4, hidden, emb_dim], 0.0F, seed)
+  let mpnn = MPnn::new([4, hidden, emb_dim], seed)
+  let pna = PNA::new(
+    [4, hidden, emb_dim], hidden, 0.001F, PNAScaler::Amplification, seed,
+  )
+  // layer 0: in 4, out per_head, concatenated to heads*per_head
+  // layer 1: in heads*per_head, out per_head, concatenated to emb_dim
+  let heads = 2
+  let per_head = emb_dim / heads
+  let gat = GraphAttention::new([4, per_head, per_head], heads, seed)
+  let nets : Array[TrainableGraphNet] = Array::make(5, TrainableGraphNet::Gin(gin))
+  nets[0] = TrainableGraphNet::Gcn(gcn)
+  nets[1] = TrainableGraphNet::Gin(gin)
+  nets[2] = TrainableGraphNet::Mpnn(mpnn)
+  nets[3] = TrainableGraphNet::Pna(pna)
+  nets[4] = TrainableGraphNet::Gat(gat)
+  let graphs : Array[Graph] = Array::make(5, raw)
+  graphs[0] = norm
+  (nets, graphs)
+}

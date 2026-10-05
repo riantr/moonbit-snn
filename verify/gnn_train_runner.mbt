@@ -1,18 +1,20 @@
-// zz_gnn_train_runner.mbt -- end-to-end training demo (v0.155.0).
+// zz_gnn_train_runner.mbt -- end-to-end training demo (v0.155.0,
+// depth study added in v0.156.0).
 //
 // WHY IT LIVES HERE: see the header of ../verify_gnn_grads.ps1. A fresh
 // sub-package cannot resolve any symbol from the parent module in moon
-// 0.1.20260920, and `moon test` cannot link with 511 .mbt files on a
+// 0.1.20260920, and `moon test` cannot link with 998 .mbt files on a
 // 32K Windows command line, so the demo runs inside the library package
 // behind the same temporary `is-main` flip the gradient gate uses.
 //
 // Every headline number is a HELD-OUT accuracy and is printed next to
 // the control that would have caught its being fake:
 //
-//   real labels     -> held-out accuracy must RISE
-//   shuffled labels -> held-out accuracy must NOT rise
-//   no message pass -> must be beaten, and the fixture itself is
-//                      measured with no training at all
+//   real labels     -> held-out accuracy must beat the no-message-
+//                       passing bar
+//   shuffled labels -> held-out accuracy must fall far below the real
+//                       run, by a stated margin
+//   no message pass -> the bar itself, trained on raw features
 //
 // The fixture separability row is the one that cannot be argued with: it
 // involves no model, only the sign of the single class-carrying feature
@@ -41,8 +43,8 @@ fn zz_curve_row(
 ///
 /// The bar is the held-out accuracy of a trained `GraphLinear` on the
 /// RAW features, plus a margin. Three earlier versions of this criterion
-/// were wrong in instructive ways, and all three are worth recording
-/// because each mistake would have been easy to ship:
+/// were wrong in instructive ways, and all three would have been easy to
+/// ship:
 ///
 ///   * "held-out accuracy must RISE" is UNSATISFIABLE for GCN. GCN's
 ///     forward pass IS a neighbourhood average, so an untrained GCN
@@ -51,21 +53,20 @@ fn zz_curve_row(
 ///     model is fine; the untrained forward had already done the work
 ///     training would otherwise have done.
 ///   * "held-out accuracy must reach the neighbourhood-averaged oracle
-///     minus 0.10" is unreachable BY CONSTRUCTION. That oracle is a sign
+///     - 0.10" is unreachable BY CONSTRUCTION. That oracle is a sign
 ///     rule on one hand-averaged feature -- a 1-parameter decision on a
 ///     1-dimensional projection with no ReLU anywhere. A single-layer
 ///     backbone applies a ReLU to its output BEFORE the readout, which
 ///     discards half the embedding, so it is strictly weaker than that
-///     oracle no matter how long it trains. Requiring it would have
-///     meant either chasing the number or weakening the claim.
+///     oracle no matter how long it trains.
 ///   * "held-out accuracy must not move" flagged 4 of 5 architectures on
 ///     shuffled labels, all of them merely CONVERGING TO CHANCE.
 ///
 /// So the bar is a comparison between two things this demo measured and
 /// trained itself, with a margin wide enough to mean something (0.10 on
-/// 24 held-out nodes is 2.4 nodes, and the observed gaps are 0.13-0.21).
-/// The oracle is still reported, as the reason the fixture is in this
-/// regime -- explicitly labelled an oracle, not a target.
+/// 24 held-out nodes is 2.4 nodes). The oracle is still reported, as the
+/// reason the fixture is in this regime -- explicitly labelled an
+/// oracle, not a target.
 fn zz_learned(
   losses : Array[Float],
   test_final : Float,
@@ -80,42 +81,112 @@ fn zz_learned(
 
 ///| Is a held-out accuracy meaningfully ABOVE chance for this fixture?
 ///
-/// Chance is 0.5 because the classes are balanced, and the sampling
-/// band is what makes a bare `> initial` test useless. The first
-/// version of this control asserted "held-out accuracy did not rise",
-/// and it flagged 4 of 5 architectures -- but every one of those was
-/// moving from an untrained head's 0.06 up to 0.50, which is
-/// CONVERGING TO CHANCE, not learning. With 24 held-out nodes
-/// sigma = sqrt(0.25/24) = 0.102, so a truly random predictor lands
-/// anywhere in 0.5 +/- 0.20 at 2 sigma, and 0.06 -> 0.50 is well
-/// inside that.
-///
-/// So the control is stated as a gap against the REAL-label run rather
-/// than as a movement: shuffled labels must leave held-out accuracy
-/// clearly BELOW what the same architecture reached on real labels. That
-/// is the property "the metric tracks a signal that exists", and it
-/// needs no binomial cut and no false-positive arithmetic.
+/// Chance is 0.5 because the classes are balanced. This is a sanity
+/// marker on the control, not the control: the control's assertion is the
+/// gap against the real-label run, which needs no binomial cut.
 fn zz_above_chance(acc : Float) -> Bool {
   acc > 0.75F
 }
 
+///| Train one configuration of five backbones and report all three
+/// criteria. Returns `(learned, final_test_accuracies)`.
+fn zz_run_set(
+  label : String,
+  names : Array[String],
+  nets : Array[TrainableGraphNet],
+  graphs : Array[Graph],
+  h : Array[Float],
+  train : Array[Bool],
+  classes : Int,
+  steps : Int,
+  lr : Float,
+  bar : Float,
+  shuffled : Array[Int],
+  marks : Array[Int],
+  out : Array[Float],
+) -> Int {
+  let n = names.length()
+  println("--- " + label + ": loss must fall, HELD-OUT acc must beat " +
+    Float::to_string(bar) + " ---")
+  let mut learned = 0
+  for i in 0..<n {
+    let net = nets[i]
+    let g = graphs[i]
+    let head = gnn_train_head(net, classes, 2024UL)
+    let (_, _, losses, tr_accs, te_accs) = gnn_train_curve(
+      net, head, g, h, gnn_train_labels(), train, classes, steps, lr,
+    )
+    out[i] = te_accs[te_accs.length() - 1]
+    zz_curve_row(names[i], losses, tr_accs, te_accs, marks)
+    if zz_learned(losses, out[i], bar) {
+      learned = learned + 1
+    } else {
+      println(
+        "  ^^ " + names[i] + " held out " + Float::to_string(out[i]) +
+        " vs bar " + Float::to_string(bar),
+      )
+    }
+  }
+  println("  learned: " + learned.to_string() + "/" + n.to_string())
+  println("--- " + label +
+    ": negative control, shuffled labels must fall far below ---")
+  let mut fake = 0
+  for i in 0..<n {
+    let net = nets[i]
+    let g = graphs[i]
+    let head = gnn_train_head(net, classes, 2024UL)
+    let (_, _, sl, tr, te) = gnn_train_curve(
+      net, head, g, h, shuffled, train, classes, steps, lr,
+    )
+    zz_curve_row(names[i] + "/shuf", sl, tr, te, marks)
+    // Training loss falling here is EXPECTED and is memorisation of the
+    // training points, not a bug. What must not happen is the held-out
+    // number coming near the real-label run.
+    let shuf_final = te[te.length() - 1]
+    if shuf_final >= out[i] - 0.2F {
+      fake = fake + 1
+      println(
+        "  ^^ " + names[i] + " held-out " + Float::to_string(shuf_final) +
+        " vs real " + Float::to_string(out[i]) +
+        " -- gap too small to distinguish a signal from noise",
+      )
+    } else {
+      println(
+        "    " + names[i] + " gap=" + Float::to_string(out[i] - shuf_final) +
+        "  (real " + Float::to_string(out[i]) +
+        " vs shuffled " + Float::to_string(shuf_final) + ")",
+      )
+    }
+    if zz_above_chance(shuf_final) {
+      println(
+        "  !! " + names[i] + " shuffled held-out " +
+        Float::to_string(shuf_final) + " is above the 0.75 chance band",
+      )
+    }
+  }
+  println(
+    "  indistinguishable from noise: " + fake.to_string() +
+    "/" + n.to_string() + " (must be 0)",
+  )
+  learned - fake
+}
+
 fn main {
   let raw = gnn_train_graph()
-  let labels = gnn_train_labels()
-  let shuffled = gnn_train_shuffled_labels()
   let train = gnn_train_mask()
+  let shuffled = gnn_train_shuffled_labels()
   let h = raw.features
   let emb_dim = 8
+  let hidden = 16
   let classes = 2
   let steps = 300
   let lr = 0.05F
   let marks = [0, 5, 50, 300]
-  let (nets, graphs) = gnn_train_backbones(emb_dim, 2024UL)
   let names = ["GCN", "GIN", "MPNN", "PNA", "GAT"]
-  println(
-    "=== end-to-end training demo: 2 communities x " +
-    gnn_train_per_community().to_string() + " nodes, 4 feats ===",
-  )
+  let (nets1, graphs1) = gnn_train_backbones(emb_dim, 2024UL)
+  let (nets2, graphs2) = gnn_train_backbones_2layer(emb_dim, hidden, 2024UL)
+  println("=== end-to-end training demo: 2 communities x " +
+    gnn_train_per_community().to_string() + " nodes, 4 feats ===")
   println("--- fixture ---")
   let mut n_train = 0
   let mut n_hold = 0
@@ -139,12 +210,13 @@ fn main {
   )
   println(
     "  steps=" + steps.to_string() + "  lr=" + Float::to_string(lr) +
-    "  objective = mean cross-entropy over TRAIN nodes, backbone + head",
+    "  embedding=" + emb_dim.to_string() + "  objective = mean" +
+    " cross-entropy over TRAIN nodes, backbone + GraphLinear head",
   )
   println("--- 0. is the graph even necessary? (baselines, no GNN) ---")
   let (raw_sep, smooth_sep) = gnn_train_fixture_separability()
   let (probe_te, probe_tr) = gnn_linear_probe_curve(
-    raw, h, labels, train, classes, steps, lr, 2024UL,
+    raw, h, gnn_train_labels(), train, classes, steps, lr, 2024UL,
   )
   let probe_final = probe_te[probe_te.length() - 1]
   let bar = probe_final + 0.10F
@@ -161,8 +233,7 @@ fn main {
     " the fixture lives in the regime where homophily helps, which is" +
     " why the noise width is 4.4x the signal. It is NOT a target: a" +
     " single-layer backbone ReLUs its embedding before the readout," +
-    " so it is strictly weaker than a 1-parameter sign rule and cannot" +
-    " reach it however long it trains.)",
+    " so it is strictly weaker than a 1-parameter sign rule.)",
   )
   let mut pline = "  [bar] LinearProbe on raw features, held out  "
   for i in 0..<marks.length() {
@@ -177,93 +248,50 @@ fn main {
     Float::to_string(probe_final) +
     "  =>  every net must beat " + Float::to_string(bar) + " held out",
   )
-  println("--- 1. real labels: loss must fall, HELD-OUT acc must beat the bar ---")
-  let mut learned = 0
-  let final_test : Array[Float] = Array::make(5, 0.0F)
-  for i in 0..<5 {
-    let net = nets[i]
-    let g = graphs[i]
-    let head = gnn_train_head(net, classes, 2024UL)
-    let (_, _, losses, tr_accs, te_accs) = gnn_train_curve(
-      net, head, g, h, labels, train, classes, steps, lr,
-    )
-    final_test[i] = te_accs[te_accs.length() - 1]
-    zz_curve_row(names[i], losses, tr_accs, te_accs, marks)
-    if zz_learned(losses, final_test[i], bar) {
-      learned = learned + 1
-    } else {
-      println(
-        "  ^^ " + names[i] + " held out " + Float::to_string(final_test[i]) +
-        " vs bar " + Float::to_string(bar),
-      )
-    }
-  }
-  println("  learned: " + learned.to_string() + "/5")
-  println("--- 2. negative control: shuffled labels must leave held-out acc far below ---")
-  let mut fake = 0
-  for i in 0..<5 {
-    let net = nets[i]
-    let g = graphs[i]
-    let head = gnn_train_head(net, classes, 2024UL)
-    let (_, _, sl, tr, te) = gnn_train_curve(
-      net, head, g, h, shuffled, train, classes, steps, lr,
-    )
-    zz_curve_row(names[i] + "/shuf", sl, tr, te, marks)
-    // Training loss falling here is EXPECTED and is memorisation of 24
-    // points, not a bug. What must not happen is the held-out number
-    // coming anywhere near the real-label run: with scrambled labels
-    // there is nothing in the graph that identifies a node's
-    // community, so anything above chance is either luck on 16 nodes
-    // or a metric that is not measuring what it claims.
-    let shuf_final = te[te.length() - 1]
-    let gap = final_test[i] - shuf_final
-    if shuf_final >= final_test[i] - 0.2F {
-      fake = fake + 1
-      println(
-        "  ^^ " + names[i] + " held-out " + Float::to_string(shuf_final) +
-        " vs real " + Float::to_string(final_test[i]) +
-        " -- gap too small to distinguish a signal from noise",
-      )
-    } else {
-      println(
-        "    " + names[i] + " gap=" + Float::to_string(gap) +
-        "  (real " + Float::to_string(final_test[i]) +
-        " vs shuffled " + Float::to_string(shuf_final) + ")",
-      )
-    }
-    if zz_above_chance(shuf_final) {
-      println(
-        "  !! " + names[i] + " shuffled held-out " +
-        Float::to_string(shuf_final) + " is above the 0.75 chance band",
-      )
-    }
-  }
-  println(
-    "  indistinguishable from noise: " + fake.to_string() +
-    "/5 (must be 0; training loss falling is fine and expected)",
+  let te1 : Array[Float] = Array::make(5, 0.0F)
+  let score1 = zz_run_set(
+    "1-layer", names, nets1, graphs1, h, train, classes, steps, lr,
+    bar, shuffled, marks, te1,
   )
-  println("--- 3. summary ---")
-  let mut beats = 0
+  let te2 : Array[Float] = Array::make(5, 0.0F)
+  let score2 = zz_run_set(
+    "2-layer (hidden " + hidden.to_string() + ")", names, nets2, graphs2, h,
+    train, classes, steps, lr, bar, shuffled, marks, te2,
+  )
+  println("--- summary: does depth move the held-out number? ---")
+  let mut deeper = 0
+  let mut beat = 0
+  let mut line = "  arch   1L held-out   2L held-out   delta"
+  println(line)
   for i in 0..<5 {
-    if final_test[i] > probe_final {
-      beats = beats + 1
+    let d = te2[i] - te1[i]
+    if d > 0.0F {
+      deeper = deeper + 1
     }
+    if te2[i] > probe_final {
+      beat = beat + 1
+    }
+    line = "  " + names[i] + "     " + Float::to_string(te1[i]) +
+      "        " + Float::to_string(te2[i]) + "      " +
+      Float::to_string(d)
+    println(line)
   }
   println(
-    "  probe held-out " + Float::to_string(probe_te[0]) + " -> " +
-    Float::to_string(probe_final) +
-    "  |  bar " + Float::to_string(bar) +
-    "  |  GNNs beating the probe: " + beats.to_string() + "/5",
+    "  2L beat the probe: " + beat.to_string() +
+    "/5   2L better than 1L: " + deeper.to_string() + "/5",
   )
   println("")
-  let ok = learned == 5 && fake == 0 && beats == 5
+  let ok = score1 == 5 && score2 == 5 && beat == 5
   if ok {
-    println("VERDICT: PASS -- 5/5 learn, 0/5 generalise on noise, 5/5 beat the probe")
+    println(
+      "VERDICT: PASS -- both depths learn 5/5, 0/5 generalise on noise," +
+      " 5/5 beat the probe at each depth",
+    )
   } else {
     println(
-      "VERDICT: FAIL (learned=" + learned.to_string() +
-      " rose-on-noise=" + fake.to_string() +
-      " beat-probe=" + beats.to_string() + ")",
+      "VERDICT: FAIL (1L score=" + score1.to_string() +
+      "  2L score=" + score2.to_string() +
+      "  2L-beat-probe=" + beat.to_string() + ")",
     )
   }
 }
