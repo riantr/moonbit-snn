@@ -38,3 +38,7 @@ Thumbs.db
 
 # Local staging dir for in-progress work (Batch D workaround)
 _new_lstm/
+
+# Python bytecode from the tools under verify/ and tools/
+__pycache__/
+*.pyc
