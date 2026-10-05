@@ -8,6 +8,13 @@ the same numerical trajectories (last-bit Float32) as the Julia run.
 
 ## Status (v0.84.0, 2026-10-02)
 
+The version in `moon.mod` is the last **published** version. The source
+tree is ahead of it: the built state is v0.155.0, and everything from
+Batch J onward is described in the batch sections at the end of this
+file. Publishing is a separate step (`moon publish` after a
+`moon.mod` bump), so a published version below the built version is
+expected, not a mismatch.
+
 | Component | Status | Notes |
 |---|---|---|
 | Unit system | 鉁?done | 30+ Float32 unit constants; `units_test.mbt` (8 tests pass) |
@@ -508,6 +515,265 @@ CreateProcessW 32K cmdline limit on `moon test` past v0.61.0; existing
 - v0.83.0 `TrajectoryTransformerAgent`: full pipeline — append
   transition → sliding history → `beam_search_plan` → return best
   first action.
+
+### Batch J (v0.85.0 - v0.88.0): time-series forecasting
+- v0.85.0 `ARIMA` enhancements: Yule-Walker stationarity estimate,
+  stateful `fit`/`forecast` (forecasts can be chained), confidence
+  intervals.
+- v0.86.0 `LSTMForecaster`: full BPTT + SGD training over a sliding
+  window.
+- v0.87.0 `GRUForecaster`: the same interface over a GRU, deliberately
+  parallel to v0.86 so the two forecasters are interchangeable.
+- v0.88.0 `TimeSeriesEnsemble`: inverse-variance weighted average of
+  the ARIMA / LSTM / GRU forecasts.
+
+### Batch K (v0.89.0 - v0.92.0): Neural ODE
+- v0.89.0 `ODEFunc`: the dynamics field `f(t, x)` as a first-class
+  primitive, so an ODE model is anything that supplies one.
+- v0.90.0 `ODESolver`: fixed-step Euler and Heun integrators.
+- v0.91.0 `AdjointSensitivity`: adjoint-method gradients, i.e. O(1) in
+  trajectory length rather than O(T) BPTT.
+- v0.92.0 `NeuralODEAgent`: forward + adjoint backward + SGD, closing
+  the loop on the batch.
+
+### Batch L (v0.93.0 - v0.96.0): meta-learning
+- v0.93.0 `TaskSampler`: MAML task family + meta-batched sampling.
+- v0.94.0 `MAML`: the FOMAML variant.
+- v0.95.0 `FOMAML`: the single-inner-step form split out on its own.
+- v0.96.0 `Reptile`: interpolation-based meta-update (no second
+  derivative, so it composes with any inner optimiser).
+
+### Batch M (v0.97.0 - v0.100.0): causal inference
+- v0.97.0 `LinearGaussianSCM`: DAG + structural equations + sampling.
+- v0.98.0 `DoCalculus`: interventions + Monte Carlo ATE.
+- v0.99.0 `CounterfactualReasoning`: Pearl's three-step procedure.
+- v0.100.0 `CausalEffectEstimator`: ATE + CATE + bootstrap CI.
+
+### Batch N (v0.101.0 - v0.104.0): normalizing flows
+- v0.101.0 `AffineCouplingLayer`: the Real NVP core block.
+- v0.102.0 `RealNVP`: stacked coupling + fixed permutation.
+- v0.103.0 `Glow`: Real NVP + ActNorm + 1x1 convolution permutation.
+- v0.104.0 `NormalizingFlowModel`: the full flow with a prior and an
+  exact density.
+
+### Batch O (v0.105.0 - v0.108.0): variational autoencoders
+- v0.105.0 `ELBO`: the Evidence Lower Bound loss.
+- v0.106.0 `GaussianReparameterization`: the reparameterization trick.
+- v0.107.0 `VAE`: the full model.
+- v0.108.0 `IWAE`: the importance-weighted bound (a tighter ELBO).
+
+### Batch P (v0.109.0 - v0.112.0): Vision Transformer
+- v0.109.0 `PatchEmbedding`: the patch linear projection.
+- v0.110.0 `ViTBlock`: LayerNorm + MHA + residual, then LayerNorm +
+  MLP + residual.
+- v0.111.0 `ViT`: PatchEmbed + CLS token + positional encoding +
+  N blocks + head.
+- v0.112.0 `ViTTrainer`: cross-entropy + SGD on the classification head.
+
+### Batch Q (v0.113.0 - v0.116.0): diffusion models
+- v0.113.0 `DiffusionSchedule`: linear and cosine beta schedules,
+  `q_sample`, `q_sample_pair`.
+- v0.114.0 `ScoreNetwork`: MLP denoiser + sinusoidal time embedding.
+- v0.115.0 `DDPM`: schedule + score net + reverse sampling + loss.
+- v0.116.0 `DDPMTrainer`: forward + MSE loss logging.
+
+### Batch R (v0.117.0 - v0.120.0): energy-based models
+- v0.117.0 `EnergyFunction`: MLP scalar energy.
+- v0.118.0 `LangevinSampler`: finite-difference gradient + Langevin
+  step + chain.
+- v0.119.0 `EBM`: energy + score + Langevin sampling.
+- v0.120.0 `EBMTrainer`: denoising score matching.
+
+### Batch S (v0.121.0 - v0.124.0): DCGAN
+- v0.121.0 `DCGANGenerator`: latent -> upconv stack -> tanh.
+- v0.122.0 `DCGANDiscriminator`: strided conv + LeakyReLU + spectral
+  norm helper.
+- v0.123.0 `DCGAN`: the composite, with BCE D/G losses and the
+  adversarial step.
+- v0.124.0 `DCGANTrainer`: mini-batch adversarial round + eval
+  metrics.
+
+### Batch T (v0.125.0 - v0.128.0): WGAN-GP
+- v0.125.0 Fix: the DCGAN generator emitted 16x16; corrected to the
+  canonical 4 -> 8 -> 16 -> 32 upconv progression.
+- v0.126.0 `WCritic`: Wasserstein critic loss + Lipschitz weight
+  clipping.
+- v0.127.0 `GradientPenalty`: WGAN-GP interpolation + finite-difference
+  input gradient + the `||grad|| - 1` squared term.
+- v0.128.0 `WGANTrainer`: n_critic loop + Wasserstein/GP losses + eval.
+
+### Batch U (v0.129.0 - v0.132.0): metric learning
+- v0.129.0 `EmbeddingNet`: MLP embedding + L2 normalize + pairwise
+  and cosine distances.
+- v0.130.0 `ContrastiveLoss`: contrastive + triplet + hard-negative +
+  N-pair.
+- v0.131.0 `SiameseNet`: shared-weight twin/triplet embedding.
+- v0.132.0 `SiameseTrainer`: triplet batch builder + hard-negative step
+  + Recall@K.
+
+### Batch V (v0.133.0 - v0.136.0): capsule networks
+- v0.133.0 Capsule primitives: squash activation, norm, dot, margin
+  loss.
+- v0.134.0 `PrimaryCapsule`: shared-conv primary capsule bank.
+- v0.135.0 `DynamicRouting`: iterative agreement-based routing with
+  coefficients.
+- v0.136.0 `CapsuleNetwork`: ReLUConv + PrimaryCapsule + routing +
+  margin loss.
+
+### Batch W (v0.137.0 - v0.140.0): graph neural networks, forward pass
+- v0.137.0 `Graph`: COO edge list + scatter sum/mean/max + GCN
+  adjacency normalisation.
+- v0.138.0 `MessagePassing`: `GCNLayer` + `MPnnLayer` (the Gilmer
+  formulation).
+- v0.139.0 `GraphAttention`: GAT single head + the multi-head stack
+  with ELU.
+- v0.140.0 `GraphClassifier`: mean/sum/max readout + MLP head +
+  graph-level cross-entropy and accuracy.
+
+### Batch X (v0.141.0 - v0.144.0): graph architectures
+- v0.141.0 `GIN`: unweighted sum aggregation + learnable-eps self term
+  + 2-layer MLP.
+- v0.142.0 `PNA`: mean/max/min/std + degree scaler. Also fixed a
+  negative-seed bug in `scatter_max` and added `scatter_min`.
+- v0.143.0 `Set2Set`: LSTM-query attention readout, plus
+  `Set2SetClassifier` with GIN/PNA backbone dispatch.
+- v0.144.0 `EdgeGNN` (`RelationalConv` with edge features) + `H2GCN`
+  separated ego/neighbour/high-order spaces + homophily diagnostics.
+
+### Batch Y (v0.145.0 - v0.148.0): graph backward pass
+- v0.145.0 `graph_backward.mbt`: scatter sum/mean backward (edge-list
+  gradient accumulation) + max/min argmax routing + `GraphLinearGrad`
+  + `graph_linear_backward` + SGD step.
+- v0.146.0 GIN + MPNN backward: `GINLayerGrad` / `MPnnGrad` bundles and
+  edge-list gradient routing.
+- v0.147.0 GCN backward: `gcn_layer_support` shared with the forward,
+  backward through the normalised edge weights,
+  `graph_cross_entropy_grad`.
+- v0.148.0 PNA backward including the standard-deviation reducer
+  derivative, `TrainableGraphNet` dispatch, and
+  `graph_net_train_step` (node-level and graph-level CE).
+
+### Batch Z (v0.149.0): gradient-check harness
+Central-difference checks for dL/dh and dL/dW, plus a negative control,
+and they immediately found four real defects that `moon check` and code
+review had both passed: the four backward stack traversals ran forwards
+instead of backwards; `g.feat_dim` was used where `layer.in_dim` was
+meant (in the GIN, MPNN and PNA forward AND backward); the PNA reducer
+gradients were written one node at a time into a `[n_nodes x dim]`
+buffer, keeping only the last node; and `GraphLinearGrad::zero`
+aliased every row of `d_w` onto row 0.
+
+### Batch AA (v0.150.0 - v0.151.0): gate green
+- v0.150.0 Replaced the cross-entropy objective with a bounded
+  quadratic one (`0.5 * sum(out^2)`, whose gradient is exactly `out`),
+  and absolute tolerance with a relative one. This overturned the
+  previous round's conclusion that GIN was the worst architecture: GIN's
+  *relative* error was in fact the smallest of all six configs.
+- v0.151.0 Added `gradcheck_over_fraction`, the kink-versus-bug
+  discriminator (a ReLU kink perturbs 1-2 components, a wrong routing
+  perturbs nearly all of them), and fixed the last two defects: the
+  MPNN ReLU mask was taken on the `self_pre` branch alone instead of on
+  the sum, and a leftover `let dim = g.feat_dim` in
+  `pna_layer_backward`.
+
+### Batch AB (v0.152.0 - v0.153.0): parameter gradients and the GAT head
+- v0.152.0 `dL/dW` wired into the gate via
+  `trainable_net_param_grad_from_dout` and `gradcheck_param_relative`,
+  with a `corrupt~` factor so the negative control is real (a corrupted
+  gradient produces max_diff 2490 against a tolerance of 74.8). This
+  matters because dL/dW accumulates over NODES inside the linear
+  backward while dL/dh accumulates over EDGES outside it, so one can
+  pass while the other fails.
+- v0.153.0 `gat_backward.mbt`: the GAT head backward. GAT is the only
+  reducer here whose score reads BOTH endpoints of an edge, so the
+  score gradient fans out to two ends and the family needed two new
+  scatter directions (`scatter_add_by_src` / `scatter_add_by_dst`).
+
+### Batch AC (v0.154.0 - v0.155.0): multi-head GAT and end-to-end training
+- v0.154.0 Multi-head `GraphAttention` backward: the concatenated
+  upstream gradient has to be un-interleaved per head, all heads of a
+  layer share their input so their input gradients sum, and the ELU sits
+  BETWEEN a head and the next layer, so its derivative multiplies at the
+  head's own pre-activation. `gat_layer_backward`'s `elu` flag had been a
+  placeholder, i.e. a hidden head asking for the mask silently received
+  an unmasked gradient. Three latent bugs in the never-called stack
+  forward were fixed at the same time: `GraphAttention::new` gave layer
+  `l > 0` an input width of `dims[l]` when concatenation requires
+  `num_heads * dims[l]`; a single-layer stack ran layer 0 twice; and the
+  head output was indexed with the layer's `in_dim` as its row stride
+  instead of its own `out_dim`. The gate separated them cleanly: the
+  configuration where `in_dim == out_dim` passed and the one where they
+  differ was off by 118%.
+- v0.155.0 `gnn_train_demo.mbt`: an end-to-end transductive
+  two-community fixture, a backbone + `GraphLinear` head composite
+  training step, training curves, and the baselines needed to make the
+  result mean something. It found a defect that had shipped for six
+  versions: `graph_cross_entropy` had an inverted sign on its
+  `logf(sum_exp)` term, so it returned a NEGATIVE loss for every
+  confident and correct prediction. Its gradient was correct throughout,
+  so training worked and accuracy rose; only the reported loss moved the
+  wrong way. It survived because the gradient gate deliberately checks a
+  bounded quadratic objective instead of cross-entropy, and a gate that
+  exercises one objective cannot see a bug in another. `graph_cross_entropy`
+  is fixed and `gradcheck_ce_consistency` now pins the loss against its
+  own gradient.
+
+## Verification harness
+
+Gradients being correct and the resulting model being useful are
+different properties, and this package now checks both.
+
+Two commands, both runnable from the repository root:
+
+```sh
+& ".\verify\verify_gnn_grads.ps1"      # gradient gate
+& ".\verify\run_gnn_train_demo.ps1"     # end-to-end training demo
+```
+
+Both flip `"is-main": true` into `mbt/moon.pkg` for the duration of the
+run and restore it in a `finally` block. This is necessary rather than
+stylistic: a freshly created sub-package cannot resolve any symbol from
+the parent module in moon 0.1.20260920 (not even `Graph`), and
+`moon test` cannot link at all, because the package has 511 `.mbt` files
+and Moon inlines every source path into the Windows command line, which
+caps at 32K (CreateProcessW). The library-side functions
+(`gnn_gradcheck.mbt`, `gnn_paramcheck.mbt`, `gnn_train_demo.mbt`) are the
+durable artifact; the runners under `verify/` are thin drivers.
+
+The gradient gate uses three criteria, and each exists for a reason:
+
+- **Relative tolerance.** `max_diff <= tol * max|analytic|`. Absolute
+  tolerances cannot rank architectures whose gradients span three orders
+  of magnitude on the same graph.
+- **`gradcheck_over_fraction`**, the count of components deviating by
+  more than 1% of the gradient scale. `max_diff` alone cannot separate a
+  ReLU kink from a wrong routing, and a scale sweep cannot either; only
+  the count can.
+- **Negative controls.** Every measured quantity is also checked against
+  a deliberately corrupted version, because a checker that reports PASS
+  for every input is worthless.
+
+Current state: 8 dL/dh configurations, 8 dL/dW configurations, 4
+multi-head GAT stack rows, a deterministic ELU-mask row, and the
+cross-entropy consistency section. `VERDICT: PASS`, with
+`moon check --target native` at 0 errors.
+
+Across Batches Z, AA and AC the harness found 10 real defects that
+`moon check` and code review had both passed, plus the 3 latent
+multi-head stack bugs in Batch AC. Two of the checks exist only because
+of specific failures rather than by design:
+
+- `gat_elu_coverage` reports how many hidden-layer pre-activations are at
+  or below zero. ELU's derivative is exactly 1 on its whole positive
+  half-line, so if every pre-activation is positive then deleting the
+  mask outright produces bit-identical numbers and the rows pass without
+  ever testing ELU. The gate said so, and a separate deterministic row
+  (whose load-bearing pre-activations, -1 and -0.5, are known by
+  arithmetic) now carries that claim.
+- The saturated CE probe is excluded from the finite-difference check
+  and kept for the value check, because at the loss minimum the
+  max-subtraction makes the value insensitive to the largest logit below
+  Float32 resolution, so a central difference there measures nothing.
 
 ## Reference source
 
