@@ -95,3 +95,44 @@ before it rewrites anything.
 Wave 1 covers neurons, STDP/STP, spiking connections, analysis, the DL
 primitives, two optimizers, one stimulus, units and time — chosen for spread,
 not for size, so the rewriter's failure modes show up in every category.
+
+## Does the test sub-package bloat what `moon publish` ships?
+
+`moon package` (not `moon publish` — it writes the archive locally and does not
+touch the network) answers this directly:
+
+```
+moon package --list          # the manifest, on stderr, after ~4 MB of warnings
+moon package                 # -> _build/publish/riantr-snn_mbt-0.155.0.zip
+```
+
+Measured on the wave-1 archive: **760 entries, 1.25 MB compressed, 3.78 MB
+uncompressed**, of which `tests/wave1` is 28 entries / 145.6 KB.
+
+**`is-test: true` does not exclude a package from the archive.** The sub-package
+is shipped. That turns out to be the right outcome rather than a problem:
+
+- The 27 test files were already in the archive (as root-package files). Wave 1
+  *relocated* them. The net growth across the whole set is **+6,340 bytes
+  (+4.6%)** on the test payload, which is just the `@snn_mbt.` prefixes —
+  +0.5% of the archive.
+- Shipping them is a feature: extracting the published zip and running
+  `moon test ./tests/wave1` gives **216/216 passed, exit 0** against the
+  published artifact, not against the working tree.
+
+So a consumer of `riantr/snn_mbt` can run part of the suite themselves. Nothing
+to exclude, and nothing to fix.
+
+Three unrelated hygiene items the same listing exposed, all pre-existing and
+all cosmetic:
+
+| file | KB | note |
+|---|---|---|
+| `quaresima_2024_updown.jl` | 0.8 | a Julia reference file tracked inside the MoonBit package |
+| `testdata/moon_mod_v0.13.2_backup.tmp` | 1.0 | a stale backup |
+| `examples/**/pkg.generated.mbti` | 12.6 | 77 generated interface files |
+
+Reading the list: PowerShell's `1>` redirect writes **UTF-16LE**, so pipe the
+output through Python (decode `utf-16`) rather than reading the file as UTF-8 —
+otherwise every line looks like mojibake and the parse finds nothing.
+
