@@ -201,6 +201,85 @@ test "flatten/unflatten round-trips and reports the right count" {
 }
 
 ///|
+/// The ten layers, in the same order `dragonnet_flatten` uses. Needed because
+/// `DragonNet` is `pub(all)`, so the test can read each layer's own arrays and
+/// check them against its slice of the flat vector.
+fn dn_layer_params(
+  net : @snn_mbt.DragonNet,
+) -> Array[@snn_mbt.LinearParam] {
+  [
+    net.enc1,
+    net.enc2,
+    net.enc3,
+    net.y0_h1,
+    net.y0_h2,
+    net.y0_out,
+    net.y1_h1,
+    net.y1_h2,
+    net.y1_out,
+    net.t_head,
+  ]
+}
+
+///|
+/// `dragonnet_layer_offset` is what lets a caller address one layer without
+/// re-deriving the layout, so it has to be right for all ten layers, not just
+/// the first. An offset that is off by one does not crash -- it silently
+/// hands the caller a neighbour's parameters, which is how a "blind one head"
+/// control ended up blinding `t_head` instead.
+test "layer offsets tile the flat vector exactly, bias then weight" {
+  let (net, _x, _y, _t) = dn_fixture(5, 4, 19UL)
+  let flat = @snn_mbt.dragonnet_flatten(net)
+  let cnt = @snn_mbt.dragonnet_param_count(net)
+  let layers = dn_layer_params(net)
+  if @snn_mbt.dragonnet_layer_offset(net, 0) != 0 {
+    fail("layer 0 must start at 0")
+  }
+  // Layers must tile the vector with no gap and no overlap.
+  let mut cursor = 0
+  for layer in 0..<10 {
+    let lo = @snn_mbt.dragonnet_layer_offset(net, layer)
+    if lo != cursor {
+      fail(
+        "layer \{layer}: offset \{lo} but the previous layer ended at \{cursor}",
+      )
+    }
+    let hi = @snn_mbt.dragonnet_layer_offset(net, layer + 1)
+    let p = layers[layer]
+    if hi - lo != p.bias.length() + p.weight.length() {
+      fail(
+        "layer \{layer}: block is \{hi - lo} wide, layer has \{p.bias.length()} + \{p.weight.length()}",
+      )
+    }
+    // and the contents must be bias first, then weight
+    for i in 0..<p.bias.length() {
+      if flat[lo + i] != p.bias[i] {
+        let got = flat[lo + i]
+        let want = p.bias[i]
+        fail("layer \{layer} bias \{i}: flat \{got} != \{want}")
+      }
+    }
+    for i in 0..<p.weight.length() {
+      let at = lo + p.bias.length() + i
+      if flat[at] != p.weight[i] {
+        let got = flat[at]
+        let want = p.weight[i]
+        fail("layer \{layer} weight \{i}: flat \{got} != \{want}")
+      }
+    }
+    cursor = hi
+  }
+  // epsilon is the LAST element, not one past the end
+  let eps = @snn_mbt.dragonnet_layer_offset(net, 10)
+  if eps != cnt - 1 {
+    fail("epsilon offset is \{eps}, expected \{cnt - 1} (count \{cnt})")
+  }
+  if flat[eps] != net.epsilon {
+    fail("flat[epsilon offset] is not epsilon")
+  }
+}
+
+///|
 test "elu forward and backward agree with finite differences" {
   let xs : Array[Float] = [-2.0F, -0.5F, 0.0F, 0.25F, 1.5F, 3.0F]
   let d : Array[Float] = [1.0F, -2.0F, 0.5F, 3.0F, -1.0F, 0.75F]

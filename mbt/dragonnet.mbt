@@ -519,8 +519,13 @@ fn dn_layers(net : DragonNet) -> Array[LinearParam] {
 ///|
 /// Start index of layer `layer`'s block inside the flat parameter vector
 /// (bias first, then weight). Layer 10 is epsilon, which starts at
-/// `dragonnet_param_count`. Exposed so a caller can address one layer's
-/// coordinates without replicating the layout.
+/// `dragonnet_param_count - 1`.
+///
+/// Exposed so a caller can address one layer's coordinates without
+/// replicating the layout. Note the doc's earlier claim that epsilon "starts
+/// at `dragonnet_param_count`" was off by one -- it is the LAST element, not
+/// one past the end. Off-by-one offsets here are silent: they point at a
+/// neighbouring layer's parameters, and the model still trains.
 pub fn dragonnet_layer_offset(net : DragonNet, layer : Int) -> Int {
   let layers = dn_layers(net)
   let mut k = 0
