@@ -1,0 +1,14 @@
+// moon.pkg for the wave-2 test sub-package: the DragonNet gradient gate.
+//
+// This is a different domain from wave 1 (causal inference, not neuroscience
+// or DL primitives), so it gets its own package. Same mechanism: a per-
+// directory `moon.pkg`, the parent imported by module name, symbols reached
+// as `@snn_mbt.X`.
+
+import {
+  "riantr/snn_mbt",
+}
+
+options(
+  "is-test": true,
+)

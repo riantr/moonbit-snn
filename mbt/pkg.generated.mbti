@@ -393,6 +393,30 @@ pub fn dqn_update_step(LinearQNet, LinearQNet, Array[Int], Array[Int], Array[Flo
 
 pub fn dqn_update_step_n_step(LinearQNet, LinearQNet, Array[Int], Array[Int], Array[Float], Array[Int], Array[Int], Array[Bool], Float, Float) -> Float
 
+pub fn dragonnet_adam_step(DragonNet, DragonNetGrad, DragonNetAdam, Float, Float, Float, Float) -> (DragonNet, DragonNetAdam)
+
+pub fn dragonnet_backward(DragonNet, Array[Float], DragonNetOut, Array[Float], Array[Float], Array[Float], Float, Int, Float) -> DragonNetGrad
+
+pub fn dragonnet_concat(DragonNetOut, Int, Int) -> Array[Float]
+
+pub fn dragonnet_flatten(DragonNet) -> Array[Float]
+
+pub fn dragonnet_forward(DragonNet, Array[Float], Int) -> DragonNetOut
+
+pub fn dragonnet_grad_flatten(DragonNetGrad) -> Array[Float]
+
+pub fn dragonnet_l2_penalty(DragonNet, Float) -> Float
+
+pub fn dragonnet_layer_offset(DragonNet, Int) -> Int
+
+pub fn dragonnet_loss(DragonNetOut, Array[Float], Array[Float], Int, Float) -> Float
+
+pub fn dragonnet_loss_grads(DragonNetOut, Array[Float], Array[Float], Int, Float) -> (Array[Float], Array[Float], Array[Float], Float)
+
+pub fn dragonnet_param_count(DragonNet) -> Int
+
+pub fn dragonnet_unflatten(DragonNet, Array[Float]) -> DragonNet
+
 pub fn dropout_backward(Array[Float], Array[Float], Dropout) -> Array[Float]
 
 pub fn dropout_forward(Array[Float], Dropout, Xoshiro) -> (Array[Float], Array[Float])
@@ -486,6 +510,10 @@ pub fn elbo_recon_log_likelihood(Array[Float], Array[Float]) -> Float
 pub fn elem_add(Array[Float], Array[Float]) -> Array[Float]
 
 pub fn elem_mul(Array[Float], Array[Float]) -> Array[Float]
+
+pub fn elu_backward(Array[Float], Array[Float], alpha? : Float) -> Array[Float]
+
+pub fn elu_forward(Array[Float], alpha? : Float) -> Array[Float]
 
 pub fn embedding_net_forward(EmbeddingNet, Array[Float]) -> Array[Float]
 
@@ -742,6 +770,8 @@ pub fn glow_total_log_det(Glow, Array[Float]) -> Float
 pub fn gnn_linear_probe_curve(Graph, Array[Float], Array[Int], Array[Bool], Int, Int, Float, UInt64) -> (Array[Float], Array[Float])
 
 pub fn gnn_train_backbones(Int, UInt64) -> (Array[TrainableGraphNet], Array[Graph])
+
+pub fn gnn_train_backbones_2layer(Int, Int, UInt64) -> (Array[TrainableGraphNet], Array[Graph])
 
 pub fn gnn_train_curve(TrainableGraphNet, GraphLinear, Graph, Array[Float], Array[Int], Array[Bool], Int, Int, Float) -> (TrainableGraphNet, GraphLinear, Array[Float], Array[Float], Array[Float])
 
@@ -3290,6 +3320,57 @@ pub(all) struct DoubleExpSynapseVars {
   hi : Array[Float]
 }
 pub fn DoubleExpSynapseVars::new(Int) -> Self
+
+pub(all) struct DragonNet {
+  enc1 : LinearParam
+  enc2 : LinearParam
+  enc3 : LinearParam
+  y0_h1 : LinearParam
+  y0_h2 : LinearParam
+  y0_out : LinearParam
+  y1_h1 : LinearParam
+  y1_h2 : LinearParam
+  y1_out : LinearParam
+  t_head : LinearParam
+  epsilon : Float
+  t_sigmoid : Bool
+}
+pub fn DragonNet::new(Int, width? : Int, half? : Int, seed? : UInt64, std? : Float, t_sigmoid? : Bool) -> Self
+
+pub(all) struct DragonNetAdam {
+  layers : Array[AdamState]
+  epsilon : AdamState
+}
+pub fn DragonNetAdam::new(DragonNet) -> Self
+
+pub(all) struct DragonNetGrad {
+  enc1 : (Array[Float], Array[Float])
+  enc2 : (Array[Float], Array[Float])
+  enc3 : (Array[Float], Array[Float])
+  y0_h1 : (Array[Float], Array[Float])
+  y0_h2 : (Array[Float], Array[Float])
+  y0_out : (Array[Float], Array[Float])
+  y1_h1 : (Array[Float], Array[Float])
+  y1_h2 : (Array[Float], Array[Float])
+  y1_out : (Array[Float], Array[Float])
+  t_head : (Array[Float], Array[Float])
+  epsilon : Float
+}
+
+pub(all) struct DragonNetOut {
+  y0 : Array[Float]
+  y1 : Array[Float]
+  t_hat : Array[Float]
+  epsilon : Float
+  phi : Array[Float]
+  z1 : Array[Float]
+  z2 : Array[Float]
+  z3 : Array[Float]
+  a0 : Array[Float]
+  b0 : Array[Float]
+  c1 : Array[Float]
+  d1 : Array[Float]
+}
 
 pub(all) struct Dropout {
   p : Float
@@ -6754,6 +6835,7 @@ pub fn Xoshiro::from_state(UInt64, UInt64, UInt64, UInt64) -> Self
 pub fn Xoshiro::new(UInt64) -> Self
 
 // Type aliases
+pub type DnLayerGrad = (Array[Float], Array[Float])
 
 // Traits
 pub(open) trait Diffable : Add + Sub {
