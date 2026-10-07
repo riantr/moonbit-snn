@@ -271,6 +271,25 @@ pub(all) struct AspGrad {
 /// variance clamp: if `second - mu^2` lands inside the dead zone for some
 /// channel, `d_second` is zero there while the difference still is not.
 ///
+/// THREE NUMBERS, NOT TWO. A partial hand-derivation of d(loss)/d(x[50]) at
+/// FIXED alpha (i.e. ignoring that alpha is itself a function of x through
+/// the context) gives
+///
+///     dvar/dx   = alpha * (x - 2*mu) = 0.2 * (0.58 - 1.16) = -0.116
+///     dsigma/dx = -0.116 / (2*0.287)                    = -0.202
+///     dL/dx     = 0.79*0.2 + 0.98*(-0.202)              = -0.040
+///
+/// so: hand -0.040, code -0.171, central difference +0.279. The code's extra
+/// -0.131 over the hand derivation is supposed to come from the context path
+/// through alpha -- but that path was measured at ~1e-4, not 1e-1. Both
+/// cannot be true.
+///
+/// THAT CONTRADICTION is the finding, and it is about the reasoning rather
+/// than the numbers: the chain written in `asp_backward` is not the chain
+/// `asp_forward` computes. Until that is reconciled by re-deriving both sides
+/// from the forward's own expressions, any further edit is a guess -- which is
+/// what the previous three rounds of hypothesis testing were.
+///
 /// THE MEASUREMENT IS SOUND; THE SIGN IS WRONG. At batch 1 / channel 2 /
 /// frame 1, the full sweep's worst coordinate:
 ///
