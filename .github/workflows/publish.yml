@@ -10,7 +10,10 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    # Pinned, not `ubuntu-latest`. The floating label migrates to Ubuntu 26 on
+    # 2026-10-19, and a release toolchain should not change under you between
+    # two tags of the same package.
+    runs-on: ubuntu-22.04
     defaults:
       run:
         working-directory: mbt
