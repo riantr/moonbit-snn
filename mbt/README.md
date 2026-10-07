@@ -786,6 +786,132 @@ list does not have a hole; none of them has been published.
   control failed for a reason unrelated to the leak it was meant to
   detect.
 
+### Batch AE (v0.160.0 - v0.163.0, not yet published): TARNet
+
+`moon.mod` still carries v0.155.0. These four are in the tree and recorded
+here so the batch list has no hole; none has been published.
+
+Note on the name: TARNet here is **not** the treatment-effect regressor of
+Shalit et al. (2017) that this package implements elsewhere. It is Terraf &
+Iraqi, ICME 2026, arXiv:2605.07735 -- a temporal-aware multi-scale architecture
+for closed-set speaker identification.
+
+- v0.160.0 **TARNet primitives and forward.** `tarnet_conv1d.mbt` (dilated
+  depthwise convolution, PReLU, pointwise 1x1 in `[n, C, T]` layout),
+  `tarnet_se.mbt` (the post-MFA squeeze-excitation and the paper's
+  multi-scale channel-time gate, CTSE), `tarnet_asp.mbt` (attentional
+  statistics pooling), and `tarnet.mbt` (the residual block, the three parallel
+  dilation stacks, and the classifier head). The gLN reuses this package's
+  `LayerNorm(c, 1, T)` and the bottleneck 1x1 reuses `linear_forward` with the
+  frame axis as the batch axis.
+
+  Two composition faults were found here that type-check, train, and report a
+  plausible number:
+  1. The 1x1 convolutions inside a block read the wrong permutation of the
+     `[n, C, T]` layout. Per-coordinate finite differences flagged 75 of 120
+     input coordinates and the directional derivative was off by 108%.
+     `tn_conv1x1_*` now exists specifically so the layout-correct pair cannot
+     be confused with the `linear_*` pair.
+  2. `layer_norm`'s `d_gamma` accumulated `dy * x_centered` and dropped the
+     `inv_std`. Isolated reproduction: 51 of 64 coordinates wrong. It is
+     invisible on any fixture whose variance is near 1, since `inv_std ~ 1`
+     there -- see the `batch_norm2d` entry below for the same mistake made a
+     second time.
+
+- v0.161.0 **Block and stack backward**, plus the multi-fixture sweep that the
+  rest of the package now uses.
+
+  The last red gate was block coordinate 145, which disagreed by 11.6% on one
+  fixture. It is a float32 artifact, and the argument is worth recording
+  because it is the basis of the instrument used everywhere after it: a wiring
+  fault is VALUE-INDEPENDENT, because the flat index -> parameter mapping does
+  not change when the RNG produces different numbers. Sweeping eight fixtures
+  gave 718 coordinate checks and exactly one failure -- seed 71, index 145 --
+  while a mutation that really is a wiring fault missed at index 50 on six of
+  eight. The tolerance was not widened; the gate gained coverage and a
+  discriminator instead (at most two coordinate-fixture artifacts, and no index
+  failing on three or more fixtures).
+
+  The supporting measurement: with `f ~ 28.23`, one float32 ulp is 1.9e-6 and
+  the measured slope is quantised in steps of `ulp/h = 4.77e-4`. At the base
+  point the two one-sided slopes differ by exactly 8 ulps, and `d_pos` stays
+  frozen bit-for-bit across steps while `d_neg` drifts -- curvature moves both
+  toward one limit, so that is a kink, not curvature. Below `h = 1e-3` the
+  signal is 1-10 ulps and carries no information at all.
+
+- v0.162.0 **Model-level backward**, `tarnet_backward.mbt`. The flat gradient
+  is in `tarnet_flatten`'s order, term for term, so a layout off-by-one cannot
+  hide. The gate sweeps the whole 4417-parameter vector over four fixtures.
+
+  Two more real bugs, and the first is a good illustration of how a broken
+  backward and a broken loss look identical:
+  1. Cross-entropy summed probabilities instead of their log (`loss -= p`
+     where it had to be `loss -= logf(p)`). `d_logits` was CORRECT throughout,
+     because it is computed from `p`, while the loss was wrong -- so 102 of 512
+     coordinates failed and the whole thing read as a broken backward pass. What
+     settled it was differentiating the WRONG objective by hand: the finite
+     difference gave 0.08617, and `-p_y(p_y - onehot)/n` is 0.0862. A finite
+     difference that lands exactly on a *different* analytic formula is
+     measuring a different function, not disagreeing with the gradient.
+  2. `batch_norm2d_backward`'s `d_gamma` was missing the `inv_std` factor --
+     the same mistake as v0.160.0's `layer_norm` one, in a second function. On
+     TARNet's `bn_seg` the small-variance channels made it a ~250x
+     under-estimate. It survived because every existing gate checked `d_gamma`'s
+     SHAPE and never its value, while the `d_input` gate used a single channel.
+     `tests/wave1/batch_norm2d_test.mbt` now has a numerical gate on a fixture
+     whose channels are scaled 1.0 / 0.05 / 20.0, plus an assertion that the
+     channel spread really exceeds 20x -- otherwise the gate would be green
+     because `inv_std` is 1 and there is nothing to see.
+
+  `se_backward` (the plain squeeze-excitation, not the CTSE) is new here. Its
+  first gate was vacuous: deleting the pooling path ENTIRELY left it green at
+  90/90, because `SeParam::new` scales `w1`/`w2` by 0.05 and the squeeze is
+  then ~0.25% of the direct path. Amplifying the fixture to ~13% made it catch
+  both the deletion (35 of 90) and a missing `g*(1-g)` (58 of 58).
+
+- v0.163.0 **Training, and the log-Mel front end.** `tarnet_train.mbt` reuses
+  the existing `adam_update_arrays` by passing the flat parameter vector as one
+  weight array, so the optimizer is the same already-gated code the rest of the
+  package uses. 60 steps take the loss from 0.6388 to 0.00061 with zero error
+  on a separable batch.
+
+  Two gate lessons from the training test, both recorded next to the gate:
+  1. "Every parameter moved" was the wrong assertion. It demanded 90% of the
+     vector and failed at 3742/4359 -- which was correct information, not a bug:
+     617 parameters have exactly zero gradient (dead PReLU slopes, biases on
+     dead channels) and must legitimately stay put. The assertion is now the
+     property: every parameter with a non-zero gradient must move, and at least
+     one must be dead or the fixture has changed.
+  2. **A training gate can never stand in for the numerical gates.** Adam's
+     update is `lr * m_hat / (sqrt(v_hat) + eps)`, so rescaling the gradient by
+     any constant `k` rescales `m_hat` by `k` and `sqrt(v_hat)` by `|k|` and
+     they cancel. Measured: halving the gradient moved the 60-step loss from
+     0.0006082716 to 0.0006083312 with every gate green. What the training gate
+     does catch is the wiring the numerical gates cannot -- a stale gradient, an
+     update to a discarded copy, a reported post-update loss.
+
+  `tarnet_logmel.mbt` is the front end, forward-only because the reference
+  computes it under `torch.no_grad()`. New primitives: radix-2 FFT, HTK mel
+  scale and filterbank, Hamming window, reflect padding, STFT. The reference's
+  unstated torchaudio defaults are written out rather than left implicit
+  (`center=True` with reflect padding, `power=2.0`, `mel_scale='htk'`,
+  `norm=None`, and a SYMMETRIC window whose cosine runs over N-1). The `1e-6`
+  goes in BEFORE the log: it floors the power spectrum, so a silent frame logs
+  finitely, rather than clamping the log and biasing loud frames. Resampling is
+  a precondition, not a step -- the reference uses torchaudio's Kaiser-windowed
+  sinc kernel, which is not reproduced here, so the input must already be mono
+  at 16 kHz.
+
+  Two assertions in the filterbank gate were wrong and measurement caught both.
+  "Every band peaks at 1.0" is impossible: with `f_min = 20 Hz` the FFT bins sit
+  every 31.25 Hz while band 0's centre is 42.2 Hz, so the triangle falls between
+  bins. "Peak alignment improves with frequency" is also false -- the measured
+  peaks oscillate across the whole bank (band 1 = 0.443, band 2 = 0.392) and
+  never exceed 0.51, because at low frequency a mel band is narrower than a
+  single bin. Neither is a defect; both follow from the reference's parameters.
+  The gate now asserts only what holds for every correct bank, and leaves "does
+  this frequency land in the right band" to a pure-tone test.
+
 ## Verification harness
 
 Gradients being correct and the resulting model being useful are
