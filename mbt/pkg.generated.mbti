@@ -7,6 +7,10 @@ import {
 }
 
 // Values
+pub const ASP_STD_FLOOR : Float = 1.0e-4
+
+pub const ASP_VAR_FLOOR : Float = 1.0e-4
+
 pub const M : Float = 1.0e6
 
 pub fn abs_f32(Float) -> Float
@@ -124,6 +128,10 @@ pub fn arma_loss_value(Array[Float], Float, Array[Float], Array[Float]) -> Float
 pub fn arma_residual_loss(Array[Float], ArmaParam) -> Float
 
 pub fn arma_residuals(Array[Float], ArmaParam) -> Array[Float]
+
+pub fn asp_backward(Array[Float], Int, AspParam, AspCache) -> AspGrad
+
+pub fn asp_forward(Array[Float], Int, AspParam) -> (Array[Float], AspCache)
 
 pub fn ate_from_observational(ObservationalSample) -> Float
 
@@ -251,6 +259,12 @@ pub fn[A] constant(A) -> Loc[A]
 
 pub fn contrastive_pair_loss(Array[Float], Array[Float], Float, Float) -> Float
 
+pub fn conv1d_depthwise_backward(Array[Float], Array[Float], Int, Conv1DDepthwise) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn conv1d_depthwise_forward(Array[Float], Int, Conv1DDepthwise) -> Array[Float]
+
+pub fn conv1d_pointwise_forward(Array[Float], Int, Int, Int, Int, Array[Float], Array[Float]) -> Array[Float]
+
 pub fn conv2d_backward(Array[Float], Array[Float], Int, Int, Int, Int, Conv2dParam) -> (Array[Float], Array[Float], Array[Float])
 
 pub fn conv2d_forward(Array[Float], Int, Int, Int, Int, Conv2dParam) -> Array[Float]
@@ -282,6 +296,10 @@ pub fn critical_window(Array[Double], Double, Int, Array[Double]) -> Int
 pub fn cross_entropy_loss(Tensor, Tensor) -> CrossEntropyLoss
 
 pub fn cross_entropy_one(Array[Float], Array[Float]) -> Float
+
+pub fn ctse_backward(Array[Float], Int, CtseParam, CtseCache) -> CtseGrad
+
+pub fn ctse_forward(Array[Float], Int, CtseParam) -> (Array[Float], CtseCache)
 
 pub fn current_synapse_current(CurrentSynapseVars, Array[Float]) -> Unit
 
@@ -1531,6 +1549,10 @@ pub fn ppo_update_step(LinearSoftmaxPolicy, PpoBatch, Float, Float) -> Unit
 
 pub fn prediction(Array[Float]) -> Int
 
+pub fn prelu_backward(Array[Float], Array[Float], Float) -> (Array[Float], Float)
+
+pub fn prelu_forward(Array[Float], Float) -> Array[Float]
+
 pub fn primary_capsule_forward(PrimaryCapsule, Array[Float]) -> Array[Float]
 
 pub fn primary_capsule_num_params(PrimaryCapsule) -> Int
@@ -1778,6 +1800,8 @@ pub fn scnn_train_n_steps(Int, Float, UInt64) -> (Float, Float, Float, Float)
 pub fn scnn_train_step_with_sgd(SimpleCNN, Array[Float], Array[Int], Int, Int, Float) -> (Float, Float)
 
 pub fn score_network_predict(ScoreNetwork, Array[Float], Int) -> Array[Float]
+
+pub fn se_forward(Array[Float], Int, SeParam) -> Array[Float]
 
 pub let second : Float
 
@@ -2075,6 +2099,10 @@ pub fn t5_compute_bias(T5RelativePosition, Int) -> Array[Float]
 
 pub fn tanhf(Float) -> Float
 
+pub fn tarnet_block_forward(TarnetBlock, Array[Float], Int) -> (Array[Float], TarnetBlockCache)
+
+pub fn tarnet_forward(Tarnet, Array[Float], Int) -> TarnetOut
+
 pub fn task_family_set_meta_model(TaskFamily, MLPModel) -> TaskFamily
 
 pub fn td3_select_action(TD3, Array[Float], Xoshiro) -> Array[Float]
@@ -2102,6 +2130,12 @@ pub fn tensor_sub(Tensor, Tensor) -> Tensor
 pub fn tile_fraction(Array[Float], Float, Float, Float) -> Float
 
 pub fn time_in_interval(Float, Array[Array[Float]]) -> Bool
+
+pub fn tn_pointwise(Array[Float], Int, Int, Int, Array[Float], Array[Float]) -> Array[Float]
+
+pub fn tn_randn(Int, Float, Xoshiro) -> Array[Float]
+
+pub fn tn_sigmoid(Float) -> Float
 
 pub fn top_k(Array[Float], Int) -> Array[Int]
 
@@ -2682,6 +2716,34 @@ pub struct ArmaParam {
 }
 pub fn ArmaParam::new(Int, Int, Float, Array[Float], Array[Float]) -> Self
 
+pub(all) struct AspCache {
+  x : Array[Float]
+  ctx : Array[Float]
+  pre : Array[Float]
+  hidden : Array[Float]
+  alpha : Array[Float]
+  mu : Array[Float]
+  var_out : Array[Float]
+}
+
+pub(all) struct AspGrad {
+  d_x : Array[Float]
+  d_w1 : Array[Float]
+  d_b1 : Array[Float]
+  d_w2 : Array[Float]
+  d_b2 : Array[Float]
+}
+
+pub(all) struct AspParam {
+  w1 : Array[Float]
+  b1 : Array[Float]
+  w2 : Array[Float]
+  b2 : Array[Float]
+  channels : Int
+  att_hidden : Int
+}
+pub fn AspParam::new(Int, Int, UInt64) -> Self
+
 pub struct AttnCache {
   seq_len : Int
   x : Array[Float]
@@ -3012,6 +3074,16 @@ pub fn ContinuousReplayBuffer::new(Int, Int, Int) -> Self
 pub fn ContinuousReplayBuffer::push(Self, Array[Float], Array[Float], Float, Array[Float], Bool) -> Unit
 pub fn ContinuousReplayBuffer::sample(Self, Int, Xoshiro) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float])
 
+pub(all) struct Conv1DDepthwise {
+  weight : Array[Float]
+  bias : Array[Float]
+  kernel_size : Int
+  dilation : Int
+  padding : Int
+  channels : Int
+}
+pub fn Conv1DDepthwise::new(Int, Int, Int, Int) -> Self
+
 pub struct Conv2dParam {
   weight : Array[Float]
   bias : Array[Float]
@@ -3049,6 +3121,46 @@ pub struct CrossEntropyLoss {
   mean : Tensor
   per_batch : Tensor
 }
+
+pub(all) struct CtseCache {
+  x : Array[Float]
+  pooled : Array[Float]
+  relu_mask : Array[Bool]
+  squeezed : Array[Float]
+  h : Array[Float]
+  gate : Array[Float]
+}
+
+pub(all) struct CtseGrad {
+  d_x : Array[Float]
+  d_small : Array[Float]
+  db_small : Array[Float]
+  d_mid : Array[Float]
+  db_mid : Array[Float]
+  d_large : Array[Float]
+  db_large : Array[Float]
+  d_fw : Array[Float]
+  d_fb : Float
+  d_w1 : Array[Float]
+  d_b1 : Array[Float]
+  d_w2 : Array[Float]
+  d_b2 : Array[Float]
+}
+
+pub(all) struct CtseParam {
+  small : Conv1DDepthwise
+  mid : Conv1DDepthwise
+  large : Conv1DDepthwise
+  fw : Array[Float]
+  fb : Float
+  w1 : Array[Float]
+  b1 : Array[Float]
+  w2 : Array[Float]
+  b2 : Array[Float]
+  channels : Int
+  c_red : Int
+}
+pub fn CtseParam::new(Int, UInt64) -> Self
 
 pub struct CurrentNoise {
   n : Int
@@ -5946,6 +6058,16 @@ pub struct ScoreNetwork {
 }
 pub fn ScoreNetwork::new(Int, Int, Int, Int, UInt64) -> Self
 
+pub(all) struct SeParam {
+  w1 : Array[Float]
+  b1 : Array[Float]
+  w2 : Array[Float]
+  b2 : Array[Float]
+  channels : Int
+  bottleneck : Int
+}
+pub fn SeParam::new(Int, Int, UInt64) -> Self
+
 pub struct SequenceReplayBuffer {
   capacity : Int
   state_dim : Int
@@ -6437,6 +6559,68 @@ pub fn[A] Tape::new() -> Self[A]
 pub fn[A] Tape::op1(Self[A], String, (A) -> A, (A, A) -> A) -> (Loc[A]) -> Loc[A]
 pub fn[A] Tape::op2(Self[A], String, (A, A) -> A, (A, A, A) -> A, (A, A, A) -> A) -> (Loc[A], Loc[A]) -> Loc[A]
 pub fn[A] Tape::variable(Self[A], A) -> Loc[A]
+
+pub(all) struct Tarnet {
+  ln_in : LayerNorm
+  bn_w : Array[Float]
+  bn_b : Array[Float]
+  stack_s : Array[TarnetBlock]
+  stack_m : Array[TarnetBlock]
+  stack_l : Array[TarnetBlock]
+  mfa_w : Array[Float]
+  mfa_b : Array[Float]
+  mfa_se : SeParam
+  asp : AspParam
+  bn_seg : BatchNorm2d
+  fc_w : Array[Float]
+  fc_b : Array[Float]
+  bn_out : BatchNorm2d
+  cls_w : Array[Float]
+  cls_b : Array[Float]
+  in_chan : Int
+  bn_chan : Int
+  hid_chan : Int
+  fuse_out : Int
+  emb_dim : Int
+  n_classes : Int
+  t_frames : Int
+}
+pub fn Tarnet::new(Int, Int, Int, width? : Int, hid_chan? : Int, kernel? : Int, repeats_s? : Int, repeats_m? : Int, repeats_l? : Int, fuse_out? : Int, emb_dim? : Int, att_hidden? : Int, seed? : UInt64) -> Self
+
+pub(all) struct TarnetBlock {
+  pw1 : Array[Float]
+  pb1 : Array[Float]
+  ln1 : LayerNorm
+  dw : Conv1DDepthwise
+  prelu1 : Float
+  ln2 : LayerNorm
+  pw2 : Array[Float]
+  pb2 : Array[Float]
+  se : CtseParam
+  chan : Int
+  hid : Int
+  dilation : Int
+}
+pub fn TarnetBlock::new(Int, Int, Int, Int, Int, UInt64) -> Self
+
+pub(all) struct TarnetBlockCache {
+  x : Array[Float]
+  pw1_out : Array[Float]
+  pw1_post_prelu : Array[Float]
+  ln1_out : Array[Float]
+  dw_out : Array[Float]
+  dw_post_prelu : Array[Float]
+  pw2_out : Array[Float]
+}
+
+pub(all) struct TarnetOut {
+  logits : Array[Float]
+  embedding : Array[Float]
+  pooled : Array[Float]
+  fused : Array[Float]
+  bottleneck : Array[Float]
+  bottleneck_ln_cache : LayerNormCache
+}
 
 pub struct TaskFamily {
   meta_model : MLPModel
