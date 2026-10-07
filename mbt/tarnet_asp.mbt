@@ -255,6 +255,22 @@ pub(all) struct AspGrad {
 /// batch 1. So this is a BROAD failure, not the 6% edge case the first
 /// measurement suggested.
 ///
+/// WHAT THE PROBES RULED OUT. `d_x` is four additive terms; probing each for
+/// batch 1 channel 0 gives
+///
+///     T1  d_mu * alpha                 ~ 1e-1
+///     T2  d_ctx x-slot                 ~ 1e-4
+///     T3  d_mean / T                   ~ 1e-5
+///     T4  g_var*2x/T + g_mean/T        ~ 1e-10  (gvar = 1.2e-10)
+///
+/// so the mean/std CONTEXT legs are three to six orders of magnitude below the
+/// mu leg and cannot account for the 0.45 worst-case disagreement. An earlier
+/// instrumented run pointed at the context path; that is now DISPROVED. The
+/// discrepancy has to live in `d_mu` or in T1 -- and `d_mu` is
+/// `d_out_mu - 2*mu*d_sigma/sigma`, so the next thing to instrument is the
+/// variance clamp: if `second - mu^2` lands inside the dead zone for some
+/// channel, `d_second` is zero there while the difference still is not.
+///
 /// NOT SOLVED. An instrumented run shows the attention's ReLU
 /// pre-activations (`pre`) are negative at every frame on the test fixture, so
 /// the ReLU mask zeroes the whole attention-to-input path and `d_conv1` is
