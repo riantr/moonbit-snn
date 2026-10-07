@@ -271,6 +271,18 @@ pub(all) struct AspGrad {
 /// variance clamp: if `second - mu^2` lands inside the dead zone for some
 /// channel, `d_second` is zero there while the difference still is not.
 ///
+/// FIXED 2026-10-07: `second = SUM_k x_k^2 * alpha_k` has a DIRECT path to
+/// x with derivative `2*x_i*alpha_i`, and only the alpha-mediated half
+/// (`d_alpha += d_second * x^2`) had been implemented. For channel 2 that
+/// term is +0.396, which is the gap between the analytic -0.171 and the true
+/// +0.279.
+///
+/// It survived inspection because the adjacent `d_alpha` line does carry a
+/// `d_second` term, so the backward reads as if `second` were handled.
+///
+/// The investigation that found it is kept below as the record of why the
+/// obvious suspects were all wrong.
+///
 /// THREE NUMBERS, NOT TWO. A partial hand-derivation of d(loss)/d(x[50]) at
 /// FIXED alpha (i.e. ignoring that alpha is itself a function of x through
 /// the context) gives
@@ -367,7 +379,10 @@ pub fn asp_backward(
       for ti in 0..<t {
         let xv = cache.x[base + ti]
         let a = cache.alpha[base + ti]
-        d_x[base + ti] = d_x[base + ti] + gm * a
+        // `mu = SUM x_k alpha_k` touches x directly with derivative alpha_k,
+        // and `second = SUM x_k^2 alpha_k` with derivative 2*x_k*alpha_k.
+        // The alpha-mediated halves go into d_alpha below.
+        d_x[base + ti] = d_x[base + ti] + gm * a + gs * 2.0F * xv * a
         d_alpha[base + ti] = gm * xv + gs * xv * xv
       }
     }

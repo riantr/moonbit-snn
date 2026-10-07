@@ -115,6 +115,158 @@ fn tn_dw_bump_b(
 
 ///|
 ///|
+/// Objective for ASP: the `[n, 2c]` output weighted by a fixed vector.
+fn tn_obj_asp(
+  x : Array[Float],
+  n : Int,
+  p : @snn_mbt.AspParam,
+  w : Array[Float],
+) -> Float {
+  let (y, _c) = @snn_mbt.asp_forward(x, n, p)
+  let mut s = 0.0F
+  let mut i = 0
+  while i < y.length() {
+    s = s + y[i] * w[i]
+    i = i + 1
+  }
+  s
+}
+
+///|
+/// Perturb one entry of `AspParam`'s first attention weight.
+fn tn_asp_w1_bump(
+  p : @snn_mbt.AspParam,
+  idx : Int,
+  delta : Float,
+) -> @snn_mbt.AspParam {
+  let w1 = p.w1.copy()
+  w1[idx] = p.w1[idx] + delta
+  {
+    w1: w1,
+    b1: p.b1.copy(),
+    w2: p.w2.copy(),
+    b2: p.b2.copy(),
+    channels: p.channels,
+    att_hidden: p.att_hidden,
+  }
+}
+
+///|
+/// Rebuild `AspParam` with a perturbed second attention weight.
+fn tn_asp_w2_bump(
+  p : @snn_mbt.AspParam,
+  idx : Int,
+  delta : Float,
+) -> @snn_mbt.AspParam {
+  let w2 = p.w2.copy()
+  w2[idx] = p.w2[idx] + delta
+  {
+    w1: p.w1.copy(),
+    b1: p.b1.copy(),
+    w2: w2,
+    b2: p.b2.copy(),
+    channels: p.channels,
+    att_hidden: p.att_hidden,
+  }
+}
+
+///|
+/// ASP gradients, checked against central differences over EVERY input
+/// coordinate and a spread of both attention convolutions' weights.
+///
+/// The count matters: the earlier version of this gate called `fail` on the
+/// first disagreement, which was index 0 -- batch 0, where a ctx stride of `c`
+/// and one of `3c` give the same index. It therefore reported one coordinate
+/// and the error looked like 6%, when 96 of 105 were wrong. A gate that stops
+/// at the first failure reports whichever coordinate it happened to hit first,
+/// so this one counts and reports the worst BY BATCH.
+test "ASP: every gradient matches central differences" {
+  let n = 3
+  let c = 5
+  let t = 7
+  let x = tn_fixture(n, c, t, 41UL)
+  let p = @snn_mbt.AspParam::new(c, 6, 43UL)
+  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(47UL), n * 2 * c)
+  let (y, cache) = @snn_mbt.asp_forward(x, n, p)
+  if y.length() != n * 2 * c {
+    fail("ASP output length is not n*2c")
+  }
+  // alpha must be a probability distribution per (sample, channel)
+  let mut b = 0
+  while b < n {
+    let mut ch = 0
+    while ch < c {
+      let mut s = 0.0F
+      let mut ti = 0
+      while ti < t {
+        s = s + cache.alpha[(b * c + ch) * t + ti]
+        ti = ti + 1
+      }
+      if s < 0.999 || s > 1.001 {
+        fail("alpha sums to \{s} at (\{b},\{ch}), expected 1")
+      }
+      ch = ch + 1
+    }
+    b = b + 1
+  }
+  let g = @snn_mbt.asp_backward(w, n, p, cache)
+  let mut over = 0
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut i = 0
+  while i < x.length() {
+    let xu = x.copy()
+    let xd = x.copy()
+    xu[i] = x[i] + TN_H_ASP
+    xd[i] = x[i] - TN_H_ASP
+    let fd = (tn_obj_asp(xu, n, p, w) - tn_obj_asp(xd, n, p, w)) /
+      (2.0F * TN_H_ASP)
+    let gap = tn_gap(fd, g.d_x[i])
+    if gap > 0.0F {
+      over = over + 1
+    }
+    let ad = if gap > 0.0F { gap } else { 0.0F }
+    if ad > worst {
+      worst = ad
+      worst_i = i
+    }
+    i = i + 1
+  }
+  if over > 0 {
+    let batch = worst_i / (c * t)
+    fail("asp d_x: \{over} of \{x.length()} coordinates outside tolerance; worst excess \{worst} at index \{worst_i} (batch \{batch})")
+  }
+  // both attention convolutions, a spread of entries each
+  let stride = (p.w1.length() / 9) + 1
+  let mut idx = 0
+  while idx < p.w1.length() {
+    let pu = tn_asp_w1_bump(p, idx, TN_H_ASP)
+    let pd = tn_asp_w1_bump(p, idx, -TN_H_ASP)
+    let fd = (tn_obj_asp(x, n, pu, w) - tn_obj_asp(x, n, pd, w)) /
+      (2.0F * TN_H_ASP)
+    let gap = tn_gap(fd, g.d_w1[idx])
+    if gap > 0.0F {
+      fail("asp d_w1[\{idx}]: fd=\{fd} analytic=\{g.d_w1[idx]} gap=\{gap}")
+    }
+    idx = idx + stride
+  }
+  let stride2 = (p.w2.length() / 7) + 1
+  idx = 0
+  while idx < p.w2.length() {
+    let pu = tn_asp_w2_bump(p, idx, TN_H_ASP)
+    let pd = tn_asp_w2_bump(p, idx, -TN_H_ASP)
+    let fd = (tn_obj_asp(x, n, pu, w) - tn_obj_asp(x, n, pd, w)) /
+      (2.0F * TN_H_ASP)
+    let gap = tn_gap(fd, g.d_w2[idx])
+    if gap > 0.0F {
+      fail("asp d_w2[\{idx}]: fd=\{fd} analytic=\{g.d_w2[idx]} gap=\{gap}")
+    }
+    idx = idx + stride2
+  }
+}
+
+///|
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
