@@ -20,10 +20,31 @@
 // `clamp_min(second - mu^2, 1e-4)` on the OUTPUT variance (a dead zone --
 // inside it the gradient really is zero, unlike the context one).
 //
-// The reference's ASP also carries a BatchNorm1d inside the attention net.
-// That is kept out of this port deliberately: BatchNorm's gradient depends on
-// the batch through its running statistics, which makes a per-sample gradient
-// check meaningless. `tarnet.mbt` notes where it goes.
+// KNOWN DEVIATION, and the original justification for it was WRONG.
+//
+// The reference's attention net is Conv1d -> ReLU -> BatchNorm1d -> Tanh ->
+// Conv1d -> Softmax(dim=2). This port omits the BatchNorm1d. The comment that
+// used to sit here said it was omitted "deliberately: BatchNorm's gradient
+// depends on the batch through its running statistics, which makes a
+// per-sample gradient check meaningless." That is not true. In training mode
+// BatchNorm uses BATCH statistics, which are a function of the input itself and
+// are differentiated exactly by `batch_norm2d_backward` -- the same function
+// that already carries this model's bn_seg and bn_out, and which is gated. A
+// stated limitation whose reason is false is worse than no comment, because the
+// next reader assumes the question was settled.
+//
+// Implementing it is NOT blocked by the BatchNorm being hard to differentiate.
+// It was attempted, and the attempt is reproducible: with the BatchNorm in
+// place the ASP d_x gate fails on 15 of 105 coordinates with a systematic,
+// SAME-SIGN 12-20% error (worst excess 0.0097 at index 59, batch 1), and the
+// model-level gate trips too. `n=1` is exactly clean while `n=2` and `n=3`
+// are not, so the discrepancy is in the cross-sample coupling. The BatchNorm
+// itself is exonerated: `batch_norm2d_backward`'s d_input is correct at this
+// exact shape (c=6, h=1, w=7), with `with_gamma_beta` as well as `new`, and
+// its forward does not mutate its input. So the fault is in how this module
+// threads `d_relu` (tanh's backward) into `batch_norm2d_backward` and masks the
+// result with the ReLU. Unresolved; the change is not committed rather than
+// leaving a red gate or widening a tolerance to hide it.
 
 ///|
 /// Parameters of the ASP attention network. Both convolutions are 1x1, so
