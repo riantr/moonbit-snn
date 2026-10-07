@@ -38,8 +38,30 @@ pub fn SeParam::new(channels : Int, bottleneck : Int, seed : UInt64) -> SeParam 
 }
 
 ///|
-/// Squeeze-and-excitation forward. `x` is `[n, c, t]`.
-pub fn se_forward(x : Array[Float], n : Int, p : SeParam) -> Array[Float] {
+/// What `se_forward_full` keeps for the backward. Carried explicitly instead of
+/// being recomputed: `u` is a mean over time and `gate` is a function of `u`,
+/// so a backward that re-derived either from `x` would be assuming a pooling
+/// width and a stride that the forward never promised.
+pub(all) struct SeCache {
+  u : Array[Float]    // [n, c]    time-pooled input
+  h : Array[Float]    // [n, bk]   post-ReLU bottleneck
+  gate : Array[Float] // [n, c]    sigmoid gate
+}
+
+///|
+/// Gradients of one SE module. Field names mirror `SeParam` exactly so the two
+/// cannot be crossed at a call site.
+pub(all) struct SeGrad {
+  d_x : Array[Float]
+  w1 : Array[Float]
+  b1 : Array[Float]
+  w2 : Array[Float]
+  b2 : Array[Float]
+}
+
+///|
+/// Squeeze-and-excitation forward, keeping the cache.
+pub fn se_forward_full(x : Array[Float], n : Int, p : SeParam) -> (Array[Float], SeCache) {
   let c = p.channels
   let t = x.length() / (n * c)
   // global average pool over time
@@ -55,7 +77,7 @@ pub fn se_forward(x : Array[Float], n : Int, p : SeParam) -> Array[Float] {
       u[b * c + ch] = s * inv_t
     }
   }
-  let gate = tn_se_gate(u, n, p)
+  let (h, gate) = tn_se_gate(u, n, p)
   let out : Array[Float] = Array::make(n * c * t, 0.0F)
   for b in 0..<n {
     for ch in 0..<c {
@@ -66,13 +88,102 @@ pub fn se_forward(x : Array[Float], n : Int, p : SeParam) -> Array[Float] {
       }
     }
   }
-  out
+  (out, { u, h, gate })
+}
+
+///|
+/// Squeeze-and-excitation forward. `x` is `[n, c, t]`.
+pub fn se_forward(x : Array[Float], n : Int, p : SeParam) -> Array[Float] {
+  se_forward_full(x, n, p).0
+}
+
+///|
+/// Backward of `se_forward_full`. `x` is the module INPUT and `d_out` is the
+/// gradient arriving at its OUTPUT; both are needed, because the gate multiplies
+/// the input elementwise and so appears in the derivative of the output twice.
+pub fn se_backward(
+  x : Array[Float],
+  d_out : Array[Float],
+  n : Int,
+  p : SeParam,
+  cache : SeCache,
+) -> SeGrad {
+  let c = p.channels
+  let bk = p.bottleneck
+  let t = x.length() / (n * c)
+  let inv_t = 1.0F / Float::from_int(t)
+  let d_x : Array[Float] = Array::make(n * c * t, 0.0F)
+  let dw1 : Array[Float] = Array::make(bk * c, 0.0F)
+  let db1 : Array[Float] = Array::make(bk, 0.0F)
+  let dw2 : Array[Float] = Array::make(c * bk, 0.0F)
+  let db2 : Array[Float] = Array::make(c, 0.0F)
+  // out[b,c,t] = x[b,c,t] * gate[b,c]: one path straight through, one path that
+  // routes the whole time axis into the gate. Both are needed; keeping only the
+  // direct one silently drops the squeeze.
+  let d_gate : Array[Float] = Array::make(n * c, 0.0F)
+  for b in 0..<n {
+    for ch in 0..<c {
+      let base = (b * c + ch) * t
+      let a = cache.gate[b * c + ch]
+      let mut dg = 0.0F
+      for ti in 0..<t {
+        let dy = d_out[base + ti]
+        dg = dg + dy * x[base + ti]
+        d_x[base + ti] = dy * a
+      }
+      d_gate[b * c + ch] = dg
+    }
+  }
+  let dz2 : Array[Float] = Array::make(n * c, 0.0F)
+  for b in 0..<n {
+    for ch in 0..<c {
+      let g = cache.gate[b * c + ch]
+      dz2[b * c + ch] = d_gate[b * c + ch] * g * (1.0F - g)
+    }
+  }
+  // gate = sigmoid(b2 + W2 h)
+  let dh : Array[Float] = Array::make(n * bk, 0.0F)
+  for b in 0..<n {
+    for ch in 0..<c {
+      let z = dz2[b * c + ch]
+      for j in 0..<bk {
+        dw2[ch * bk + j] = dw2[ch * bk + j] + z * cache.h[b * bk + j]
+        dh[b * bk + j] = dh[b * bk + j] + z * p.w2[ch * bk + j]
+      }
+      db2[ch] = db2[ch] + z
+    }
+  }
+  // h = relu(b1 + W1 u)
+  let du : Array[Float] = Array::make(n * c, 0.0F)
+  for b in 0..<n {
+    for j in 0..<bk {
+      let dz1 = if cache.h[b * bk + j] > 0.0F { dh[b * bk + j] } else { 0.0F }
+      for ch in 0..<c {
+        dw1[j * c + ch] = dw1[j * c + ch] + dz1 * cache.u[b * c + ch]
+        du[b * c + ch] = du[b * c + ch] + dz1 * p.w1[j * c + ch]
+      }
+      db1[j] = db1[j] + dz1
+    }
+  }
+  // u[b,c] = mean_t x[b,c,t]
+  for b in 0..<n {
+    for ch in 0..<c {
+      let d = du[b * c + ch] * inv_t
+      let base = (b * c + ch) * t
+      for ti in 0..<t {
+        d_x[base + ti] = d_x[base + ti] + d
+      }
+    }
+  }
+  { d_x, w1: dw1, b1: db1, w2: dw2, b2: db2 }
 }
 
 ///|
 /// The pooled vector -> gate part, shared by the forward and the backward so
-/// the two cannot drift on where the sigmoid sits.
-fn tn_se_gate(u : Array[Float], n : Int, p : SeParam) -> Array[Float] {
+/// the two cannot drift on where the sigmoid sits. Returns the post-ReLU
+/// bottleneck as well, which the backward needs to differentiate the second
+/// linear layer.
+fn tn_se_gate(u : Array[Float], n : Int, p : SeParam) -> (Array[Float], Array[Float]) {
   let c = p.channels
   let bk = p.bottleneck
   let h : Array[Float] = Array::make(n * bk, 0.0F)
@@ -96,7 +207,7 @@ fn tn_se_gate(u : Array[Float], n : Int, p : SeParam) -> Array[Float] {
       gate[b * c + ch] = tn_sigmoid(acc)
     }
   }
-  gate
+  (h, gate)
 }
 
 ///|
