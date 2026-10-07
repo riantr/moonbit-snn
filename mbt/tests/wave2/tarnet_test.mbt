@@ -267,6 +267,122 @@ test "ASP: every gradient matches central differences" {
 
 ///|
 ///|
+/// The small configuration the layout tests use.
+fn tn_flat_model() -> @snn_mbt.Tarnet {
+  @snn_mbt.Tarnet::new(
+    4,
+    6,
+    9,
+    width=8,
+    hid_chan=8,
+    kernel=3,
+    repeats_s=1,
+    repeats_m=1,
+    repeats_l=1,
+    fuse_out=8,
+    emb_dim=6,
+    att_hidden=5,
+    seed=13UL,
+  )
+}
+
+///|
+test "Tarnet flatten round-trips and the named offsets land where documented" {
+  let net = tn_flat_model()
+  let flat = @snn_mbt.tarnet_flatten(net)
+  let cnt = @snn_mbt.tarnet_param_count(net)
+  if flat.length() != cnt {
+    fail("flatten length is not tarnet_param_count")
+  }
+  let back = @snn_mbt.tarnet_flatten(@snn_mbt.tarnet_unflatten(net, flat))
+  let mut i = 0
+  while i < cnt {
+    if flat[i] != back[i] {
+      fail("round trip differs at \{i}: \{flat[i]} vs \{back[i]}")
+    }
+    i = i + 1
+  }
+  // The three stacks must tile the block region in order.
+  let mut o = 2 * 6 * 9 + 8 * 6 + 8
+  let stacks = [net.stack_s, net.stack_m, net.stack_l]
+  for st in stacks {
+    if st.length() == 0 {
+      fail("a stack is empty; the fixture should have one repeat each")
+    }
+    for b in st {
+      o = o + b.hid * b.chan + b.hid
+      o = o + b.hid * 9 * 2
+      o = o + b.dw.weight.length() + b.dw.bias.length() + 1
+      o = o + b.hid * 9 * 2
+      o = o + b.chan * b.hid + b.chan
+      o = o + @snn_mbt.ctse_param_count(b.se)
+    }
+  }
+  // The offset the walk arrives at must be mfa_w's first element.
+  let mb = flat.copy()
+  mb[o] = mb[o] + 1.0F
+  let qm = @snn_mbt.tarnet_unflatten(net, mb)
+  if qm.mfa_w[0] != net.mfa_w[0] + 1.0F {
+    fail("the offset after the three stacks does not reach mfa_w[0]")
+  }
+  if qm.bn_b[0] != net.bn_b[0] {
+    fail("the mfa_w bump leaked into the bottleneck bias")
+  }
+  // A bump at the FIRST slot must reach ln_in.gamma[0].
+  let bumped = flat.copy()
+  bumped[0] = bumped[0] + 1.0F
+  let q = @snn_mbt.tarnet_unflatten(net, bumped)
+  if q.ln_in.gamma[0] != flat[0] + 1.0F {
+    fail("offset 0 does not reach ln_in.gamma[0]")
+  }
+  if q.bn_w[0] != net.bn_w[0] {
+    fail("the ln_in bump leaked into bn_w")
+  }
+  // The FIRST prelu scalar: walk to it exactly as the layout says.
+  // pw1 is hid*chan = 8*8, not hid*in_chan = 8*6
+  let pre = 2 * 6 * 9 + 8 * 6 + 8 + 8 * 8 + 8 + 8 * 9 * 2 + 8 * 3 + 8
+  let pb = flat.copy()
+  pb[pre] = pb[pre] + 1.0F
+  let q2 = @snn_mbt.tarnet_unflatten(net, pb)
+  if q2.stack_s[0].prelu1 != net.stack_s[0].prelu1 + 1.0F {
+    fail("the prelu offset does not reach the first block's prelu1")
+  }
+  if q2.stack_s[0].pw1[0] != net.stack_s[0].pw1[0] {
+    fail("the prelu bump leaked into pw1")
+  }
+  // The TAIL: the last entry must be the classifier bias.
+  let lb = flat.copy()
+  lb[cnt - 1] = lb[cnt - 1] + 1.0F
+  let q3 = @snn_mbt.tarnet_unflatten(net, lb)
+  if q3.cls_b[net.n_classes - 1] != net.cls_b[net.n_classes - 1] + 1.0F {
+    fail("the last offset does not reach cls_b")
+  }
+  if q3.cls_w[0] != net.cls_w[0] {
+    fail("the classifier-bias bump leaked into cls_w")
+  }
+}
+
+///|
+/// The round trip must not be a consistent permutation either, so also check
+/// that unflattening leaves the FORWARD output bit-identical.
+test "Tarnet unflatten preserves the forward output exactly" {
+  let net = tn_flat_model()
+  let x = tn_fixture(3, 6, 9, 61UL)
+  let a = @snn_mbt.tarnet_forward(net, x, 3)
+  let again = @snn_mbt.tarnet_unflatten(
+    net, @snn_mbt.tarnet_flatten(net),
+  )
+  let b = @snn_mbt.tarnet_forward(again, x, 3)
+  let mut i = 0
+  while i < a.logits.length() {
+    if a.logits[i] != b.logits[i] {
+      fail("logits differ at \{i} after a flatten round trip")
+    }
+    i = i + 1
+  }
+}
+
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4

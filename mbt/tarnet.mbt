@@ -374,3 +374,319 @@ fn tn_run_stack(
   }
   cur
 }
+// ---------------------------------------------------------------------------
+// flat parameter view
+// ---------------------------------------------------------------------------
+//
+// WHY: the model-level gradient gate needs to perturb the WHOLE parameter
+// vector along one direction and compare -- a directional derivative, which
+// averages over every coordinate and so cannot be defeated by individually
+// small gradients. Same reason `ctse_flatten` exists.
+//
+// Layout, in this exact order:
+//   ln_in.gamma, ln_in.beta
+//   bn_w, bn_b
+//   for each stack in (stack_s, stack_m, stack_l), for each block in order:
+//     pw1, pb1, ln1.gamma, ln1.beta, dw.weight, dw.bias, prelu1,
+//     ln2.gamma, ln2.beta, pw2, pb2, then ctse_flatten of the block's se
+//   mfa_w, mfa_b, mfa_se(w1,b1,w2,b2)
+//   asp(w1,b1,w2,b2)
+//   bn_seg.gamma, bn_seg.beta, fc_w, fc_b, bn_out.gamma, bn_out.beta
+//   cls_w, cls_b
+
+///|
+/// Copy `len` scalars out of `flat` starting at `off`.
+fn tn_take(flat : Array[Float], off : Int, len : Int) -> Array[Float] {
+  let a : Array[Float] = Array::make(len, 0.0F)
+  let mut i = 0
+  while i < len {
+    a[i] = flat[off + i]
+    i = i + 1
+  }
+  a
+}
+
+///|
+/// Write `src` into `dst` at `off`; returns the next free offset.
+fn tn_put(dst : Array[Float], off : Int, src : Array[Float]) -> Int {
+  let mut i = 0
+  while i < src.length() {
+    dst[off + i] = src[i]
+    i = i + 1
+  }
+  off + src.length()
+}
+
+///|
+/// How many scalars one `TarnetBlock` contributes.
+fn tn_block_len(b : TarnetBlock, t : Int) -> Int {
+  b.hid * b.chan + b.hid +
+  b.hid * t * 2 +
+  b.dw.weight.length() + b.dw.bias.length() + 1 +
+  b.hid * t * 2 +
+  b.chan * b.hid + b.chan +
+  ctse_param_count(b.se)
+}
+
+///|
+/// Number of scalars in a flattened `Tarnet`.
+pub fn tarnet_param_count(net : Tarnet) -> Int {
+  let t = net.t_frames
+  let mut total = net.in_chan * t * 2
+  total = total + net.bn_chan * net.in_chan + net.bn_chan
+  let stacks = [net.stack_s, net.stack_m, net.stack_l]
+  for st in stacks {
+    for b in st {
+      total = total + tn_block_len(b, t)
+    }
+  }
+  total = total + net.fuse_out * 3 * net.bn_chan + net.fuse_out
+  let bk = net.mfa_se.bottleneck
+  let c = net.mfa_se.channels
+  total = total + bk * c + bk + c * bk + c
+  let ac = net.asp.channels
+  let ah = net.asp.att_hidden
+  total = total + ah * 3 * ac + ah + ac * ah + ac
+  total = total + 2 * net.fuse_out * 2
+  total = total + net.emb_dim * 2 * net.fuse_out + net.emb_dim
+  total = total + net.emb_dim * 2
+  total = total + net.n_classes * net.emb_dim + net.n_classes
+  total
+}
+
+///|
+/// Flatten a `Tarnet`. Order is documented above `tarnet_param_count`.
+pub fn tarnet_flatten(net : Tarnet) -> Array[Float] {
+  let flat : Array[Float] = Array::make(tarnet_param_count(net), 0.0F)
+  let mut o = 0
+  o = tn_put(flat, o, net.ln_in.gamma)
+  o = tn_put(flat, o, net.ln_in.beta)
+  o = tn_put(flat, o, net.bn_w)
+  o = tn_put(flat, o, net.bn_b)
+  let stacks = [net.stack_s, net.stack_m, net.stack_l]
+  for st in stacks {
+    for b in st {
+      o = tn_put(flat, o, b.pw1)
+      o = tn_put(flat, o, b.pb1)
+      o = tn_put(flat, o, b.ln1.gamma)
+      o = tn_put(flat, o, b.ln1.beta)
+      o = tn_put(flat, o, b.dw.weight)
+      o = tn_put(flat, o, b.dw.bias)
+      o = tn_put(flat, o, [b.prelu1])
+      o = tn_put(flat, o, b.ln2.gamma)
+      o = tn_put(flat, o, b.ln2.beta)
+      o = tn_put(flat, o, b.pw2)
+      o = tn_put(flat, o, b.pb2)
+      o = tn_put(flat, o, ctse_flatten(b.se))
+    }
+  }
+  o = tn_put(flat, o, net.mfa_w)
+  o = tn_put(flat, o, net.mfa_b)
+  o = tn_put(flat, o, net.mfa_se.w1)
+  o = tn_put(flat, o, net.mfa_se.b1)
+  o = tn_put(flat, o, net.mfa_se.w2)
+  o = tn_put(flat, o, net.mfa_se.b2)
+  o = tn_put(flat, o, net.asp.w1)
+  o = tn_put(flat, o, net.asp.b1)
+  o = tn_put(flat, o, net.asp.w2)
+  o = tn_put(flat, o, net.asp.b2)
+  o = tn_put(flat, o, net.bn_seg.gamma)
+  o = tn_put(flat, o, net.bn_seg.beta)
+  o = tn_put(flat, o, net.fc_w)
+  o = tn_put(flat, o, net.fc_b)
+  o = tn_put(flat, o, net.bn_out.gamma)
+  o = tn_put(flat, o, net.bn_out.beta)
+  o = tn_put(flat, o, net.cls_w)
+  o = tn_put(flat, o, net.cls_b)
+  flat
+}
+
+///|
+/// Rebuild one block from `flat`, starting at `off`. Returns the block and the
+/// next free offset.
+fn tn_block_unflatten(
+  proto : TarnetBlock,
+  flat : Array[Float],
+  off : Int,
+  t : Int,
+) -> (TarnetBlock, Int) {
+  let mut o = off
+  let pw1 = tn_take(flat, o, proto.hid * proto.chan)
+  o = o + pw1.length()
+  let pb1 = tn_take(flat, o, proto.hid)
+  o = o + pb1.length()
+  let l1g = tn_take(flat, o, proto.hid * t)
+  o = o + l1g.length()
+  let l1b = tn_take(flat, o, proto.hid * t)
+  o = o + l1b.length()
+  let dww = tn_take(flat, o, proto.dw.weight.length())
+  o = o + dww.length()
+  let dwb = tn_take(flat, o, proto.dw.bias.length())
+  o = o + dwb.length()
+  let prelu = tn_take(flat, o, 1)[0]
+  o = o + 1
+  let l2g = tn_take(flat, o, proto.hid * t)
+  o = o + l2g.length()
+  let l2b = tn_take(flat, o, proto.hid * t)
+  o = o + l2b.length()
+  let pw2 = tn_take(flat, o, proto.chan * proto.hid)
+  o = o + pw2.length()
+  let pb2 = tn_take(flat, o, proto.chan)
+  o = o + pb2.length()
+  let se_flat = tn_take(flat, o, ctse_param_count(proto.se))
+  o = o + se_flat.length()
+  let blk = {
+    pw1: pw1,
+    pb1: pb1,
+    ln1: { gamma: l1g, beta: l1b, eps: proto.ln1.eps, c: proto.hid, h: 1, w: t },
+    dw: conv1d_depthwise_with(proto.dw, dww, dwb),
+    prelu1: prelu,
+    ln2: { gamma: l2g, beta: l2b, eps: proto.ln2.eps, c: proto.hid, h: 1, w: t },
+    pw2: pw2,
+    pb2: pb2,
+    se: ctse_unflatten(proto.se, se_flat),
+    chan: proto.chan,
+    hid: proto.hid,
+    dilation: proto.dilation,
+  }
+  (blk, o)
+}
+
+///|
+/// Rebuild one stack from `flat`, starting at `off`.
+fn tn_stack_unflatten(
+  proto : Array[TarnetBlock],
+  flat : Array[Float],
+  off : Int,
+  t : Int,
+) -> (Array[TarnetBlock], Int) {
+  let out : Array[TarnetBlock] = []
+  let mut o = off
+  let mut i = 0
+  while i < proto.length() {
+    let (blk, next) = tn_block_unflatten(proto[i], flat, o, t)
+    out.push(blk)
+    o = next
+    i = i + 1
+  }
+  (out, o)
+}
+
+///|
+/// Inverse of `tarnet_flatten`. Returns a NEW `Tarnet`; the input is untouched.
+pub fn tarnet_unflatten(
+  net : Tarnet,
+  flat : Array[Float],
+) -> Tarnet {
+  let want = tarnet_param_count(net)
+  if flat.length() != want {
+    abort("tarnet_unflatten: expected \{want} parameters, got \{flat.length()}")
+  }
+  let t = net.t_frames
+  let mut o = 0
+  let ln_g = tn_take(flat, o, net.in_chan * t)
+  o = o + ln_g.length()
+  let ln_b = tn_take(flat, o, net.in_chan * t)
+  o = o + ln_b.length()
+  let bn_w = tn_take(flat, o, net.bn_chan * net.in_chan)
+  o = o + bn_w.length()
+  let bn_b = tn_take(flat, o, net.bn_chan)
+  o = o + bn_b.length()
+  let (s_s, o1) = tn_stack_unflatten(net.stack_s, flat, o, t)
+  let (s_m, o2) = tn_stack_unflatten(net.stack_m, flat, o1, t)
+  let (s_l, o3) = tn_stack_unflatten(net.stack_l, flat, o2, t)
+  let mut o = o3
+  let mfa_w = tn_take(flat, o, net.fuse_out * 3 * net.bn_chan)
+  o = o + mfa_w.length()
+  let mfa_b = tn_take(flat, o, net.fuse_out)
+  o = o + mfa_b.length()
+  let se1 = net.mfa_se
+  let sw1 = tn_take(flat, o, se1.bottleneck * se1.channels)
+  o = o + sw1.length()
+  let sb1 = tn_take(flat, o, se1.bottleneck)
+  o = o + sb1.length()
+  let sw2 = tn_take(flat, o, se1.channels * se1.bottleneck)
+  o = o + sw2.length()
+  let sb2 = tn_take(flat, o, se1.channels)
+  o = o + sb2.length()
+  let asp = net.asp
+  let aw1 = tn_take(flat, o, asp.att_hidden * 3 * asp.channels)
+  o = o + aw1.length()
+  let ab1 = tn_take(flat, o, asp.att_hidden)
+  o = o + ab1.length()
+  let aw2 = tn_take(flat, o, asp.channels * asp.att_hidden)
+  o = o + aw2.length()
+  let ab2 = tn_take(flat, o, asp.channels)
+  o = o + ab2.length()
+  let sg_g = tn_take(flat, o, 2 * net.fuse_out)
+  o = o + sg_g.length()
+  let sg_b = tn_take(flat, o, 2 * net.fuse_out)
+  o = o + sg_b.length()
+  let fc_w = tn_take(flat, o, net.emb_dim * 2 * net.fuse_out)
+  o = o + fc_w.length()
+  let fc_b = tn_take(flat, o, net.emb_dim)
+  o = o + fc_b.length()
+  let bo_g = tn_take(flat, o, net.emb_dim)
+  o = o + bo_g.length()
+  let bo_b = tn_take(flat, o, net.emb_dim)
+  o = o + bo_b.length()
+  let cls_w = tn_take(flat, o, net.n_classes * net.emb_dim)
+  o = o + cls_w.length()
+  let cls_b = tn_take(flat, o, net.n_classes)
+  o = o + cls_b.length()
+  {
+    ln_in: { gamma: ln_g, beta: ln_b, eps: net.ln_in.eps, c: net.in_chan, h: 1, w: t },
+    bn_w: bn_w,
+    bn_b: bn_b,
+    stack_s: s_s,
+    stack_m: s_m,
+    stack_l: s_l,
+    mfa_w: mfa_w,
+    mfa_b: mfa_b,
+    mfa_se: {
+      w1: sw1,
+      b1: sb1,
+      w2: sw2,
+      b2: sb2,
+      channels: se1.channels,
+      bottleneck: se1.bottleneck,
+    },
+    asp: {
+      w1: aw1,
+      b1: ab1,
+      w2: aw2,
+      b2: ab2,
+      channels: asp.channels,
+      att_hidden: asp.att_hidden,
+    },
+    bn_seg: {
+      gamma: sg_g,
+      beta: sg_b,
+      running_mean: net.bn_seg.running_mean.copy(),
+      running_var: net.bn_seg.running_var.copy(),
+      momentum: net.bn_seg.momentum,
+      eps: net.bn_seg.eps,
+      training: net.bn_seg.training,
+    },
+    fc_w: fc_w,
+    fc_b: fc_b,
+    bn_out: {
+      gamma: bo_g,
+      beta: bo_b,
+      running_mean: net.bn_out.running_mean.copy(),
+      running_var: net.bn_out.running_var.copy(),
+      momentum: net.bn_out.momentum,
+      eps: net.bn_out.eps,
+      training: net.bn_out.training,
+    },
+    cls_w: cls_w,
+    cls_b: cls_b,
+    in_chan: net.in_chan,
+    bn_chan: net.bn_chan,
+    hid_chan: net.hid_chan,
+    fuse_out: net.fuse_out,
+    emb_dim: net.emb_dim,
+    n_classes: net.n_classes,
+    t_frames: net.t_frames,
+  }
+}
