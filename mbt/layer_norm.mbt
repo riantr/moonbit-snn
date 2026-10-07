@@ -171,7 +171,12 @@ pub fn layer_norm_backward(
           let idx = ni * chw + feat_off
           let dy = d_output[idx]
           let dxhat = dy * ln.gamma[feat_off]
-          d_gamma[feat_off] = d_gamma[feat_off] + dy * cache.x_centered[idx]
+          // output = gamma * xc * inv + beta, so d(output)/d(gamma) is
+          // xc * inv -- the inv_std factor is part of the derivative and was
+          // missing here. A gate that only checked d_input could not see it:
+          // d_input does not depend on this line.
+          d_gamma[feat_off] = d_gamma[feat_off] +
+            dy * cache.x_centered[idx] * inv
           d_beta[feat_off] = d_beta[feat_off] + dy
           sum_dxhat = sum_dxhat + dxhat
           sum_dxhat_xc = sum_dxhat_xc + dxhat * cache.x_centered[idx]
