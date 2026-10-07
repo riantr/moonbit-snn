@@ -244,16 +244,24 @@ pub(all) struct AspGrad {
 ///|
 /// ASP backward. `d_out` is `[n, 2c]`, laid out `[mu | sigma]` per row.
 ///
-/// KNOWN WRONG, DO NOT TRUST `d_x`: the attention-to-input path contributes
-/// almost nothing here -- `d_x` comes out nearly constant across time within
-/// a channel while a central difference of `asp_forward` varies by 6-30%. The
-/// gate that measured it was removed from `tests/wave2` rather than left
+/// KNOWN WRONG, DO NOT TRUST `d_x`: a central difference of `asp_forward`
+/// disagrees with `d_x` by 6-30%, and `d_x` comes out nearly constant across
+/// time within a channel while the difference is not.
+///
+/// NARROWED, NOT SOLVED. An instrumented run shows the attention's ReLU
+/// pre-activations (`pre`) are negative at every frame on the test fixture, so
+/// the ReLU mask zeroes the whole attention-to-input path and `d_conv1` is
+/// identically 0. On that fixture the residual disagreement therefore lives in
+/// the mean/std CONTEXT leg -- `d_mean / T` and the `g_var * 2 * x / T` term --
+/// not in the attention. Two bugs of exactly this shape were already found and
+/// fixed in this function (reading `d_ctx` with x's stride, and routing the
+/// 1x1 convolutions through `linear_forward` with `n_batch = n*t` against
+/// `[n, c, t]` data), so a third is likely.
+///
+/// The gate that measured it was removed from `tests/wave2` rather than left
 /// red or weakened to pass. The pooling half (mu, sigma, the softmax) and the
 /// two attention convolutions' own weight gradients have been checked; the
-/// `ctx -> x` leg has not. Two bugs of exactly this shape were already found
-/// and fixed in this function -- reading `d_ctx` with x's stride instead of
-/// ctx's, and routing the 1x1 convolutions through `linear_forward` with
-/// `n_batch = n*t` when the data is `[n, c, t]`. Expect a third.
+/// `ctx -> x` leg has not.
 pub fn asp_backward(
   d_out : Array[Float],
   n : Int,
