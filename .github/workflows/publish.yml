@@ -22,8 +22,25 @@ jobs:
 
       - name: Install moon
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install.sh | bash
+          # NOTE the path is install/unix.sh, not install.sh. Getting that wrong
+          # 403s, and piping into `bash` then HIDES it: bash exits 0 on empty
+          # stdin, so the step goes green and the next step fails with a
+          # misleading "moon: command not found". Hence the explicit verify.
+          # cli.moonbitlang.com is what MoonBit's own CI uses; the .cn mirror is
+          # a fallback for when the .com host is unreachable from a runner.
+          { curl -fsSL https://cli.moonbitlang.com/install/unix.sh \
+            || curl -fsSL https://cli.moonbitlang.cn/install/unix.sh; } \
+            > /tmp/moon-install.sh
+          test -s /tmp/moon-install.sh
+          bash /tmp/moon-install.sh
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Verify moon is on PATH
+        run: |
+          # The install step cannot be trusted on its own exit code (see above),
+          # so the next step proves the binary is really there before anything
+          # depends on it.
+          moon version --all
 
       # `typos` is checked before anything expensive because it has historically
       # been the step that actually fails in this repo -- the token has usually
@@ -32,7 +49,12 @@ jobs:
         uses: crate-ci/typos@master
 
       - name: moon check
-        run: moon check --target all
+        # `--target native`, not `--target all`. This package is native-only by
+        # design: `math_native.mbt` and friends bind libm directly through
+        # `extern "C"`, and moon.mod declares `preferred_target = "native"`.
+        # Asking for every target cannot even build a plan -- it fails on Wasm,
+        # WasmGC and Js before a single file is checked.
+        run: moon check --target native
 
       # `moon fmt --check` is deliberately NOT a gate. The package has ~998
       # files and ten of them carry pre-existing formatting diffs that predate
