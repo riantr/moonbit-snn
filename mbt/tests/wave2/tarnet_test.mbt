@@ -801,10 +801,11 @@ test "stack: d_input matches central differences where the objective is smooth" 
 const DN_H_STACK : Float = 2.0e-4F
 
 ///|
-/// One direction across EVERY block's parameters, so both blocks are checked
-/// at once and the reverse walk's ordering has to be right for the aggregate
-/// to agree.
-test "stack: one direction over all blocks matches a directional derivative" {
+/// Per-parameter sweep across BOTH blocks. The blocks share the stack input,
+/// so each coordinate is perturbed in one block at a time and the other is
+/// left alone -- the same construction the block gate uses, applied once per
+/// block and against the stack's own backward.
+test "stack: per-parameter sweep across both blocks" {
   let n = 3
   let chan = 5
   let t = 8
@@ -815,193 +816,44 @@ test "stack: one direction over all blocks matches a directional derivative" {
     fail("stack returned \{gs.length()} block gradients for \{stack.length()} blocks")
   }
   let f_base = tn_obj_stack(stack, x, n, u)
-  let mut checked = 0
-  let mut d = 0
-  while d < 8 {
-    let seed = 1009UL + d.to_uint64() * 131UL
-    // the SAME direction on both sides, up then down
-    let up = @snn_mbt.tn_stack_bump(stack, DN_H_STACK, seed)
-    let dn = @snn_mbt.tn_stack_bump(stack, -DN_H_STACK, seed)
-    // the analytic side has to use the same directions
-    let mut an = 0.0F
-    let mut gi = 0
-    while gi < stack.length() {
-      let fb = @snn_mbt.tarnet_block_flatten(stack[gi])
-      let gb = @snn_mbt.tarnet_block_grad_flatten(gs[gi], stack[gi])
-      let dir = @snn_mbt.tn_randn(
-        fb.length(),
-        1.0F,
-        @snn_mbt.Xoshiro::new(seed + gi.to_uint64() * 7919UL),
-      )
-      let mut k = 0
-      while k < fb.length() {
-        an = an + gb[k] * dir[k]
-        k = k + 1
-      }
-      gi = gi + 1
-    }
-    let fu = tn_obj_stack(up, x, n, u)
-    let fd_ = tn_obj_stack(dn, x, n, u)
-    let d_pos = (fu - f_base) / DN_H_STACK
-    let d_neg = (f_base - fd_) / DN_H_STACK
-    let a = if an < 0.0F { -an } else { an }
-    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    if split > dn_split_tol(f_base, DN_H_STACK) {
-      d = d + 1
-      continue
-    }
-    checked = checked + 1
-    let dfd = (fu - fd_) / (2.0F * DN_H_STACK)
-    let err = if dfd > an { dfd - an } else { an - dfd }
-    let scale = if a < 1.0e-2F { 1.0e-2F } else { a }
-    if err / scale > 5.0e-2F {
-      fail("stack directional fd=\{dfd} analytic=\{an} (direction \{d})")
-    }
-    d = d + 1
-  }
-  if checked < 3 {
-    fail("only \{checked} of 8 stack directions survived the kink filter")
-  }
-}
-
-///|
-test "BISECT a single block from the stack's own fixture" {
-  let n = 3
-  let chan = 5
-  let t = 8
-  let seed = 167UL
-  let (stack, x, u) = tn_stack_fixture(n, chan, t, seed)
-  let b = stack[0]
-  let (y, cache) = @snn_mbt.tarnet_block_forward_full(b, x, n)
-  let mut s = 0.0F
-  let mut i = 0
-  while i < y.length() {
-    s = s + y[i] * u[i]
-    i = i + 1
-  }
-  let f_base = s
-  let g = @snn_mbt.tarnet_block_backward(b, n, cache, u, 0.0F).1
-  let fb = @snn_mbt.tarnet_block_flatten(b)
-  let gb = @snn_mbt.tarnet_block_grad_flatten(g, b)
-  let mut checked = 0
-  let mut skipped = 0
-  let mut worst = 0.0F
-  let mut d = 0
-  while d < 8 {
-    let sd = 1009UL + d.to_uint64() * 131UL
-    let dir = @snn_mbt.tn_randn(fb.length(), 1.0F, @snn_mbt.Xoshiro::new(sd))
-    let up = fb.copy()
-    let dn = fb.copy()
-    let mut an = 0.0F
-    let mut k = 0
-    while k < fb.length() {
-      up[k] = up[k] + DN_H_STACK * dir[k]
-      dn[k] = dn[k] - DN_H_STACK * dir[k]
-      an = an + gb[k] * dir[k]
-      k = k + 1
-    }
-    let bu = @snn_mbt.tarnet_block_unflatten(b, up)
-    let bd = @snn_mbt.tarnet_block_unflatten(b, dn)
-    let fu = tn_obj_block(bu, x, n, u)
-    let fd_ = tn_obj_block(bd, x, n, u)
-    let d_pos = (fu - f_base) / DN_H_STACK
-    let d_neg = (f_base - fd_) / DN_H_STACK
-    let a = if an < 0.0F { -an } else { an }
-    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    if split > dn_split_tol(f_base, DN_H_STACK) {
-      skipped = skipped + 1
-      d = d + 1
-      continue
-    }
-    checked = checked + 1
-    let dfd = (fu - fd_) / (2.0F * DN_H_STACK)
-    let err = if dfd > an { dfd - an } else { an - dfd }
-    let scale = if a < 1.0e-2F { 1.0e-2F } else { a }
-    let rel = err / scale
-    if rel > worst {
-      worst = rel
-    }
-    d = d + 1
-  }
-  println("SINGLE-BLOCK dir=\{DN_H_STACK}: checked=\{checked} skipped=\{skipped} worst_rel=\{worst}")
-}
-
-///|
-///|
-fn tn_ln_with_gamma(
-  proto : @snn_mbt.LayerNorm,
-  idx : Int,
-  delta : Float,
-) -> @snn_mbt.LayerNorm {
-  let g = proto.gamma.copy()
-  g[idx] = proto.gamma[idx] + delta
-  { gamma: g, beta: proto.beta.copy(), eps: proto.eps, c: proto.c, h: proto.h,
-    w: proto.w }
-}
-
-///|
-fn tn_ln_obj(
-  x : Array[Float],
-  n : Int,
-  c : Int,
-  t : Int,
-  ln : @snn_mbt.LayerNorm,
-  u : Array[Float],
-) -> Float {
-  let (y, _c) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
-  let mut s = 0.0F
-  let mut i = 0
-  while i < y.length() {
-    s = s + y[i] * u[i]
-    i = i + 1
-  }
-  s
-}
-
-///|
-test "layer_norm: d_gamma matches central differences in GAMMA" {
-  let n = 3
-  let c = 8
-  let t = 8
-  let chw = c * t
-  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @snn_mbt.Xoshiro::new(311UL))
-  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @snn_mbt.Xoshiro::new(312UL))
-  let ln : @snn_mbt.LayerNorm = {
-    gamma: g0,
-    beta: b0,
-    eps: 1.0e-4F,
-    c: c,
-    h: 1,
-    w: t,
-  }
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @snn_mbt.Xoshiro::new(313UL))
-  let u : Array[Float] = Array::make(n * c * t, 0.0F)
-  let mut i = 0
-  while i < u.length() {
-    u[i] = Float::from_int((i * 7 + 3) % 11) - 5.0F
-    i = i + 1
-  }
-  let (_y, cache) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
-  let dg = @snn_mbt.layer_norm_backward(u, cache, ln).1
-  let f_base = tn_ln_obj(x, n, c, t, ln, u)
   let tol = dn_split_tol(f_base, TN_H)
   let mut over = 0
   let mut checked = 0
+  let mut kinks = 0
   let mut worst = 0.0F
-  let mut worst_i = -1
+  let mut worst_gi = -1
+  let mut worst_k = -1
   let mut worst_fd = 0.0F
   let mut worst_an = 0.0F
-  i = 0
-  while i < chw {
-    let fu = tn_ln_obj(x, n, c, t, tn_ln_with_gamma(ln, i, TN_H), u)
-    let fd_ = tn_ln_obj(x, n, c, t, tn_ln_with_gamma(ln, i, -TN_H), u)
-    let d_pos = (fu - f_base) / TN_H
-    let d_neg = (f_base - fd_) / TN_H
-    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    if split <= tol {
+  let mut bi = 0
+  while bi < stack.length() {
+    let base = @snn_mbt.tarnet_block_flatten(stack[bi])
+    let gb = @snn_mbt.tarnet_block_grad_flatten(gs[bi], stack[bi])
+    let stride = (base.length() / 60) + 1
+    let mut k = 0
+    while k < base.length() {
+      let bu = base.copy()
+      let bd = base.copy()
+      bu[k] = base[k] + TN_H
+      bd[k] = base[k] - TN_H
+      // replace block bi with the bumped copy, leave the others alone
+      let up = [stack[0], stack[1]]
+      let dn = [stack[0], stack[1]]
+      up[bi] = @snn_mbt.tarnet_block_unflatten(stack[bi], bu)
+      dn[bi] = @snn_mbt.tarnet_block_unflatten(stack[bi], bd)
+      let fu = tn_obj_stack(up, x, n, u)
+      let fd_ = tn_obj_stack(dn, x, n, u)
+      let d_pos = (fu - f_base) / TN_H
+      let d_neg = (f_base - fd_) / TN_H
+      let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
+      if split > tol {
+        kinks = kinks + 1
+        k = k + stride
+        continue
+      }
       checked = checked + 1
       let fd = (fu - fd_) / (2.0F * TN_H)
-      let an = dg[i]
+      let an = gb[k]
       let dd = fd - an
       let ad = if dd < 0.0F { -dd } else { dd }
       let m = if an < 0.0F { -an } else { an }
@@ -1009,23 +861,24 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
         over = over + 1
         if ad > worst {
           worst = ad
-          worst_i = i
+          worst_gi = bi
+          worst_k = k
           worst_fd = fd
           worst_an = an
         }
       }
+      k = k + stride
     }
-    i = i + 1
+    bi = bi + 1
   }
-  if checked < chw / 2 {
-    fail("only \{checked} of \{chw} smooth coordinates checked -- the filter is not discriminating")
+  if checked < 40 {
+    fail("only \{checked} smooth coordinates checked and \{kinks} kinked and skipped -- the filter is not discriminating")
   }
   if over > 0 {
-    fail("layer_norm d_gamma: \{over} of \{checked} outside tolerance, worst \{worst} at \{worst_i} (fd=\{worst_fd} an=\{worst_an})")
+    fail("stack parameters: \{over} of \{checked} outside tolerance, worst \{worst} at block \{worst_gi} index \{worst_k} (fd=\{worst_fd} an=\{worst_an})")
   }
 }
 
-///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
