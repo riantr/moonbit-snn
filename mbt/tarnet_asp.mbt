@@ -248,7 +248,14 @@ pub(all) struct AspGrad {
 /// disagrees with `d_x` by 6-30%, and `d_x` comes out nearly constant across
 /// time within a channel while the difference is not.
 ///
-/// NARROWED, NOT SOLVED. An instrumented run shows the attention's ReLU
+/// MEASURED SCALE: a full sweep of every input coordinate (not the gate that
+/// was removed -- that one failed on its FIRST disagreement, index 0, i.e.
+/// batch 0, where `c` and `3c` give the same index, so it never looked past
+/// the first batch) puts 96 of 105 coordinates outside tolerance, worst at
+/// batch 1. So this is a BROAD failure, not the 6% edge case the first
+/// measurement suggested.
+///
+/// NOT SOLVED. An instrumented run shows the attention's ReLU
 /// pre-activations (`pre`) are negative at every frame on the test fixture, so
 /// the ReLU mask zeroes the whole attention-to-input path and `d_conv1` is
 /// identically 0. On that fixture the residual disagreement therefore lives in
