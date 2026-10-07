@@ -690,3 +690,215 @@ pub fn tarnet_unflatten(
     t_frames: net.t_frames,
   }
 }
+
+///|
+/// Caches one block needs for its backward. The plain forward discarded the
+/// two gLN caches and the SE cache, which makes the backward impossible.
+pub(all) struct TarnetBlockFullCache {
+  x : Array[Float]
+  pw1_out : Array[Float]
+  pw1_post : Array[Float]
+  ln1_out : Array[Float]
+  ln1_cache : LayerNormCache
+  dw_out : Array[Float]
+  dw_post : Array[Float]
+  ln2_out : Array[Float]
+  ln2_cache : LayerNormCache
+  pw2_out : Array[Float]
+  se_cache : CtseCache
+}
+
+///|
+/// Block forward, keeping everything the backward needs.
+pub fn tarnet_block_forward_full(
+  b : TarnetBlock,
+  x : Array[Float],
+  n : Int,
+) -> (Array[Float], TarnetBlockFullCache) {
+  let t = x.length() / (n * b.chan)
+  let pw1_out = linear_forward(
+    x, n * t, LinearParam::new(b.pw1, b.pb1, b.chan, b.hid),
+  )
+  let pw1_post = prelu_forward(pw1_out, b.prelu1)
+  let (ln1_out, ln1_cache) = layer_norm_forward(
+    pw1_post, n, b.hid, 1, t, b.ln1,
+  )
+  let dw_out = conv1d_depthwise_forward(ln1_out, n, b.dw)
+  let dw_post = prelu_forward(dw_out, b.prelu1)
+  let (ln2_out, ln2_cache) = layer_norm_forward(
+    dw_post, n, b.hid, 1, t, b.ln2,
+  )
+  let pw2_out = linear_forward(
+    ln2_out, n * t, LinearParam::new(b.pw2, b.pb2, b.hid, b.chan),
+  )
+  let (r, se_cache) = ctse_forward(pw2_out, n, b.se)
+  let out : Array[Float] = Array::make(n * b.chan * t, 0.0F)
+  let mut i = 0
+  while i < n * b.chan * t {
+    out[i] = x[i] + r[i]
+    i = i + 1
+  }
+  (
+    out,
+    {
+      x: x,
+      pw1_out: pw1_out,
+      pw1_post: pw1_post,
+      ln1_out: ln1_out,
+      ln1_cache: ln1_cache,
+      dw_out: dw_out,
+      dw_post: dw_post,
+      ln2_out: ln2_out,
+      ln2_cache: ln2_cache,
+      pw2_out: pw2_out,
+      se_cache: se_cache,
+    },
+  )
+}
+
+///|
+/// Gradients of one block, in the same order as `tarnet_flatten`.
+pub(all) struct TarnetBlockGrad {
+  pw1 : DnLayerGrad
+  ln1_g : Array[Float]
+  ln1_b : Array[Float]
+  dw : DnLayerGrad
+  prelu : Float
+  ln2_g : Array[Float]
+  ln2_b : Array[Float]
+  pw2 : DnLayerGrad
+  se : CtseGrad
+}
+
+///|
+/// Block backward. Returns `(d_x, gradients)`.
+///
+/// The two PReLUs SHARE one slope here, where the reference declares two
+/// separate `nn.PReLU()` layers. That is a documented deviation, so the
+/// slope's gradient is the sum of both sites'.
+pub fn tarnet_block_backward(
+  b : TarnetBlock,
+  n : Int,
+  cache : TarnetBlockFullCache,
+  d_out : Array[Float],
+  l2 : Float,
+) -> (Array[Float], TarnetBlockGrad) {
+  // `out = x + r`, so the incoming gradient reaches BOTH branches: r's branch
+  // below and x's, which is added at the end.
+  let t = cache.x.length() / (n * b.chan)
+  // The CTSE is a nonlinearity: the gradient arriving at `pw2_out` is the SE's
+  // own d_x, NOT d_out. Passing d_out treats the gate as the identity.
+  let se_g = ctse_backward(d_out, n, b.se, cache.se_cache)
+  let (d_ln2_out, dw2, db2) = linear_backward(
+    cache.ln2_out, se_g.d_x, n * t,
+    LinearParam::new(b.pw2, b.pb2, b.hid, b.chan),
+  )
+  let (d_dw_post, ln2_g, ln2_b) = layer_norm_backward(
+    d_ln2_out, cache.ln2_cache, b.ln2,
+  )
+  let (d_dw_out, d_prelu2) = prelu_backward(
+    cache.dw_out, d_dw_post, b.prelu1,
+  )
+  let (d_ln1_out, dww, dwb) = conv1d_depthwise_backward(
+    cache.ln1_out, d_dw_out, n, b.dw,
+  )
+  let (d_pw1_post, ln1_g, ln1_b) = layer_norm_backward(
+    d_ln1_out, cache.ln1_cache, b.ln1,
+  )
+  let (d_pw1_out, d_prelu1) = prelu_backward(
+    cache.pw1_out, d_pw1_post, b.prelu1,
+  )
+  let (d_x, dw1, db1) = linear_backward(
+    cache.x, d_pw1_out, n * t,
+    LinearParam::new(b.pw1, b.pb1, b.chan, b.hid),
+  )
+  let d_total : Array[Float] = Array::make(d_x.length(), 0.0F)
+  let mut i = 0
+  while i < d_x.length() {
+    d_total[i] = d_x[i] + d_out[i]
+    i = i + 1
+  }
+  // `dn_l2` returns the `(d_weight, d_bias)` tuple as a whole; destructuring
+  // it with `_` is not accepted here.
+  let pw1g = dn_l2(dw1, db1, b.pw1, l2)
+  let pw2g = dn_l2(dw2, db2, b.pw2, l2)
+  let _ = t
+  (
+    d_total,
+    {
+      pw1: pw1g,
+      ln1_g: ln1_g,
+      ln1_b: ln1_b,
+      dw: (dww, dwb),
+      prelu: d_prelu1 + d_prelu2,
+      ln2_g: ln2_g,
+      ln2_b: ln2_b,
+      pw2: pw2g,
+      se: se_g,
+    },
+  )
+}
+
+///|
+/// The channel-time SE backward, hoisted here so the block's gradient record
+
+///|
+/// Flatten one `TarnetBlock`, in the same order the block region of
+/// `tarnet_flatten` uses:
+///
+///   pw1, pb1, ln1.gamma, ln1.beta, dw.weight, dw.bias, prelu1,
+///   ln2.gamma, ln2.beta, pw2, pb2, then ctse_flatten of the block's se
+pub fn tarnet_block_flatten(b : TarnetBlock) -> Array[Float] {
+  // the frame count is the layer norm's `w`; taking it from there rather than
+  // from the caller means the two cannot disagree
+  let t = b.ln1.w
+  let flat : Array[Float] = Array::make(tn_block_len(b, t), 0.0F)
+  let mut o = 0
+  o = tn_put(flat, o, b.pw1)
+  o = tn_put(flat, o, b.pb1)
+  o = tn_put(flat, o, b.ln1.gamma)
+  o = tn_put(flat, o, b.ln1.beta)
+  o = tn_put(flat, o, b.dw.weight)
+  o = tn_put(flat, o, b.dw.bias)
+  o = tn_put(flat, o, [b.prelu1])
+  o = tn_put(flat, o, b.ln2.gamma)
+  o = tn_put(flat, o, b.ln2.beta)
+  o = tn_put(flat, o, b.pw2)
+  o = tn_put(flat, o, b.pb2)
+  o = tn_put(flat, o, ctse_flatten(b.se))
+  flat
+}
+
+///|
+/// Rebuild one block around a new parameter vector, reusing the existing
+/// `tn_block_unflatten` so the two cannot disagree about the layout.
+pub fn tarnet_block_unflatten(
+  proto : TarnetBlock,
+  flat : Array[Float],
+) -> TarnetBlock {
+  let (blk, _o) = tn_block_unflatten(proto, flat, 0, proto.ln1.w)
+  blk
+}
+
+///|
+/// Flatten a `TarnetBlockGrad` in the same order as `tarnet_block_flatten`.
+pub fn tarnet_block_grad_flatten(
+  g : TarnetBlockGrad,
+  b : TarnetBlock,
+) -> Array[Float] {
+  let flat : Array[Float] = Array::make(tn_block_len(b, b.ln1.w), 0.0F)
+  let mut o = 0
+  o = tn_put(flat, o, g.pw1.0)
+  o = tn_put(flat, o, g.pw1.1)
+  o = tn_put(flat, o, g.ln1_g)
+  o = tn_put(flat, o, g.ln1_b)
+  o = tn_put(flat, o, g.dw.0)
+  o = tn_put(flat, o, g.dw.1)
+  o = tn_put(flat, o, [g.prelu])
+  o = tn_put(flat, o, g.ln2_g)
+  o = tn_put(flat, o, g.ln2_b)
+  o = tn_put(flat, o, g.pw2.0)
+  o = tn_put(flat, o, g.pw2.1)
+  o = tn_put(flat, o, ctse_grad_flatten(g.se))
+  flat
+}

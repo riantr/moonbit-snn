@@ -383,6 +383,113 @@ test "Tarnet unflatten preserves the forward output exactly" {
 }
 
 ///|
+fn tn_obj_block(
+  b : @snn_mbt.TarnetBlock,
+  x : Array[Float],
+  n : Int,
+  u : Array[Float],
+) -> Float {
+  let (y, _c) = @snn_mbt.tarnet_block_forward_full(b, x, n)
+  let mut s = 0.0F
+  let mut i = 0
+  while i < y.length() {
+    s = s + y[i] * u[i]
+    i = i + 1
+  }
+  s
+}
+
+///|
+/// A small block with a wide receptive field, so the depthwise dilation is
+/// actually in play.
+fn tn_block_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
+  -> (@snn_mbt.TarnetBlock, Array[Float], Array[Float]) {
+  let b = @snn_mbt.TarnetBlock::new(chan, 8, 3, 2, t, seed)
+  let x = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed + 1UL), n * chan * t)
+  let u = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed + 2UL), n * chan * t)
+  (b, x, u)
+}
+
+///|
+test "TarnetBlock: directional derivative over the whole parameter vector" {
+  let n = 3
+  let chan = 5
+  let t = 8
+  let (b0, x, u) = tn_block_fixture(n, chan, t, 71UL)
+  let flat = @snn_mbt.tarnet_block_flatten(b0)
+  let (_y, cache) = @snn_mbt.tarnet_block_forward_full(b0, x, n)
+  let g = @snn_mbt.tarnet_block_backward(b0, n, cache, u, 0.0F).1
+  let gf = @snn_mbt.tarnet_block_grad_flatten(g, b0)
+  if flat.length() != gf.length() {
+    fail("block param length \{flat.length()} != grad length \{gf.length()}")
+  }
+  // three independent directions
+  let mut d = 0
+  while d < 3 {
+    let dir = @snn_mbt.tn_randn(
+      gf.length(),
+      1.0F,
+      @snn_mbt.Xoshiro::new(101UL + d.to_uint64()),
+    )
+    let up = flat.copy()
+    let dn = flat.copy()
+    let mut an = 0.0F
+    let mut i = 0
+    while i < flat.length() {
+      up[i] = flat[i] + TN_H * dir[i]
+      dn[i] = flat[i] - TN_H * dir[i]
+      an = an + gf[i] * dir[i]
+      i = i + 1
+    }
+    let bu = @snn_mbt.tarnet_block_unflatten(b0, up)
+    let bd = @snn_mbt.tarnet_block_unflatten(b0, dn)
+    let fd = (tn_obj_block(bu, x, n, u) - tn_obj_block(bd, x, n, u)) /
+      (2.0F * TN_H)
+    let m = if an < 0.0F { -an } else { an }
+    let err = if fd > an { fd - an } else { an - fd }
+    let scale = if m < 1.0e-3F { 1.0e-3F } else { m }
+    if err / scale > 3.0e-2F {
+      fail("block directional fd=\{fd} analytic=\{an} (direction \{d})")
+    }
+    d = d + 1
+  }
+}
+
+///|
+test "TarnetBlock: the input gradient also matches central differences" {
+  let n = 3
+  let chan = 5
+  let t = 8
+  let (b, x, u) = tn_block_fixture(n, chan, t, 73UL)
+  let (_y, cache) = @snn_mbt.tarnet_block_forward_full(b, x, n)
+  let d_x = @snn_mbt.tarnet_block_backward(b, n, cache, u, 0.0F).0
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut over = 0
+  let mut i = 0
+  while i < x.length() {
+    let xu = x.copy()
+    let xd = x.copy()
+    xu[i] = x[i] + TN_H
+    xd[i] = x[i] - TN_H
+    let fd = (tn_obj_block(b, xu, n, u) - tn_obj_block(b, xd, n, u)) /
+      (2.0F * TN_H)
+    let gap = tn_gap(fd, d_x[i])
+    if gap > 0.0F {
+      over = over + 1
+    }
+    if gap > worst {
+      worst = gap
+      worst_i = i
+    }
+    i = i + 1
+  }
+  if over > 0 {
+    fail("block d_x: \{over} of \{x.length()} outside tolerance, worst \{worst} at \{worst_i}")
+  }
+}
+
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
