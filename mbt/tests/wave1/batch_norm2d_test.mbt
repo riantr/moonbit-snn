@@ -337,6 +337,91 @@ test "batch_norm2d_backward / d_input matches numerical across samples AND chann
 }
 
 ///|
+test "batch_norm2d_backward / inference mode: the cache must record what the forward used" {
+  // The hole this fills: every other d_input gate here runs with training = true,
+  // where the statistics ARE a function of the input and the two coupling terms
+  // are required. In inference mode the statistics are CONSTANTS -- the output
+  // is affine in the input -- so those terms must NOT be applied, and the cache
+  // must carry the RUNNING inv_std rather than the batch one.
+  //
+  // Two bugs lived in that gap, both silent:
+  //   - the cache stored the batch inv_std even though the output was computed
+  //     from running_var, so the backward differentiated a relationship the
+  //     forward never used;
+  //   - the coupling terms were applied unconditionally.
+  // Running stats are made deliberately unlike the batch's, so a backward that
+  // quietly reuses the batch statistics cannot accidentally agree.
+  let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
+  let bn2 = @snn_mbt.BatchNorm2d::with_gamma_beta(
+    Array::make(c, 1.4F),
+    Array::make(c, 0.0F),
+  )
+  // Freeze running stats well away from anything the batch would produce.
+  for k in 0..<c {
+    bn2.running_mean[k] = 3.0F + Float::from_int(k)
+    bn2.running_var[k] = 0.5F + 0.25F * Float::from_int(k)
+  }
+  @snn_mbt.BatchNorm2d::set_training(bn2, false)
+  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn2)
+  let (d_input, _dg, _db) = @snn_mbt.batch_norm2d_backward(wt, cache, bn2)
+  let eps = 0.002F
+  let mut over = 0
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut i = 0
+  while i < input.length() {
+    let up = input.copy()
+    let dn = input.copy()
+    up[i] = input[i] + eps
+    dn[i] = input[i] - eps
+    let fu = bn_obj(up, n, c, h, w, bn2, wt)
+    let fm = bn_obj(dn, n, c, h, w, bn2, wt)
+    let fd = (fu - fm) / (2.0F * eps)
+    let d = fd - d_input[i]
+    let ad = if d < 0.0F { -d } else { d }
+    let m = if d_input[i] < 0.0F { -d_input[i] } else { d_input[i] }
+    if ad - 0.05F * m - 0.01F > 0.0F {
+      over = over + 1
+      if ad > worst {
+        worst = ad
+        worst_i = i
+      }
+    }
+    i = i + 1
+  }
+  if over > 0 {
+    fail(
+      "inference-mode d_input: \{over} of \{input.length()} coordinates outside tolerance; worst \{worst} at \{worst_i} -- the cache is not recording the statistics the forward used",
+    )
+  }
+  // Non-vacuity: inference-mode d_input is exactly d_output * gamma * inv_std,
+  // so the gamma=1.4 fixture must show a non-trivial gradient.
+  let mut nonzero = 0
+  i = 0
+  while i < d_input.length() {
+    if d_input[i] != 0.0F {
+      nonzero = nonzero + 1
+    }
+    i = i + 1
+  }
+  if nonzero == 0 {
+    fail("every inference-mode d_input is zero -- the gate would measure nothing")
+  }
+  // And the closed form, checked on one coordinate rather than trusted.
+  let k0 = 0
+  let inv_run = 1.0F / @snn_mbt.sqrtf(bn2.running_var[k0] + bn2.eps)
+  let ci = k0
+  let chw = c * h * w
+  let idx = 2 * chw + ci * h * w + 1 * w + 1
+  let want = wt[idx] * bn2.gamma[ci] * inv_run
+  if (d_input[idx] - want).abs() > 1.0e-4F {
+    fail(
+      "inference-mode d_input[\{idx}] = \{d_input[idx]}, expected d_out * gamma * inv_std = \{want}",
+    )
+  }
+}
+
+///|
 test "batch_norm2d_backward / d_gamma matches numerical on wildly scaled channels" {
   let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
   // Non-vacuity: if every channel had variance near 1, inv_std ~ 1 and a

@@ -89,11 +89,24 @@ pub fn BatchNorm2d::set_training(self : BatchNorm2d, training : Bool) -> Unit {
 /// `batch_norm2d_backward`. Holds everything the backward pass needs
 /// without recomputing the forward.
 pub struct BatchNormCache {
-  // Per-channel statistics computed from the current batch.
+  // Per-channel statistics AS ACTUALLY USED. In inference mode these are the
+  // running statistics, not the batch ones -- see `coupled`.
   mean : Array[Float]
   inv_std : Array[Float]
-  // (n, c, h, w) — input shifted by the per-channel mean.
+  // (n, c, h, w) — input shifted by the per-channel mean that was used.
   x_centered : Array[Float]
+  // TRUE when the statistics came from the current batch, so they are a
+  // function of the input and `d_input` carries the two coupling terms
+  // (the mean and the xhat correction).
+  //
+  // FALSE in inference mode, where the statistics are constants: the output is
+  // affine in the input, so `d_input` is just `d_output * gamma * inv_std`.
+  //
+  // Without this flag the backward always applied the coupling terms, which is
+  // correct only when the statistics actually moved with the input. That made
+  // an inference-mode forward followed by a backward silently wrong, and no
+  // gate caught it because nothing set `training = false`.
+  coupled : Bool
   // n * h * w per channel; cached to avoid re-multiplying in backward.
   nhw : Int
   // Shape, for backward.
@@ -171,6 +184,11 @@ pub fn batch_norm2d_forward(
     } else {
       inv_std[ci]
     }
+    // The cache must record the statistics the OUTPUT used. In inference mode
+    // that is the running inv_std, not the batch one computed above -- leaving
+    // the batch value here is what made the backward disagree with the forward.
+    inv_std[ci] = inv
+    mean[ci] = ms
     for ni in 0..<n {
       for hi in 0..<h {
         for wi in 0..<w {
@@ -184,7 +202,17 @@ pub fn batch_norm2d_forward(
   }
   // Silence the unused `use_var` warning by referencing it.
   let _ = use_var
-  (output, { mean: use_mean, inv_std, x_centered, nhw, n, c, h, w })
+  (output, {
+    mean: use_mean,
+    inv_std,
+    x_centered,
+    coupled: not(use_running),
+    nhw,
+    n,
+    c,
+    h,
+    w,
+  })
 }
 
 ///|
@@ -252,9 +280,16 @@ pub fn batch_norm2d_backward(
         for wi in 0..<w {
           let idx = ni * chw + ci * h * w + hi * w + wi
           let dxhat = d_output[idx] * bn.gamma[ci]
-          let xc = cache.x_centered[idx]
-          d_input[idx] = dxhat * inv + d_var * 2.0F * xc * inv_nhw +
-            d_mean * inv_nhw
+          if cache.coupled {
+            let xc = cache.x_centered[idx]
+            d_input[idx] = dxhat * inv + d_var * 2.0F * xc * inv_nhw +
+              d_mean * inv_nhw
+          } else {
+            // Inference mode: mean and inv_std are CONSTANTS, so the output is
+            // affine in the input and neither coupling term applies. Applying
+            // them anyway is what made this wrong.
+            d_input[idx] = dxhat * inv
+          }
         }
       }
     }
