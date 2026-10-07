@@ -510,6 +510,67 @@ test "TarnetBlock: the input gradient also matches central differences" {
 }
 
 ///|
+/// Layer norm with the package default affine (gamma = 1, beta = 0), which is
+/// all a cross-package caller can build: `LayerNorm` is `pub struct`, not
+/// `pub(all)`, so its fields cannot be set from the test package. `d_input` is
+/// proportional to gamma, so the normalisation's input path is still fully
+/// exercised -- which is what the block relies on. The gamma/beta gradient
+/// slots are NOT checked here.
+test "layer_norm: d_input matches central differences at every coordinate" {
+  let n = 3
+  let c = 5
+  let t = 8
+  let ln = @snn_mbt.LayerNorm::new(c, 1, t, eps=1.0e-4F)
+  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @snn_mbt.Xoshiro::new(133UL))
+  // an arbitrary upstream gradient, asymmetric in position so a layout
+  // mistake cannot hide behind a symmetric one
+  let w : Array[Float] = Array::make(n * c * t, 0.0F)
+  let mut i = 0
+  while i < w.length() {
+    w[i] = Float::from_int((i * 7 + 3) % 11) - 5.0F
+    i = i + 1
+  }
+  let (_y, cache) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
+  let (d_x, _dg, _db) = @snn_mbt.layer_norm_backward(w, cache, ln)
+  let h = TN_H
+  let mut over = 0
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut list = ""
+  i = 0
+  while i < x.length() {
+    let xu = x.copy()
+    let xd = x.copy()
+    xu[i] = x[i] + h
+    xd[i] = x[i] - h
+    let (yu, _ca) = @snn_mbt.layer_norm_forward(xu, n, c, 1, t, ln)
+    let (yd, _cb) = @snn_mbt.layer_norm_forward(xd, n, c, 1, t, ln)
+    let mut au = 0.0F
+    let mut ad = 0.0F
+    let mut j = 0
+    while j < yu.length() {
+      au = au + yu[j] * w[j]
+      ad = ad + yd[j] * w[j]
+      j = j + 1
+    }
+    let fd = (au - ad) / (2.0F * h)
+    let gap = tn_gap(fd, d_x[i])
+    if gap > 0.0F {
+      over = over + 1
+      list = list + " [b=\\{i / (c * t)} c=\\{(i / t) % c} t=\\{i % t}]"
+    }
+    if gap > worst {
+      worst = gap
+      worst_i = i
+    }
+    i = i + 1
+  }
+  if over > 0 {
+    fail("layer_norm d_x: \{over} of \{x.length()} outside tolerance, worst \{worst} at \{worst_i}; at\{list}")
+  }
+}
+
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
