@@ -34,16 +34,37 @@
 // next reader assumes the question was settled.
 //
 // Implementing it is NOT blocked by the BatchNorm being hard to differentiate.
-// It was attempted, and the attempt is reproducible: with the BatchNorm in
-// place the ASP d_x gate fails on 15 of 105 coordinates with a systematic,
-// SAME-SIGN 12-20% error (worst excess 0.0097 at index 59, batch 1), and the
-// model-level gate trips too. `n=1` is exactly clean while `n=2` and `n=3`
-// are not, so the discrepancy is in the cross-sample coupling. The BatchNorm
-// itself is exonerated: `batch_norm2d_backward`'s d_input is correct at this
-// exact shape (c=6, h=1, w=7), with `with_gamma_beta` as well as `new`, and
-// its forward does not mutate its input. So the fault is in how this module
-// threads `d_relu` (tanh's backward) into `batch_norm2d_backward` and masks the
-// result with the ReLU. Unresolved; the change is not committed rather than
+// It was attempted, and the attempt is reproducible. Four things are now
+// established about the failure:
+//
+//  1. IT IS A REAL BUG, not precision. At the worst coordinate (index 59) the
+//     relative error holds at about -17% while the finite-difference step drops
+//     32-fold, from 0.012 to 0.000375:
+//         h=0.012    rel=-0.16803
+//         h=0.006    rel=-0.16756
+//         h=0.003    rel=-0.16756
+//         h=0.0015   rel=-0.16568
+//         h=0.00075  rel=-0.16568
+//     Truncation error scales as h^2 and would have collapsed by ~1000x, so no
+//     tolerance derived from float32 precision can explain this. This is the
+//     opposite of block coordinate 145, which WAS a float32 artefact.
+//
+//  2. The gradient carries TOO MUCH, not too little: fd=0.0704 against
+//     an=0.0846. So a contribution is being added, not dropped. A missing path
+//     would show the opposite sign.
+//
+//  3. `n = 1` is exactly clean while `n = 2` and `n = 3` are not, so the
+//     discrepancy lives in the cross-sample coupling -- which is the BatchNorm's
+//     whole purpose here.
+//
+//  4. The BatchNorm is exonerated: `batch_norm2d_backward`'s d_input is correct
+//     at this exact shape (c=6, h=1, w=7), with `with_gamma_beta` as well as
+//     `new`, and its forward does not mutate its input. And `d_relu` is consumed
+//     exactly once (the ReLU mask below), so double-counting through a second
+//     consumer is excluded.
+//
+// So the fault is in this module's own attention backward, somewhere between
+// `d_h_tanh` and `d_ctx`. Unresolved; the change is not committed rather than
 // leaving a red gate or widening a tolerance to hide it.
 
 ///|
