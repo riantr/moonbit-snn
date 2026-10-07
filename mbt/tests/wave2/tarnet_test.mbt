@@ -571,6 +571,95 @@ test "layer_norm: d_input matches central differences at every coordinate" {
 }
 
 ///|
+/// Objective for the [n, C, T] 1x1 convolution.
+fn tn_obj_c1x1(
+  x : Array[Float],
+  n : Int,
+  in_ch : Int,
+  out_ch : Int,
+  w : Array[Float],
+  b : Array[Float],
+  u : Array[Float],
+) -> Float {
+  let y = @snn_mbt.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
+  let mut s = 0.0F
+  let mut i = 0
+  while i < y.length() {
+    s = s + y[i] * u[i]
+    i = i + 1
+  }
+  s
+}
+
+///|
+test "tn_conv1x1: d_input, d_weight and d_bias all match central differences" {
+  let n = 3
+  let in_ch = 5
+  let out_ch = 4
+  let t = 8
+  let x = @snn_mbt.tn_randn(n * in_ch * t, 1.0F, @snn_mbt.Xoshiro::new(211UL))
+  let w = @snn_mbt.tn_randn(out_ch * in_ch, 0.4F, @snn_mbt.Xoshiro::new(212UL))
+  let b = @snn_mbt.tn_randn(out_ch, 0.2F, @snn_mbt.Xoshiro::new(213UL))
+  let u = @snn_mbt.tn_randn(n * out_ch * t, 1.0F, @snn_mbt.Xoshiro::new(214UL))
+  let y = @snn_mbt.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
+  if y.length() != n * out_ch * t {
+    fail("forward length wrong")
+  }
+  let (d_x, d_w, d_b) = @snn_mbt.tn_conv1x1_backward(
+    x, u, n, in_ch, out_ch, w,
+  )
+  let h = TN_H
+  // ---- d_input, every coordinate ----
+  let mut over = 0
+  let mut list = ""
+  let mut i = 0
+  while i < x.length() {
+    let xu = x.copy()
+    let xd = x.copy()
+    xu[i] = x[i] + h
+    xd[i] = x[i] - h
+    let fd = (tn_obj_c1x1(xu, n, in_ch, out_ch, w, b, u) -
+      tn_obj_c1x1(xd, n, in_ch, out_ch, w, b, u)) / (2.0F * h)
+    if tn_gap(fd, d_x[i]) > 0.0F {
+      over = over + 1
+      list = list + " [b=\\{i / (in_ch * t)} c=\\{(i / t) % in_ch} t=\\{i % t}]"
+    }
+    i = i + 1
+  }
+  if over > 0 {
+    fail("tn_conv1x1 d_x: \{over} of \{x.length()} outside tolerance at\{list}")
+  }
+  // ---- d_weight ----
+  i = 0
+  while i < w.length() {
+    let wu = w.copy()
+    let wd = w.copy()
+    wu[i] = w[i] + h
+    wd[i] = w[i] - h
+    let fd = (tn_obj_c1x1(x, n, in_ch, out_ch, wu, b, u) -
+      tn_obj_c1x1(x, n, in_ch, out_ch, wd, b, u)) / (2.0F * h)
+    if tn_gap(fd, d_w[i]) > 0.0F {
+      fail("tn_conv1x1 d_w[\{i}]: fd=\{fd} analytic=\{d_w[i]}")
+    }
+    i = i + 1
+  }
+  // ---- d_bias ----
+  i = 0
+  while i < b.length() {
+    let bu = b.copy()
+    let bd = b.copy()
+    bu[i] = b[i] + h
+    bd[i] = b[i] - h
+    let fd = (tn_obj_c1x1(x, n, in_ch, out_ch, w, bu, u) -
+      tn_obj_c1x1(x, n, in_ch, out_ch, w, bd, u)) / (2.0F * h)
+    if tn_gap(fd, d_b[i]) > 0.0F {
+      fail("tn_conv1x1 d_b[\{i}]: fd=\{fd} analytic=\{d_b[i]}")
+    }
+    i = i + 1
+  }
+}
+
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
