@@ -271,6 +271,13 @@ pub(all) struct AspGrad {
 /// variance clamp: if `second - mu^2` lands inside the dead zone for some
 /// channel, `d_second` is zero there while the difference still is not.
 ///
+/// ALSO DISPROVED: the variance dead zone. Probing every channel of batch 1
+/// gives `raw == clamped` and `at_floor = false` on all five, and d_mu checks
+/// out by hand -- for channel 0, `d_second = g_sig*0.5/sigma = 1.44421` and
+/// `d_mu = g_mu - 2*mu*d_second = -1.16654`, both exactly what the code
+/// reports. So neither the context legs nor the clamp nor d_mu's arithmetic
+/// accounts for the disagreement, and the defect is further downstream.
+///
 /// NOT SOLVED. An instrumented run shows the attention's ReLU
 /// pre-activations (`pre`) are negative at every frame on the test fixture, so
 /// the ReLU mask zeroes the whole attention-to-input path and `d_conv1` is
