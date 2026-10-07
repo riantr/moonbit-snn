@@ -219,3 +219,22 @@ pub fn conv1d_pointwise_forward(
 ) -> Array[Float] {
   linear_forward(x, t, LinearParam::new(weight, bias, in_ch, out_ch))
 }
+///|
+/// Rebuild a `Conv1DDepthwise` around new weight / bias arrays, keeping the
+/// shape. Field assignment on a `let`-bound struct is rejected by the
+/// compiler, so every perturbation -- in a finite-difference gate, or in
+/// `ctse_unflatten` -- has to go through a fresh literal like this one.
+pub fn conv1d_depthwise_with(
+  p : Conv1DDepthwise,
+  weight : Array[Float],
+  bias : Array[Float],
+) -> Conv1DDepthwise {
+  {
+    weight,
+    bias,
+    kernel_size: p.kernel_size,
+    dilation: p.dilation,
+    padding: p.padding,
+    channels: p.channels,
+  }
+}

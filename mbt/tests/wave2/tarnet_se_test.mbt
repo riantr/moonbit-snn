@@ -258,3 +258,98 @@ test "channel-time SE: every parameter class matches central differences" {
   }
 }
 
+
+///|
+/// Objective over the FLATTENED parameters, so a whole direction can be
+/// perturbed at once.
+fn tn_obj_ctse_flat(
+  x : Array[Float],
+  n : Int,
+  p : @snn_mbt.CtseParam,
+  flat : Array[Float],
+  w : Array[Float],
+) -> Float {
+  tn_obj_ctse(x, n, @snn_mbt.ctse_unflatten(p, flat), w)
+}
+
+///|
+/// Directional derivative check over the whole parameter vector.
+///
+/// This is the instrument the per-coordinate sweep could not be. It averages
+/// over every coordinate, so it is not defeated by individually small
+/// gradients -- `d_w1` and `d_b1` included, which on a small fixture are
+/// individually near zero but collectively carry signal.
+test "channel-time SE: directional derivative over all parameters" {
+  let n = 3
+  let c = 4
+  let t = 6
+  let x = tn_fixture(n, c, t, 67UL)
+  let p = tn_ctse_awake(@snn_mbt.CtseParam::new(c, 71UL), 0.5F)
+  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(73UL), n * c * t)
+  let (_y, cache) = @snn_mbt.ctse_forward(x, n, p)
+  let g = @snn_mbt.ctse_backward(w, n, p, cache)
+  let flat = @snn_mbt.ctse_flatten(p)
+  let gf = @snn_mbt.ctse_grad_flatten(g)
+  if flat.length() != gf.length() {
+    fail("flat param length \{flat.length()} != flat grad length \{gf.length()}")
+  }
+  // three independent directions
+  let mut d = 0
+  while d < 3 {
+    let u = @snn_mbt.tn_randn(gf.length(), 1.0F, @snn_mbt.Xoshiro::new(101UL + d.to_uint64()))
+    let up = flat.copy()
+    let dn = flat.copy()
+    let mut an = 0.0F
+    let mut i = 0
+    while i < flat.length() {
+      up[i] = flat[i] + TN_H * u[i]
+      dn[i] = flat[i] - TN_H * u[i]
+      an = an + gf[i] * u[i]
+      i = i + 1
+    }
+    let fd = (tn_obj_ctse_flat(x, n, p, up, w) -
+      tn_obj_ctse_flat(x, n, p, dn, w)) / (2.0F * TN_H)
+    let rel = if an < 0.0F { -an } else { an }
+    let err = if fd > an { fd - an } else { an - fd }
+    let scale = if rel < 1.0e-4F { 1.0e-4F } else { rel }
+    if err / scale > 3.0e-2F {
+      fail("directional fd=\{fd} analytic=\{an} (direction \{d})")
+    }
+    d = d + 1
+  }
+}
+
+///|
+/// Flatten / unflatten round-trips, and a perturbed vector really lands in
+/// the parameters it claims to.
+test "ctse flatten round-trips and the layout is the documented one" {
+  let c = 4
+  let p = @snn_mbt.CtseParam::new(c, 97UL)
+  let flat = @snn_mbt.ctse_flatten(p)
+  if flat.length() != @snn_mbt.ctse_param_count(p) {
+    fail("flatten length does not match ctse_param_count")
+  }
+  let back = @snn_mbt.ctse_flatten(@snn_mbt.ctse_unflatten(p, flat))
+  for i in 0..<flat.length() {
+    if flat[i] != back[i] {
+      fail("round trip differs at \{i}")
+    }
+  }
+  // the layout is bias-free arrays then fb, so a bump at each documented
+  // offset must reach that field
+  let bumped = flat.copy()
+  bumped[0] = bumped[0] + 1.0F
+  let q = @snn_mbt.ctse_unflatten(p, bumped)
+  if q.small.weight[0] != flat[0] + 1.0F {
+    fail("offset 0 is not small.weight[0]")
+  }
+  let at_fb = p.fw.length() + p.small.bias.length() + p.mid.bias.length() +
+    p.large.bias.length() + p.small.weight.length() + p.mid.weight.length() +
+    p.large.weight.length()
+  let fb = flat.copy()
+  fb[at_fb] = fb[at_fb] + 1.0F
+  let q2 = @snn_mbt.ctse_unflatten(p, fb)
+  if q2.fb != p.fb + 1.0F {
+    fail("the documented fb offset does not land on fb")
+  }
+}

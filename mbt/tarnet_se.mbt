@@ -400,3 +400,159 @@ pub fn ctse_backward(
     d_b2,
   }
 }
+// ---------------------------------------------------------------------------
+// flat parameter view
+// ---------------------------------------------------------------------------
+//
+// WHY THIS EXISTS. A per-coordinate finite-difference check is the wrong
+// instrument for this module: with c = 3 and t = 4 a single weight entry's
+// gradient accumulates over 8 samples and cancels, so every coordinate tried
+// had a near-zero analytic value and doubling it was undetectable -- the
+// negative control reported a blind gate that was not blind. Worse, the fc1
+// ReLU is inactive on a small fixture, so `d_w1` and `d_b1` are legitimately
+// zero and get skipped as kinks.
+//
+// A DIRECTIONAL derivative fixes both: perturb the whole vector along one
+// random direction and compare, which averages over every coordinate and so
+// cannot be defeated by individually small gradients. That needs the
+// parameters and the gradient in one flat layout, which is what this provides.
+//
+// Layout, in this exact order:
+//   small.weight, small.bias, mid.weight, mid.bias, large.weight, large.bias,
+//   fw[0..2], fb, w1, b1, w2, b2
+
+///|
+/// Number of scalars in a flattened `CtseParam`.
+pub fn ctse_param_count(p : CtseParam) -> Int {
+  p.small.weight.length() + p.small.bias.length() +
+  p.mid.weight.length() + p.mid.bias.length() +
+  p.large.weight.length() + p.large.bias.length() +
+  p.fw.length() + 1 + p.w1.length() + p.b1.length() + p.w2.length() +
+  p.b2.length()
+}
+
+///|
+/// Flatten a `CtseParam`. Order is documented on `ctse_param_count`.
+pub fn ctse_flatten(p : CtseParam) -> Array[Float] {
+  let out : Array[Float] = Array::make(ctse_param_count(p), 0.0F)
+  let mut k = 0
+  let parts = [
+    p.small.weight, p.small.bias, p.mid.weight, p.mid.bias, p.large.weight,
+    p.large.bias, p.fw,
+  ]
+  for a in parts {
+    for i in 0..<a.length() {
+      out[k] = a[i]
+      k = k + 1
+    }
+  }
+  out[k] = p.fb
+  k = k + 1
+  let rest = [p.w1, p.b1, p.w2, p.b2]
+  for a in rest {
+    for i in 0..<a.length() {
+      out[k] = a[i]
+      k = k + 1
+    }
+  }
+  out
+}
+
+///|
+/// Copy `len` scalars out of `flat` starting at `off`.
+fn ctse_slice(flat : Array[Float], off : Int, len : Int) -> Array[Float] {
+  let a : Array[Float] = Array::make(len, 0.0F)
+  let mut i = 0
+  while i < len {
+    a[i] = flat[off + i]
+    i = i + 1
+  }
+  a
+}
+
+///|
+/// Inverse of `ctse_flatten`. Returns a NEW `CtseParam`; the input is untouched.
+///
+/// Offsets are spelled out rather than walked with a closure over a mutable
+/// cursor: a silent off-by-one in the parameter layout is exactly the class of
+/// bug this whole gate exists to catch, and the layout is what a closure would
+/// get subtly wrong.
+pub fn ctse_unflatten(
+  p : CtseParam,
+  flat : Array[Float],
+) -> CtseParam {
+  let want = ctse_param_count(p)
+  if flat.length() != want {
+    abort(
+      "ctse_unflatten: expected \{want} parameters, got \{flat.length()}",
+    )
+  }
+  let sw = ctse_slice(flat, 0, p.small.weight.length())
+  let sb = ctse_slice(flat, sw.length(), p.small.bias.length())
+  let o = sw.length() + sb.length()
+  let mw = ctse_slice(flat, o, p.mid.weight.length())
+  let o = o + mw.length()
+  let mb = ctse_slice(flat, o, p.mid.bias.length())
+  let o = o + mb.length()
+  let lw = ctse_slice(flat, o, p.large.weight.length())
+  let o = o + lw.length()
+  let lb = ctse_slice(flat, o, p.large.bias.length())
+  let o = o + lb.length()
+  let fw = ctse_slice(flat, o, p.fw.length())
+  let o = o + fw.length()
+  let fb = flat[o]
+  let o = o + 1
+  let w1 = ctse_slice(flat, o, p.w1.length())
+  let o = o + w1.length()
+  let b1 = ctse_slice(flat, o, p.b1.length())
+  let o = o + b1.length()
+  let w2 = ctse_slice(flat, o, p.w2.length())
+  let o = o + w2.length()
+  let b2 = ctse_slice(flat, o, p.b2.length())
+  {
+    small: conv1d_depthwise_with(p.small, sw, sb),
+    mid: conv1d_depthwise_with(p.mid, mw, mb),
+    large: conv1d_depthwise_with(p.large, lw, lb),
+    fw: fw,
+    fb: fb,
+    w1: w1,
+    b1: b1,
+    w2: w2,
+    b2: b2,
+    channels: p.channels,
+    c_red: p.c_red,
+  }
+}
+
+///|
+/// Flatten a `CtseGrad` in the same order as `ctse_flatten`.
+pub fn ctse_grad_flatten(g : CtseGrad) -> Array[Float] {
+  let parts = [
+    g.d_small, g.db_small, g.d_mid, g.db_mid, g.d_large, g.db_large,
+    g.d_fw,
+  ]
+  let mut total = 1
+  for a in parts {
+    total = total + a.length()
+  }
+  total = total + g.d_w1.length() + g.d_b1.length() + g.d_w2.length() +
+    g.d_b2.length()
+  let out : Array[Float] = Array::make(total, 0.0F)
+  let mut k = 0
+  for a in parts {
+    for i in 0..<a.length() {
+      out[k] = a[i]
+      k = k + 1
+    }
+  }
+  out[k] = g.d_fb
+  k = k + 1
+  let rest = [g.d_w1, g.d_b1, g.d_w2, g.d_b2]
+  for a in rest {
+    for i in 0..<a.length() {
+      out[k] = a[i]
+      k = k + 1
+    }
+  }
+  out
+}
