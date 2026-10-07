@@ -40,6 +40,20 @@ Note the third line: a character whose third UTF-8 byte is 0x80 leaves a euro
 sign, not a marker, and eats nothing.  That is why the marker count and the
 character count are different numbers.
 
+ONE INVARIANT THE AUTHOR HAS TO KEEP
+
+`slots()` treats EVERY CJK character as damage, and that is correct here
+only because this README legitimately contains none: after the repair its CJK
+count is 0, and the corruption is what introduced all 767 of the originals.
+So writing a single Chinese phrase into this file makes the gate report
+DAMAGED on a line nobody damaged.
+
+That is not a bug to route around -- the message is localised, so quote the
+English form (`CreateProcessW: The filename or extension is too long`) and
+note the locale instead.  But it is a trap worth stating: if this file ever
+gains CJK on purpose, this gate has to learn the difference, not have the
+check quietly relaxed.
+
 WHY THIS FILE IS THE ONLY PLACE THE MODEL LIVES
 
 The forward function is used twice: to invert damage, and to prove the

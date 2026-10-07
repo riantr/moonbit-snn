@@ -10,8 +10,8 @@ the same numerical trajectories (last-bit Float32) as the Julia run.
 
 `moon.mod` carries the version that is published to mooncakes.io, and
 this header tracks it. The batch sections at the end of this file run
-from Batch C (v0.58.0) through Batch AC (v0.155.0) and describe what
-changed in each.
+from Batch C (v0.58.0) through Batch AD (v0.159.0, not yet published)
+and describe what changed in each.
 
 | Component | Status | Notes |
 |---|---|---|
@@ -717,6 +717,74 @@ aliased every row of `d_w` onto row 0.
   exercises one objective cannot see a bug in another. `graph_cross_entropy`
   is fixed and `gradcheck_ce_consistency` now pins the loss against its
   own gradient.
+
+### Batch AD (v0.156.0 - v0.159.0, not yet published): `moon test`, and DragonNet
+
+`moon.mod` still carries v0.155.0, the last version published to
+mooncakes.io. These four are in the tree and are recorded here so the batch
+list does not have a hole; none of them has been published.
+
+- v0.156.0 The training demo grows a second, deeper backbone and reports
+  per-architecture depth effects: both depths learn on 5/5 probes, the
+  deeper one is better on 4/5, and neither generalises on noise.
+- v0.157.0 **Test sub-packages.** `moon test` on the root package has
+  failed since v0.61.0 with `CreateProcessW: The filename or extension is
+  too long` -- Win32 ERROR_FILENAME_EXCED_RANGE, rendered in Chinese by a
+  zh-CN console -- which is the 32767-character command-line limit. The
+  stage is unambiguous:
+  `moon check` over all 516 files reports **0 errors**, so `moonc` is
+  fine, and a sub-package that generates **957 KB** of C compiles and
+  links where the root package's **203 KB** test C does not. The size of
+  the generated C is therefore NOT the mechanism, and reasoning from it
+  sends you down the wrong path. The fix is to stop asking the root
+  package to host tests: a per-directory `moon.pkg` with
+  `import { "riantr/snn_mbt", }` and `options("is-test": true)` gives a
+  split package blackbox access to the package under test as
+  `@snn_mbt.X`, with no `moon.work` and no interface regeneration
+  (`moon work` manages *separate modules*, each with its own
+  `moon.mod`). `tests/wave1/` holds 27 files and **216 test blocks that
+  had never been executed before**. Those 27 files were relocated rather
+  than added, so the published archive grows by 6,340 bytes (+0.5%) --
+  just the `@snn_mbt.` prefixes -- and extracting the published zip and
+  running `moon test ./tests/wave1` gives 216/216 against the published
+  artifact rather than the working tree.
+- v0.158.0 `ELU`: `elu_forward` / `elu_backward`. Only a GAT-scoped ELU
+  *derivative* existed (`gat_elu_grad`); there was no forward at all. The
+  backward takes the pre-activation, because at zero the two branches
+  coincide and reading the post-activation would make the mask depend on
+  a value the caller may already have transformed.
+- v0.159.0 `DragonNet`: the architecture of arXiv:1906.02120 (Shi, Blei &
+  Veitch) with the three-term objective transcribed from the authors'
+  implementation (`claudiashi57/dragonnet`, `src/experiment/models.py`):
+  `L_reg + L_bce + ratio * L_tarreg`. The gate in `tests/wave2/` checks
+  **every** parameter by central difference rather than a sample, which
+  is what the `dragonnet_flatten` / `unflatten` / `grad_flatten` /
+  `layer_offset` family exists for. It caught two defects that
+  type-check, compile, train, and report a plausible number:
+  1. The propensity is clipped to `[1e-7, 1-1e-7]` exactly as Keras'
+     `binary_crossentropy` does, but the gradient was taken from the
+     clipped value as though the clip were not there -- terms of order
+     **1e7** for a term the loss does not depend on, with the finite
+     difference reading exactly **0**. `dn_prop` now returns
+     `(value, derivative)` and the derivative is zero whenever the clip
+     is active; it is the single place the clipping decision is made, so
+     the loss and its gradient cannot disagree about it.
+  2. A widely circulated variant of this Keras model omits the sigmoid
+     on the propensity head. Without it the linear output leaves
+     `[0,1]`, the clip saturates, the BCE term becomes a **constant**,
+     and the propensity head trains on nothing at all while the loss
+     falls and the ATE looks fine. `DragonNet::new` defaults to
+     `t_sigmoid = true`; the linear variant remains available and its
+     gradient stays correct either way.
+
+  The gate also carries two negative controls (doubling and sign-flipping
+  `d_epsilon` must both be detected) and a shuffled-outcome control on the
+  training test, so a gate that stops comparing cannot report PASS. The
+  first version of that control zeroed the y1 head's parameters instead
+  of shuffling the outcomes; the targeted-regularisation term drags y0
+  down uniformly, so the "blinded" model reported an ATE of 2.18 and the
+  control failed for a reason unrelated to the leak it was meant to
+  detect.
 
 ## Verification harness
 
