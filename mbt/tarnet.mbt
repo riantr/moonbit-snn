@@ -963,3 +963,89 @@ pub fn tn_conv1x1_backward(
   }
   (d_x, d_w, d_b)
 }
+
+///|
+/// Caches for one parallel stack: the stack input plus every block's cache.
+pub(all) struct TarnetStackCache {
+  x0 : Array[Float]
+  caches : Array[TarnetBlockFullCache]
+}
+
+///|
+/// Run a stack forward, keeping every block's cache.
+pub fn tn_stack_forward_full(
+  stack : Array[TarnetBlock],
+  x : Array[Float],
+  n : Int,
+) -> (Array[Float], TarnetStackCache) {
+  let caches : Array[TarnetBlockFullCache] = []
+  let mut cur = x
+  let mut i = 0
+  while i < stack.length() {
+    let (next, c) = tarnet_block_forward_full(stack[i], cur, n)
+    caches.push(c)
+    cur = next
+    i = i + 1
+  }
+  (cur, { x0: x, caches: caches })
+}
+
+///|
+/// Run a stack backward: reverse walk, accumulating the gradient that reaches
+/// the stack input and returning one `TarnetBlockGrad` per block IN FORWARD
+/// ORDER (the reverse walk naturally produces them backwards).
+pub fn tn_stack_backward(
+  stack : Array[TarnetBlock],
+  n : Int,
+  cache : TarnetStackCache,
+  d_out : Array[Float],
+  l2 : Float,
+) -> (Array[Float], Array[TarnetBlockGrad]) {
+  let rev : Array[TarnetBlockGrad] = []
+  let mut d = d_out
+  let mut i = stack.length() - 1
+  while i >= 0 {
+    let (d_in, g) = tarnet_block_backward(stack[i], n, cache.caches[i], d, l2)
+    rev.push(g)
+    d = d_in
+    i = i - 1
+  }
+  let ordered : Array[TarnetBlockGrad] = []
+  let mut k = rev.length() - 1
+  while k >= 0 {
+    ordered.push(rev[k])
+    k = k - 1
+  }
+  (d, ordered)
+}
+
+///|
+/// Bump every block of `stack` by `delta * dir`, regenerating `dir` from
+/// `seed + block_index` so the SAME direction is used for the up and the down
+/// perturbation -- a gate needs both sides of one direction, not two
+/// unrelated ones.
+pub fn tn_stack_bump(
+  stack : Array[TarnetBlock],
+  delta : Float,
+  seed : UInt64,
+) -> Array[TarnetBlock] {
+  let out : Array[TarnetBlock] = []
+  let mut i = 0
+  while i < stack.length() {
+    let fb = tarnet_block_flatten(stack[i])
+    let dir = tn_randn(
+      fb.length(),
+      1.0F,
+      Xoshiro::new(seed + i.to_uint64() * 7919UL),
+    )
+    let bumped = fb.copy()
+    let mut k = 0
+    while k < bumped.length() {
+      bumped[k] = bumped[k] + delta * dir[k]
+      k = k + 1
+    }
+    out.push(tarnet_block_unflatten(stack[i], bumped))
+    i = i + 1
+  }
+  out
+}

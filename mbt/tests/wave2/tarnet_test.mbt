@@ -700,6 +700,161 @@ test "tn_conv1x1: d_input, d_weight and d_bias all match central differences" {
 
 ///|
 ///|
+fn tn_obj_stack(
+  stack : Array[@snn_mbt.TarnetBlock],
+  x : Array[Float],
+  n : Int,
+  u : Array[Float],
+) -> Float {
+  let (y, _c) = @snn_mbt.tn_stack_forward_full(stack, x, n)
+  let mut s = 0.0F
+  let mut i = 0
+  while i < y.length() {
+    s = s + y[i] * u[i]
+    i = i + 1
+  }
+  s
+}
+
+///|
+fn tn_stack_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
+  -> (Array[@snn_mbt.TarnetBlock], Array[Float], Array[Float]) {
+  let b0 = @snn_mbt.TarnetBlock::new(chan, 8, 3, 1, t, seed)
+  let b1 = @snn_mbt.TarnetBlock::new(chan, 8, 3, 2, t, seed + 5UL)
+  let stack = [b0, b1]
+  let x = @snn_mbt.tn_randn(n * chan * t, 1.0F, @snn_mbt.Xoshiro::new(seed + 9UL))
+  let u = @snn_mbt.tn_randn(n * chan * t, 1.0F, @snn_mbt.Xoshiro::new(seed + 13UL))
+  (stack, x, u)
+}
+
+///|
+test "stack: d_input matches central differences where the objective is smooth" {
+  let n = 3
+  let chan = 5
+  let t = 8
+  let (stack, x, u) = tn_stack_fixture(n, chan, t, 151UL)
+  let (_y, cache) = @snn_mbt.tn_stack_forward_full(stack, x, n)
+  let d_x = @snn_mbt.tn_stack_backward(stack, n, cache, u, 0.0F).0
+  let f0 = tn_obj_stack(stack, x, n, u)
+  let mut kinks = 0
+  let mut checked = 0
+  let mut over = 0
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut list = ""
+  let mut i = 0
+  while i < x.length() {
+    let xu = x.copy()
+    let xd = x.copy()
+    xu[i] = x[i] + TN_H
+    xd[i] = x[i] - TN_H
+    let fu = tn_obj_stack(stack, xu, n, u)
+    let fn_ = tn_obj_stack(stack, xd, n, u)
+    let d_pos = (fu - f0) / TN_H
+    let d_neg = (f0 - fn_) / TN_H
+    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
+    if split > 5.0e-3F {
+      kinks = kinks + 1
+      i = i + 1
+      continue
+    }
+    checked = checked + 1
+    let fd = (fu - fn_) / (2.0F * TN_H)
+    let gap = tn_gap(fd, d_x[i])
+    if gap > 0.0F {
+      over = over + 1
+      let bi = i / (chan * t)
+      let ci = (i / t) % chan
+      let fi = i % t
+      list = list + " [b=\{bi} c=\{ci} t=\{fi}]"
+    }
+    let ad = if gap > 0.0F { gap } else { 0.0F }
+    if ad > worst {
+      worst = ad
+      worst_i = i
+    }
+    i = i + 1
+  }
+  if checked < x.length() / 2 {
+    fail("only \{checked} smooth coordinates checked and \{kinks} kinked and skipped -- the filter is not discriminating")
+  }
+  if over > 0 {
+    fail("stack d_x: \{over} of \{checked} smooth coordinates outside tolerance, worst \{worst} at \{worst_i}; at\{list}")
+  }
+}
+
+///|
+/// Step for the STACK's directional check: a quarter of DN_H_DIR, because two
+/// residual blocks in series double the chance that one direction crosses a
+/// PReLU kink. At DN_H_DIR, 6 of 8 directions had to be discarded, which is
+/// barely a check at all.
+const DN_H_STACK : Float = 2.0e-4F
+
+///|
+/// One direction across EVERY block's parameters, so both blocks are checked
+/// at once and the reverse walk's ordering has to be right for the aggregate
+/// to agree.
+test "stack: one direction over all blocks matches a directional derivative" {
+  let n = 3
+  let chan = 5
+  let t = 8
+  let (stack, x, u) = tn_stack_fixture(n, chan, t, 167UL)
+  let (_y, cache) = @snn_mbt.tn_stack_forward_full(stack, x, n)
+  let gs = @snn_mbt.tn_stack_backward(stack, n, cache, u, 0.0F).1
+  if gs.length() != stack.length() {
+    fail("stack returned \{gs.length()} block gradients for \{stack.length()} blocks")
+  }
+  let f_base = tn_obj_stack(stack, x, n, u)
+  let mut checked = 0
+  let mut d = 0
+  while d < 8 {
+    let seed = 1009UL + d.to_uint64() * 131UL
+    // the SAME direction on both sides, up then down
+    let up = @snn_mbt.tn_stack_bump(stack, DN_H_STACK, seed)
+    let dn = @snn_mbt.tn_stack_bump(stack, -DN_H_STACK, seed)
+    // the analytic side has to use the same directions
+    let mut an = 0.0F
+    let mut gi = 0
+    while gi < stack.length() {
+      let fb = @snn_mbt.tarnet_block_flatten(stack[gi])
+      let gb = @snn_mbt.tarnet_block_grad_flatten(gs[gi], stack[gi])
+      let dir = @snn_mbt.tn_randn(
+        fb.length(),
+        1.0F,
+        @snn_mbt.Xoshiro::new(seed + gi.to_uint64() * 7919UL),
+      )
+      let mut k = 0
+      while k < fb.length() {
+        an = an + gb[k] * dir[k]
+        k = k + 1
+      }
+      gi = gi + 1
+    }
+    let fu = tn_obj_stack(up, x, n, u)
+    let fd_ = tn_obj_stack(dn, x, n, u)
+    let d_pos = (fu - f_base) / DN_H_STACK
+    let d_neg = (f_base - fd_) / DN_H_STACK
+    let a = if an < 0.0F { -an } else { an }
+    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
+    if split / (if a < 1.0F { 1.0F } else { a }) > 5.0e-2F {
+      d = d + 1
+      continue
+    }
+    checked = checked + 1
+    let dfd = (fu - fd_) / (2.0F * DN_H_STACK)
+    let err = if dfd > an { dfd - an } else { an - dfd }
+    let scale = if a < 1.0e-2F { 1.0e-2F } else { a }
+    if err / scale > 5.0e-2F {
+      fail("stack directional fd=\{dfd} analytic=\{an} (direction \{d})")
+    }
+    d = d + 1
+  }
+  if checked < 3 {
+    fail("only \{checked} of 8 stack directions survived the kink filter")
+  }
+}
+
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
