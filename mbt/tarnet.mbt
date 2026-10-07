@@ -291,69 +291,16 @@ pub(all) struct TarnetOut {
 ///
 /// `t` must match the `t_frames` the model was built for, because the layer
 /// norms hold per-element scale and shift sized to it.
+///
+/// Thin wrapper over `tarnet_forward_full`. This used to hold the whole
+/// twelve-stage pipeline; keeping a second copy of it is how the forward and
+/// the backward end up disagreeing about what ran.
 pub fn tarnet_forward(
   net : Tarnet,
   x : Array[Float],
   n : Int,
 ) -> TarnetOut {
-  let c = net.in_chan
-  let t = net.t_frames
-  // bottleneck: gLN over (in_chan, t) jointly, then a 1x1 convolution
-  let (gln, bn_ln_cache) = layer_norm_forward(x, n, c, 1, t, net.ln_in)
-  let bn = linear_forward(
-    gln, n * t, LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
-  )
-  let x_s = tn_run_stack(net.stack_s, bn, n)
-  let x_m = tn_run_stack(net.stack_m, bn, n)
-  let x_l = tn_run_stack(net.stack_l, bn, n)
-  // concat along the channel axis -> [n, 3*bn_chan, t]
-  let cat : Array[Float] = Array::make(n * 3 * net.bn_chan * t, 0.0F)
-  let a = x_s.length() / n
-  let mut i = 0
-  while i < n {
-    let mut ch = 0
-    while ch < net.bn_chan {
-      // The three stacks all have the same shape, so the SOURCE index is the same
-      // for all of them; only the DESTINATION carries the group offset. Adding
-      // the offset to the source too walks straight off the end of the stack.
-      let dst = (i * 3 * net.bn_chan + ch) * t
-      let src = (i * net.bn_chan + ch) * t
-      let mut ti = 0
-      while ti < t {
-        cat[dst + ti] = x_s[src + ti]
-        cat[dst + ti + net.bn_chan * t] = x_m[src + ti]
-        cat[dst + ti + 2 * net.bn_chan * t] = x_l[src + ti]
-        ti = ti + 1
-      }
-      ch = ch + 1
-    }
-    i = i + 1
-  }
-  let mfa = linear_forward(
-    cat,
-    n * t,
-    LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
-  )
-  let mfa_relu = relu_forward(mfa)
-  let fused = se_forward(mfa_relu, n, net.mfa_se)
-  let (pooled, _asp_cache) = asp_forward(fused, n, net.asp)
-  let (bn_seg, _s1) = batch_norm2d_forward(
-    pooled, n, 2 * net.fuse_out, 1, 1, net.bn_seg,
-  )
-  let emb = linear_forward(
-    bn_seg,
-    n,
-    LinearParam::new(net.fc_w, net.fc_b, 2 * net.fuse_out, net.emb_dim),
-  )
-  let (embedding, _s2) = batch_norm2d_forward(
-    emb, n, net.emb_dim, 1, 1, net.bn_out,
-  )
-  let logits = linear_forward(
-    embedding,
-    n,
-    LinearParam::new(net.cls_w, net.cls_b, net.emb_dim, net.n_classes),
-  )
-  { logits, embedding, pooled: bn_seg, fused, bottleneck: bn, bottleneck_ln_cache: bn_ln_cache }
+  tarnet_forward_full(net, x, n).0
 }
 
 ///|

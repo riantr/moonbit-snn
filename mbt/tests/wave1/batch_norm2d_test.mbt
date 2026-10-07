@@ -182,3 +182,160 @@ test "batch_norm2d_backward / d_input gradient check vs numerical" {
     }
   }
 }
+
+///|
+/// Objective for the affine-parameter gates: the BN output weighted by a fixed
+/// vector, so every channel gets a non-zero, non-uniform upstream gradient.
+fn bn_obj(
+  input : Array[Float],
+  n : Int,
+  c : Int,
+  h : Int,
+  w : Int,
+  bn : @snn_mbt.BatchNorm2d,
+  wt : Array[Float],
+) -> Float {
+  let (out, _cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn)
+  let mut s = 0.0F
+  for i in 0..<out.length() {
+    s = s + out[i] * wt[i]
+  }
+  s
+}
+
+///|
+/// Fixture whose channels have deliberately WILDLY different scales, so
+/// `inv_std = 1/sqrt(var + eps)` differs by ~100x across channels.
+///
+/// THIS IS THE POINT OF THE TEST. `d_gamma[c] = sum(d_y * xhat)` and
+/// `xhat = x_centered * inv_std`; the `* inv_std` factor was missing from
+/// `batch_norm2d_backward` for its whole life, and every pre-existing gate
+/// missed it because they checked d_gamma's SHAPE and never its value, and the
+/// d_input gate uses a single channel. On a fixture whose variance is near 1,
+/// `inv_std ~ 1` and the bug is arithmetically invisible. The three channels
+/// here have scales 1.0, 0.05 and 20.0, so no single omitted factor can hide.
+/// The TARNet model-level sweep is what finally caught it, on `bn_seg`.
+fn bn_scaled_fixture() -> (@snn_mbt.BatchNorm2d, Array[Float], Array[Float], Int, Int, Int, Int) {
+  let n = 4
+  let c = 3
+  let h = 2
+  let w = 2
+  let scales = [1.0F, 0.05F, 20.0F]
+  let input : Array[Float] = Array::make(n * c * h * w, 0.0F)
+  for ni in 0..<n {
+    for ci in 0..<c {
+      let hw = h * w
+      for k in 0..<hw {
+        let idx = ni * c * h * w + ci * h * w + k
+        // a varying pattern, not a constant: a constant channel has xhat == 0
+        // and would measure nothing
+        input[idx] = scales[ci] *
+          (1.0F + 0.37F * Float::from_int(k) + 0.11F * Float::from_int(ni))
+      }
+    }
+  }
+  let wt : Array[Float] = Array::make(n * c * h * w, 0.0F)
+  for i in 0..<wt.length() {
+    wt[i] = 1.0F + 0.23F * Float::from_int(i % 7)
+  }
+  (@snn_mbt.BatchNorm2d::new(c), input, wt, n, c, h, w)
+}
+
+///|
+/// Ratio of the largest to the smallest per-channel standard deviation in the
+/// fixture. This is the knob that decides whether the d_gamma gate can see a
+/// missing `inv_std`: the factor is 1/sqrt(var + eps), so channels whose
+/// spreads differ by R have inv_stds differing by up to R.
+fn bn_channel_scale_ratio(input : Array[Float], n : Int, c : Int, hw : Int) -> Float {
+  let mut lo = 1.0e30F
+  let mut hi = 0.0F
+  for ci in 0..<c {
+    let mut s = 0.0F
+    let mut s2 = 0.0F
+    let mut cnt = 0.0F
+    for ni in 0..<n {
+      for k in 0..<hw {
+        let v = input[ni * c * hw + ci * hw + k]
+        s = s + v
+        s2 = s2 + v * v
+        cnt = cnt + 1.0F
+      }
+    }
+    let mean = s / cnt
+    let variance = s2 / cnt - mean * mean
+    let sd = if variance > 0.0F { variance.sqrt() } else { 0.0F }
+    if sd < lo {
+      lo = sd
+    }
+    if sd > hi {
+      hi = sd
+    }
+  }
+  if lo > 0.0F { hi / lo } else { 0.0F }
+}
+
+///|
+test "batch_norm2d_backward / d_gamma matches numerical on wildly scaled channels" {
+  let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
+  // Non-vacuity: if every channel had variance near 1, inv_std ~ 1 and a
+  // missing inv_std factor in d_gamma would be arithmetically invisible --
+  // which is exactly how the bug survived every earlier gate.
+  let ratio = bn_channel_scale_ratio(input, n, c, h * w)
+  if ratio < 20.0F {
+    fail("fixture channels differ in scale by only \{ratio}x -- d_gamma's inv_std factor would be invisible here")
+  }
+  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn0)
+  let wt2 : Array[Float] = wt
+  let (_di, d_gamma, _db) = @snn_mbt.batch_norm2d_backward(wt2, cache, bn0)
+  let g0 = bn0.gamma.copy()
+  let f0 = bn_obj(input, n, c, h, w, bn0, wt2)
+  let eps = 0.002F
+  for k in 0..<c {
+    let up = g0.copy()
+    let dn = g0.copy()
+    up[k] = g0[k] + eps
+    dn[k] = g0[k] - eps
+    let fu = bn_obj(
+      input, n, c, h, w,
+      @snn_mbt.BatchNorm2d::with_gamma_beta(up, bn0.beta), wt2,
+    )
+    let fm = bn_obj(
+      input, n, c, h, w,
+      @snn_mbt.BatchNorm2d::with_gamma_beta(dn, bn0.beta), wt2,
+    )
+    let fd = (fu - fm) / (2.0F * eps)
+    if (d_gamma[k] - fd).abs() > 0.01F {
+      fail("d_gamma[\{k}] analytical \{d_gamma[k]} vs numerical \{fd}")
+    }
+  }
+  if f0 == 0.0F {
+    fail("objective is identically zero -- the gate measured nothing")
+  }
+}
+
+///|
+test "batch_norm2d_backward / d_beta matches numerical" {
+  let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
+  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn0)
+  let (_di, _dg, d_beta) = @snn_mbt.batch_norm2d_backward(wt, cache, bn0)
+  let b0 = bn0.beta.copy()
+  let eps = 0.002F
+  for k in 0..<c {
+    let up = b0.copy()
+    let dn = b0.copy()
+    up[k] = b0[k] + eps
+    dn[k] = b0[k] - eps
+    let fu = bn_obj(
+      input, n, c, h, w,
+      @snn_mbt.BatchNorm2d::with_gamma_beta(bn0.gamma, up), wt,
+    )
+    let fm = bn_obj(
+      input, n, c, h, w,
+      @snn_mbt.BatchNorm2d::with_gamma_beta(bn0.gamma, dn), wt,
+    )
+    let fd = (fu - fm) / (2.0F * eps)
+    if (d_beta[k] - fd).abs() > 0.01F {
+      fail("d_beta[\{k}] analytical \{d_beta[k]} vs numerical \{fd}")
+    }
+  }
+}

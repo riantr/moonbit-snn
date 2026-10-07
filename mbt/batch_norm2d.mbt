@@ -225,7 +225,14 @@ pub fn batch_norm2d_backward(
           let dy = d_output[idx]
           let dxhat = dy * bn.gamma[ci]
           d_b = d_b + dy
-          d_g = d_g + dy * cache.x_centered[idx]
+          // d_gamma[c] = sum(d_y * xhat) and xhat = x_centered * inv_std.
+          // The `* inv` used to be missing here, which made d_gamma wrong by a
+          // factor of inv_std per channel -- invisible on any channel whose
+          // variance is near 1, and a ~250x under-estimate on the small-variance
+          // channels TARNet's bn_seg produces. Caught by the model-level sweep
+          // in tests/wave2/tarnet_model_test.mbt. This is the same mistake as
+          // the layer_norm d_gamma one; `inv` is in scope and deliberately used.
+          d_g = d_g + dy * cache.x_centered[idx] * inv
           sum_dxhat = sum_dxhat + dxhat
           sum_dxhat_xc = sum_dxhat_xc + dxhat * cache.x_centered[idx]
         }
