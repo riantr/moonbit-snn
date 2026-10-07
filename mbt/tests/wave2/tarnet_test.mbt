@@ -451,6 +451,8 @@ test "TarnetBlock: per-parameter sweep with the one-sided kink filter" {
   let mut worst_k = -1
   let mut worst_fd = 0.0F
   let mut worst_an = 0.0F
+  let mut worst_pos = 0.0F
+  let mut worst_neg = 0.0F
   let mut k = 0
   while k < base.length() {
     let bu = base.copy()
@@ -480,6 +482,8 @@ test "TarnetBlock: per-parameter sweep with the one-sided kink filter" {
         worst_k = k
         worst_fd = fd
         worst_an = an
+        worst_pos = d_pos
+        worst_neg = d_neg
       }
     }
     k = k + stride
@@ -488,7 +492,7 @@ test "TarnetBlock: per-parameter sweep with the one-sided kink filter" {
     fail("only \{checked} smooth coordinates checked and \{kinks} kinked and skipped -- the filter is not discriminating")
   }
   if over > 0 {
-    fail("block parameters: \{over} of \{checked} outside tolerance, worst excess \{worst} at \{worst_k} (fd=\{worst_fd} an=\{worst_an})")
+    fail("block parameters: \{over} of \{checked} outside tolerance, worst excess \{worst} at \{worst_k} (fd=\{worst_fd} an=\{worst_an} d_pos=\{worst_pos} d_neg=\{worst_neg} tol=\{tol})")
   }
 }
 
