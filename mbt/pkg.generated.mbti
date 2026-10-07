@@ -263,6 +263,8 @@ pub fn conv1d_depthwise_backward(Array[Float], Array[Float], Int, Conv1DDepthwis
 
 pub fn conv1d_depthwise_forward(Array[Float], Int, Conv1DDepthwise) -> Array[Float]
 
+pub fn conv1d_depthwise_with(Conv1DDepthwise, Array[Float], Array[Float]) -> Conv1DDepthwise
+
 pub fn conv1d_pointwise_forward(Array[Float], Int, Int, Int, Int, Array[Float], Array[Float]) -> Array[Float]
 
 pub fn conv2d_backward(Array[Float], Array[Float], Int, Int, Int, Int, Conv2dParam) -> (Array[Float], Array[Float], Array[Float])
@@ -299,7 +301,15 @@ pub fn cross_entropy_one(Array[Float], Array[Float]) -> Float
 
 pub fn ctse_backward(Array[Float], Int, CtseParam, CtseCache) -> CtseGrad
 
+pub fn ctse_flatten(CtseParam) -> Array[Float]
+
 pub fn ctse_forward(Array[Float], Int, CtseParam) -> (Array[Float], CtseCache)
+
+pub fn ctse_grad_flatten(CtseGrad) -> Array[Float]
+
+pub fn ctse_param_count(CtseParam) -> Int
+
+pub fn ctse_unflatten(CtseParam, Array[Float]) -> CtseParam
 
 pub fn current_synapse_current(CurrentSynapseVars, Array[Float]) -> Unit
 
@@ -2099,9 +2109,25 @@ pub fn t5_compute_bias(T5RelativePosition, Int) -> Array[Float]
 
 pub fn tanhf(Float) -> Float
 
+pub fn tarnet_block_backward(TarnetBlock, Int, TarnetBlockFullCache, Array[Float], Float) -> (Array[Float], TarnetBlockGrad)
+
+pub fn tarnet_block_flatten(TarnetBlock) -> Array[Float]
+
 pub fn tarnet_block_forward(TarnetBlock, Array[Float], Int) -> (Array[Float], TarnetBlockCache)
 
+pub fn tarnet_block_forward_full(TarnetBlock, Array[Float], Int) -> (Array[Float], TarnetBlockFullCache)
+
+pub fn tarnet_block_grad_flatten(TarnetBlockGrad, TarnetBlock) -> Array[Float]
+
+pub fn tarnet_block_unflatten(TarnetBlock, Array[Float]) -> TarnetBlock
+
+pub fn tarnet_flatten(Tarnet) -> Array[Float]
+
 pub fn tarnet_forward(Tarnet, Array[Float], Int) -> TarnetOut
+
+pub fn tarnet_param_count(Tarnet) -> Int
+
+pub fn tarnet_unflatten(Tarnet, Array[Float]) -> Tarnet
 
 pub fn task_family_set_meta_model(TaskFamily, MLPModel) -> TaskFamily
 
@@ -2131,11 +2157,21 @@ pub fn tile_fraction(Array[Float], Float, Float, Float) -> Float
 
 pub fn time_in_interval(Float, Array[Array[Float]]) -> Bool
 
+pub fn tn_conv1x1_backward(Array[Float], Array[Float], Int, Int, Int, Array[Float]) -> (Array[Float], Array[Float], Array[Float])
+
+pub fn tn_conv1x1_forward(Array[Float], Int, Int, Int, Array[Float], Array[Float]) -> Array[Float]
+
 pub fn tn_pointwise(Array[Float], Int, Int, Int, Array[Float], Array[Float]) -> Array[Float]
 
 pub fn tn_randn(Int, Float, Xoshiro) -> Array[Float]
 
 pub fn tn_sigmoid(Float) -> Float
+
+pub fn tn_stack_backward(Array[TarnetBlock], Int, TarnetStackCache, Array[Float], Float) -> (Array[Float], Array[TarnetBlockGrad])
+
+pub fn tn_stack_bump(Array[TarnetBlock], Float, UInt64) -> Array[TarnetBlock]
+
+pub fn tn_stack_forward_full(Array[TarnetBlock], Array[Float], Int) -> (Array[Float], TarnetStackCache)
 
 pub fn top_k(Array[Float], Int) -> Array[Int]
 
@@ -4641,7 +4677,7 @@ pub enum LayerGrad {
   MaxPool2d
 }
 
-pub struct LayerNorm {
+pub(all) struct LayerNorm {
   gamma : Array[Float]
   beta : Array[Float]
   eps : Float
@@ -6613,6 +6649,32 @@ pub(all) struct TarnetBlockCache {
   pw2_out : Array[Float]
 }
 
+pub(all) struct TarnetBlockFullCache {
+  x : Array[Float]
+  pw1_out : Array[Float]
+  pw1_post : Array[Float]
+  ln1_out : Array[Float]
+  ln1_cache : LayerNormCache
+  dw_out : Array[Float]
+  dw_post : Array[Float]
+  ln2_out : Array[Float]
+  ln2_cache : LayerNormCache
+  pw2_out : Array[Float]
+  se_cache : CtseCache
+}
+
+pub(all) struct TarnetBlockGrad {
+  pw1 : (Array[Float], Array[Float])
+  ln1_g : Array[Float]
+  ln1_b : Array[Float]
+  dw : (Array[Float], Array[Float])
+  prelu : Float
+  ln2_g : Array[Float]
+  ln2_b : Array[Float]
+  pw2 : (Array[Float], Array[Float])
+  se : CtseGrad
+}
+
 pub(all) struct TarnetOut {
   logits : Array[Float]
   embedding : Array[Float]
@@ -6620,6 +6682,11 @@ pub(all) struct TarnetOut {
   fused : Array[Float]
   bottleneck : Array[Float]
   bottleneck_ln_cache : LayerNormCache
+}
+
+pub(all) struct TarnetStackCache {
+  x0 : Array[Float]
+  caches : Array[TarnetBlockFullCache]
 }
 
 pub struct TaskFamily {
