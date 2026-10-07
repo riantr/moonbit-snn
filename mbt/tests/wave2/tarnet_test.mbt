@@ -485,7 +485,27 @@ test "TarnetBlock: the input gradient also matches central differences" {
     i = i + 1
   }
   if over > 0 {
-    fail("block d_x: \{over} of \{x.length()} outside tolerance, worst \{worst} at \{worst_i}")
+    // Which coordinates, and how they are distributed. A cluster in the time
+    // index points at the depthwise conv's boundary arithmetic; a cluster in
+    // the channel index points at the CTSE; a scattered handful is neither.
+    let mut list = ""
+    let mut k = 0
+    while k < x.length() {
+      let xu = x.copy()
+      let xd = x.copy()
+      xu[k] = x[k] + TN_H
+      xd[k] = x[k] - TN_H
+      let fd = (tn_obj_block(b, xu, n, u) - tn_obj_block(b, xd, n, u)) /
+        (2.0F * TN_H)
+      if tn_gap(fd, d_x[k]) > 0.0F {
+        let bi = k / (chan * t)
+        let ci = (k / t) % chan
+        let fi = k % t
+        list = list + " [b=\{bi} c=\{ci} t=\{fi}]"
+      }
+      k = k + 1
+    }
+    fail("block d_x: \{over} of \{x.length()} outside tolerance, worst \{worst} at \{worst_i}; at\{list}")
   }
 }
 
