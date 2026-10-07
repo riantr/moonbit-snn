@@ -271,6 +271,21 @@ pub(all) struct AspGrad {
 /// variance clamp: if `second - mu^2` lands inside the dead zone for some
 /// channel, `d_second` is zero there while the difference still is not.
 ///
+/// THE MEASUREMENT IS SOUND; THE SIGN IS WRONG. At batch 1 / channel 2 /
+/// frame 1, the full sweep's worst coordinate:
+///
+///     analytic = -0.17113
+///     fd       = 0.279387 / 0.279466 / 0.279427 / 0.279427 / 0.279427
+///                 at h = 0.024, 0.012, 0.006, 0.003, 0.0015
+///     d_pos    = 0.28324 -> 0.27974    (converging)
+///     d_neg    = 0.27553 -> 0.27911    (converging)
+///
+/// Five step sizes agreeing to five significant digits, and one-sided slopes
+/// agreeing to 0.0015, mean this is neither a kink nor Float32 noise: the
+/// probe is fine. Truth is about +0.279 against an analytic -0.171 --
+/// OPPOSITE SIGN, comparable magnitude. That rules out the entire
+/// mu/second/std derivation as "nearly right" and makes this a sign hunt.
+///
 /// ALSO DISPROVED: the variance dead zone. Probing every channel of batch 1
 /// gives `raw == clamped` and `at_floor = false` on all five, and d_mu checks
 /// out by hand -- for channel 0, `d_second = g_sig*0.5/sigma = 1.44421` and
