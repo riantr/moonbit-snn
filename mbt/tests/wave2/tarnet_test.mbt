@@ -316,7 +316,13 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
     i = i + 1
   }
   // The three stacks must tile the block region in order.
-  let mut o = 2 * 6 * 9 + 8 * 6 + 8
+  //
+  // These offsets are DERIVED, not written as literals. The previous version
+  // hard-coded `2 * 6 * 9` and `b.hid * 9 * 2` -- the `* 9` being the frame
+  // count, because the gLN affine was per (channel, frame). With a per-channel
+  // affine those are `in_chan * 2` and `hid * 2`, and a literal would have kept
+  // pointing at the wrong slot while still compiling.
+  let mut o = net.in_chan * 2 + net.bn_chan * net.in_chan + net.bn_chan
   let stacks = [net.stack_s, net.stack_m, net.stack_l]
   for st in stacks {
     if st.length() == 0 {
@@ -324,9 +330,9 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
     }
     for b in st {
       o = o + b.hid * b.chan + b.hid
-      o = o + b.hid * 9 * 2
+      o = o + b.hid * 2
       o = o + b.dw.weight.length() + b.dw.bias.length() + 1
-      o = o + b.hid * 9 * 2
+      o = o + b.hid * 2
       o = o + b.chan * b.hid + b.chan
       o = o + @snn_mbt.ctse_param_count(b.se)
     }
@@ -352,8 +358,12 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
     fail("the ln_in bump leaked into bn_w")
   }
   // The FIRST prelu scalar: walk to it exactly as the layout says.
-  // pw1 is hid*chan = 8*8, not hid*in_chan = 8*6
-  let pre = 2 * 6 * 9 + 8 * 6 + 8 + 8 * 8 + 8 + 8 * 9 * 2 + 8 * 3 + 8
+  // pw1 is hid*chan = 8*8, not hid*in_chan = 8*6. Derived, not literal, for
+  // the same reason as the walk above.
+  let b0 = net.stack_s[0]
+  let pre = net.in_chan * 2 + net.bn_chan * net.in_chan + net.bn_chan +
+    b0.hid * b0.chan + b0.hid + b0.hid * 2 +
+    b0.dw.weight.length() + b0.dw.bias.length()
   let pb = flat.copy()
   pb[pre] = pb[pre] + 1.0F
   let q2 = @snn_mbt.tarnet_unflatten(net, pb)

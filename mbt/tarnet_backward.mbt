@@ -18,7 +18,7 @@
 /// Every cache the model-level backward needs. Held as one struct so a missing
 /// stage is a compile error rather than a silently absent gradient.
 pub(all) struct TarnetFullCache {
-  ln_in_cache : LayerNormCache // gLN over the log-Mel input
+  ln_in_cache : GlnCache // gLN over the log-Mel input
   gln : Array[Float]           // gLN output, the 1x1 conv's input
   bn : Array[Float]            // bottleneck, the three stacks' shared input
   stack_s : TarnetStackCache
@@ -99,9 +99,14 @@ pub fn tarnet_forward_full(
   n : Int,
 ) -> (TarnetOut, TarnetFullCache) {
   let c = net.in_chan
-  let t = net.t_frames
+  // The frame count is read off the INPUT, not off `net.t_frames`. With a
+  // per-channel gLN affine nothing in the parameters depends on the frame
+  // count, so one model serves utterances of any length -- which is the whole
+  // point of a model whose input is variable-length speech. `t_frames` remains
+  // on the struct as the expected length, not as a constraint.
+  let t = x.length() / (n * c)
   // bottleneck: gLN over (in_chan, t) jointly, then a 1x1 convolution
-  let (gln, bn_ln_cache) = layer_norm_forward(x, n, c, 1, t, net.ln_in)
+  let (gln, bn_ln_cache) = gln_forward(x, n, c, t, net.ln_in)
   let bn = linear_forward(
     gln, n * t, LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
   )
@@ -182,7 +187,8 @@ pub fn tarnet_backward(
   l2 : Float,
 ) -> (Array[Float], Array[Float]) {
   let c = net.in_chan
-  let t = net.t_frames
+  // read off the cache's bottleneck, which is where the forward left it
+  let t = cache.bn.length() / (n * net.bn_chan)
   // classifier
   let (d_embedding, d_cls_w, d_cls_b) = linear_backward(
     cache.embedding,
@@ -232,7 +238,7 @@ pub fn tarnet_backward(
     n * t,
     LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
   )
-  let (d_x, d_ln_g, d_ln_b) = layer_norm_backward(
+  let (d_x, d_ln_g, d_ln_b) = gln_backward(
     d_gln, cache.ln_in_cache, net.ln_in,
   )
   let g : Array[Float] = Array::make(tarnet_param_count(net), 0.0F)

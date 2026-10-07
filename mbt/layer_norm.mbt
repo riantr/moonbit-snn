@@ -201,3 +201,172 @@ pub fn layer_norm_backward(
   }
   (d_input, d_gamma, d_beta)
 }
+
+// ---------------------------------------------------------------------------
+// Global layer norm
+// ---------------------------------------------------------------------------
+//
+// WHY THIS EXISTS, and why it is not `LayerNorm` with different numbers:
+// asteroid's `GlobLN` -- the `gLN` that the TARNet reference selects via
+// `norms.get("gLN")` -- has PER-CHANNEL affine parameters of shape (C,),
+// broadcast over time, while this package's `LayerNorm` allocates one
+// gamma/beta per ELEMENT of the (c, h, w) group. Both normalise over the same
+// axis, so the two agree numerically at gamma = 1, beta = 0; they differ in
+// capacity, and the difference is not cosmetic:
+//
+//   - parameter count: GlobLN has C, LayerNorm has C * h * w. At the default
+//     t_frames = 301 that is 301x more parameters in every one of the block's
+//     four norms, none of them in the reference.
+//   - LENGTH: GlobLN has no length-dependent parameter, so the reference runs
+//     utterances of any frame count through one model. LayerNorm(c, 1, t)
+//     cannot -- the model becomes hard-wired to the t_frames it was built with,
+//     which defeats the point of a model whose input is variable-length
+//     speech.
+//
+// Reference (asteroid/masknn/norms.py, verified against the library's own
+// source, not from memory):
+//
+//     class _LayerNorm(nn.Module):
+//         def __init__(self, channel_size):
+//             self.gamma = nn.Parameter(torch.ones(channel_size))
+//             self.beta = nn.Parameter(torch.zeros(channel_size))
+//         def apply_gain_and_bias(self, normed_x):   # [batch, channel, *]
+//             return (self.gamma * normed_x.transpose(1, -1) + self.beta).transpose(1, -1)
+//
+//     class GlobLN(_LayerNorm):
+//         def forward(self, x, EPS=1e-8):
+//             dims = list(range(1, len(x.shape)))      # every dim except batch
+//             mean = x.mean(dim=dims, keepdim=True)
+//             var = torch.pow(x - mean, 2).mean(dim=dims, keepdim=True)
+//             return self.apply_gain_and_bias((x - mean) / (var + EPS).sqrt())
+//
+// Note EPS = 1e-8 here, against 1e-5 in this package's `LayerNorm`; that is the
+// reference's value for the gLN path and is not arbitrary.
+
+///|
+/// Global layer norm with a PER-CHANNEL affine of length `c`, applied to a
+/// `[n, c, t]` tensor. Deliberately not `LayerNorm`: see the section comment.
+pub(all) struct GlobalLayerNorm {
+  gamma : Array[Float]
+  beta : Array[Float]
+  eps : Float
+  c : Int
+}
+
+///|
+pub fn GlobalLayerNorm::new(c : Int, eps? : Float = 0.00000001) -> GlobalLayerNorm {
+  { gamma: Array::make(c, 1.0F), beta: Array::make(c, 0.0F), eps, c }
+}
+
+///|
+/// Forward cache. `x_centered` is (x - mean) and `inv_std` is
+/// 1 / sqrt(var + eps) with ONE entry per sample, because the group is the
+/// whole (c, t) plane of that sample.
+pub(all) struct GlnCache {
+  x_centered : Array[Float]
+  inv_std : Array[Float]
+  n : Int
+  c : Int
+  t : Int
+  ct : Int
+}
+
+///|
+/// Forward pass. `x` is `[n, c, t]`, returns `[n, c, t]` and the cache.
+pub fn gln_forward(
+  x : Array[Float],
+  n : Int,
+  c : Int,
+  t : Int,
+  gln : GlobalLayerNorm,
+) -> (Array[Float], GlnCache) {
+  let ct = c * t
+  let out : Array[Float] = Array::make(n * ct, 0.0F)
+  let x_centered : Array[Float] = Array::make(n * ct, 0.0F)
+  let inv_std : Array[Float] = Array::make(n, 0.0F)
+  for b in 0..<n {
+    let base = b * ct
+    let mut s = 0.0F
+    for i in 0..<ct {
+      s = s + x[base + i]
+    }
+    let mean = s / Float::from_int(ct)
+    let mut v = 0.0F
+    for i in 0..<ct {
+      let d = x[base + i] - mean
+      x_centered[base + i] = d
+      v = v + d * d
+    }
+    // biased variance, matching torch.pow(x - mean, 2).mean(...)
+    let variance = v / Float::from_int(ct)
+    let inv = 1.0F / sqrtf(variance + gln.eps)
+    inv_std[b] = inv
+    for ch in 0..<c {
+      let g = gln.gamma[ch]
+      let be = gln.beta[ch]
+      let off = ch * t
+      for ti in 0..<t {
+        let i = base + off + ti
+        out[i] = x_centered[i] * inv * g + be
+      }
+    }
+  }
+  (out, { x_centered, inv_std, n, c, t, ct })
+}
+
+///|
+/// Backward pass: `(d_input, d_gamma, d_beta)`, both affine gradients being of
+/// length `c` -- they sum over time, because gamma and beta are per channel.
+///
+/// The input gradient is the closed form for a group-normalised affine:
+///
+///     d_xhat = d_y * gamma
+///     d_x    = inv * ( d_xhat - mean(d_xhat) - xhat * mean(d_xhat * xhat) )
+///
+/// with every mean taken over the (c, t) plane of one sample. Writing it this
+/// way rather than by accumulating per-element contributions is what keeps the
+/// two "mean" terms from being recomputed inside the inner loop.
+pub fn gln_backward(
+  d_output : Array[Float],
+  cache : GlnCache,
+  gln : GlobalLayerNorm,
+) -> (Array[Float], Array[Float], Array[Float]) {
+  let n = cache.n
+  let c = cache.c
+  let t = cache.t
+  let ct = cache.ct
+  let d_input : Array[Float] = Array::make(n * ct, 0.0F)
+  let d_gamma : Array[Float] = Array::make(c, 0.0F)
+  let d_beta : Array[Float] = Array::make(c, 0.0F)
+  let inv_ct = 1.0F / Float::from_int(ct)
+  for b in 0..<n {
+    let base = b * ct
+    let inv = cache.inv_std[b]
+    // first pass: d_xhat and its two moments
+    let mut sum_d = 0.0F
+    let mut sum_dxc = 0.0F
+    for ch in 0..<c {
+      let g = gln.gamma[ch]
+      let off = ch * t
+      for ti in 0..<t {
+        let i = base + off + ti
+        let dy = d_output[i]
+        let xhat = cache.x_centered[i] * inv
+        d_beta[ch] = d_beta[ch] + dy
+        d_gamma[ch] = d_gamma[ch] + dy * xhat
+        let dxhat = dy * g
+        sum_d = sum_d + dxhat
+        sum_dxc = sum_dxc + dxhat * xhat
+      }
+    }
+    let mean_d = sum_d * inv_ct
+    let mean_dxc = sum_dxc * inv_ct
+    // second pass: assemble d_x
+    for i in 0..<ct {
+      let idx = base + i
+      let xhat = cache.x_centered[idx] * inv
+      d_input[idx] = inv * (d_output[idx] * gln.gamma[i / t] - mean_d - xhat * mean_dxc)
+    }
+  }
+  (d_input, d_gamma, d_beta)
+}

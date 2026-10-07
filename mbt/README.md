@@ -926,7 +926,40 @@ for closed-set speaker identification.
 
   One deviation remains, documented in the code: the reference declares TWO
   separate `nn.PReLU()` layers per block, each learning its own slope, while
-  this implementation shares one. The reference's
+  this implementation shares one.
+
+  3. **The gLN affine was per element where asteroid's is per channel.** The
+     reference gets its normalisation from `norms.get("gLN")`, which is
+     `asteroid.masknn.norms.GlobLN` -- an UNDECLARED dependency: it is not in
+     the reference's own `install_requires`, so it cannot be read from the
+     checkout and has to be verified against the library. Its `_LayerNorm`
+     allocates `gamma`/`beta` of shape `(channel_size,)` and broadcasts them
+     over time, while the statistic is still one mean and one std over every
+     dim except batch, i.e. the `(C, T)` plane jointly. This implementation had
+     used this package's `LayerNorm(c, 1, T)`, which agrees on the axis but
+     allocates one gamma/beta per ELEMENT. Two consequences, only one of which
+     is cosmetic:
+       - parameter count: `GlobLN` has C, `LayerNorm` had C * T. At the default
+         `t_frames = 301` that is 301x more parameters in each of a block's
+         four norms, none of them in the reference.
+       - **LENGTH.** `GlobLN` has no length-dependent parameter, so the
+         reference runs utterances of any length through ONE model.
+         `LayerNorm(c, 1, T)` cannot -- the model was hard-wired to the
+         `t_frames` it was constructed with, which defeats the point of a
+         model whose input is variable-length speech. `tarnet_forward` read `t`
+         from the input, not from the model, and `tarnet_param_count` no longer
+         depends on `t` at all.
+
+     `GlobalLayerNorm` (`layer_norm.mbt`) is the faithful version, with EPS
+     1e-8 against `LayerNorm`'s 1e-5, because that is asteroid's value on the
+     gLN path. `tarnet_test.mbt`'s round-trip gate had hard-coded the old flat
+     offsets (`2 * 6 * 9`, `b.hid * 9 * 2`); they are now derived from the
+     model, since a literal would have kept pointing at the wrong slot while
+     still compiling. The gate that matters is the length-independence one: the
+     parameter count must be identical at every `t`, because a forward that
+     merely happens to run at several lengths proves nothing while a per-frame
+     affine is still hiding somewhere in the parameter vector. Making the
+     count `t`-dependent again fails it with `t = 9 gives 3665 against 3593`. The reference's
   unstated torchaudio defaults are written out rather than left implicit
   (`center=True` with reflect padding, `power=2.0`, `mel_scale='htk'`,
   `norm=None`, and a SYMMETRIC window whose cosine runs over N-1). The `1e-6`

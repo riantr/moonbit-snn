@@ -124,6 +124,109 @@ test "TARNet: 20 default-width blocks keep the forward finite" {
   }
 }
 
+test "TARNet: ONE model runs utterances of different lengths" {
+  // The payoff of the per-channel gLN affine. `Tarnet::new` still takes
+  // `t_frames`, but it is the EXPECTED length, not a constraint: asteroid's
+  // `GlobLN` has no length-dependent parameter, so the reference runs any
+  // utterance length through one model. This implementation used to hold a
+  // per-ELEMENT affine, which made the model hard-wired to the t it was built
+  // with -- and hard-wiring a speaker-ID model to one utterance length defeats
+  // the entire point of the architecture.
+  let n = 2
+  let n_classes = 4
+  let built_for = 5
+  let net = @snn_mbt.Tarnet::new(
+    n_classes,
+    6,
+    built_for,
+    width=8,
+    hid_chan=8,
+    kernel=3,
+    repeats_s=1,
+    repeats_m=1,
+    repeats_l=1,
+    fuse_out=8,
+    emb_dim=8,
+    att_hidden=8,
+    seed=331UL,
+  )
+  // Three lengths, none of them the one the model was built for.
+  let lengths = [3, 9, 16]
+  let mut li = 0
+  while li < lengths.length() {
+    let t = lengths[li]
+    let x = @snn_mbt.rand_f32(
+      @snn_mbt.Xoshiro::new(400UL + t.to_uint64()), n * 6 * t,
+    )
+    let (out, cache) = @snn_mbt.tarnet_forward_full(net, x, n)
+    if out.logits.length() != n * n_classes {
+      fail("t = \{t}: logits length \{out.logits.length()}")
+    }
+    if out.fused.length() != n * net.fuse_out * t {
+      fail("t = \{t}: fused length \{out.fused.length()}, expected \{n * net.fuse_out * t} -- the frame axis is wrong")
+    }
+    if out.pooled.length() != n * 2 * net.fuse_out {
+      fail("t = \{t}: pooled length \{out.pooled.length()} -- ASP must collapse the frame axis")
+    }
+    let mut i = 0
+    while i < out.logits.length() {
+      if !(out.logits[i] == out.logits[i]) {
+        fail("t = \{t}: logits[\{i}] is NaN")
+      }
+      i = i + 1
+    }
+    // and the backward has to close at that length too
+    let targets : Array[Int] = [0, 1]
+    let (d_logits, loss) = @snn_mbt.tarnet_softmax_dlogits(
+      out.logits, n, n_classes, targets,
+    )
+    let (g, d_x) = @snn_mbt.tarnet_backward(net, n, cache, d_logits, 0.0F)
+    if g.length() != @snn_mbt.tarnet_param_count(net) {
+      fail("t = \{t}: gradient length \{g.length()} -- the parameter count must not depend on the frame count")
+    }
+    if d_x.length() != x.length() {
+      fail("t = \{t}: d_x length \{d_x.length()} vs input \{x.length()}")
+    }
+    if !(loss == loss) || loss <= 0.0F {
+      fail("t = \{t}: loss \{loss}")
+    }
+    li = li + 1
+  }
+  // The non-vacuity point: the parameter count MUST be identical across
+  // lengths. If any norm still carried a per-frame affine, this would grow
+  // with t and the model would still be hard-wired -- passing every forward
+  // above while retaining the very defect this test exists to rule out.
+  let mut counts = 0
+  let mut li2 = 0
+  while li2 < lengths.length() {
+    let t = lengths[li2]
+    let net2 = @snn_mbt.Tarnet::new(
+      n_classes,
+      6,
+      t,
+      width=8,
+      hid_chan=8,
+      kernel=3,
+      repeats_s=1,
+      repeats_m=1,
+      repeats_l=1,
+      fuse_out=8,
+      emb_dim=8,
+      att_hidden=8,
+      seed=331UL,
+    )
+    let cnt = @snn_mbt.tarnet_param_count(net2)
+    if li2 == 0 {
+      counts = cnt
+    } else if cnt != counts {
+      fail(
+        "param count depends on t: t = \{t} gives \{cnt} against \{counts} at another length -- a norm still has a per-frame affine",
+      )
+    }
+    li2 = li2 + 1
+  }
+}
+
 test "TARNet: default-width backward and one Adam step stay finite" {
   let n = 2
   let n_classes = 5

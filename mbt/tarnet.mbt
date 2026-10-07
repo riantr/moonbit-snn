@@ -40,17 +40,20 @@
 ///   x -> 1x1 conv -> PReLU -> gLN -> depthwise dilated -> PReLU -> gLN
 ///     -> 1x1 conv -> channel-time SE -> (+ x)
 ///
-/// The gLN uses this package's `LayerNorm(chan, 1, T)`, whose statistic is
-/// over `chan * T` per sample -- the joint channel-and-time statistic gLN
-/// calls for. Its scale and shift are per element rather than per channel as
-/// in asteroid's gLN; that is a documented simplification, not an oversight.
+/// The gLN is `GlobalLayerNorm`: one mean and one std over the whole
+/// `(chan, T)` plane of each sample -- the joint channel-and-time statistic
+/// gLN calls for -- with a PER-CHANNEL affine of length `chan`, matching
+/// asteroid's `GlobLN`, which is what `norms.get("gLN")` returns in the
+/// reference. It is deliberately NOT this package's `LayerNorm(chan, 1, T)`,
+/// whose per-element affine made the model length-dependent; see
+/// `GlobalLayerNorm` in `layer_norm.mbt`.
 pub(all) struct TarnetBlock {
   pw1 : Array[Float]
   pb1 : Array[Float]
-  ln1 : LayerNorm
+  ln1 : GlobalLayerNorm
   dw : Conv1DDepthwise
   prelu1 : Float
-  ln2 : LayerNorm
+  ln2 : GlobalLayerNorm
   pw2 : Array[Float]
   pb2 : Array[Float]
   se : CtseParam
@@ -85,11 +88,11 @@ pub fn TarnetBlock::new(
   {
     pw1: tn_randn(hid * chan, 0.05F, rng),
     pb1: Array::make(hid, 0.0F),
-    ln1: LayerNorm::new(hid, 1, t),
+    ln1: GlobalLayerNorm::new(hid),
     dw,
     // PReLU's initial slope is 0.25, as in PyTorch's default.
     prelu1: 0.25F,
-    ln2: LayerNorm::new(hid, 1, t),
+    ln2: GlobalLayerNorm::new(hid),
     pw2: tn_randn(chan * hid, 0.05F, rng),
     pb2: Array::make(chan, 0.0F),
     se: CtseParam::new(chan, seed + 1UL),
@@ -127,10 +130,10 @@ pub fn tarnet_block_forward(
   // utterance, which is what makes it a *global* layer norm. Passing `n * t`
   // here (as the 1x1 convolutions above do) would normalise each frame on its
   // own and ask the layer for n*hid*t^2 elements it does not have.
-  let (ln1_out, _c1) = layer_norm_forward(pw1_post, n, b.hid, 1, t, b.ln1)
+  let (ln1_out, _c1) = gln_forward(pw1_post, n, b.hid, t, b.ln1)
   let dw_out = conv1d_depthwise_forward(ln1_out, n, b.dw)
   let dw_post = prelu_forward(dw_out, b.prelu1)
-  let (ln2_out, _c2) = layer_norm_forward(dw_post, n, b.hid, 1, t, b.ln2)
+  let (ln2_out, _c2) = gln_forward(dw_post, n, b.hid, t, b.ln2)
   let pw2_out = tn_conv1x1_forward(
     ln2_out, n, b.hid, b.chan, b.pw2, b.pb2,
   )
@@ -149,7 +152,7 @@ pub fn tarnet_block_forward(
 /// The whole trainable network.
 pub(all) struct Tarnet {
   // bottleneck
-  ln_in : LayerNorm
+  ln_in : GlobalLayerNorm
   bn_w : Array[Float]
   bn_b : Array[Float]
   // three parallel stacks
@@ -218,10 +221,10 @@ fn tn_build_stack(
 /// bottleneck, 512 hidden channels, kernel 3, four repeats per scale,
 /// 512 fused channels and a 512-d embedding.
 ///
-/// `t_frames` sizes the layer norms, which makes it a property of the model
-/// rather than of a batch: the reference's gLN has no length-dependent
-/// parameters either, but this package's `LayerNorm` stores gamma and beta
-/// per element, so they are allocated for the expected frame count.
+/// `t_frames` is the EXPECTED frame count, not a constraint. The gLN affine is
+/// per channel, so no parameter depends on the frame count and one model serves
+/// utterances of any length -- `tarnet_forward` reads `t` off the input. It is
+/// kept because a caller needs to know what to allocate.
 pub fn Tarnet::new(
   n_classes : Int,
   in_chan : Int,
@@ -244,7 +247,7 @@ pub fn Tarnet::new(
   let _ = (tn_stack_len(dil_s, repeats_s), tn_stack_len(dil_m, repeats_m),
     tn_stack_len(dil_l, repeats_l))
   {
-    ln_in: LayerNorm::new(in_chan, 1, t_frames),
+    ln_in: GlobalLayerNorm::new(in_chan),
     bn_w: tn_randn(width * in_chan, 0.05F, rng),
     bn_b: Array::make(width, 0.0F),
     stack_s: tn_build_stack(dil_s, repeats_s, width, hid_chan, kernel, t_frames,
@@ -294,14 +297,15 @@ pub(all) struct TarnetOut {
   pooled : Array[Float]
   fused : Array[Float]
   bottleneck : Array[Float]
-  bottleneck_ln_cache : LayerNormCache
+  bottleneck_ln_cache : GlnCache
 }
 
 ///|
 /// Forward pass from a log-Mel spectrogram. `x` is `[n, in_chan, t]`.
 ///
-/// `t` must match the `t_frames` the model was built for, because the layer
-/// norms hold per-element scale and shift sized to it.
+/// `t` is read off `x` and need NOT match the `t_frames` the model was built
+/// for: the gLN affine is per channel, so no parameter depends on the frame
+/// count and one model serves utterances of any length.
 ///
 /// Thin wrapper over `tarnet_forward_full`. This used to hold the whole
 /// twelve-stage pipeline; keeping a second copy of it is how the forward and
@@ -375,11 +379,11 @@ fn tn_put(dst : Array[Float], off : Int, src : Array[Float]) -> Int {
 
 ///|
 /// How many scalars one `TarnetBlock` contributes.
-fn tn_block_len(b : TarnetBlock, t : Int) -> Int {
+fn tn_block_len(b : TarnetBlock) -> Int {
   b.hid * b.chan + b.hid +
-  b.hid * t * 2 +
+  b.hid * 2 +
   b.dw.weight.length() + b.dw.bias.length() + 1 +
-  b.hid * t * 2 +
+  b.hid * 2 +
   b.chan * b.hid + b.chan +
   ctse_param_count(b.se)
 }
@@ -387,13 +391,12 @@ fn tn_block_len(b : TarnetBlock, t : Int) -> Int {
 ///|
 /// Number of scalars in a flattened `Tarnet`.
 pub fn tarnet_param_count(net : Tarnet) -> Int {
-  let t = net.t_frames
-  let mut total = net.in_chan * t * 2
+  let mut total = net.in_chan * 2
   total = total + net.bn_chan * net.in_chan + net.bn_chan
   let stacks = [net.stack_s, net.stack_m, net.stack_l]
   for st in stacks {
     for b in st {
-      total = total + tn_block_len(b, t)
+      total = total + tn_block_len(b)
     }
   }
   total = total + net.fuse_out * 3 * net.bn_chan + net.fuse_out
@@ -464,16 +467,15 @@ fn tn_block_unflatten(
   proto : TarnetBlock,
   flat : Array[Float],
   off : Int,
-  t : Int,
 ) -> (TarnetBlock, Int) {
   let mut o = off
   let pw1 = tn_take(flat, o, proto.hid * proto.chan)
   o = o + pw1.length()
   let pb1 = tn_take(flat, o, proto.hid)
   o = o + pb1.length()
-  let l1g = tn_take(flat, o, proto.hid * t)
+  let l1g = tn_take(flat, o, proto.hid)
   o = o + l1g.length()
-  let l1b = tn_take(flat, o, proto.hid * t)
+  let l1b = tn_take(flat, o, proto.hid)
   o = o + l1b.length()
   let dww = tn_take(flat, o, proto.dw.weight.length())
   o = o + dww.length()
@@ -481,9 +483,9 @@ fn tn_block_unflatten(
   o = o + dwb.length()
   let prelu = tn_take(flat, o, 1)[0]
   o = o + 1
-  let l2g = tn_take(flat, o, proto.hid * t)
+  let l2g = tn_take(flat, o, proto.hid)
   o = o + l2g.length()
-  let l2b = tn_take(flat, o, proto.hid * t)
+  let l2b = tn_take(flat, o, proto.hid)
   o = o + l2b.length()
   let pw2 = tn_take(flat, o, proto.chan * proto.hid)
   o = o + pw2.length()
@@ -494,10 +496,10 @@ fn tn_block_unflatten(
   let blk = {
     pw1: pw1,
     pb1: pb1,
-    ln1: { gamma: l1g, beta: l1b, eps: proto.ln1.eps, c: proto.hid, h: 1, w: t },
+    ln1: { gamma: l1g, beta: l1b, eps: proto.ln1.eps, c: proto.hid },
     dw: conv1d_depthwise_with(proto.dw, dww, dwb),
     prelu1: prelu,
-    ln2: { gamma: l2g, beta: l2b, eps: proto.ln2.eps, c: proto.hid, h: 1, w: t },
+    ln2: { gamma: l2g, beta: l2b, eps: proto.ln2.eps, c: proto.hid },
     pw2: pw2,
     pb2: pb2,
     se: ctse_unflatten(proto.se, se_flat),
@@ -514,13 +516,12 @@ fn tn_stack_unflatten(
   proto : Array[TarnetBlock],
   flat : Array[Float],
   off : Int,
-  t : Int,
 ) -> (Array[TarnetBlock], Int) {
   let out : Array[TarnetBlock] = []
   let mut o = off
   let mut i = 0
   while i < proto.length() {
-    let (blk, next) = tn_block_unflatten(proto[i], flat, o, t)
+    let (blk, next) = tn_block_unflatten(proto[i], flat, o)
     out.push(blk)
     o = next
     i = i + 1
@@ -538,19 +539,18 @@ pub fn tarnet_unflatten(
   if flat.length() != want {
     abort("tarnet_unflatten: expected \{want} parameters, got \{flat.length()}")
   }
-  let t = net.t_frames
   let mut o = 0
-  let ln_g = tn_take(flat, o, net.in_chan * t)
+  let ln_g = tn_take(flat, o, net.in_chan)
   o = o + ln_g.length()
-  let ln_b = tn_take(flat, o, net.in_chan * t)
+  let ln_b = tn_take(flat, o, net.in_chan)
   o = o + ln_b.length()
   let bn_w = tn_take(flat, o, net.bn_chan * net.in_chan)
   o = o + bn_w.length()
   let bn_b = tn_take(flat, o, net.bn_chan)
   o = o + bn_b.length()
-  let (s_s, o1) = tn_stack_unflatten(net.stack_s, flat, o, t)
-  let (s_m, o2) = tn_stack_unflatten(net.stack_m, flat, o1, t)
-  let (s_l, o3) = tn_stack_unflatten(net.stack_l, flat, o2, t)
+  let (s_s, o1) = tn_stack_unflatten(net.stack_s, flat, o)
+  let (s_m, o2) = tn_stack_unflatten(net.stack_m, flat, o1)
+  let (s_l, o3) = tn_stack_unflatten(net.stack_l, flat, o2)
   let mut o = o3
   let mfa_w = tn_take(flat, o, net.fuse_out * 3 * net.bn_chan)
   o = o + mfa_w.length()
@@ -591,7 +591,7 @@ pub fn tarnet_unflatten(
   let cls_b = tn_take(flat, o, net.n_classes)
   o = o + cls_b.length()
   {
-    ln_in: { gamma: ln_g, beta: ln_b, eps: net.ln_in.eps, c: net.in_chan, h: 1, w: t },
+    ln_in: { gamma: ln_g, beta: ln_b, eps: net.ln_in.eps, c: net.in_chan },
     bn_w: bn_w,
     bn_b: bn_b,
     stack_s: s_s,
@@ -655,11 +655,11 @@ pub(all) struct TarnetBlockFullCache {
   pw1_out : Array[Float]
   pw1_post : Array[Float]
   ln1_out : Array[Float]
-  ln1_cache : LayerNormCache
+  ln1_cache : GlnCache
   dw_out : Array[Float]
   dw_post : Array[Float]
   ln2_out : Array[Float]
-  ln2_cache : LayerNormCache
+  ln2_cache : GlnCache
   pw2_out : Array[Float]
   se_cache : CtseCache
 }
@@ -674,13 +674,13 @@ pub fn tarnet_block_forward_full(
   let t = x.length() / (n * b.chan)
   let pw1_out = tn_conv1x1_forward(x, n, b.chan, b.hid, b.pw1, b.pb1)
   let pw1_post = prelu_forward(pw1_out, b.prelu1)
-  let (ln1_out, ln1_cache) = layer_norm_forward(
-    pw1_post, n, b.hid, 1, t, b.ln1,
+  let (ln1_out, ln1_cache) = gln_forward(
+    pw1_post, n, b.hid, t, b.ln1,
   )
   let dw_out = conv1d_depthwise_forward(ln1_out, n, b.dw)
   let dw_post = prelu_forward(dw_out, b.prelu1)
-  let (ln2_out, ln2_cache) = layer_norm_forward(
-    dw_post, n, b.hid, 1, t, b.ln2,
+  let (ln2_out, ln2_cache) = gln_forward(
+    dw_post, n, b.hid, t, b.ln2,
   )
   let pw2_out = tn_conv1x1_forward(
     ln2_out, n, b.hid, b.chan, b.pw2, b.pb2,
@@ -746,7 +746,7 @@ pub fn tarnet_block_backward(
   let (d_ln2_out, dw2, db2) = tn_conv1x1_backward(
     cache.ln2_out, se_g.d_x, n, b.hid, b.chan, b.pw2,
   )
-  let (d_dw_post, ln2_g, ln2_b) = layer_norm_backward(
+  let (d_dw_post, ln2_g, ln2_b) = gln_backward(
     d_ln2_out, cache.ln2_cache, b.ln2,
   )
   let (d_dw_out, d_prelu2) = prelu_backward(
@@ -755,7 +755,7 @@ pub fn tarnet_block_backward(
   let (d_ln1_out, dww, dwb) = conv1d_depthwise_backward(
     cache.ln1_out, d_dw_out, n, b.dw,
   )
-  let (d_pw1_post, ln1_g, ln1_b) = layer_norm_backward(
+  let (d_pw1_post, ln1_g, ln1_b) = gln_backward(
     d_ln1_out, cache.ln1_cache, b.ln1,
   )
   let (d_pw1_out, d_prelu1) = prelu_backward(
@@ -801,10 +801,13 @@ pub fn tarnet_block_backward(
 ///   pw1, pb1, ln1.gamma, ln1.beta, dw.weight, dw.bias, prelu1,
 ///   ln2.gamma, ln2.beta, pw2, pb2, then ctse_flatten of the block's se
 pub fn tarnet_block_flatten(b : TarnetBlock) -> Array[Float] {
-  // the frame count is the layer norm's `w`; taking it from there rather than
-  // from the caller means the two cannot disagree
-  let t = b.ln1.w
-  let flat : Array[Float] = Array::make(tn_block_len(b, t), 0.0F)
+  // The frame count is no longer a property of the block. It USED to be read
+  // off the layer norm's `w` here, precisely so the norm and the flat length
+  // could not disagree -- but that was a symptom of the norm owning a
+  // length-dependent affine, and with a per-channel affine nothing in a
+  // block's parameters depends on `t` at all. Deriving the length from the
+  // norm is what forced the model to be built for one frame count.
+  let flat : Array[Float] = Array::make(tn_block_len(b), 0.0F)
   let mut o = 0
   o = tn_put(flat, o, b.pw1)
   o = tn_put(flat, o, b.pb1)
@@ -828,7 +831,7 @@ pub fn tarnet_block_unflatten(
   proto : TarnetBlock,
   flat : Array[Float],
 ) -> TarnetBlock {
-  let (blk, _o) = tn_block_unflatten(proto, flat, 0, proto.ln1.w)
+  let (blk, _o) = tn_block_unflatten(proto, flat, 0)
   blk
 }
 
@@ -838,7 +841,7 @@ pub fn tarnet_block_grad_flatten(
   g : TarnetBlockGrad,
   b : TarnetBlock,
 ) -> Array[Float] {
-  let flat : Array[Float] = Array::make(tn_block_len(b, b.ln1.w), 0.0F)
+  let flat : Array[Float] = Array::make(tn_block_len(b), 0.0F)
   let mut o = 0
   o = tn_put(flat, o, g.pw1.0)
   o = tn_put(flat, o, g.pw1.1)
