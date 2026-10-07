@@ -892,7 +892,41 @@ for closed-set speaker identification.
 
   `tarnet_logmel.mbt` is the front end, forward-only because the reference
   computes it under `torch.no_grad()`. New primitives: radix-2 FFT, HTK mel
-  scale and filterbank, Hamming window, reflect padding, STFT. The reference's
+  scale and filterbank, Hamming window, reflect padding, STFT, pre-emphasis.
+
+  Every gate above is SELF-CONSISTENCY: it compares my code against my own
+  arithmetic, so a transcription error in the ARCHITECTURE would pass all of
+  them. A line-by-line reading of the reference against this implementation is
+  the only check that can catch that class, and it found two things:
+
+  1. **Pre-emphasis was missing entirely.** The reference's model front end is
+     `PreEmphasis(0.97)` -> `MelSpectrogram`, and `train_voxceleb.py` defaults
+     `feature_type` to `'raw'`, so the dataset hands the model a WAVEFORM and
+     the model does its own feature extraction -- pre-emphasis included. The
+     reference implements it as `pad(1, 0, reflect)` then `conv1d` with kernel
+     `[-coef, 1.0]`, which is
+     `y[0] = x[0] - coef*x[1]` and `y[n] = x[n] - coef*x[n-1]`. The reflected
+     FIRST sample is the detail: borrowing `x[0]` instead of `x[1]` yields
+     `(1-coef)*x[0] = 0.03*x[0]`, which is not a rounding difference but a
+     different filter. Mutation-tested -- with the wrong reflection the gate
+     reports `y[0] = 0.030` against a correct `-0.940`.
+  2. A comment on the classifier claimed the reference uses
+     `xavier_uniform` while the code allocated `randn(0.05)`. A comment that
+     states something the code does not do is worse than no comment, so the
+     mismatch is now resolved in favour of saying what the code does, with the
+     deviation (0.068 vs 0.05 gain for the default shape) and the reason.
+
+  Everything else matched, and the comparison is worth recording because the
+  close calls are easy to get wrong: SE sits INSIDE the MFA module (conv ->
+  ReLU -> SE), its bottleneck is `max(32, fuse_out // 4)`, the dilation stacks
+  are `build_stack([1,2], 4) / build_stack([4,8], 4) / build_stack([16], 4)`
+  with the repeat loop OUTSIDE the dilation loop, `bn_seg` is over
+  `2 * fuse_out`, and the block is `pw1 -> PReLU -> gLN -> depthwise -> PReLU ->
+  gLN` then `res_conv` then CTSE then `x + residual`.
+
+  One deviation remains, documented in the code: the reference declares TWO
+  separate `nn.PReLU()` layers per block, each learning its own slope, while
+  this implementation shares one. The reference's
   unstated torchaudio defaults are written out rather than left implicit
   (`center=True` with reflect padding, `power=2.0`, `mel_scale='htk'`,
   `norm=None`, and a SYMMETRIC window whose cosine runs over N-1). The `1e-6`

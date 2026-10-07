@@ -360,6 +360,52 @@ pub fn tn_dft(re : Array[Float]) -> (Array[Float], Array[Float]) {
 }
 
 ///|
+/// Pre-emphasis: a first-order high-pass applied to the WAVEFORM, before the
+/// STFT. This is part of the reference's model front end, not an optional
+/// extra, and it was MISSING from the first version of this file.
+///
+/// The reference builds it as
+///
+///     self.flipped_filter = tensor([[-coef, 1.0]]).unsqueeze(1)
+///     x = F.pad(x, (1, 0), mode="reflect")     # one sample, on the LEFT
+///     x = F.conv1d(x, self.flipped_filter)
+///
+/// which is length-preserving and equals
+///
+///     y[0] = x[0] - coef * x[1]
+///     y[n] = x[n] - coef * x[n - 1]     for n >= 1
+///
+/// Note the reflected FIRST sample: it borrows `x[1]`, not `x[0]`. Reflect
+/// padding excludes the edge sample, so writing `y[0] = x[0] - coef * x[0]`
+/// would be a different filter -- and it would also destroy the signal, since
+/// that is `(1 - coef) * x[0]` = 0.03 * x[0].
+///
+/// `coef <= 0` disables the filter, which is what the reference's DATASET path
+/// does (see `tn_log_mel`).
+pub fn tn_pre_emphasis(wav : Array[Float], coef~ : Float = 0.97F) -> Array[Float] {
+  let n = wav.length()
+  if coef <= 0.0F || n < 2 {
+    return wav.copy()
+  }
+  let out : Array[Float] = Array::make(n, 0.0F)
+  // reflect-pad one sample on the left: the pad borrows x[1]
+  let xpad = Array::make(n + 1, 0.0F)
+  xpad[0] = wav[1]
+  let mut i = 1
+  while i <= n {
+    xpad[i] = wav[i - 1]
+    i = i + 1
+  }
+  // conv1d with kernel [-coef, 1.0]: y[n] = -coef * xpad[n] + 1.0 * xpad[n+1]
+  i = 0
+  while i < n {
+    out[i] = xpad[i + 1] - coef * xpad[i]
+    i = i + 1
+  }
+  out
+}
+
+///|
 /// The reference's whole feature pipeline, for one waveform.
 ///
 /// Returns `[n_mels, n_frames]` row-major, which is `[1, in_chan, t]` to
@@ -369,6 +415,21 @@ pub fn tn_dft(re : Array[Float]) -> (Array[Float], Array[Float]) {
 /// torchaudio's Kaiser-windowed sinc kernel, which is not reproducible here;
 /// resampling is therefore a precondition, not a step, and is stated rather
 /// than approximated -- a silently-wrong resample produces plausible features.
+///
+/// TWO FRONT ENDS EXIST IN THE REFERENCE, and they are not the same:
+///
+///   - the MODEL path, `backbone.forward`: `PreEmphasis(0.97)` -> MelSpectrogram
+///     -> `clamp_min(1e-6)` -> log -> per-band mean removal. This is the path
+///     training actually runs: `train_voxceleb.py` defaults `feature_type` to
+///     `'raw'`, so the dataset hands the model a WAVEFORM and the model does its
+///     own feature extraction. `pre_emphasis` defaults to 0.97 to match.
+///   - the DATASET path, `AudioDataset._compute_features`: the same but with
+///     NO pre-emphasis. Pass `pre_emphasis = 0.0F` for that variant.
+///
+/// `clamp_min(1e-6)` versus `+ 1e-6` is not a behavioural difference here:
+/// both floor the power spectrum, and after the per-band mean removal a uniform
+/// additive shift cancels exactly, so the two agree except where the clamp is
+/// genuinely active.
 pub fn tn_log_mel(
   wav : Array[Float],
   sample_rate~ : Int = 16000,
@@ -378,8 +439,10 @@ pub fn tn_log_mel(
   n_mels~ : Int = 80,
   f_min~ : Float = 20.0F,
   f_max~ : Float = 7600.0F,
+  pre_emphasis~ : Float = 0.97F,
 ) -> Array[Float] {
-  let power = tn_stft_power(wav, n_fft, win_length, hop)
+  let filtered = tn_pre_emphasis(wav, coef=pre_emphasis)
+  let power = tn_stft_power(filtered, n_fft, win_length, hop)
   let n_freqs = n_fft / 2 + 1
   let n_frames = power.length() / n_freqs
   let fb = tn_mel_filterbank(n_freqs, n_mels, sample_rate, f_min, f_max)

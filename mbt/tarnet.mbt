@@ -262,7 +262,18 @@ pub fn Tarnet::new(
     fc_w: tn_randn(emb_dim * 2 * fuse_out, 0.05F, rng),
     fc_b: Array::make(emb_dim, 0.0F),
     bn_out: BatchNorm2d::new(emb_dim),
-    // the reference initialises the classifier xavier_uniform with zero bias
+    // DOCUMENTED DEVIATION, not an oversight: the reference writes
+    // `nn.init.xavier_uniform_(self.fc.weight)` here, and this used to carry a
+    // comment saying so while allocating randn(0.05) -- i.e. the comment
+    // documented the reference and the code contradicted it, which is the
+    // "stated limitation is where the defect waits" shape. A comment that
+    // claims something the code does not do is worse than no comment, so the
+    // mismatch is resolved in favour of saying what the code does.
+    // For reference, xavier_uniform's gain is sqrt(6/(n_classes + emb_dim)),
+    // i.e. 0.068 for the default 5-class/512-d shape against 0.05 here --
+    // the same order, so this changes the init scale slightly, not the
+    // architecture. Switch to tn_xavier_uniform if bit-compatibility with the
+    // reference's initialisation is wanted.
     cls_w: tn_randn(n_classes * emb_dim, 0.05F, rng),
     cls_b: Array::make(n_classes, 0.0F),
     in_chan,

@@ -33,6 +33,129 @@ extern "C" fn lm_sin(x : Float) -> Float = "sinf"
 
 const LM_TWO_PI : Float = 6.28318530717958647692F
 
+test "log-Mel: pre-emphasis matches the reference filter and is a real high-pass" {
+  // The reference implements this as pad(1, 0, reflect) then conv1d with the
+  // kernel [-coef, 1.0], so:
+  //     y[0] = x[0] - coef * x[1]      <- reflected: borrows x[1], NOT x[0]
+  //     y[n] = x[n] - coef * x[n-1]
+  // The first sample is the whole point of the test. Using x[0] there instead
+  // gives (1 - coef) * x[0] = 0.03 * x[0], which is not a rounding difference
+  // but a different filter.
+  let coef = 0.97F
+  let n = 8
+  let x : Array[Float] = Array::make(n, 0.0F)
+  let mut i = 0
+  while i < n {
+    x[i] = Float::from_int(i + 1)
+    i = i + 1
+  }
+  let y = @snn_mbt.tn_pre_emphasis(x, coef=coef)
+  if y.length() != n {
+    fail("pre-emphasis changed the length: \{y.length()} vs \{n}")
+  }
+  let want0 = x[0] - coef * x[1]
+  if (y[0] - want0).abs() > 1.0e-6F {
+    fail("y[0] = \{y[0]}, expected \{want0} (reflect borrows x[1], not x[0])")
+  }
+  i = 1
+  while i < n {
+    let want = x[i] - coef * x[i - 1]
+    if (y[i] - want).abs() > 1.0e-5F {
+      fail("y[\{i}] = \{y[i]}, expected \{want}")
+    }
+    i = i + 1
+  }
+  // NON-VACUITY. A filter that quietly returned its input would pass the
+  // length check and nothing else. A pre-emphasis is a high-pass, so its gain
+  // must RISE with frequency: DC is scaled by (1 - coef) = 0.03 and Nyquist by
+  // (1 + coef) = 1.97. Asserting both ends pins the sign of the kernel too.
+  let m = 64
+  let dc : Array[Float] = Array::make(m, 0.25F)
+  let nyq : Array[Float] = Array::make(m, 0.0F)
+  i = 0
+  while i < m {
+    nyq[i] = if i % 2 == 0 { 0.25F } else { -0.25F }
+    i = i + 1
+  }
+  let dcy = @snn_mbt.tn_pre_emphasis(dc, coef=coef)
+  let nyqy = @snn_mbt.tn_pre_emphasis(nyq, coef=coef)
+  let dc_gain = dcy[m / 2].abs() / 0.25F
+  let nyq_gain = nyqy[m / 2].abs() / 0.25F
+  if (dc_gain - 0.03F).abs() > 1.0e-3F {
+    fail("DC gain is \{dc_gain}, expected 1 - coef = 0.03 -- the kernel sign may be flipped")
+  }
+  if (nyq_gain - 1.97F).abs() > 1.0e-2F {
+    fail("Nyquist gain is \{nyq_gain}, expected 1 + coef = 1.97")
+  }
+  if dc_gain >= nyq_gain {
+    fail("pre-emphasis attenuates Nyquist more than DC -- that is a low-pass")
+  }
+  // coef <= 0 disables the filter (the reference's DATASET path).
+  let off = @snn_mbt.tn_pre_emphasis(x, coef=0.0F)
+  i = 0
+  while i < n {
+    if off[i] != x[i] {
+      fail("coef = 0 should be the identity, but y[\{i}] = \{off[i]} vs \{x[i]}")
+    }
+    i = i + 1
+  }
+}
+
+test "log-Mel: the model path applies pre-emphasis and the dataset path does not" {
+  // The reference has TWO front ends and they differ. `train_voxceleb.py`
+  // defaults feature_type to 'raw', so the dataset hands the model a waveform
+  // and the MODEL does the extraction -- with PreEmphasis. The dataset's own
+  // 'mel' branch omits it. If these two produced identical features, one of
+  // them is wrong, so the gate asserts they differ.
+  let wav : Array[Float] = Array::make(4000, 0.0F)
+  let mut i = 0
+  while i < 4000 {
+    wav[i] = 0.4F * lm_sin(0.05F * Float::from_int(i))
+    i = i + 1
+  }
+  let with_pe = @snn_mbt.tn_log_mel(wav, n_mels=16)
+  let without_pe = @snn_mbt.tn_log_mel(wav, n_mels=16, pre_emphasis=0.0F)
+  if with_pe.length() != without_pe.length() {
+    fail("the two front ends disagree on shape")
+  }
+  let mut diff = 0.0F
+  i = 0
+  while i < with_pe.length() {
+    let d = with_pe[i] - without_pe[i]
+    diff = diff + (if d < 0.0F { -d } else { d })
+    i = i + 1
+  }
+  let mean = diff / Float::from_int(with_pe.length())
+  if mean < 0.05F {
+    fail("the model path and the dataset path differ by only \{mean} on average -- pre-emphasis is not being applied")
+  }
+  // Both must still be finite and mean-normalised; enabling pre-emphasis must
+  // not have broken the downstream invariants.
+  i = 0
+  while i < with_pe.length() {
+    if !(with_pe[i] == with_pe[i]) {
+      fail("log-Mel with pre-emphasis produced NaN at \{i}")
+    }
+    i = i + 1
+  }
+  let n_mels = 16
+  let n_frames = with_pe.length() / n_mels
+  let mut m = 0
+  while m < n_mels {
+    let mut s = 0.0F
+    let mut t = 0
+    while t < n_frames {
+      s = s + with_pe[m * n_frames + t]
+      t = t + 1
+    }
+    let mean_band = s / Float::from_int(n_frames)
+    if mean_band.abs() > 1.0e-4F {
+      fail("band \{m} has mean \{mean_band} after pre-emphasis and normalisation")
+    }
+    m = m + 1
+  }
+}
+
 test "log-Mel FFT matches a direct DFT, in magnitude and in phase" {
   // Comparing an FFT to another FFT would prove only self-consistency.
   // `tn_dft` is the O(n^2) definition, so this checks the twiddle factors, the
