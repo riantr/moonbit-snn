@@ -48,6 +48,19 @@ fn tn_fixture(n : Int, c : Int, t : Int, seed : UInt64) -> Array[Float] {
 }
 
 ///|
+/// Threshold above which a direction is treated as straddling a kink.
+///
+/// Deliberately NOT normalised by the gradient magnitude: that makes the
+/// criterion permissive exactly when |dL| is large, which is when a small kink
+/// is most likely to slip through. Derived instead from the objective's own
+/// Float32 precision -- one one-sided slope carries a rounding error of about
+/// `|f| * 6e-8 / h` -- times a fixed factor.
+fn dn_split_tol(f_base : Float, h : Float) -> Float {
+  let a = if f_base < 0.0F { -f_base } else { f_base }
+  20.0F * a * 6.0e-8F / h
+}
+
+///|
 /// Objective for the depthwise convolution: sum of the output weighted by a
 /// fixed vector, so every input and every weight has a non-zero gradient.
 fn tn_obj_dw(
@@ -461,8 +474,7 @@ test "TarnetBlock: directional derivative over the whole parameter vector" {
     let d_pos = (fu - f_base) / DN_H_DIR
     let d_neg = (f_base - fd_) / DN_H_DIR
     let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    let rel = if an < 0.0F { -an } else { an }
-    if split / (if rel < 1.0F { 1.0F } else { rel }) > 5.0e-2F {
+    if split > dn_split_tol(f_base, DN_H_DIR) {
       kinked = kinked + 1
       d = d + 1
       continue
@@ -836,7 +848,7 @@ test "stack: one direction over all blocks matches a directional derivative" {
     let d_neg = (f_base - fd_) / DN_H_STACK
     let a = if an < 0.0F { -an } else { an }
     let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    if split / (if a < 1.0F { 1.0F } else { a }) > 5.0e-2F {
+    if split > dn_split_tol(f_base, DN_H_STACK) {
       d = d + 1
       continue
     }
@@ -898,7 +910,7 @@ test "BISECT a single block from the stack's own fixture" {
     let d_neg = (f_base - fd_) / DN_H_STACK
     let a = if an < 0.0F { -an } else { an }
     let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    if split / (if a < 1.0F { 1.0F } else { a }) > 5.0e-2F {
+    if split > dn_split_tol(f_base, DN_H_STACK) {
       skipped = skipped + 1
       d = d + 1
       continue
