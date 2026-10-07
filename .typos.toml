@@ -1,0 +1,43 @@
+# typos configuration
+#
+# The repo's identifiers are mostly domain vocabulary, not prose, and `typos`
+# reads them as misspellings. These entries are deliberate, not accidents:
+#
+#   PNA   Principal Neighbourhood Aggregation, a graph architecture
+#   gae   Graph Attention Embedding, the same family
+#   inh   inhibitory conductance, a neuron-model parameter
+#   IZ    an abbreviation used in the graph fixtures
+#
+# `_build/` holds a vendored checkout of the upstream reference repository and
+# is not ours to lint.
+
+[files]
+extend-exclude = [
+  "_build/**",
+  "target/**",
+]
+
+[default.extend-words]
+PNA = "PNA"
+gae = "gae"
+inh = "inh"
+IZ = "IZ"
+tre = "tre"
+thr = "thr"
+Nd = "Nd"
+dout = "dout"
+Ba = "Ba"
+iy = "iy"
+pn = "pn"
+# de-meaned: standard time-series vocabulary ("demeaning"), not a misspelling
+meaned = "meaned"
+# Meger: an author surname (Fujimoto, van Hoof, Meger -- TD3)
+Meger = "Meger"
+# mis-pair / mis-match: idiomatic English
+mis = "mis"
+# ERROR_FILENAME_EXCED_RANGE: Microsoft's own spelling of the Win32 constant
+EXCED = "EXCED"
+
+[default.extend-identifiers]
+PNAx1 = "PNAx1"
+PNAx2 = "PNAx2"

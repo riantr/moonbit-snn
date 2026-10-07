@@ -1,0 +1,63 @@
+name: publish
+
+# Tag-driven only. Releases are never published from a branch or by hand:
+# a tag that exists is a release request, and the gates below decide whether it
+# actually happens.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mbt
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install moon
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      # `typos` is checked before anything expensive because it has historically
+      # been the step that actually fails in this repo -- the token has usually
+      # been fine and the typo gate has not. Cheap to run, so run it first.
+      - name: Check typos
+        uses: crate-ci/typos@master
+
+      - name: moon check
+        run: moon check --target all
+
+      # `moon fmt --check` is deliberately NOT a gate. The package has ~998
+      # files and ten of them carry pre-existing formatting diffs that predate
+      # any of this work; enabling the check now would fail a release over
+      # unrelated files, and mass-reformatting them inside a release commit is
+      # scope creep. Worth doing as its own commit, then the gate can come
+      # back.
+
+      # NOT `moon test` on the root package. It fails with CreateProcessW
+      # ERROR_FILENAME_EXCED_RANGE (the 32K Windows command-line limit) because
+      # moon inlines every source path. The two test sub-packages are the
+      # supported entry points.
+      - name: moon test wave1
+        run: moon test ./tests/wave1 --target native
+
+      - name: moon test wave2
+        run: moon test ./tests/wave2 --target native
+
+      - name: Publish to mooncakes.io
+        run: |
+          mkdir -p ~/.moon
+          # The secret must be the ENTIRE contents of ~/.moon/credentials.json
+          # as JSON -- not a bare token. `moon publish` reads that file.
+          echo "${{ secrets.MOONCAKES_RIANTR_TOKEN }}" > ~/.moon/credentials.json
+          moon publish
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true

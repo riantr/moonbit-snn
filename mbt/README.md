@@ -6,11 +6,11 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.155.0, 2026-10-05)
+## Status (v0.165.0, 2026-10-07)
 
 `moon.mod` carries the version that is published to mooncakes.io, and
 this header tracks it. The batch sections at the end of this file run
-from Batch C (v0.58.0) through Batch AD (v0.159.0, not yet published)
+from Batch C (v0.58.0) through Batch AF (v0.165.0)
 and describe what changed in each.
 
 | Component | Status | Notes |
@@ -264,7 +264,7 @@ and describe what changed in each.
 
 - `mbt/ddpg.mbt` (NEW) — `DeterministicPolicy` (state → continuous action via tanh-squash to `[action_low, action_high]`) + `QNetworkContinuous` ([state, action] → scalar Q with one ReLU hidden layer) + `DDPG` agent struct (deterministic actor + twin critics + twin target critics + target actor + 5 Polyak-averaged target nets + γ/τ/exploration_noise).
 - `mbt/ddpg_update.mbt` (NEW) — `ContinuousReplayBuffer` (FIFO wrap-around with `(s, a, r, s', done)` transitions) + `ddpg_update_critic` (analytic twin-critic TD gradient update) + `ddpg_update_actor` (closed-form critic gradient through `sign(ReLU_out)` gate, avoids backward pass through actor ReLU).
-- `mbt/ddpg_test.mbt` (NEW) — 15 tests: `ddpg_select_action_shape`, `ddpg_select_action_no_grad_shape`, `ddpg_update_critic_runs_without_crash` (NaN guard), `ddpg_update_actor_modifies_w2` (mutates w2 in place), `ddpg_twin_critic_does_not_collape_on_seeded_inputs`, `ddpg_soft_update_polyak`, `continuous_replay_buffer_push_and_len`, `continuous_replay_buffer_overflow_wraps`, `deterministic_policy_tanh_squash_clips`, `deterministic_policy_action_range`, `deterministic_policy_random_init`, `qnet_continuous_forward_shape`, `qnet_continuous_zero_input_zero_weight`, `ddpg_train_smoke_pendulum_like_env` (end-to-end 4-step smoke train), `ddpg_select_action_is_deterministic`.
+- `mbt/ddpg_test.mbt` (NEW) — 15 tests: `ddpg_select_action_shape`, `ddpg_select_action_no_grad_shape`, `ddpg_update_critic_runs_without_crash` (NaN guard), `ddpg_update_actor_modifies_w2` (mutates w2 in place), `ddpg_twin_critic_does_not_collapse_on_seeded_inputs`, `ddpg_soft_update_polyak`, `continuous_replay_buffer_push_and_len`, `continuous_replay_buffer_overflow_wraps`, `deterministic_policy_tanh_squash_clips`, `deterministic_policy_action_range`, `deterministic_policy_random_init`, `qnet_continuous_forward_shape`, `qnet_continuous_zero_input_zero_weight`, `ddpg_train_smoke_pendulum_like_env` (end-to-end 4-step smoke train), `ddpg_select_action_is_deterministic`.
 
 ### v0.55.0 — TD3 (Twin Delayed DDPG, Fujimoto 2018)
 
@@ -718,11 +718,9 @@ aliased every row of `d_w` onto row 0.
   is fixed and `gradcheck_ce_consistency` now pins the loss against its
   own gradient.
 
-### Batch AD (v0.156.0 - v0.159.0, not yet published): `moon test`, and DragonNet
+### Batch AD (v0.156.0 - v0.159.0): `moon test`, and DragonNet
 
-`moon.mod` still carries v0.155.0, the last version published to
-mooncakes.io. These four are in the tree and are recorded here so the batch
-list does not have a hole; none of them has been published.
+These four shipped in v0.159.0.
 
 - v0.156.0 The training demo grows a second, deeper backbone and reports
   per-architecture depth effects: both depths learn on 5/5 probes, the
@@ -786,10 +784,9 @@ list does not have a hole; none of them has been published.
   control failed for a reason unrelated to the leak it was meant to
   detect.
 
-### Batch AE (v0.160.0 - v0.163.0, not yet published): TARNet
+### Batch AE (v0.160.0 - v0.163.0): TARNet
 
-`moon.mod` still carries v0.155.0. These four are in the tree and recorded
-here so the batch list has no hole; none has been published.
+These four shipped in v0.163.0.
 
 Note on the name: TARNet here is **not** the treatment-effect regressor of
 Shalit et al. (2017) that this package implements elsewhere. It is Terraf &
@@ -979,11 +976,10 @@ for closed-set speaker identification.
   The gate now asserts only what holds for every correct bank, and leaves "does
   this frequency land in the right band" to a pure-tone test.
 
-### Batch AF (v0.164.0 - v0.165.0, not yet published): gate-design and BatchNorm defects
+### Batch AF (v0.164.0 - v0.165.0): gate-design and BatchNorm defects
 
 Two defects that belong to the TARNet batch above but landed after Batch AE
-was written, recorded here so the changelog has no hole. `moon.mod` still
-carries v0.155.0; nothing has been published.
+was written.
 
 - v0.164.0 **`batch_norm2d`'s cache recorded statistics the forward never
   used.** The forward picks its statistics by `bn.training`, and in inference
