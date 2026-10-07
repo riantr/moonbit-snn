@@ -855,6 +855,69 @@ test "stack: one direction over all blocks matches a directional derivative" {
 }
 
 ///|
+test "BISECT a single block from the stack's own fixture" {
+  let n = 3
+  let chan = 5
+  let t = 8
+  let seed = 167UL
+  let (stack, x, u) = tn_stack_fixture(n, chan, t, seed)
+  let b = stack[0]
+  let (y, cache) = @snn_mbt.tarnet_block_forward_full(b, x, n)
+  let mut s = 0.0F
+  let mut i = 0
+  while i < y.length() {
+    s = s + y[i] * u[i]
+    i = i + 1
+  }
+  let f_base = s
+  let g = @snn_mbt.tarnet_block_backward(b, n, cache, u, 0.0F).1
+  let fb = @snn_mbt.tarnet_block_flatten(b)
+  let gb = @snn_mbt.tarnet_block_grad_flatten(g, b)
+  let mut checked = 0
+  let mut skipped = 0
+  let mut worst = 0.0F
+  let mut d = 0
+  while d < 8 {
+    let sd = 1009UL + d.to_uint64() * 131UL
+    let dir = @snn_mbt.tn_randn(fb.length(), 1.0F, @snn_mbt.Xoshiro::new(sd))
+    let up = fb.copy()
+    let dn = fb.copy()
+    let mut an = 0.0F
+    let mut k = 0
+    while k < fb.length() {
+      up[k] = up[k] + DN_H_STACK * dir[k]
+      dn[k] = dn[k] - DN_H_STACK * dir[k]
+      an = an + gb[k] * dir[k]
+      k = k + 1
+    }
+    let bu = @snn_mbt.tarnet_block_unflatten(b, up)
+    let bd = @snn_mbt.tarnet_block_unflatten(b, dn)
+    let fu = tn_obj_block(bu, x, n, u)
+    let fd_ = tn_obj_block(bd, x, n, u)
+    let d_pos = (fu - f_base) / DN_H_STACK
+    let d_neg = (f_base - fd_) / DN_H_STACK
+    let a = if an < 0.0F { -an } else { an }
+    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
+    if split / (if a < 1.0F { 1.0F } else { a }) > 5.0e-2F {
+      skipped = skipped + 1
+      d = d + 1
+      continue
+    }
+    checked = checked + 1
+    let dfd = (fu - fd_) / (2.0F * DN_H_STACK)
+    let err = if dfd > an { dfd - an } else { an - dfd }
+    let scale = if a < 1.0e-2F { 1.0e-2F } else { a }
+    let rel = err / scale
+    if rel > worst {
+      worst = rel
+    }
+    d = d + 1
+  }
+  println("SINGLE-BLOCK dir=\{DN_H_STACK}: checked=\{checked} skipped=\{skipped} worst_rel=\{worst}")
+}
+
+///|
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4
