@@ -431,66 +431,64 @@ fn tn_block_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
   (b, x, u)
 }
 
-///|
-test "TarnetBlock: directional derivative over the whole parameter vector" {
+test "TarnetBlock: per-parameter sweep with the one-sided kink filter" {
   let n = 3
   let chan = 5
   let t = 8
-  let (b0, x, u) = tn_block_fixture(n, chan, t, 71UL)
-  let flat = @snn_mbt.tarnet_block_flatten(b0)
-  let (_y, cache) = @snn_mbt.tarnet_block_forward_full(b0, x, n)
-  let g = @snn_mbt.tarnet_block_backward(b0, n, cache, u, 0.0F).1
-  let gf = @snn_mbt.tarnet_block_grad_flatten(g, b0)
-  if flat.length() != gf.length() {
-    fail("block param length \{flat.length()} != grad length \{gf.length()}")
-  }
-  let f_base = tn_obj_block(b0, x, n, u)
-  // Independent directions; each is skipped if it straddles a kink.
-  let mut kinked = 0
+  let (b, x, u) = tn_block_fixture(n, chan, t, 71UL)
+  let (_y, cache) = @snn_mbt.tarnet_block_forward_full(b, x, n)
+  let gb = @snn_mbt.tarnet_block_grad_flatten(
+    @snn_mbt.tarnet_block_backward(b, n, cache, u, 0.0F).1, b,
+  )
+  let base = @snn_mbt.tarnet_block_flatten(b)
+  let f_base = tn_obj_block(b, x, n, u)
+  let tol = dn_split_tol(f_base, TN_H)
+  let stride = (base.length() / 120) + 1
   let mut checked = 0
-  let mut d = 0
-  while d < 8 {
-    let dir = @snn_mbt.tn_randn(
-      gf.length(),
-      1.0F,
-      @snn_mbt.Xoshiro::new(101UL + d.to_uint64()),
-    )
-    let up = flat.copy()
-    let dn = flat.copy()
-    let mut an = 0.0F
-    let mut i = 0
-    while i < flat.length() {
-      up[i] = flat[i] + DN_H_DIR * dir[i]
-      dn[i] = flat[i] - DN_H_DIR * dir[i]
-      an = an + gf[i] * dir[i]
-      i = i + 1
-    }
-    let bu = @snn_mbt.tarnet_block_unflatten(b0, up)
-    let bd = @snn_mbt.tarnet_block_unflatten(b0, dn)
-    let fu = tn_obj_block(bu, x, n, u)
-    let fd_ = tn_obj_block(bd, x, n, u)
-    // one-sided slopes: perturbing the whole vector crosses many PReLU kinks
-    // at once, so a central difference straddles them all
-    let d_pos = (fu - f_base) / DN_H_DIR
-    let d_neg = (f_base - fd_) / DN_H_DIR
+  let mut kinks = 0
+  let mut over = 0
+  let mut worst = 0.0F
+  let mut worst_k = -1
+  let mut worst_fd = 0.0F
+  let mut worst_an = 0.0F
+  let mut k = 0
+  while k < base.length() {
+    let bu = base.copy()
+    let bd = base.copy()
+    bu[k] = base[k] + TN_H
+    bd[k] = base[k] - TN_H
+    let fu = tn_obj_block(@snn_mbt.tarnet_block_unflatten(b, bu), x, n, u)
+    let fd_ = tn_obj_block(@snn_mbt.tarnet_block_unflatten(b, bd), x, n, u)
+    let d_pos = (fu - f_base) / TN_H
+    let d_neg = (f_base - fd_) / TN_H
     let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
-    if split > dn_split_tol(f_base, DN_H_DIR) {
-      kinked = kinked + 1
-      d = d + 1
+    if split > tol {
+      kinks = kinks + 1
+      k = k + stride
       continue
     }
     checked = checked + 1
-    let fd = (fu - fd_) / (2.0F * DN_H_DIR)
+    let fd = (fu - fd_) / (2.0F * TN_H)
+    let an = gb[k]
+    let dd = fd - an
+    let ad = if dd < 0.0F { -dd } else { dd }
     let m = if an < 0.0F { -an } else { an }
-    let err = if fd > an { fd - an } else { an - fd }
-    let scale = if m < 1.0e-3F { 1.0e-3F } else { m }
-    if err / scale > 3.0e-2F {
-      fail("block directional fd=\{fd} analytic=\{an} (direction \{d})")
+    if ad - TN_RTOL * m - TN_ATOL > 0.0F {
+      over = over + 1
+      if ad > worst {
+        worst = ad
+        worst_k = k
+        worst_fd = fd
+        worst_an = an
+      }
     }
-    d = d + 1
+    k = k + stride
   }
-  if checked < 5 {
-    fail("only \{checked} of 8 directions survived the kink filter at DN_H_DIR")
+  if checked < 30 {
+    fail("only \{checked} smooth coordinates checked and \{kinks} kinked and skipped -- the filter is not discriminating")
+  }
+  if over > 0 {
+    fail("block parameters: \{over} of \{checked} outside tolerance, worst excess \{worst} at \{worst_k} (fd=\{worst_fd} an=\{worst_an})")
   }
 }
 
