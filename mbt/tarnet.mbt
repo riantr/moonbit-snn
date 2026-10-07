@@ -120,9 +120,7 @@ pub fn tarnet_block_forward(
 ) -> (Array[Float], TarnetBlockCache) {
   let t = x.length() / (n * b.chan)
   // 1x1 conv, time axis as batch
-  let pw1_out = linear_forward(
-    x, n * t, LinearParam::new(b.pw1, b.pb1, b.chan, b.hid),
-  )
+  let pw1_out = tn_conv1x1_forward(x, n, b.chan, b.hid, b.pw1, b.pb1)
   let pw1_post = prelu_forward(pw1_out, b.prelu1)
   // gLN over (hid, t) jointly. The BATCH dimension is the utterance, not the
   // frame: the statistic has to span every hidden unit and every frame of one
@@ -133,8 +131,8 @@ pub fn tarnet_block_forward(
   let dw_out = conv1d_depthwise_forward(ln1_out, n, b.dw)
   let dw_post = prelu_forward(dw_out, b.prelu1)
   let (ln2_out, _c2) = layer_norm_forward(dw_post, n, b.hid, 1, t, b.ln2)
-  let pw2_out = linear_forward(
-    ln2_out, n * t, LinearParam::new(b.pw2, b.pb2, b.hid, b.chan),
+  let pw2_out = tn_conv1x1_forward(
+    ln2_out, n, b.hid, b.chan, b.pw2, b.pb2,
   )
   let (r, _se_cache) = ctse_forward(pw2_out, n, b.se)
   let out : Array[Float] = Array::make(n * b.chan * t, 0.0F)
@@ -716,9 +714,7 @@ pub fn tarnet_block_forward_full(
   n : Int,
 ) -> (Array[Float], TarnetBlockFullCache) {
   let t = x.length() / (n * b.chan)
-  let pw1_out = linear_forward(
-    x, n * t, LinearParam::new(b.pw1, b.pb1, b.chan, b.hid),
-  )
+  let pw1_out = tn_conv1x1_forward(x, n, b.chan, b.hid, b.pw1, b.pb1)
   let pw1_post = prelu_forward(pw1_out, b.prelu1)
   let (ln1_out, ln1_cache) = layer_norm_forward(
     pw1_post, n, b.hid, 1, t, b.ln1,
@@ -728,8 +724,8 @@ pub fn tarnet_block_forward_full(
   let (ln2_out, ln2_cache) = layer_norm_forward(
     dw_post, n, b.hid, 1, t, b.ln2,
   )
-  let pw2_out = linear_forward(
-    ln2_out, n * t, LinearParam::new(b.pw2, b.pb2, b.hid, b.chan),
+  let pw2_out = tn_conv1x1_forward(
+    ln2_out, n, b.hid, b.chan, b.pw2, b.pb2,
   )
   let (r, se_cache) = ctse_forward(pw2_out, n, b.se)
   let out : Array[Float] = Array::make(n * b.chan * t, 0.0F)
@@ -789,9 +785,8 @@ pub fn tarnet_block_backward(
   // The CTSE is a nonlinearity: the gradient arriving at `pw2_out` is the SE's
   // own d_x, NOT d_out. Passing d_out treats the gate as the identity.
   let se_g = ctse_backward(d_out, n, b.se, cache.se_cache)
-  let (d_ln2_out, dw2, db2) = linear_backward(
-    cache.ln2_out, se_g.d_x, n * t,
-    LinearParam::new(b.pw2, b.pb2, b.hid, b.chan),
+  let (d_ln2_out, dw2, db2) = tn_conv1x1_backward(
+    cache.ln2_out, se_g.d_x, n, b.hid, b.chan, b.pw2,
   )
   let (d_dw_post, ln2_g, ln2_b) = layer_norm_backward(
     d_ln2_out, cache.ln2_cache, b.ln2,
@@ -808,9 +803,8 @@ pub fn tarnet_block_backward(
   let (d_pw1_out, d_prelu1) = prelu_backward(
     cache.pw1_out, d_pw1_post, b.prelu1,
   )
-  let (d_x, dw1, db1) = linear_backward(
-    cache.x, d_pw1_out, n * t,
-    LinearParam::new(b.pw1, b.pb1, b.chan, b.hid),
+  let (d_x, dw1, db1) = tn_conv1x1_backward(
+    cache.x, d_pw1_out, n, b.chan, b.hid, b.pw1,
   )
   let d_total : Array[Float] = Array::make(d_x.length(), 0.0F)
   let mut i = 0
@@ -901,4 +895,71 @@ pub fn tarnet_block_grad_flatten(
   o = tn_put(flat, o, g.pw2.1)
   o = tn_put(flat, o, ctse_grad_flatten(g.se))
   flat
+}
+
+///|
+/// 1x1 convolution over CHANNELS, in `[n, c, t]` layout.
+///
+/// This exists because `linear_forward(x, n_batch, LP)` assumes `[n_batch,
+/// features]` -- index `batch*C + c` -- while the layer norms in this package
+/// assume `[n, C, T]` -- index `(b*C + c)*t + ti`. Those are different
+/// permutations of the same memory, so routing a layer-norm output into a
+/// `linear_*` call silently reinterprets it. Inside a block every tensor is
+/// `[n, C, T]`, so this pair is the layout-correct one to use.
+pub fn tn_conv1x1_forward(
+  x : Array[Float],
+  n : Int,
+  in_ch : Int,
+  out_ch : Int,
+  weight : Array[Float],
+  bias : Array[Float],
+) -> Array[Float] {
+  let t = x.length() / (n * in_ch)
+  let out : Array[Float] = Array::make(n * out_ch * t, 0.0F)
+  for b in 0..<n {
+    for ti in 0..<t {
+      for o in 0..<out_ch {
+        let mut acc = bias[o]
+        let wo = o * in_ch
+        for i in 0..<in_ch {
+          acc = acc + weight[wo + i] * x[(b * in_ch + i) * t + ti]
+        }
+        out[(b * out_ch + o) * t + ti] = acc
+      }
+    }
+  }
+  out
+}
+
+///|
+/// Backward of `tn_conv1x1_forward`: `(d_input, d_weight, d_bias)`, all in
+/// `[n, C, T]` layout.
+pub fn tn_conv1x1_backward(
+  x : Array[Float],
+  d_out : Array[Float],
+  n : Int,
+  in_ch : Int,
+  out_ch : Int,
+  weight : Array[Float],
+) -> (Array[Float], Array[Float], Array[Float]) {
+  let t = x.length() / (n * in_ch)
+  let d_x : Array[Float] = Array::make(n * in_ch * t, 0.0F)
+  let d_w : Array[Float] = Array::make(out_ch * in_ch, 0.0F)
+  let d_b : Array[Float] = Array::make(out_ch, 0.0F)
+  for b in 0..<n {
+    for ti in 0..<t {
+      for o in 0..<out_ch {
+        let g = d_out[(b * out_ch + o) * t + ti]
+        d_b[o] = d_b[o] + g
+        let wo = o * in_ch
+        for i in 0..<in_ch {
+          let xv = x[(b * in_ch + i) * t + ti]
+          d_w[wo + i] = d_w[wo + i] + g * xv
+          d_x[(b * in_ch + i) * t + ti] = d_x[(b * in_ch + i) * t + ti] +
+            g * weight[wo + i]
+        }
+      }
+    }
+  }
+  (d_x, d_w, d_b)
 }
