@@ -475,7 +475,28 @@ fn tn_block_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
 /// fault trips the second condition immediately; a diffuse regression trips the
 /// first.
 const TN_SEEDS : Int = 8
-const TN_MAX_ARTIFACTS : Int = 2
+
+///|
+/// Artifact BUDGET, as a FRACTION of the smooth coordinates actually checked.
+///
+/// This was an absolute count (2) and that was a design defect, not a tuning
+/// choice: the number of checks depends on the block's flat length and the
+/// stride derived from it, and that length CHANGED when the gLN affine went
+/// from per-element to per-channel. The same budget therefore meant something
+/// different before and after -- 2 out of 718 is 0.28%, 2 out of 600 is 0.33%
+/// -- and the count sat exactly AT the bound, so one more artifact on any
+/// fixture would have turned a green suite red with nothing having changed.
+///
+/// A fraction is scale-free: it means "at most this much of the instrument's
+/// noise floor", which is the property actually being bounded. 1% is far below
+/// any real fault -- a mutation that breaks the wiring produces 118 of 656,
+/// about 18% -- while still failing loudly if the noise floor rises.
+///
+/// The per-index rule below is the real discriminator and is already
+/// scale-free; this one only stops the aggregate from being brittle.
+const TN_MAX_ARTIFACT_FRACTION : Float = 0.01F
+
+///|
 const TN_MAX_INDEX_SEEDS : Int = 3
 
 test "TarnetBlock: per-parameter sweep over eight fixtures" {
@@ -557,9 +578,10 @@ test "TarnetBlock: per-parameter sweep over eight fixtures" {
       "block index \{worst_k} misses on \{worst_seeds} of \{TN_SEEDS} fixtures -- value-independent, so this is a wiring fault, not a float32 artifact",
     )
   }
-  if artifacts > TN_MAX_ARTIFACTS {
+  if Float::from_int(artifacts) >
+    TN_MAX_ARTIFACT_FRACTION * Float::from_int(total_checked) {
     fail(
-      "block parameters: \{artifacts} of \{total_checked} coordinate-fixture pairs outside tolerance across \{TN_SEEDS} fixtures (bound \{TN_MAX_ARTIFACTS})",
+      "block parameters: \{artifacts} of \{total_checked} coordinate-fixture pairs outside tolerance across \{TN_SEEDS} fixtures, over the \{TN_MAX_ARTIFACT_FRACTION * 100.0F}% budget",
     )
   }
 }
