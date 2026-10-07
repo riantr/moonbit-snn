@@ -275,6 +275,68 @@ fn bn_channel_scale_ratio(input : Array[Float], n : Int, c : Int, hw : Int) -> F
 }
 
 ///|
+test "batch_norm2d_backward / d_input matches numerical across samples AND channels" {
+  // The shape gap this file had. Every other d_input check here uses a SINGLE
+  // channel with h = w = 1, and every other BatchNorm in this package's models
+  // runs on `[n, c, 1, 1]`. At h = w = 1 the two sums that carry BN's
+  // cross-sample coupling (`sum_dxhat`, `sum_dxhat_xc`) degenerate, so a fault
+  // in them is invisible -- and `tarnet_asp` is about to call this on
+  // `[n, att, t]` with n > 1 and h*w = t > 1 for the first time.
+  //
+  // `bn_scaled_fixture` is already n=4, c=3, h=2, w=2 with per-channel scales
+  // 1.0 / 0.05 / 20.0, so the per-channel statistics differ by orders of
+  // magnitude and no single term dominates.
+  let (bn, input, wt, n, c, h, w) = bn_scaled_fixture()
+  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn)
+  let (d_input, _dg, _db) = @snn_mbt.batch_norm2d_backward(wt, cache, bn)
+  let eps = 0.002F
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut over = 0
+  let mut i = 0
+  while i < input.length() {
+    let up = input.copy()
+    let dn = input.copy()
+    up[i] = input[i] + eps
+    dn[i] = input[i] - eps
+    let fu = bn_obj(up, n, c, h, w, bn, wt)
+    let fm = bn_obj(dn, n, c, h, w, bn, wt)
+    let fd = (fu - fm) / (2.0F * eps)
+    let diff = fd - d_input[i]
+    let ad = if diff < 0.0F { -diff } else { diff }
+    let m = if d_input[i] < 0.0F { -d_input[i] } else { d_input[i] }
+    // Relative+absolute, matching how every other gradient gate here is written:
+    // an absolute tolerance alone would be blind on the 20x-scaled channel and
+    // a relative one alone would be blind where the true gradient is ~0.
+    if ad - 0.05F * m - 0.01F > 0.0F {
+      over = over + 1
+      if ad > worst {
+        worst = ad
+        worst_i = i
+      }
+    }
+    i = i + 1
+  }
+  // Non-vacuity: if every d_input were zero the gate would be measuring nothing.
+  let mut nonzero = 0
+  i = 0
+  while i < d_input.length() {
+    if d_input[i] != 0.0F {
+      nonzero = nonzero + 1
+    }
+    i = i + 1
+  }
+  if nonzero * 10 < d_input.length() {
+    fail("only \{nonzero} of \{d_input.length()} d_input entries are non-zero -- the gate would measure nothing")
+  }
+  if over > 0 {
+    fail(
+      "d_input: \{over} of \{input.length()} coordinates outside tolerance; worst excess \{worst} at \{worst_i} (n={n}, c={c}, h={h}, w={w})",
+    )
+  }
+}
+
+///|
 test "batch_norm2d_backward / d_gamma matches numerical on wildly scaled channels" {
   let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
   // Non-vacuity: if every channel had variance near 1, inv_std ~ 1 and a
