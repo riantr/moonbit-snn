@@ -928,6 +928,104 @@ test "BISECT a single block from the stack's own fixture" {
 
 ///|
 ///|
+fn tn_ln_with_gamma(
+  proto : @snn_mbt.LayerNorm,
+  idx : Int,
+  delta : Float,
+) -> @snn_mbt.LayerNorm {
+  let g = proto.gamma.copy()
+  g[idx] = proto.gamma[idx] + delta
+  { gamma: g, beta: proto.beta.copy(), eps: proto.eps, c: proto.c, h: proto.h,
+    w: proto.w }
+}
+
+///|
+fn tn_ln_obj(
+  x : Array[Float],
+  n : Int,
+  c : Int,
+  t : Int,
+  ln : @snn_mbt.LayerNorm,
+  u : Array[Float],
+) -> Float {
+  let (y, _c) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
+  let mut s = 0.0F
+  let mut i = 0
+  while i < y.length() {
+    s = s + y[i] * u[i]
+    i = i + 1
+  }
+  s
+}
+
+///|
+test "layer_norm: d_gamma matches central differences in GAMMA" {
+  let n = 3
+  let c = 8
+  let t = 8
+  let chw = c * t
+  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @snn_mbt.Xoshiro::new(311UL))
+  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @snn_mbt.Xoshiro::new(312UL))
+  let ln : @snn_mbt.LayerNorm = {
+    gamma: g0,
+    beta: b0,
+    eps: 1.0e-4F,
+    c: c,
+    h: 1,
+    w: t,
+  }
+  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @snn_mbt.Xoshiro::new(313UL))
+  let u : Array[Float] = Array::make(n * c * t, 0.0F)
+  let mut i = 0
+  while i < u.length() {
+    u[i] = Float::from_int((i * 7 + 3) % 11) - 5.0F
+    i = i + 1
+  }
+  let (_y, cache) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
+  let dg = @snn_mbt.layer_norm_backward(u, cache, ln).1
+  let f_base = tn_ln_obj(x, n, c, t, ln, u)
+  let tol = dn_split_tol(f_base, TN_H)
+  let mut over = 0
+  let mut checked = 0
+  let mut worst = 0.0F
+  let mut worst_i = -1
+  let mut worst_fd = 0.0F
+  let mut worst_an = 0.0F
+  i = 0
+  while i < chw {
+    let fu = tn_ln_obj(x, n, c, t, tn_ln_with_gamma(ln, i, TN_H), u)
+    let fd_ = tn_ln_obj(x, n, c, t, tn_ln_with_gamma(ln, i, -TN_H), u)
+    let d_pos = (fu - f_base) / TN_H
+    let d_neg = (f_base - fd_) / TN_H
+    let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
+    if split <= tol {
+      checked = checked + 1
+      let fd = (fu - fd_) / (2.0F * TN_H)
+      let an = dg[i]
+      let dd = fd - an
+      let ad = if dd < 0.0F { -dd } else { dd }
+      let m = if an < 0.0F { -an } else { an }
+      if ad - TN_RTOL * m - TN_ATOL > 0.0F {
+        over = over + 1
+        if ad > worst {
+          worst = ad
+          worst_i = i
+          worst_fd = fd
+          worst_an = an
+        }
+      }
+    }
+    i = i + 1
+  }
+  if checked < chw / 2 {
+    fail("only \{checked} of \{chw} smooth coordinates checked -- the filter is not discriminating")
+  }
+  if over > 0 {
+    fail("layer_norm d_gamma: \{over} of \{checked} outside tolerance, worst \{worst} at \{worst_i} (fd=\{worst_fd} an=\{worst_an})")
+  }
+}
+
+///|
 test "depthwise dilated conv1d: forward and backward agree with differences" {
   let n = 3
   let c = 4

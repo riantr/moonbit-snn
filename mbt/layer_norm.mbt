@@ -24,7 +24,14 @@
 ///|
 /// LayerNorm parameter container. Affine params have one element per
 /// feature position (length = c * h * w).
-pub struct LayerNorm {
+/// `pub(all)` rather than `pub` so a caller OUTSIDE this package can build an
+/// instance with chosen gamma/beta. With plain `pub` the fields are private
+/// across packages, which made it impossible to write a gradient gate for
+/// `layer_norm_backward`'s d_gamma / d_beta -- the gate could only exercise
+/// d_input, and the two affine slots went unverified until the block's
+/// per-parameter sweep hit one of them (26 of 85 block parameters wrong, worst
+/// in ln1.gamma, fd = -0.369 against analytic -0.0138).
+pub(all) struct LayerNorm {
   gamma : Array[Float]
   beta : Array[Float]
   eps : Float
