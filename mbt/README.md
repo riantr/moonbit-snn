@@ -979,6 +979,38 @@ for closed-set speaker identification.
   The gate now asserts only what holds for every correct bank, and leaves "does
   this frequency land in the right band" to a pure-tone test.
 
+### Batch AF (v0.164.0 - v0.165.0, not yet published): gate-design and BatchNorm defects
+
+Two defects that belong to the TARNet batch above but landed after Batch AE
+was written, recorded here so the changelog has no hole. `moon.mod` still
+carries v0.155.0; nothing has been published.
+
+- v0.164.0 **`batch_norm2d`'s cache recorded statistics the forward never
+  used.** The forward picks its statistics by `bn.training`, and in inference
+  mode two things went wrong: the cache stored the BATCH `inv_std` (computed
+  unconditionally and never overwritten) while the output was written with the
+  RUNNING one, and the two coupling terms in `d_input` were applied
+  unconditionally even though running statistics are constants and the output
+  is affine in the input. So a backward after an inference-mode forward
+  differentiated a relationship the forward never used. No gate caught it
+  because **no gate set `training = false`**. The fix stores the statistics
+  actually used and adds a `coupled` flag to `BatchNormCache`; the new gate
+  freezes running stats at values deliberately unlike the batch's, and
+  dropping the one line that stores the effective `inv_std` fails it with
+  48 of 48 coordinates out of tolerance, worst 148.9.
+
+- v0.165.0 **The block sweep's artifact budget was an absolute count, and
+  that was a design defect rather than a tuning choice.** The number of checks
+  is the block's flat length over a stride derived from that length, and the
+  flat length changed when the gLN affine went from per-element to
+  per-channel -- so the same budget of 2 meant 0.28% of 718 checks before and
+  0.33% of 600 after, and the sweep had drifted to sitting exactly AT its own
+  limit. A budget whose meaning moves with the thing it measures is not a
+  budget. It is now `TN_MAX_ARTIFACT_FRACTION = 0.01`. Mutation-tested: a 10%
+  scale on the gradient entering `ln1` yields 89 of 600 artifacts (14.8%) and
+  trips the per-index rule on all eight fixtures, so real faults are still
+  rejected loudly.
+
 ## Verification harness
 
 Gradients being correct and the resulting model being useful are
