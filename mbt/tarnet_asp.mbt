@@ -63,9 +63,43 @@
 //     exactly once (the ReLU mask below), so double-counting through a second
 //     consumer is excluded.
 //
-// So the fault is in this module's own attention backward, somewhere between
-// `d_h_tanh` and `d_ctx`. Unresolved; the change is not committed rather than
-// leaving a red gate or widening a tolerance to hide it.
+// So the fault is in this module's own attention backward. And it is now
+// pinned to ONE link, by decomposing d_x into its two sources.
+//
+// d_x gets contributions from exactly two places:
+//
+//   (a) DIRECT, from mu and second:
+//       d_x[k] += gm*alpha_k + gs*2*x_k*alpha_k
+//       gm = g_mu - 2*mu*gs/(2*sigma),  gs = g_sigma*0.5/sigma
+//       (alpha is treated as constant here on purpose -- its x-dependence is
+//        what the ctx path carries.)
+//   (b) CTX, through alpha -> pre -> conv1 -> ctx -> x. Tiny in magnitude but
+//       this is where alpha's dependence on x lives.
+//
+// Everything (a) needs is in the cache (alpha, mu, var_out, x) so it can be
+// rebuilt outside the library and compared against the converged FD. At the
+// worst coordinate, i = 59 (batch 1, channel 3, time 3):
+//
+//     fd     = 0.06866455078125     <- converged, stable across a 32x step cut
+//     total  = 0.08458627015352249  <- what asp_backward returns
+//     direct = 0.08287138491868973  <- (a) alone
+//     ctx    = 0.0017148852348327637 <- (b) alone
+//
+//     |fd - total| = 0.0159   |fd - direct| = 0.0142   |fd - ctx| = 0.0669
+//
+// TWO CONCLUSIONS. d_x here is ~98% DIRECT, and the direct path is right to
+// within float32 -- so `d_mu` / `d_var` / `alpha` / the variance floor are all
+// exonerated. The whole discrepancy sits in the ctx path: its true
+// cross-sample contribution is about -0.0159 while this code computes +0.0017,
+// i.e. it is wrong by roughly ten times its own magnitude.
+//
+// Within that path the only operation that mixes samples is the BatchNorm, so
+// the suspect is the thread
+//     d_alpha -> softmax -> conv2 -> tanh -> BN backward -> ReLU mask -> conv1
+//     -> ctx split -> d_x
+// and specifically what `batch_norm2d_backward` returns as d_input when that
+// gradient itself already carries cross-sample content. The change is not
+// committed: an unexplained red gate is not progress.
 
 ///|
 /// Parameters of the ASP attention network. Both convolutions are 1x1, so
