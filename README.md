@@ -13,11 +13,21 @@ cd mbt
 moon check --target native
 ```
 
-`moon test` does **not** currently work in this package and the command is
-not a valid entry point: there are 511 `.mbt` files, Moon inlines every
-source path into the Windows command line, and that caps at 32K
-(CreateProcessW). Use `moon check` for the type check, and the two
-harnesses below for anything that needs to actually execute:
+Tests live in nine sub-packages under `mbt/tests/`, not in the package root.
+`moon test` on the root is not a valid entry point: Moon inlines every source
+path into the Windows command line, the package exceeds the 32K cap
+(CreateProcessW), and the root's test target cannot link. Run a wave instead:
+
+```sh
+cd mbt
+moon test ./tests/wave1 --target native   # ... through ./tests/wave9
+```
+
+That is 1884 tests. A test placed in the root would never run, so CI fails the
+build if one appears there.
+
+Two gradient harnesses remain, for checks that need to execute rather than
+type-check:
 
 ```powershell
 & ".\verify\verify_gnn_grads.ps1"      # gradient gate
@@ -31,7 +41,13 @@ symbol from the parent module. See
 
 ## Project layout
 
-- `mbt/` — the MoonBit port (all source, tests, and examples).
+- `mbt/` — the MoonBit port: all source, plus `mbt/examples/` (77
+  runnable examples).
+- `mbt/tests/wave1` … `wave9` — the test suite, split by domain so a failure
+  points at one. None of it can live in the package root; see Quick start.
+- `tools/split_tests/` — the rewriter that qualifies a root test for a
+  sub-package, and its README, which records why the split exists and what
+  the allow-list must not be derived from.
 - `verify/` — the two executable harnesses and the script that runs
   them inside the library package.
 - `refs/` — local working copies of the upstream Julia reference
