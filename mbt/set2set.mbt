@@ -156,7 +156,7 @@ pub fn set2set_forward(
     }
     let mut z = 0.0F
     for i in 0..<n_nodes {
-      let e = expf(logits[i] - mx)
+      let e = @core.expf(logits[i] - mx)
       logits[i] = e
       z = z + e
     }

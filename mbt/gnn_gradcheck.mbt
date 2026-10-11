@@ -462,15 +462,15 @@ pub fn gradcheck_ce_probe_logits() -> Array[Array[Float]] {
 pub fn gradcheck_ce_probe_expected() -> Array[Float] {
   let out : Array[Float] = Array::make(4, 0.0F)
   // -log(exp(0)/(1 + 2*exp(-9))) = log(1 + 2*exp(-9))
-  out[0] = logf(1.0F + 2.0F * expf(0.0F - 9.0F))
+  out[0] = @core.logf(1.0F + 2.0F * @core.expf(0.0F - 9.0F))
   // (9 - 0) + log(1 + exp(-9) + exp(-9))
-  out[1] = 9.0F + logf(1.0F + 2.0F * expf(0.0F - 9.0F))
+  out[1] = 9.0F + @core.logf(1.0F + 2.0F * @core.expf(0.0F - 9.0F))
   // m = 0.4; sum = 1 + exp(-0.6) + exp(-0.3)
-  out[2] = 0.4F - (0.0F - 0.2F) + logf(
-    1.0F + expf(0.0F - 0.6F) + expf(0.0F - 0.3F),
+  out[2] = 0.4F - (0.0F - 0.2F) + @core.logf(
+    1.0F + @core.expf(0.0F - 0.6F) + @core.expf(0.0F - 0.3F),
   )
   // all equal -> uniform softmax -> -log(1/4) = log 4
-  out[3] = logf(4.0F)
+  out[3] = @core.logf(4.0F)
   out
 }
 

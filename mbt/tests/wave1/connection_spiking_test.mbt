@@ -2,7 +2,7 @@
 
 ///|
 test "SpikingSynapse::new: delays empty by default" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -12,7 +12,7 @@ test "SpikingSynapse::new: delays empty by default" {
 
 ///|
 test "SpikingSynapse::set_constant_delay: populates delays" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -26,7 +26,7 @@ test "SpikingSynapse::set_constant_delay: populates delays" {
 
 ///|
 test "SpikingSynapse::random_with_delays: Normal distribution sampling" {
-  let rng = @snn_mbt.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x12345678UL, 0x9ABCDEF0UL)
+  let rng = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x12345678UL, 0x9ABCDEF0UL)
   let pre = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::random_with_delays(
@@ -41,7 +41,7 @@ test "SpikingSynapse::random_with_delays: Normal distribution sampling" {
 
 ///|
 test "SpikingSynapse::forward_synapse: no-delay fast path applies immediately" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -55,7 +55,7 @@ test "SpikingSynapse::forward_synapse: no-delay fast path applies immediately" {
 
 ///|
 test "SpikingSynapse::forward_synapse with delay: schedules events" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -74,7 +74,7 @@ test "SpikingSynapse::forward_synapse with delay: schedules events" {
 
 ///|
 test "SpikingSynapse::deliver_pending_synapse: delivers only past-due events" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -96,7 +96,7 @@ test "SpikingSynapse::deliver_pending_synapse: delivers only past-due events" {
 test "SpikingSynapse: delay_dist composition across steps" {
   // 2 pre, 1 post, identity synapse with 1.0 delay. Force-fire pre[0]
   // at t=0; expect post.glu[0] to receive the spike at t=1.0.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")

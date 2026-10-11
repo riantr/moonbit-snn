@@ -170,7 +170,7 @@ test "sac_soft_update: target = tau · online + (1 - tau) · old_target" {
 ///|
 test "sac_sample_action: returns valid action" {
   let sac = @snn_mbt.Sac::new(2, 3, 0.1F, 37UL)
-  let rng = @snn_mbt.Xoshiro::from_state(41UL, 43UL, 47UL, 53UL)
+  let rng = @core.Xoshiro::from_state(41UL, 43UL, 47UL, 53UL)
   let a = @snn_mbt.sac_sample_action(sac.policy, 0, rng)
   assert_true(a >= 0 && a < 3)
 }

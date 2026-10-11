@@ -80,7 +80,7 @@ test "PoissonLayer::with_conn: full parameter set" {
 
 ///|
 test "PoissonLayerStimulus::new: weight/connectivity shapes" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(4, if_param, rng)
   let param = @snn_mbt.PoissonLayer::with_n(2.0F, 3)
@@ -102,7 +102,7 @@ test "PoissonLayerStimulus::new: weight/connectivity shapes" {
 ///|
 test "PoissonLayerStimulus::new: Fixed weights = μ" {
   // Fixed: weights must all equal mu where connected (no σ contribution).
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(5, if_param, rng)
   let param = @snn_mbt.PoissonLayer::with_conn(
@@ -122,7 +122,7 @@ test "PoissonLayerStimulus::new: Fixed weights = μ" {
 
 ///|
 test "PoissonLayerStimulus::new: Normal weights have mean ≈ μ" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(10, if_param, rng)
   let active : Array[Bool] = {
@@ -135,7 +135,7 @@ test "PoissonLayerStimulus::new: Normal weights have mean ≈ μ" {
   // Box-Muller samples are independent N(0,1), so 200 samples should
   // give a sample mean within ≈ σ/sqrt(N) = 0.5/sqrt(200) ≈ 0.035 of μ.
   let param = @snn_mbt.PoissonLayer::with_conn(
-    2.0F * @snn_mbt.hz, 20, active, 2.0F, 0.5F, 1.0F, "Normal", "Fixed",
+    2.0F * @core.hz, 20, active, 2.0F, 0.5F, 1.0F, "Normal", "Fixed",
   )
   let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
   let mut sum = 0.0F
@@ -158,7 +158,7 @@ test "PoissonLayerStimulus::new: Normal weights have mean ≈ μ" {
 
 ///|
 test "stimulate_layer: zero rate → no fire, no conductance change" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(3, if_param, rng)
   let param = @snn_mbt.PoissonLayer::with_n(0.0F, 5)
@@ -178,13 +178,13 @@ test "stimulate_layer: zero rate → no fire, no conductance change" {
 
 ///|
 test "stimulate_layer: inactive source → no fire" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(2, if_param, rng)
   let active : Array[Bool] = [false, true]
   // 10 kHz on source 1 (high enough to fire ~every step at dt=0.125ms).
   // Rate is in internal units: 10000 Hz × hz_unit = 10000 × 0.001 = 10.0
-  let param = @snn_mbt.PoissonLayer::with_active(10000.0F * @snn_mbt.hz, 2, active)
+  let param = @snn_mbt.PoissonLayer::with_active(10000.0F * @core.hz, 2, active)
   let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
   let mut total_fires = 0
   for _ in 0..<100 {
@@ -203,13 +203,13 @@ test "stimulate_layer: inactive source → no fire" {
 
 ///|
 test "stimulate_layer: high rate fires, weight accumulates on post" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(1, if_param, rng)
   // 1 kHz → rate_internal = 1.0, lambda = 1.0 × 0.125 = 0.125 spikes/step.
   // Over 1000 steps (~125 ms) expect ~125 fires × weight 2.0 = ~250.
   let param = @snn_mbt.PoissonLayer::with_conn(
-    1000.0F * @snn_mbt.hz, 1, [true], 2.0F, 0.0F, 1.0F, "Fixed", "Fixed",
+    1000.0F * @core.hz, 1, [true], 2.0F, 0.0F, 1.0F, "Fixed", "Fixed",
   )
   let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
   let mut total_added = 0.0F
@@ -240,12 +240,12 @@ test "stimulate_layer: high rate fires, weight accumulates on post" {
 
 ///|
 test "stimulate_layer: writes to gaba for :gi sym" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let post = @snn_mbt.IF::new(2, if_param, rng)
   // 1 kHz on 2 sources → ~12.5% fire rate each.
   let param = @snn_mbt.PoissonLayer::with_conn(
-    1000.0F * @snn_mbt.hz, 2, [true, true], 1.5F, 0.0F, 1.0F, "Fixed", "Fixed",
+    1000.0F * @core.hz, 2, [true, true], 1.5F, 0.0F, 1.0F, "Fixed", "Fixed",
   )
   let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "gi", rng)
   let mut any_gaba_change = false

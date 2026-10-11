@@ -33,7 +33,7 @@ pub fn NoisyQNet::new(
   seed : UInt64,
 ) -> NoisyQNet {
   // Use a single RNG whose state advances through both inits.
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let layer1 = NoisyLinearParam::init(n_states, hidden, rng)
   let layer2 = NoisyLinearParam::init(hidden, n_actions, rng)
   { layer1, layer2, n_states, hidden, n_actions }
@@ -45,7 +45,7 @@ pub fn NoisyQNet::new(
 pub fn noisy_q_forward(
   net : NoisyQNet,
   x : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   // layer1: n_states -> hidden
   let h1 = noisy_linear_forward(x, 1, net.layer1, rng)
@@ -82,7 +82,7 @@ pub fn noisy_q_forward_eval(net : NoisyQNet, x : Array[Float]) -> Array[Float] {
 pub fn noisy_q_argmax(
   net : NoisyQNet,
   x : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Int {
   let q = noisy_q_forward(net, x, rng)
   let mut best = 0

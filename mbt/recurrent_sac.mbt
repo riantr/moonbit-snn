@@ -47,7 +47,7 @@ pub fn LstmQNet::new(
 ) -> LstmQNet {
   let cell = LstmCellParam::new(d_x, d_h, seed)
   let std = sqrtf(1.0F / Float::from_int(d_h))
-  let rng = Xoshiro::from_state(seed + 11UL, seed + 12UL, seed + 13UL, seed + 14UL)
+  let rng = @core.Xoshiro::from_state(seed + 11UL, seed + 12UL, seed + 13UL, seed + 14UL)
   let w_out = xavier_normal(n_actions, d_h, std, rng)
   let b_out : Array[Float] = Array::make(n_actions, 0.0F)
   { cell, w_out, b_out }
@@ -138,7 +138,7 @@ pub fn RecurrentSac::new(
 ///|
 /// Current α = exp(log_alpha).
 pub fn recurrent_sac_get_alpha(sac : RecurrentSac) -> Float {
-  expf(sac.log_alpha)
+  @core.expf(sac.log_alpha)
 }
 
 ///|
@@ -174,7 +174,7 @@ pub fn recurrent_sac_rollout_episode(
   env_n_cells : Int,
   sac : RecurrentSac,
   max_steps : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> RecurrentSacEpisode {
   let (u_raw, _) = box_muller(rng)
   let side = if u_raw > 0.0 { 1 } else { 0 }
@@ -245,7 +245,7 @@ pub fn recurrent_sac_soft_target_seq(
   sac : RecurrentSac,
   ep : RecurrentSacEpisode,
   gamma : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n = ep.actions.length()
   let n_a = 2
@@ -268,7 +268,7 @@ pub fn recurrent_sac_soft_target_seq(
       let mut expected = 0.0F
       for i in 0..<n_a {
         let q_min = if q1t[i] < q2t[i] { q1t[i] } else { q2t[i] }
-        let lp = if pi_t[i] > 0.0F { logf(pi_t[i]) } else { -20.0F }
+        let lp = if pi_t[i] > 0.0F { @core.logf(pi_t[i]) } else { -20.0F }
         expected = expected + pi_t[i] * (q_min - alpha * lp)
       }
       targets[t] = ep.rewards[t] + gamma * expected
@@ -286,7 +286,7 @@ pub fn recurrent_sac_critic_update(
   ep : RecurrentSacEpisode,
   gamma : Float,
   lr : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let targets = recurrent_sac_soft_target_seq(sac, ep, gamma, rng)
   let h0 : Array[Float] = Array::make(sac.q1.cell.d_h, 0.0F)
@@ -422,7 +422,7 @@ pub fn recurrent_sac_actor_update(
   sac : RecurrentSac,
   ep : RecurrentSacEpisode,
   lr : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Unit {
   let n = ep.actions.length()
   let n_actions = sac.policy.w_out.length()
@@ -449,7 +449,7 @@ pub fn recurrent_sac_actor_update(
     let mut v_mean = 0.0F
     let v_arr : Array[Float] = Array::make(n_actions, 0.0F)
     for i in 0..<n_actions {
-      let lp = if pi[i] > 0.0F { logf(pi[i]) } else { -20.0F }
+      let lp = if pi[i] > 0.0F { @core.logf(pi[i]) } else { -20.0F }
       v_arr[i] = q[i] - alpha * (lp + 1.0F)
       v_mean = v_mean + pi[i] * v_arr[i]
     }
@@ -531,7 +531,7 @@ pub fn recurrent_sac_actor_update(
 pub fn recurrent_sac_update_alpha(
   sac : RecurrentSac,
   ep : RecurrentSacEpisode,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let h0 : Array[Float] = Array::make(sac.policy.cell.d_h, 0.0F)
   let c0 : Array[Float] = Array::make(sac.policy.cell.d_h, 0.0F)
@@ -543,7 +543,7 @@ pub fn recurrent_sac_update_alpha(
     let pi = policy_cache.probs[t]
     let mut neg_ent = 0.0F
     for i in 0..<n_a {
-      let lp = if pi[i] > 0.0F { logf(pi[i]) } else { -20.0F }
+      let lp = if pi[i] > 0.0F { @core.logf(pi[i]) } else { -20.0F }
       neg_ent = neg_ent + pi[i] * lp
     }
     sum_neg_ent = sum_neg_ent + neg_ent
@@ -637,7 +637,7 @@ pub fn train_recurrent_sac(
   max_steps : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let mut total_return = 0.0F
   for _ep in 0..<n_episodes {
     let episode = recurrent_sac_rollout_episode(env_n_cells, sac, max_steps, rng)

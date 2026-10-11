@@ -49,7 +49,7 @@ test "prioritized_buffer: update_priority changes total" {
 ///|
 test "prioritized_buffer: sample returns valid transitions" {
   let b = @snn_mbt.PrioritizedBuffer::new(10, 0.6F, 0.4F, 0.01F)
-  let rng = @snn_mbt.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
+  let rng = @core.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
   for k in 0..<10 {
     b.push(k, k % 4, Float::from_int(k), (k + 1) % 10, false)
   }

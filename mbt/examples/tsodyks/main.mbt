@@ -17,7 +17,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 8
   let ni = 4
 

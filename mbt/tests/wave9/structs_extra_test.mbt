@@ -27,29 +27,29 @@ test "NetworkModel::new is_valid = true" {
 ///|
 test "Time::from_ms — 100ms → tt = 800" {
   // Julia: tts = 100 / 0.125 = 800; Int32(800) = 800.
-  let t = @snn_mbt.Time::from_ms(100.0F)
-  assert_eq(@snn_mbt.get_time(t), 100.0F)
-  assert_eq(@snn_mbt.get_tt(t), 800)
-  assert_eq(@snn_mbt.get_dt(t), 0.125F)
+  let t = @core.Time::from_ms(100.0F)
+  assert_eq(@core.get_time(t), 100.0F)
+  assert_eq(@core.get_tt(t), 800)
+  assert_eq(@core.get_dt(t), 0.125F)
 }
 
 ///|
 test "Time::from_ms — 0.5ms → tt = 4" {
   // tts = 0.5 / 0.125 = 4.
-  let t = @snn_mbt.Time::from_ms(0.5F)
-  assert_eq(@snn_mbt.get_time(t), 0.5F)
-  assert_eq(@snn_mbt.get_tt(t), 4)
+  let t = @core.Time::from_ms(0.5F)
+  assert_eq(@core.get_time(t), 0.5F)
+  assert_eq(@core.get_tt(t), 4)
 }
 
 ///|
 test "Time::update_time advances correctly" {
   // After 100 steps at dt=0.125ms, t should be 12.5ms and tt=100.
-  let t = @snn_mbt.Time::new()
+  let t = @core.Time::new()
   let mut s = 0
   while s < 100 {
-    @snn_mbt.update_time(t, @snn_mbt.get_dt(t))
+    @core.update_time(t, @core.get_dt(t))
     s = s + 1
   }
-  assert_eq(@snn_mbt.get_time(t), 12.5F)
-  assert_eq(@snn_mbt.get_tt(t), 100)
+  assert_eq(@core.get_time(t), 12.5F)
+  assert_eq(@core.get_tt(t), 100)
 }

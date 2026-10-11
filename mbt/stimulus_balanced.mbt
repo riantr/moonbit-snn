@@ -60,7 +60,7 @@ pub fn BalancedParameter::new(
   kIE? : Float = 1.0F,
   beta? : Float = 0.0F,
   tau? : Float = 50.0F,
-  r0? : Float = 1.0F * khz,
+  r0? : Float = 1.0F * @core.khz,
   w? : Float = 1.0F,
   wIE? : Float = 1.0F,
   same_input? : Bool = false,
@@ -88,7 +88,7 @@ pub(all) struct BalancedStimulus {
   fire : Array[Bool]
   r : Array[Float]
   noise : Array[Float]
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -118,7 +118,7 @@ pub fn BalancedStimulus::new(
     fire: Array::make(n, false),
     r,
     noise,
-    rng: Xoshiro::new(seed),
+    rng: @core.Xoshiro::new(seed),
   }
 }
 
@@ -160,7 +160,7 @@ pub fn stimulate_balanced(
   if param.same_input {
     // Shared trace: draw one uniform, update r[0] / noise[0], then
     // sample Poisson once and broadcast the contribution to all ge[i].
-    let re = next_f64(s.rng).to_float() - 0.5F
+    let re = @core.next_f64(s.rng).to_float() - 0.5F
     s.noise[0] = (s.noise[0] - re) * cc + re
     let mut nb = s.noise[0] * beta
     if nb > 1.0F {
@@ -185,7 +185,7 @@ pub fn stimulate_balanced(
     }
   } else {
     for i in 0..<n {
-      let re = next_f64(s.rng).to_float() - 0.5F
+      let re = @core.next_f64(s.rng).to_float() - 0.5F
       s.noise[i] = (s.noise[i] - re) * cc + re
       let mut nb = s.noise[i] * beta
       if nb > 1.0F {

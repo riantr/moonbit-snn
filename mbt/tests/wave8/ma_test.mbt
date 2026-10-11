@@ -149,7 +149,7 @@ test "ma_fit: gradient descent recovers MA(1) theta on strong-signal data" {
   // Generate MA(1) data with theta=0.7 and high-noise-to-signal ratio.
   // Use a simple deterministic generator with strong autocorrelation
   // to make gradient descent converge reliably.
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let n = 500
   let eps : Array[Float] = Array::make(n, 0.0F)
   for t in 0..<n {
@@ -174,7 +174,7 @@ test "ma_fit: gradient descent moves θ in the right direction" {
   // For under-fit θ (= 0, starting point), gradient should push θ up
   // (toward the true positive θ). Just verify direction, not exact
   // convergence (which depends on step size).
-  let rng = @snn_mbt.Xoshiro::from_state(23UL, 29UL, 31UL, 37UL)
+  let rng = @core.Xoshiro::from_state(23UL, 29UL, 31UL, 37UL)
   let n = 300
   let eps : Array[Float] = Array::make(n, 0.0F)
   for t in 0..<n {

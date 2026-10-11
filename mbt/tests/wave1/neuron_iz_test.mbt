@@ -3,7 +3,7 @@
 ///|
 test "IZ::new initialises v = -65" {
   let param = @snn_mbt.IZParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IZ::new(5, param, rng)
   for k in 0..<5 {
     assert_eq(p.v[k], -65.0F)
@@ -13,7 +13,7 @@ test "IZ::new initialises v = -65" {
 ///|
 test "IZ::new initialises u = b * v = -13" {
   let param = @snn_mbt.IZParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IZ::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.u[k], -13.0F) // 0.2 * -65 = -13
@@ -39,7 +39,7 @@ test "IZ: one step from rest" {
   // (since 0.04*65^2 - 5*65 = 169 - 325 = -156, plus 140 = -16, plus u=-13
   // gives -29, so v is decreasing). Verify the sign.
   let param = @snn_mbt.IZParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IZ::new(1, param, rng)
   let v_before = p.v[0]
   @snn_mbt.step_iz(p, 0.125F)

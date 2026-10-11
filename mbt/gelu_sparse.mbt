@@ -24,7 +24,7 @@
 pub fn gelu_sparse(x : Float) -> Float {
   // √(1/2) ≈ 0.7071067811865475
   let c = 0.7071067811865475F
-  0.5F * x * (1.0F + erff(x * c))
+  0.5F * x * (1.0F + @core.erff(x * c))
 }
 
 ///|
@@ -45,9 +45,9 @@ pub fn gelu_sparse_forward(input : Array[Float]) -> Array[Float] {
 ///         = 0.5·(1 + erff(x/√2)) + x · (1/√(2π)) · expf(-x²/2)
 pub fn gelu_sparse_grad(x : Float) -> Float {
   let c = 0.7071067811865475F
-  let phi_x = 0.5F * (1.0F + erff(x * c))
+  let phi_x = 0.5F * (1.0F + @core.erff(x * c))
   let one_over_sqrt_2pi = 0.3989422804014327F
-  let pdf_x = one_over_sqrt_2pi * expf(-0.5F * x * x)
+  let pdf_x = one_over_sqrt_2pi * @core.expf(-0.5F * x * x)
   phi_x + x * pdf_x
 }
 

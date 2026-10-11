@@ -27,7 +27,7 @@ fn run_e_only(e : @snn_mbt.IF, duration_ms : Float) -> Int {
     [],
     monitors=[fm],
   )
-  @snn_mbt.heterogeneous_sim_for(model, duration_ms * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, duration_ms * @core.ms)
   fm.count_spikes()
 }
 
@@ -45,13 +45,13 @@ fn run_ei(
     [ei, ie],
     monitors=[fm],
   )
-  @snn_mbt.heterogeneous_sim_for(model, duration_ms * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, duration_ms * @core.ms)
   fm.count_spikes()
 }
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_param = @snn_mbt.IFParameter::with_el(-49.0F)
 
   // E-only baseline: 30 IF neurons with El=-49mV (just below Vt=-50).

@@ -20,7 +20,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // 1 Tripod neuron with default AdEx soma + 2 default dendrites.

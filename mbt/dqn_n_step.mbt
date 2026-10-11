@@ -115,7 +115,7 @@ pub fn train_dqn_n_step(
   n_step : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ReplayBuffer::new(buffer_capacity)
   let nstep = NStepBuffer::new(n_step)
   let mut total_return = 0.0F

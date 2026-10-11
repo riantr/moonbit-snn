@@ -115,7 +115,7 @@ pub fn mlp_model_mse_grad_batch(
       for k in 0..<in_dim {
         s = s + model.w1[i][k] * inp[k]
       }
-      hidden[i] = tanhf(s)
+      hidden[i] = @core.tanhf(s)
     }
     let pred : Array[Float] = Array::make(out_dim, 0.0F)
     for i in 0..<out_dim {

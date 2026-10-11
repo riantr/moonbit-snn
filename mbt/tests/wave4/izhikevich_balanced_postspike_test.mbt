@@ -5,7 +5,7 @@
 ///|
 test "izhikevich_balanced_postspike — 1 kHz Bernoulli drive reaches ~1kHz expected input rate" {
   // Verify that the Bernoulli sampler reaches the expected input rate.
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let dt = 0.125F
   let rate_khz = 1.0F
   let n_post = 50
@@ -37,8 +37,8 @@ test "izhikevich_balanced_postspike — 1 kHz Bernoulli drive reaches ~1kHz expe
 ///|
 test "izhikevich_balanced_postspike — refractory caps firing rate" {
   // Build two populations: one with tabs_const=4, one without refractory.
-  let rng_a = @snn_mbt.Xoshiro::new(7UL)
-  let rng_b = @snn_mbt.Xoshiro::new(7UL)
+  let rng_a = @core.Xoshiro::new(7UL)
+  let rng_b = @core.Xoshiro::new(7UL)
   let dt = 0.125F
   let n_post = 50
   let total_steps = 4000  // 0.5 second
@@ -77,7 +77,7 @@ test "izhikevich_balanced_postspike — refractory caps firing rate" {
 
 ///|
 test "izhikevich_balanced_postspike — fire rate is bounded by 1/(tabs_const*dt)" {
-  let rng = @snn_mbt.Xoshiro::new(99UL)
+  let rng = @core.Xoshiro::new(99UL)
   let dt = 0.125F
   let n_post = 100
   let total_steps = 8000  // 1 second
@@ -107,7 +107,7 @@ test "izhikevich_balanced_postspike — fire rate is bounded by 1/(tabs_const*dt
 
 ///|
 fn run_balanced_postspike_benchmark() -> Int {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let dt = 0.125F
   let n_post = 50
   let total_steps = 1000
@@ -172,7 +172,7 @@ test "izhikevich_balanced_postspike — refractory decrement tracks per-neuron" 
 test "izhikevich_balanced_postspike — E/I balanced: both populations fire" {
   // Verify the E/I balanced network scenario: both populations fire at
   // least once under 1 kHz Poisson drive. Mirrors the example's main().
-  let rng = @snn_mbt.Xoshiro::new(123UL)
+  let rng = @core.Xoshiro::new(123UL)
   let dt = 0.125F
   let n_e = 50
   let n_i = 25

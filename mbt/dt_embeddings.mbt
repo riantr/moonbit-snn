@@ -54,16 +54,16 @@ pub fn DTEmbeddings::new(
   max_timestep : Int,
   seed : UInt64,
 ) -> DTEmbeddings {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std_rtg = sqrtf(2.0F / 1.0F)
   let rtg_w = xavier_normal(d_model, 1, std_rtg, rng1)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std_state = sqrtf(2.0F / Float::from_int(state_dim))
   let state_w = xavier_normal(d_model, state_dim, std_state, rng2)
-  let rng3 = Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
   let std_action = sqrtf(2.0F / Float::from_int(action_dim))
   let action_w = xavier_normal(d_model, action_dim, std_action, rng3)
-  let rng4 = Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)
+  let rng4 = @core.Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)
   let std_ts = 0.02F
   let timestep_emb = xavier_normal(max_timestep, d_model, std_ts, rng4)
   // xavier_normal returns (rows, cols). We want (max_timestep × d_model).

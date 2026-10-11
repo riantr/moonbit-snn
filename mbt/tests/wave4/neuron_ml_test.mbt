@@ -23,7 +23,7 @@ test "MorrisLecarParameter defaults" {
 ///|
 test "MorrisLecar::new initial state" {
   let param = @snn_mbt.MorrisLecarParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.MorrisLecar::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.v[k], -52.14F)
@@ -37,7 +37,7 @@ test "MorrisLecar::new initial state" {
 ///|
 test "MorrisLecar one step is stable" {
   let param = @snn_mbt.MorrisLecarParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.MorrisLecar::new(1, param, rng)
   p.i[0] = 100.0F
   @snn_mbt.step_ml(p, 0.125F)

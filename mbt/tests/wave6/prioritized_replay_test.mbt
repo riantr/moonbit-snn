@@ -40,7 +40,7 @@ test "per_push_overwrites_when_full" {
 ///|
 test "per_sample_returns_batch_shapes" {
   let buf = @snn_mbt.PrioritizedReplayBuffer::new(16, 0.6F, 0.4F, 0.01F)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   for i in 0..<8 {
     buf.push(i % 5, i % 4, Float::from_int(i), (i + 1) % 5, i % 3 == 0)
   }
@@ -70,7 +70,7 @@ test "per_sample_uniform_distribution" {
   buf.push(1, 1, 0.0F, 2, false)
   buf.push(2, 2, 0.0F, 3, false)
   buf.push(3, 3, 0.0F, 0, false)
-  let rng = @snn_mbt.Xoshiro::from_state(42UL, 7UL, 13UL, 19UL)
+  let rng = @core.Xoshiro::from_state(42UL, 7UL, 13UL, 19UL)
   let (ss, _aa, _rr, _nss, _dd, _idx, _w, probs) = buf.sample(4, rng)
   // Under alpha=0, each sample's probability should be ≈ 1/N = 0.25.
   let one_over_n = 1.0F / Float::from_int(buf.len())
@@ -98,7 +98,7 @@ test "per_sample_high_priority_more_frequent" {
   buf.push(40, 3, 0.0F, 41, false)
   // Bump priority of slot 2 (= state 30).
   buf.update_priorities([2], [99.0F])
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   // Sample many times; slot 2 should dominate.
   let mut hits_slot2 = 0
   let n_batches = 200
@@ -127,7 +127,7 @@ test "per_is_weights_in_unit_interval" {
   buf.push(2, 0, 0.0F, 3, false)
   buf.push(3, 0, 0.0F, 0, false)
   buf.update_priorities([0, 1, 2, 3], [10.0F, 5.0F, 2.0F, 1.0F])
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let (_ss, _aa, _rr, _nss, _dd, _idx, w, _probs) = buf.sample(4, rng)
   // Find max.
   let mut m = w[0]
@@ -187,7 +187,7 @@ test "per_sample_uses_overwritten_slots_after_wrap" {
   buf.push(50, 0, 0.0F, 51, false)
   // Sample repeatedly with alpha=1: should never reach state 10 because slot 0's
   // priority was reset to max (and no further priority bumps).
-  let rng = @snn_mbt.Xoshiro::from_state(99UL, 100UL, 101UL, 102UL)
+  let rng = @core.Xoshiro::from_state(99UL, 100UL, 101UL, 102UL)
   let (ss, _aa, _rr, _nss, _dd, _idx, _w, _p) = buf.sample(4, rng)
   // Verify every state is in {20, 30, 40, 50} — none of {10}.
   for k in 0..<4 {
@@ -215,7 +215,7 @@ test "per_sample_empty_buffer_does_not_panic" {
   // Sampling from an empty buffer must not crash. With total = 0 the call
   // returns the default-initialised arrays; we only require it to terminate.
   let buf = @snn_mbt.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let (ss, aa, rr, nss, dd, idx, w, probs) = buf.sample(4, rng)
   assert_eq(ss.length(), 4)
   assert_eq(aa.length(), 4)
@@ -235,7 +235,7 @@ test "per_sample_returns_finite_weights" {
     buf.push(i, i % 4, Float::from_int(i), (i + 1) % 8, false)
   }
   buf.update_priorities([0, 1, 2, 3], [5.0F, 0.5F, 50.0F, 0.1F])
-  let rng = @snn_mbt.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
+  let rng = @core.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
   let (_ss, _aa, _rr, _nss, _dd, _idx, w, _probs) = buf.sample(4, rng)
   for k in 0..<4 {
     let wk = w[k]

@@ -71,21 +71,21 @@ pub struct Tripod {
 pub fn Tripod::new(
   n : Int,
   soma_param : AdExParameter,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Tripod {
   // Soma initial v_s in [vr, vt].
   let v_s = Array::make(n, 0.0F)
   let spread = soma_param.vt - soma_param.vr
   for k in 0..<n {
-    v_s[k] = soma_param.vr + next_f32(rng) * spread
+    v_s[k] = soma_param.vr + @core.next_f32(rng) * spread
   }
   let w_s : Array[Float] = Array::make(n, 0.0F)
   // Dendrites initial v_d1/v_d2 also in [vr, vt].
   let v_d1 = Array::make(n, 0.0F)
   let v_d2 = Array::make(n, 0.0F)
   for k in 0..<n {
-    v_d1[k] = soma_param.vr + next_f32(rng) * spread
-    v_d2[k] = soma_param.vr + next_f32(rng) * spread
+    v_d1[k] = soma_param.vr + @core.next_f32(rng) * spread
+    v_d2[k] = soma_param.vr + @core.next_f32(rng) * spread
   }
   let fire : Array[Bool] = Array::make(n, false)
   let threshold : Array[Float] = Array::make(n, soma_param.vt)
@@ -234,7 +234,7 @@ fn tripod_heun_step(p : Tripod, dt : Float, store_temp : Bool) -> Unit {
     let exp_term = if dt_slope < 0.0F {
       0.0F
     } else {
-      dt_slope * expf((p.v_s[k] + ds - p.threshold[k]) / dt_slope)
+      dt_slope * @core.expf((p.v_s[k] + ds - p.threshold[k]) / dt_slope)
     }
     let dv_s_val = (gl * (el - p.v_s[k] - ds) + exp_term -
                     p.w_s[k] - dw - p.syn_curr_s[k] - (ic1 + ic2) +

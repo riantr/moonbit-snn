@@ -3,7 +3,7 @@
 
 ///|
 test "ReceptorSynapseTripod::new: shapes and initial state" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(3, pre_param, rng)
   let base = @snn_mbt.AdExParameter::new()
@@ -37,7 +37,7 @@ test "ReceptorSynapseTripod::new: shapes and initial state" {
 
 ///|
 test "ReceptorSynapseTripod: AMPA target receptor → glu_d1 buffer" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let base = @snn_mbt.AdExParameter::new()
@@ -72,7 +72,7 @@ test "ReceptorSynapseTripod: AMPA target receptor → glu_d1 buffer" {
 
 ///|
 test "ReceptorSynapseTripod: GABAa target → gaba_d1 buffer" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let base = @snn_mbt.AdExParameter::new()
@@ -103,7 +103,7 @@ test "ReceptorSynapseTripod: GABAa target → gaba_d1 buffer" {
 
 ///|
 test "ReceptorSynapseTripod: soma compartment routing" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let base = @snn_mbt.AdExParameter::new()
@@ -131,7 +131,7 @@ test "ReceptorSynapseTripod: soma compartment routing" {
 
 ///|
 test "step_receptors_tripod_synapse: 2-state ODE consumes buffer, populates ge_out" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let base = @snn_mbt.AdExParameter::new()
@@ -176,7 +176,7 @@ test "step_receptors_tripod_synapse: 2-state ODE consumes buffer, populates ge_o
 
 ///|
 test "ReceptorSynapseTripod: non-firing pre → no conductance change" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(2, pre_param, rng)
   let base = @snn_mbt.AdExParameter::new()

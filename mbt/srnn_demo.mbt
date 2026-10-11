@@ -32,7 +32,7 @@ pub fn srnn_poisson_encode(
   n_steps : Int,
   dt : Float,
   max_rate : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n_in = input.length()
   let out : Array[Float] = Array::make(n_steps * n_in, 0.0F)
@@ -40,7 +40,7 @@ pub fn srnn_poisson_encode(
     for i in 0..<n_in {
       let raw_p = input[i] * max_rate * dt
       let p = if raw_p > 1.0F { 1.0F } else { raw_p }
-      let r = next_f32(rng)
+      let r = @core.next_f32(rng)
       out[t * n_in + i] = if r < p { 1.0F } else { 0.0F }
     }
   }
@@ -59,13 +59,13 @@ pub fn srnn_dataset_build(
   let n_in = 2
   let images : Array[Float] = Array::make(n_total * n_in, 0.0F)
   let labels : Array[Int] = Array::make(n_total, 0)
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   for c in 0..<n_classes {
     for k in 0..<per_class {
       let idx = c * per_class + k
       labels[idx] = c
-      let x0 = if c == 0 { 0.7F + 0.3F * next_f32(rng) } else { 0.3F * next_f32(rng) }
-      let x1 = next_f32(rng)
+      let x0 = if c == 0 { 0.7F + 0.3F * @core.next_f32(rng) } else { 0.3F * @core.next_f32(rng) }
+      let x1 = @core.next_f32(rng)
       images[idx * n_in + 0] = x0
       images[idx * n_in + 1] = x1
     }
@@ -117,7 +117,7 @@ pub fn SRNN::new(
   n_classes : Int,
   seed : UInt64,
 ) -> SRNN {
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std_in = sqrtf(1.0F / Float::from_int(n_in))
   let std_rec = sqrtf(1.0F / Float::from_int(n_hidden))
   let std_out = sqrtf(1.0F / Float::from_int(n_hidden))
@@ -201,7 +201,7 @@ pub fn srnn_forward(
   // Softmax + cross-entropy at final timestep.
   let final_off = (n_steps - 1) * n_classes
   let probs : Array[Float] = spikeformer_softmax_slice(y, final_off, n_classes)
-  let loss = -logf(probs[target])
+  let loss = -@core.logf(probs[target])
 
   let cache : SRNNCache = {
     n_steps, n_in, n_hidden, n_classes,
@@ -229,7 +229,7 @@ fn spikeformer_softmax_slice(
   let mut sum_exp = 0.0F
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let e = expf(arr[start + i] - max_v)
+    let e = @core.expf(arr[start + i] - max_v)
     out[i] = e
     sum_exp = sum_exp + e
   }
@@ -359,7 +359,7 @@ pub fn srnn_train_step(
   lr : Float,
   beta : Float,
   srnn : SRNN,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let dt = srnn.dt
   let max_rate = 50.0F
@@ -411,7 +411,7 @@ pub fn srnn_eval_loss(
       one_img[j] = images[img_off + j]
     }
     let seed_i : UInt64 = seed + i.to_uint64() * 1009UL
-    let rng = Xoshiro::from_state(seed_i, seed_i + 1UL, seed_i + 2UL, seed_i + 3UL)
+    let rng = @core.Xoshiro::from_state(seed_i, seed_i + 1UL, seed_i + 2UL, seed_i + 3UL)
     let x = srnn_poisson_encode(one_img, n_steps, srnn.dt, 50.0F, rng)
     let (loss, _) = srnn_forward(x, n_steps, labels[i], srnn, beta)
     sum_loss = sum_loss + loss

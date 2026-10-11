@@ -398,14 +398,14 @@ pub fn pna_degree_scale(
     Identity => 1.0F
     Amplification => {
       let d = Float::from_int(deg)
-      logf(d + 1.0F) / mean_deg
+      @core.logf(d + 1.0F) / mean_deg
     }
     Attenuation => {
       if deg == 0 {
         1.0F
       } else {
         let d = Float::from_int(deg)
-        mean_deg / logf(d + 1.0F)
+        mean_deg / @core.logf(d + 1.0F)
       }
     }
   }

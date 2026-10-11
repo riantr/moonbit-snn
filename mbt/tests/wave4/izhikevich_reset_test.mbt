@@ -2,7 +2,7 @@
 
 ///|
 test "iz_reset — restores v to -65 and u to b*-65" {
-  let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(1UL))
+  let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(1UL))
   // Run a few steps to perturb state.
   pop.i[0] = 30.0F
   pop.i[1] = 30.0F
@@ -42,7 +42,7 @@ test "iz_reset — clears fire, ge, gi, tabs" {
 
 ///|
 test "iz_reset — does NOT modify i (external input)" {
-  let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(1UL))
+  let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(1UL))
   pop.i[0] = 10.0F
   pop.i[1] = 20.0F
   @snn_mbt.iz_reset(pop)
@@ -56,8 +56,8 @@ test "iz_reset — step_iz after reset produces deterministic trajectory" {
   // the other runs 20 steps + reset + 20 more steps with same seed.
   // Both should produce identical final state (since reset zeros all
   // perturbation).
-  let pop_a = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(7UL))
-  let pop_b = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(8UL))
+  let pop_a = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
+  let pop_b = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(8UL))
   pop_a.i[0] = 5.0F
   pop_b.i[0] = 5.0F
   pop_a.i[1] = 5.0F
@@ -90,7 +90,7 @@ test "iz_reset — step_iz after reset produces deterministic trajectory" {
 test "iz_reset — works for FS parameters (b=0.2 still)" {
   // For FS (a=0.1, b=0.2, c=-65, d=2), u should reset to b * -65 = -13
   // (same as RS since b is identical).
-  let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @snn_mbt.Xoshiro::new(1UL))
+  let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @core.Xoshiro::new(1UL))
   // Run a few steps.
   pop.i[0] = 50.0F
   for _ in 0..<30 {

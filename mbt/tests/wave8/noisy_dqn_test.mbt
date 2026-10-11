@@ -15,7 +15,7 @@ fn grid_n_actions() -> Int {
 test "noisy_dqn_select_action_in_range" {
   let online = @snn_mbt.NoisyQNet::new(4, 8, 3, 1UL)
   let target = @snn_mbt.NoisyQNet::new(4, 8, 3, 2UL)
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let a = @snn_mbt.noisy_dqn_select_action(online, 0, rng)
   if a < 0 || a >= 3 {
     fail("action \{a} out of [0, 3)")
@@ -85,7 +85,7 @@ test "noisy_dqn_update_step_returns_mean_td" {
   let dones : Array[Bool] = [false, false, false, true]
   let mean_td = @snn_mbt.noisy_dqn_update_step(
     online, target, states, actions, rewards, next_states, dones, 0.9F, 0.01F,
-    @snn_mbt.Xoshiro::new(99UL),
+    @core.Xoshiro::new(99UL),
   )
   if mean_td < 0.0F {
     fail("mean_td = \{mean_td}, expected ≥ 0")
@@ -111,7 +111,7 @@ test "noisy_dqn_update_step_changes_weights" {
   let dones : Array[Bool] = [false, false, false, true]
   let _ = @snn_mbt.noisy_dqn_update_step(
     online, target, states, actions, rewards, next_states, dones, 0.9F, 0.1F,
-    @snn_mbt.Xoshiro::new(99UL),
+    @core.Xoshiro::new(99UL),
   )
   if online.layer1.weight_mu[0] == w0_before {
     fail("layer1.weight_mu[0] unchanged after update")

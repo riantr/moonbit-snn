@@ -19,7 +19,7 @@ pub fn elu_forward(input : Array[Float], alpha~ : Float = 1.0F) -> Array[Float] 
     if v > 0.0F {
       out[i] = v
     } else {
-      out[i] = alpha * (expf(v) - 1.0F)
+      out[i] = alpha * (@core.expf(v) - 1.0F)
     }
   }
   out

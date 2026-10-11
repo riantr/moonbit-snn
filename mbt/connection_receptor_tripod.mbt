@@ -61,7 +61,7 @@ pub fn ReceptorSynapseTripod::new(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> ReceptorSynapseTripod {
   let m = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   let n_post = post.n

@@ -236,10 +236,10 @@ pub fn Multipod::new(
 pub fn Multipod::step(p : Multipod, dt : Float) -> Unit {
   let n = p.n
   let nd = p.nd
-  let soma_decay_d : Float = expf(-dt / p.soma_syn.tau_e)
-  let soma_decay_r : Float = expf(-dt / p.soma_syn.tau_e)
-  let dend_decay_d : Float = expf(-dt / p.dend_syn.tau_e)
-  let dend_decay_r : Float = expf(-dt / p.dend_syn.tau_e)
+  let soma_decay_d : Float = @core.expf(-dt / p.soma_syn.tau_e)
+  let soma_decay_r : Float = @core.expf(-dt / p.soma_syn.tau_e)
+  let dend_decay_d : Float = @core.expf(-dt / p.dend_syn.tau_e)
+  let dend_decay_r : Float = @core.expf(-dt / p.dend_syn.tau_e)
   // Phase 1: per-dendrite, per-receptor h update from he_d / hi_d.
   let mut d_idx = 0
   while d_idx < nd {
@@ -337,7 +337,7 @@ fn multipod_step_neurons(p : Multipod, dt : Float, n : Int, nd : Int) -> Unit {
     // Δv[0] for soma.
     let theta_i = p.theta[i]
     let dv_soma : Float = (gl *
-      ((-p.v_s[i] + el) + dt_slope * expf((p.v_s[i] - theta_i) / dt_slope)) -
+      ((-p.v_s[i] + el) + dt_slope * @core.expf((p.v_s[i] - theta_i) / dt_slope)) -
       p.w_s[i] - p.iv[0] - cs_sum) / c
     p.v_s[i] = p.v_s[i] + dt * dv_soma
     // Δv[d+1] for each dendrite.

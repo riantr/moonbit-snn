@@ -135,7 +135,7 @@ pub fn SpikingSynapse::random(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SpikingSynapse {
   let matrix = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   {
@@ -164,7 +164,7 @@ pub fn SpikingSynapse::random_with_rule(
   sigma : Float,
   p : Float,
   rule : ConnectRule,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SpikingSynapse {
   let matrix = SparseMatrixCSR::random_with_rule(
     pre.n, post.n, mu, sigma, p, rule, rng,
@@ -197,7 +197,7 @@ pub fn SpikingSynapse::random_with_delays(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   d_mean : Float,
   d_std : Float,
 ) -> SpikingSynapse {

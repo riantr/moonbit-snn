@@ -6,7 +6,7 @@
 test "IZ bit-exact — custom RS-like (a=0.02, b=0.2, c=-65, d=8)" {
   // Custom matches the IZParameter::rs() defaults. Verify that
   // step_iz gives the same trajectory from same seed.
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let p = @snn_mbt.IZParameter::custom(0.02F, 0.2F, -65.0F, 8.0F)
   let pop = @snn_mbt.IZ::new(2, p, rng)
   pop.i[0] = 10.0F
@@ -28,7 +28,7 @@ test "IZ bit-exact — custom FS-like (a=0.1, d=2) faster than RS" {
   // Two parallel populations: RS and FS. Same input, same seed prefix.
   // FS (a=0.1, d=2) typically fires more spikes per second than RS
   // (a=0.02, d=8) because the adaptation increment is smaller.
-  let rng_rs = @snn_mbt.Xoshiro::new(42UL)
+  let rng_rs = @core.Xoshiro::new(42UL)
   let pop_rs = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -65.0F, 8.0F), rng_rs)
   pop_rs.i[0] = 10.0F
   let mut rs_fires = 0
@@ -36,7 +36,7 @@ test "IZ bit-exact — custom FS-like (a=0.1, d=2) faster than RS" {
     @snn_mbt.step_iz(pop_rs, 0.125F)
     if pop_rs.fire[0] { rs_fires = rs_fires + 1 }
   }
-  let rng_fs = @snn_mbt.Xoshiro::new(42UL)
+  let rng_fs = @core.Xoshiro::new(42UL)
   let pop_fs = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.1F, 0.2F, -65.0F, 2.0F), rng_fs)
   pop_fs.i[0] = 10.0F
   let mut fs_fires = 0
@@ -54,7 +54,7 @@ test "IZ bit-exact — custom FS-like (a=0.1, d=2) faster than RS" {
 ///|
 test "IZ custom — different c resets the post-fire voltage correctly" {
   // Custom c=-70 (vs default -65). After firing, v should reset to -70.
-  let rng = @snn_mbt.Xoshiro::new(1UL)
+  let rng = @core.Xoshiro::new(1UL)
   let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -70.0F, 8.0F), rng)
   pop.v[0] = 35.0F  // force fire on next step
   @snn_mbt.step_iz(pop, 0.125F)

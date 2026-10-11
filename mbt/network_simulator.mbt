@@ -54,7 +54,7 @@ pub fn network_summary(m : HeterogeneousModel) -> NetworkSummary {
     n_monitors: m.monitors.length(),
     n_stdp_entries: m.stdp_entries.length(),
     n_stp_entries: m.stp_entries.length(),
-    current_time: get_time(m.time),
+    current_time: @core.get_time(m.time),
     total_neurons,
   }
 }
@@ -220,12 +220,12 @@ pub fn heterogeneous_sim_for_with_log(
 ) -> Array[SimLog] {
   let logs : Array[SimLog] = []
   let mut next_log_t = if log_every_ms > 0.0F { log_every_ms } else { 1.0e6F }
-  let start_t = get_time(m.time)
+  let start_t = @core.get_time(m.time)
   let end_t = start_t + duration
   let dt = 0.125F
-  while get_time(m.time) < end_t {
+  while @core.get_time(m.time) < end_t {
     step_heterogeneous(m, dt)
-    let t = get_time(m.time)
+    let t = @core.get_time(m.time)
     if t >= next_log_t {
       let active = count_active_monitors(m)
       let total_spikes = total_recorded_spikes(m)
@@ -268,5 +268,5 @@ pub fn step_heterogeneous_with_record(
   record : (Float) -> Unit,
 ) -> Unit {
   step_heterogeneous(m, dt)
-  record(get_time(m.time))
+  record(@core.get_time(m.time))
 }

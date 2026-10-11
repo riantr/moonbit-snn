@@ -10,7 +10,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
 
   // 1. place_populations_e_i: 40 E + 10 I on a [0, 1]^2 periodic grid.
   let pops = @snn_mbt.place_populations_e_i(40, 10, 1.0F, 1.0F, rng)

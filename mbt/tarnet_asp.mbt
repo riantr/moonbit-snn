@@ -115,7 +115,7 @@ pub(all) struct AspParam {
 
 ///|
 pub fn AspParam::new(channels : Int, att_hidden : Int, seed : UInt64) -> AspParam {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   {
     w1: tn_randn(att_hidden * 3 * channels, 0.05F, rng),
     b1: Array::make(att_hidden, 0.0F),
@@ -216,7 +216,7 @@ pub fn asp_forward(
   while i < n * att * t {
     let v = pre[i]
     let r = if v > 0.0F { v } else { 0.0F }
-    hidden[i] = tanhf(r)
+    hidden[i] = @core.tanhf(r)
     i = i + 1
   }
   let logits : Array[Float] = Array::make(n * c * t, 0.0F)
@@ -251,12 +251,12 @@ pub fn asp_forward(
       let mut s = 0.0F
       ti = 0
       while ti < t {
-        s = s + expf(logits[base + ti] - mx)
+        s = s + @core.expf(logits[base + ti] - mx)
         ti = ti + 1
       }
       ti = 0
       while ti < t {
-        alpha[base + ti] = expf(logits[base + ti] - mx) / s
+        alpha[base + ti] = @core.expf(logits[base + ti] - mx) / s
         ti = ti + 1
       }
     }

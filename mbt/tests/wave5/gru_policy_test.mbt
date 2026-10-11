@@ -21,7 +21,7 @@ test "gru_policy_forward: action + cache lengths match obs_seq" {
     [1.0F, 0.0F, 0.0F, 0.0F, 1.0F],
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(17UL, 19UL, 23UL, 29UL)
+  let rng = @core.Xoshiro::from_state(17UL, 19UL, 23UL, 29UL)
   let (actions, cache) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng)
   assert_eq(actions.length(), 3)
   for t in 0..<3 {
@@ -45,7 +45,7 @@ test "gru_policy_gradient_update: zero returns -> no change" {
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
+  let rng = @core.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
   let (actions, cache) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng)
   let w0_snapshot : Array[Array[Float]] = Array::make(2, [])
   for i in 0..<2 {
@@ -84,11 +84,11 @@ test "gru_policy_gradient_update: positive return increases chosen prob" {
     [1.0F, 0.0F, 0.0F, 0.0F, 1.0F],
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
+  let rng = @core.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
   let (actions, cache) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng)
   let returns : Array[Float] = [1.0F, 1.0F, 1.0F]
   @snn_mbt.gru_policy_gradient_update(p, actions, returns, cache, 0.5F)
-  let rng2 = @snn_mbt.Xoshiro::from_state(73UL, 79UL, 83UL, 89UL)
+  let rng2 = @core.Xoshiro::from_state(73UL, 79UL, 83UL, 89UL)
   let (_a2, cache2) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng2)
   for t in 0..<3 {
     let a = actions[t]
@@ -119,8 +119,8 @@ test "gru_policy_indicator_attends: learns opposite actions per side" {
     [0.0F, 1.0F, 1.0F, 0.0F, 0.0F],
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let rng_l = @snn_mbt.Xoshiro::from_state(139UL, 149UL, 151UL, 157UL)
-  let rng_r = @snn_mbt.Xoshiro::from_state(163UL, 167UL, 173UL, 179UL)
+  let rng_l = @core.Xoshiro::from_state(139UL, 149UL, 151UL, 157UL)
+  let rng_r = @core.Xoshiro::from_state(163UL, 167UL, 173UL, 179UL)
   // Force p_l to prefer action 0 (left) via bias (since h_0=0
   // would cancel any w_out bias).
   p_l.b_out[0] = 20.0F

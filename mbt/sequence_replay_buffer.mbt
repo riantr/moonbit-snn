@@ -141,7 +141,7 @@ pub fn SequenceReplayBuffer::sample_seq_batch(
   self : SequenceReplayBuffer,
   batch_size : Int,
   seq_len : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float], Array[Float]) {
   let max_start = self.size - seq_len
   let safe_max = if max_start < 1 {

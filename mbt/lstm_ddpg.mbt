@@ -83,7 +83,7 @@ pub fn lstm_ddpg_select_action(
   hidden : Array[Float],
   cell : Array[Float],
   noise_std : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Array[Float]) {
   let (action, hidden_next, cell_next) = lstm_deterministic_policy_step(
     agent.actor, obs, hidden, cell,

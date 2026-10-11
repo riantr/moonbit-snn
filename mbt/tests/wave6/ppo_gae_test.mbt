@@ -28,7 +28,7 @@ test "gae_advantages_returns: shape + zero TD residual on perfect V" {
   v.w[1] = 1.0F
   v.w[2] = 1.0F
   v.w[3] = 1.0F
-  let rng = @snn_mbt.Xoshiro::from_state(23UL, 29UL, 31UL, 37UL)
+  let rng = @core.Xoshiro::from_state(23UL, 29UL, 31UL, 37UL)
   let mut state = env.start
   let mut done = false
   let mut t = 0

@@ -29,12 +29,12 @@ pub struct Poisson {
   n : Int
   fire : Array[Bool]
   randcache : Array[Float]
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
 /// Construct a new Poisson population with `n` neurons and `rate` (Hz).
-pub fn Poisson::new(n : Int, rate : Float, rng : Xoshiro) -> Poisson {
+pub fn Poisson::new(n : Int, rate : Float, rng : @core.Xoshiro) -> Poisson {
   { param: PoissonHomoParameter::new(rate),
     n,
     fire: Array::make(n, false),
@@ -49,7 +49,7 @@ pub fn step_poisson(p : Poisson, dt : Float) -> Unit {
   let n = p.n
   let rate_dt = p.param.rate * dt
   for i in 0..<n {
-    let u = next_f32(p.rng)
+    let u = @core.next_f32(p.rng)
     p.randcache[i] = u
     p.fire[i] = u < rate_dt
   }

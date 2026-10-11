@@ -4,7 +4,7 @@
 test "step_iz_synapses — exponential decay of ge" {
   // Initial ge[0] = 1.0; tau_e = 5.0; dt = 0.125.
   // After step: ge = 1.0 + 0.125 * (-1.0 / 5.0) = 1.0 - 0.025 = 0.975.
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng)
   pop.ge[0] = 1.0F
   pop.gi[0] = 0.5F
@@ -23,7 +23,7 @@ test "step_iz_synapses — exponential decay of ge" {
 
 ///|
 test "step_iz_synapses — does not touch v or u" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), rng)
   let v_before = pop.v[0]
   let u_before = pop.u[0]
@@ -37,7 +37,7 @@ test "step_iz_synapses — does not touch v or u" {
 test "step_iz_synapses — 100-step stability (ge decays to 0)" {
   // Starting from ge=1.0 with tau_e=5, after many steps ge should
   // approach 0 (exponential decay).
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), rng)
   pop.ge[0] = 1.0F
   for _ in 0..<1000 {
@@ -53,8 +53,8 @@ test "step_iz_synapses — 100-step stability (ge decays to 0)" {
 test "step_iz then step_iz_synapses — full equivalence" {
   // Verify that calling step_iz (which internally does both) produces
   // the same ge decay as calling step_iz_synapses separately.
-  let rng1 = @snn_mbt.Xoshiro::new(42UL)
-  let rng2 = @snn_mbt.Xoshiro::new(42UL)
+  let rng1 = @core.Xoshiro::new(42UL)
+  let rng2 = @core.Xoshiro::new(42UL)
   let p1 = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), rng1)
   let p2 = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), rng2)
   p1.ge[0] = 1.0F

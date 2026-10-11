@@ -97,7 +97,7 @@ pub fn SparseMatrixCSR::random(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SparseMatrixCSR {
   // Default rule is Bernoulli for backward compatibility.
   SparseMatrixCSR::random_with_rule(rows, cols, mu, sigma, p, Bernoulli, rng)
@@ -113,7 +113,7 @@ pub fn SparseMatrixCSR::random_with_rule(
   sigma : Float,
   p : Float,
   rule : ConnectRule,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SparseMatrixCSR {
   // Build the dense weight matrix first. We use Float for weights
   // (matches Julia's Float32 default).
@@ -140,7 +140,7 @@ pub fn SparseMatrixCSR::random_with_rule(
       // Each weight independently zeroed with prob (1 - p).
       for i in 0..<rows {
         for j in 0..<cols {
-          let u = next_f32(rng)
+          let u = @core.next_f32(rng)
           if u >= p {
             dense[i][j] = 0.0F
           }
@@ -164,7 +164,7 @@ pub fn SparseMatrixCSR::random_with_rule(
           let n_drop = rows - n_keep
           for k in 0..<n_drop {
             // Pick random swap target from k..<rows
-            let u = next_f32(rng)
+            let u = @core.next_f32(rng)
             let r_idx = k + (Float::from_int(rows) - Float::from_int(k) * u).to_int()
             let r_clamped = if r_idx >= rows { rows - 1 } else { r_idx }
             // Swap pre_idx[k] and pre_idx[r_clamped]
@@ -197,7 +197,7 @@ pub fn SparseMatrixCSR::random_with_rule(
           }
           let n_drop = cols - n_keep
           for k in 0..<n_drop {
-            let u = next_f32(rng)
+            let u = @core.next_f32(rng)
             let r_idx = k + (Float::from_int(cols) - Float::from_int(k) * u).to_int()
             let r_clamped = if r_idx >= cols { cols - 1 } else { r_idx }
             let tmp = post_idx[k]

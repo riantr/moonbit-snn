@@ -84,7 +84,7 @@ pub fn ode_adjoint_gradients(
       for k in 0..<state_dim {
         s = s + func.w1[i][k] * x_t[k]
       }
-      cached_hidden[step][i] = tanhf(s)
+      cached_hidden[step][i] = @core.tanhf(s)
     }
   }
   // Backward Euler integration of the adjoint ODE.

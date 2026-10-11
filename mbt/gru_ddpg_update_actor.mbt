@@ -199,7 +199,7 @@ fn gru_actor_step_with_cache(
   let mid = (policy.action_high + policy.action_low) * 0.5F
   let action : Array[Float] = Array::make(policy.action_dim, 0.0F)
   for i in 0..<policy.action_dim {
-    action[i] = tanhf(a_pre[i]) * half_range + mid
+    action[i] = @core.tanhf(a_pre[i]) * half_range + mid
   }
   (action, x_proj, cache)
 }

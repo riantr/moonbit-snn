@@ -69,14 +69,14 @@ pub fn GTrXLBlock::new(
   d_ff : Int,
   seed : UInt64,
 ) -> GTrXLBlock {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std1 = sqrtf(2.0F / Float::from_int(d_model))
   let ffn_w1 = xavier_normal(d_ff, d_model, std1, rng1)
   let ffn_b1 : Array[Float] = Array::make(d_ff, 0.0F)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let ffn_w2 = xavier_normal(d_model, d_ff, std1, rng2)
   let ffn_b2 : Array[Float] = Array::make(d_model, 0.0F)
-  let rng3 = Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
   let ffn_gate_w = xavier_normal(d_model, d_model, 0.1F * std1, rng3)
   let ffn_gate_b : Array[Float] = Array::make(d_model, 0.0F)
   { d_model, d_ff, ffn_w1, ffn_b1, ffn_w2, ffn_b2, ffn_gate_w, ffn_gate_b }
@@ -99,7 +99,7 @@ pub fn gtrxl_block_token_step(
   let gate : Array[Float] = Array::make(block.d_model, 0.0F)
   for k in 0..<block.d_model {
     // sigmoid via 1 / (1 + exp(-x))
-    let g : Float = 1.0F / (1.0F + expf(-gate_pre[k]))
+    let g : Float = 1.0F / (1.0F + @core.expf(-gate_pre[k]))
     gate[k] = g
   }
   // FFN main path: W2 · GELU(W1 · x + b1) + b2

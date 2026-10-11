@@ -70,7 +70,7 @@ pub struct MorrisLecar {
 
 ///|
 /// Construct a new MorrisLecar population with `n` neurons.
-pub fn MorrisLecar::new(n : Int, param : MorrisLecarParameter, _rng : Xoshiro) -> MorrisLecar {
+pub fn MorrisLecar::new(n : Int, param : MorrisLecarParameter, _rng : @core.Xoshiro) -> MorrisLecar {
   let v = Array::make(n, -52.14F)
   let w = Array::make(n, 0.2F)
   let fire : Array[Bool] = Array::make(n, false)
@@ -106,14 +106,14 @@ pub fn step_ml(p : MorrisLecar, dt : Float) -> Unit {
     let v = p.v[i]
     let w = p.w[i]
     // dv = I + gl*(El - v) + gCa*(ECa - v)*m_ss + gK*(EK - v)*w
-    let m_ss = 0.5F * (1.0F + tanhf((v - v1) / v2))
+    let m_ss = 0.5F * (1.0F + @core.tanhf((v - v1) / v2))
     let dv = p.i[i] + gl * (el - v) + gca * (eca - v) * m_ss + gk * (ek - v) * w
     // dw = (n_ss - w) / τ
-    let n_ss = 0.5F * (1.0F + tanhf((v - v3) / v4))
+    let n_ss = 0.5F * (1.0F + @core.tanhf((v - v3) / v4))
     // τ = 1 / (phi * cosh((v-V3)/(2*V4)))
     // cosh(x) = (exp(x) + exp(-x)) / 2; we can use 0.5*(expf(x) + expf(-x))
     let cosh_arg = (v - v3) / (2.0F * v4)
-    let cosh_val = 0.5F * (expf(cosh_arg) + expf(-cosh_arg))
+    let cosh_val = 0.5F * (@core.expf(cosh_arg) + @core.expf(-cosh_arg))
     let tau = if phi * cosh_val != 0.0F { 1.0F / (phi * cosh_val) } else { 0.0F }
     let dw = (n_ss - w) / tau
     p.v[i] = v + dt / cm * dv

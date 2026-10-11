@@ -47,7 +47,7 @@ pub fn ddpm_loss(
   t : Int,
   noise : Array[Float],
 ) -> Float {
-  let (xt, _) = q_sample_pair(x0, t, ddpm.schedule, Xoshiro::new(0UL))
+  let (xt, _) = q_sample_pair(x0, t, ddpm.schedule, @core.Xoshiro::new(0UL))
   // Use the supplied noise instead of regenerating it.
   let sa = ddpm.schedule.sqrt_alpha_bars[t]
   let sb = ddpm.schedule.sqrt_one_minus_alpha_bars[t]
@@ -92,7 +92,7 @@ pub fn ddpm_sample_step(
   ddpm : DDPM,
   xt : Array[Float],
   t : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n = ddpm.input_dim
   let eps = score_network_predict(ddpm.net, xt, t)
@@ -143,7 +143,7 @@ pub fn ddpm_sample_step(
 /// Full reverse chain: pure Gaussian noise -> x_0. Returns x_0.
 pub fn ddpm_sample(
   ddpm : DDPM,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n = ddpm.input_dim
   let mut xt : Array[Float] = Array::make(n, 0.0F)

@@ -152,7 +152,7 @@ pub fn gat_alpha(g : Graph, t_src : Array[Float], t_dst : Array[Float]) -> Array
       if g.edge_dst[e] != v {
         continue
       }
-      let x = expf(logits[e] - m)
+      let x = @core.expf(logits[e] - m)
       alpha[e] = x
       sum_exp = sum_exp + x
     }
@@ -359,7 +359,7 @@ pub fn gat_apply_elu_mask(
 /// ELU derivative, exported so the multi-head stack can build the
 /// same mask it applies in the forward.
 pub fn gat_elu_grad(x : Float) -> Float {
-  if x > 0.0F { 1.0F } else { expf(x) }
+  if x > 0.0F { 1.0F } else { @core.expf(x) }
 }
 
 ///|

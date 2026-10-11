@@ -17,7 +17,7 @@ test "IZParameter::custom — arbitrary (a, b, c, d) round-trip" {
 ///|
 test "IZParameter::custom — IZ::new accepts the custom params" {
   let p = @snn_mbt.IZParameter::custom(0.05F, 0.15F, -55.0F, 5.0F)
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IZ::new(3, p, rng)
   // Julia source: u[k] = b * v[k], where v[k] is initialised to -65 (not c).
   // So u[k] = b * -65 = 0.15 * -65 = -9.75.

@@ -182,7 +182,7 @@ pub fn PrioritizedReplayBuffer::update_priorities(
 pub fn PrioritizedReplayBuffer::sample(
   self : PrioritizedReplayBuffer,
   batch_size : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (
   Array[Int],
   Array[Int],

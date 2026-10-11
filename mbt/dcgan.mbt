@@ -47,7 +47,7 @@ pub fn DCGAN::new(
 /// which avoids computing log(0) at either extreme.
 pub fn bce_with_logits(x : Float, y : Float) -> Float {
   let ax = if x >= 0.0F { x } else { -x }
-  let log_term = logf(1.0F + expf(-ax))
+  let log_term = @core.logf(1.0F + @core.expf(-ax))
   let max_x = if x > 0.0F { x } else { 0.0F }
   max_x - x * y + log_term
 }
@@ -56,7 +56,7 @@ pub fn bce_with_logits(x : Float, y : Float) -> Float {
 /// Draw a latent vector z ~ N(0, I) of length `latent_dim`.
 pub fn dcgan_sample_latent(
   latent_dim : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let z : Array[Float] = Array::make(latent_dim, 0.0F)
   let pairs = latent_dim / 2
@@ -108,7 +108,7 @@ pub fn dcgan_g_loss(gan : DCGAN, fake_image : Array[Float]) -> Float {
 pub fn dcgan_step(
   gan : DCGAN,
   real_image : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float, Array[Float]) {
   let z = dcgan_sample_latent(gan.latent_dim, rng)
   let fake = dcgan_generator_forward(gan.g, z)
@@ -123,7 +123,7 @@ pub fn dcgan_step(
 pub fn dcgan_generate_batch(
   gan : DCGAN,
   batch_size : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Array[Float]] {
   let out : Array[Array[Float]] = Array::make(batch_size, Array::make(0, 0.0F))
   for b in 0..<batch_size {

@@ -52,11 +52,11 @@ pub fn PoissonFixed::set_mu(p : PoissonFixed, mu : Float) -> Unit {
 ///
 /// Safety: capped at `max(100, ceil(10*λ))` iterations to prevent
 /// runaway loops in pathological cases.
-pub fn sample_poisson(rng : Xoshiro, lambda : Float) -> Int {
+pub fn sample_poisson(rng : @core.Xoshiro, lambda : Float) -> Int {
   if lambda <= 0.0F {
     return 0
   }
-  let l : Double = expf(-lambda).to_double()
+  let l : Double = @core.expf(-lambda).to_double()
   let mut p : Double = 1.0
   let mut k = 0
   let cap : Int = {
@@ -65,7 +65,7 @@ pub fn sample_poisson(rng : Xoshiro, lambda : Float) -> Int {
   }
   while true {
     k = k + 1
-    p = p * next_f64(rng)
+    p = p * @core.next_f64(rng)
     if p < l {
       return k - 1
     }
@@ -83,7 +83,7 @@ pub struct PoissonStimulusIF {
   param : PoissonFixed
   neurons : Array[Int]
   g : Array[Float]
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn PoissonStimulusIF::new(
   pop : IF,
   sym : String,
   rate : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> PoissonStimulusIF {
   let n = pop.n
   let neurons : Array[Int] = []
@@ -139,7 +139,7 @@ pub fn stimulate_if(
 ///
 /// Result is clamped at X >= 0 (rates must be non-negative).
 pub fn ornstein_uhlenbeck_step(
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   x : Float,
   theta : Float,
   mu : Float,

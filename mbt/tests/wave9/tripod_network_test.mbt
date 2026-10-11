@@ -6,7 +6,7 @@
 
 ///|
 fn build_tripod_network_test() -> (@snn_mbt.Tripod, @snn_mbt.IF, @snn_mbt.IF, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.IstdpRateEntry, @snn_mbt.IstdpPotentialEntry) {
-  let rng = @snn_mbt.Xoshiro::new(123UL)
+  let rng = @core.Xoshiro::new(123UL)
   let ne = 20
   let ni1 = 5
   let ni2 = 5

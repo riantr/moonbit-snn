@@ -92,7 +92,7 @@ pub fn sac_gru_act(
   agent : SAC_GRU,
   obs : Array[Float],
   hidden : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Float) {
   let (a, log_prob, hidden_next) = sac_gru_actor_step(
     agent.actor, obs, hidden, rng,
@@ -222,5 +222,5 @@ pub fn sac_gru_update_alpha(
 /// Get the current alpha = exp(log_alpha). Used by callers in
 /// actor/critic updates.
 pub fn sac_gru_get_alpha(agent : SAC_GRU) -> Float {
-  expf(agent.log_alpha)
+  @core.expf(agent.log_alpha)
 }

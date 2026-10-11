@@ -33,7 +33,7 @@ test "AdExParameterHet::homogeneous: matches AdExParameter defaults per-ne" {
 
 ///|
 test "AdExHet::new: initial state — v spread over vr[i]..vt[i], threshold = vt[i]" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.AdExParameter::new()
   let ph = @snn_mbt.AdExParameterHet::homogeneous(3, p)
   let pop = @snn_mbt.AdExHet::new(3, ph, rng)
@@ -57,7 +57,7 @@ test "step_adex_het: homogeneous params match AdEx scalar step" {
   // Verifies that AdExHet with homogeneous params produces the same
   // membrane potential trajectory as AdEx (with same rng seed and
   // same number of steps).
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.AdExParameter::new()
   let ph = @snn_mbt.AdExParameterHet::homogeneous(3, p)
   let pop_het = @snn_mbt.AdExHet::new(3, ph, rng)
@@ -82,7 +82,7 @@ test "step_adex_het: per-ne τm differences produce different v dynamics" {
   // 3 neurons with τm = [3.5, 7.0, 14.0] (half, default, double).
   // Inject 350 pA constant current. Neuron with shorter τm should
   // reach higher v faster (faster membrane charging).
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.AdExParameter::new()
   let ph : @snn_mbt.AdExParameterHet = {
     vt: [p.vt, p.vt, p.vt],

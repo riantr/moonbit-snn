@@ -22,7 +22,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // Build 1 BallAndStick + 1 TripodHet.
@@ -33,25 +33,25 @@ fn main {
   let tripod : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(1, trip_param, rng)
 
   // Exc Poisson (200 Hz) on BallAndStick :d.
-  let pl_ball_e = @snn_mbt.PoissonLayer::with_n(200.0F * @snn_mbt.hz, 1)
+  let pl_ball_e = @snn_mbt.PoissonLayer::with_n(200.0F * @core.hz, 1)
   let stim_ball_e = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl_ball_e, ball, "d", "glu", 30.0F, 0.0F, 1.0F, rng,
   )
 
   // Inh Poisson (400 Hz) on BallAndStick :d.
-  let pl_ball_i = @snn_mbt.PoissonLayer::with_n(400.0F * @snn_mbt.hz, 1)
+  let pl_ball_i = @snn_mbt.PoissonLayer::with_n(400.0F * @core.hz, 1)
   let stim_ball_i = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl_ball_i, ball, "d", "gaba", 15.0F, 0.0F, 1.0F, rng,
   )
 
   // Exc Poisson (200 Hz) on Tripod :d1.
-  let pl_trip_e = @snn_mbt.PoissonLayer::with_n(200.0F * @snn_mbt.hz, 1)
+  let pl_trip_e = @snn_mbt.PoissonLayer::with_n(200.0F * @core.hz, 1)
   let stim_trip_e = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl_trip_e, tripod, "d1", "glu", 30.0F, 0.0F, 1.0F, rng,
   )
 
   // Inh Poisson (400 Hz) on Tripod :d1.
-  let pl_trip_i = @snn_mbt.PoissonLayer::with_n(400.0F * @snn_mbt.hz, 1)
+  let pl_trip_i = @snn_mbt.PoissonLayer::with_n(400.0F * @core.hz, 1)
   let stim_trip_i = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl_trip_i, tripod, "d1", "gaba", 15.0F, 0.0F, 1.0F, rng,
   )

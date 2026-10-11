@@ -75,7 +75,7 @@ pub struct TripodHet {
 pub fn TripodHet::new(
   n : Int,
   soma_param : AdExParameterHet,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> TripodHet {
   // Per-neuron c[i] = tm[i] / r[i] (matches Julia: C = tm / R, with
   // tm in ms and R in MΩ giving C in pF when multiplied by 1e-3
@@ -94,9 +94,9 @@ pub fn TripodHet::new(
   let v_d2 : Array[Float] = Array::make(n, 0.0F)
   for k in 0..<n {
     let spread = soma_param.vt[k] - soma_param.vr[k]
-    v_s[k] = soma_param.vr[k] + next_f32(rng) * spread
-    v_d1[k] = soma_param.vr[k] + next_f32(rng) * spread
-    v_d2[k] = soma_param.vr[k] + next_f32(rng) * spread
+    v_s[k] = soma_param.vr[k] + @core.next_f32(rng) * spread
+    v_d1[k] = soma_param.vr[k] + @core.next_f32(rng) * spread
+    v_d2[k] = soma_param.vr[k] + @core.next_f32(rng) * spread
   }
   let w_s : Array[Float] = Array::make(n, 0.0F)
   let fire : Array[Bool] = Array::make(n, false)
@@ -234,7 +234,7 @@ fn tripod_het_heun_step(p : TripodHet, dt : Float, store_temp : Bool) -> Unit {
     let exp_term = if dt_slope < 0.0F {
       0.0F
     } else {
-      dt_slope * expf((p.v_s[k] + ds - p.threshold[k]) / dt_slope)
+      dt_slope * @core.expf((p.v_s[k] + ds - p.threshold[k]) / dt_slope)
     }
     let dv_s_val = (gl_val * (el - p.v_s[k] - ds) + exp_term -
                     p.w_s[k] - dw - p.syn_curr_s[k] - (ic1 + ic2) +

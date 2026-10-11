@@ -83,7 +83,7 @@ pub fn IF::with_gsyn(
   base : IFParameter,
   gsyn_e : Float,
   gsyn_i : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> IF {
   let p = IF::new(n, base, rng)
   let gs : IFParameterGsyn = { base, gsyn_e, gsyn_i }

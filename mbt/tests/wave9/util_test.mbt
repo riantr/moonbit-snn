@@ -13,15 +13,15 @@
 
 ///|
 test "rand_value — length matches n" {
-  let rng = @snn_mbt.Xoshiro::default()
-  let out = @snn_mbt.rand_value(100, 1.0F, 5.0F, rng)
+  let rng = @core.Xoshiro::default()
+  let out = @core.rand_value(100, 1.0F, 5.0F, rng)
   assert_eq(out.length(), 100)
 }
 
 ///|
 test "rand_value — all values in [min, max]" {
-  let rng = @snn_mbt.Xoshiro::default()
-  let out = @snn_mbt.rand_value(50, 1.0F, 5.0F, rng)
+  let rng = @core.Xoshiro::default()
+  let out = @core.rand_value(50, 1.0F, 5.0F, rng)
   let mut i = 0
   while i < 50 {
     let v = out[i]
@@ -34,8 +34,8 @@ test "rand_value — all values in [min, max]" {
 
 ///|
 test "rand_value — handles reversed p1 > p2" {
-  let rng = @snn_mbt.Xoshiro::default()
-  let out = @snn_mbt.rand_value(50, 5.0F, 1.0F, rng)
+  let rng = @core.Xoshiro::default()
+  let out = @core.rand_value(50, 5.0F, 1.0F, rng)
   let mut i = 0
   while i < 50 {
     let v = out[i]
@@ -48,8 +48,8 @@ test "rand_value — handles reversed p1 > p2" {
 
 ///|
 test "rand_value — degenerate p1 == p2 returns all p1" {
-  let rng = @snn_mbt.Xoshiro::default()
-  let out = @snn_mbt.rand_value(10, 3.0F, 3.0F, rng)
+  let rng = @core.Xoshiro::default()
+  let out = @core.rand_value(10, 3.0F, 3.0F, rng)
   let mut i = 0
   while i < 10 {
     assert_eq(out[i], 3.0F)
@@ -59,14 +59,14 @@ test "rand_value — degenerate p1 == p2 returns all p1" {
 
 ///|
 test "exp32(0) == 1.0" {
-  let r = @snn_mbt.exp32(0.0F)
+  let r = @core.exp32(0.0F)
   assert_eq(r, 1.0F)
 }
 
 ///|
 test "exp32(1) ~ exp(1)" {
-  let r = @snn_mbt.exp32(1.0F)
-  let target = @snn_mbt.expf(1.0F)
+  let r = @core.exp32(1.0F)
+  let target = @core.expf(1.0F)
   let diff = if r > target { r - target } else { target - r }
   if diff > 0.07F {
     fail("exp32(1) too far from exp(1): got \{r}, expected \{target}")
@@ -75,8 +75,8 @@ test "exp32(1) ~ exp(1)" {
 
 ///|
 test "exp32(-1) ~ exp(-1)" {
-  let r = @snn_mbt.exp32(-1.0F)
-  let target = @snn_mbt.expf(-1.0F)
+  let r = @core.exp32(-1.0F)
+  let target = @core.expf(-1.0F)
   let diff = if r > target { r - target } else { target - r }
   if diff > 0.02F {
     fail("exp32(-1) too far from exp(-1): got \{r}, expected \{target}")
@@ -85,7 +85,7 @@ test "exp32(-1) ~ exp(-1)" {
 
 ///|
 test "exp32(-20) > 0 (clamped to -10)" {
-  let r = @snn_mbt.exp32(-20.0F)
+  let r = @core.exp32(-20.0F)
   if r <= 0.0F {
     fail("exp32(-20) must be > 0 (clamped to -10): got \{r}")
   }
@@ -93,77 +93,77 @@ test "exp32(-20) > 0 (clamped to -10)" {
 
 ///|
 test "exp64(0) == 1.0" {
-  assert_eq(@snn_mbt.exp64(0.0F), 1.0F)
+  assert_eq(@core.exp64(0.0F), 1.0F)
 }
 
 ///|
 test "exp256(0) == 1.0" {
-  assert_eq(@snn_mbt.exp256(0.0F), 1.0F)
+  assert_eq(@core.exp256(0.0F), 1.0F)
 }
 
 ///|
 test "name — two-argument form" {
-  let r = @snn_mbt.name2("E", "I")
+  let r = @core.name2("E", "I")
   assert_eq(r, "E_to_I")
 }
 
 ///|
 test "name — three-argument form with k" {
-  let r = @snn_mbt.name("E", "I", "AMPA")
+  let r = @core.name("E", "I", "AMPA")
   assert_eq(r, "E_to_I_AMPA")
 }
 
 ///|
 test "str_name — two-argument form" {
-  let r = @snn_mbt.str_name("E", "I", "")
+  let r = @core.str_name("E", "I", "")
   assert_eq(r, "E_to_I")
 }
 
 ///|
 test "str_name — three-argument form with k" {
-  let r = @snn_mbt.str_name("E", "I", "AMPA")
+  let r = @core.str_name("E", "I", "AMPA")
   assert_eq(r, "E_to_I_AMPA")
 }
 
 ///|
 test "str_name_single — one-argument form" {
-  let r = @snn_mbt.str_name_single("pre", "")
+  let r = @core.str_name_single("pre", "")
   assert_eq(r, "pre")
 }
 
 ///|
 test "str_name_single — two-argument form with k" {
-  let r = @snn_mbt.str_name_single("pre", "suffix")
+  let r = @core.str_name_single("pre", "suffix")
   assert_eq(r, "pre_suffix")
 }
 
 ///|
 test "f2l — pads short string to default 10" {
-  let r = @snn_mbt.f2l_default("test")
+  let r = @core.f2l_default("test")
   assert_eq(r.length(), 10)
   assert_eq(r, "test      ")
 }
 
 ///|
 test "f2l — pads to custom length" {
-  let r = @snn_mbt.f2l("test", 5)
+  let r = @core.f2l("test", 5)
   assert_eq(r, "test ")
 }
 
 ///|
 test "f2l — truncates long string" {
-  let r = @snn_mbt.f2l("verylongstring", 5)
+  let r = @core.f2l("verylongstring", 5)
   assert_eq(r, "veryl")
 }
 
 ///|
 test "f2l — exact length returned unchanged" {
-  let r = @snn_mbt.f2l("1234567890", 10)
+  let r = @core.f2l("1234567890", 10)
   assert_eq(r, "1234567890")
 }
 
 ///|
 test "f2l — pads numeric-looking string" {
-  let r = @snn_mbt.f2l("123", 5)
+  let r = @core.f2l("123", 5)
   assert_eq(r, "123  ")
 }

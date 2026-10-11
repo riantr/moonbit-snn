@@ -77,7 +77,7 @@ test "SparseMatrixCSR::forward only fires on pre spikes" {
 
 ///|
 test "SparseMatrixCSR::random produces expected nnz" {
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let m = @snn_mbt.SparseMatrixCSR::random(100, 100, 0.5F, 0.1F, 0.8F, rng)
   // Expected nnz ≈ 100 * 100 * 0.8 = 8000; tol ±15%
   let n = m.nnz()
@@ -88,9 +88,9 @@ test "SparseMatrixCSR::random produces expected nnz" {
 
 ///|
 test "SparseMatrixCSR::random — fixed seed is deterministic" {
-  let rng1 = @snn_mbt.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 1UL, 2UL)
+  let rng1 = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 1UL, 2UL)
   let m1 = @snn_mbt.SparseMatrixCSR::random(20, 20, 0.5F, 0.1F, 0.5F, rng1)
-  let rng2 = @snn_mbt.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 1UL, 2UL)
+  let rng2 = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 1UL, 2UL)
   let m2 = @snn_mbt.SparseMatrixCSR::random(20, 20, 0.5F, 0.1F, 0.5F, rng2)
   // Same nnz, same first entry.
   assert_eq(m1.nnz(), m2.nnz())
@@ -101,7 +101,7 @@ test "SparseMatrixCSR::random — fixed seed is deterministic" {
 
 ///|
 test "ConnectRule::FixedIn — every post has same in-degree" {
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let rows = 10
   let cols = 8
   let p = 0.3F
@@ -121,7 +121,7 @@ test "ConnectRule::FixedIn — every post has same in-degree" {
 
 ///|
 test "ConnectRule::FixedOut — every pre has same out-degree" {
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let rows = 6
   let cols = 10
   let p = 0.4F
@@ -135,9 +135,9 @@ test "ConnectRule::FixedOut — every pre has same out-degree" {
 
 ///|
 test "ConnectRule::Bernoulli — matches default random()" {
-  let rng1 = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng1 = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let m1 = @snn_mbt.SparseMatrixCSR::random(20, 20, 1.0F, 0.0F, 0.5F, rng1)
-  let rng2 = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng2 = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let m2 = @snn_mbt.SparseMatrixCSR::random_with_rule(20, 20, 1.0F, 0.0F, 0.5F, Bernoulli, rng2)
   // Default Bernoulli rule should produce the same nnz as random().
   assert_eq(m1.nnz(), m2.nnz())

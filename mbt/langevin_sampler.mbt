@@ -60,7 +60,7 @@ pub fn langevin_step(
   x : Array[Float],
   step_size : Float,
   eps : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n = x.length()
   let grad = langevin_gradient(net, x, eps)
@@ -96,7 +96,7 @@ pub fn langevin_chain(
   n_steps : Int,
   step_size : Float,
   eps : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let mut x = x0
   for _ in 0..<n_steps {

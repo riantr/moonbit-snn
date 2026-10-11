@@ -23,7 +23,7 @@ test "IFSinExpParameter::lkd_pv — LKD 2014 PV defaults" {
 
 ///|
 test "IFSinExp::new — population size, initial state at rest" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IFSinExp::new(4, @snn_mbt.IFSinExpParameter::new(), rng)
   if pop.n != 4 { fail("expected n=4") }
   // All voltages are near el (modulo small Box-Muller noise).
@@ -39,7 +39,7 @@ test "IFSinExp::new — population size, initial state at rest" {
 
 ///|
 test "ifsinexp_step — single-exp ge decay (no he/hi)" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IFSinExp::new(1, @snn_mbt.IFSinExpParameter::new(), rng)
   // Inject glu into neuron 0.
   pop.glu[0] = 1.0F
@@ -61,7 +61,7 @@ test "ifsinexp_step — single-exp ge decay (no he/hi)" {
 
 ///|
 test "ifsinexp_step — fire when v >= vt, reset to vr" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IFSinExp::new(1, @snn_mbt.IFSinExpParameter::new(), rng)
   pop.v[0] = -49.0F  // above vt = -50
   @snn_mbt.ifsinexp_step(pop, 0.1F)
@@ -72,7 +72,7 @@ test "ifsinexp_step — fire when v >= vt, reset to vr" {
 
 ///|
 test "ifsinexp_step — refractory period" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IFSinExp::new(1, @snn_mbt.IFSinExpParameter::new(), rng)
   pop.v[0] = -49.0F  // force fire
   @snn_mbt.ifsinexp_step(pop, 0.1F)
@@ -89,15 +89,15 @@ test "ifsinexp_step — refractory period" {
 
 ///|
 test "ifsinexp_step — 100-step stability (ge/gi bounded)" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.IFSinExp::new(5, @snn_mbt.IFSinExpParameter::new(), rng)
   for _ in 0..<100 {
     // Random spike injection.
     for k in 0..<pop.n {
-      if @snn_mbt.next_f64(rng).to_float() < 0.3 {
+      if @core.next_f64(rng).to_float() < 0.3 {
         pop.glu[k] = pop.glu[k] + 1.0F
       }
-      if @snn_mbt.next_f64(rng).to_float() < 0.2 {
+      if @core.next_f64(rng).to_float() < 0.2 {
         pop.gaba[k] = pop.gaba[k] + 0.5F
       }
     }

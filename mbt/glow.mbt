@@ -100,7 +100,7 @@ pub fn actnorm_log_det(layer : ActNorm) -> Float {
       layer.scale[i]
     }
     let safe_scale = if abs_scale < 1.0e-12F { 1.0e-12F } else { abs_scale }
-    ld = ld + logf(safe_scale)
+    ld = ld + @core.logf(safe_scale)
   }
   ld
 }
@@ -130,7 +130,7 @@ pub fn OneByOneConv::new(dim : Int, seed : UInt64) -> OneByOneConv {
     dim, Array::make(dim, 0.0F),
   )
   // Initialize as identity + small noise.
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   for i in 0..<dim {
     w[i][i] = 1.0F
   }
@@ -148,7 +148,7 @@ pub fn OneByOneConv::new(dim : Int, seed : UInt64) -> OneByOneConv {
 
 ///|
 /// Helper: standard normal via Box-Muller.
-fn gaussian_noise_via_box_muller(r : Xoshiro) -> Float {
+fn gaussian_noise_via_box_muller(r : @core.Xoshiro) -> Float {
   let (z1, _) = box_muller(r)
   Float::from_double(z1)
 }
@@ -189,7 +189,7 @@ fn matrix_log_det(a : Array[Array[Float]], n : Int) -> Float {
       lu[pivot_row] = tmp
       sign = -sign
     }
-    log_det = log_det + logf(if lu[k][k] < 0.0F { -lu[k][k] } else { lu[k][k] })
+    log_det = log_det + @core.logf(if lu[k][k] < 0.0F { -lu[k][k] } else { lu[k][k] })
     // Eliminate below.
     for i in (k + 1)..<n {
       let factor = lu[i][k] / lu[k][k]

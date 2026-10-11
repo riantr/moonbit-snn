@@ -19,7 +19,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 20
   let npv = 8
   let nsst = 8

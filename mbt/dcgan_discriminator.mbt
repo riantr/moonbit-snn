@@ -59,7 +59,7 @@ pub fn DCGANDiscriminator::new(
   let conv3_b : Array[Float] = Array::make(c_base * 4, 0.0F)
   // After three stride-2 convs from 32x32 we get 4x4 with c_base*4 chans.
   let feat_dim = c_base * 4 * 4 * 4 * 4
-  let rng_fc = Xoshiro::from_state(
+  let rng_fc = @core.Xoshiro::from_state(
     seed + 44UL, seed + 45UL, seed + 46UL, seed + 47UL,
   )
   let std_fc = sqrtf(2.0F / Float::from_int(feat_dim))
@@ -78,10 +78,10 @@ fn conv4x4_weights(
   let in_dim = c_in * 16
   let rows : Array[Array[Float]] = Array::make(c_out, Array::make(in_dim, 0.0F))
   let std = sqrtf(2.0F / Float::from_int(in_dim))
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   for o in 0..<c_out {
     for i in 0..<in_dim {
-      rows[o][i] = std * (next_f32(rng) * 2.0F - 1.0F)
+      rows[o][i] = std * (@core.next_f32(rng) * 2.0F - 1.0F)
     }
   }
   rows
@@ -227,9 +227,9 @@ pub fn dcgan_discriminator_prob(
   let logit = dcgan_discriminator_forward(d, image)
   // sigmoid
   if logit >= 0.0F {
-    1.0F / (1.0F + expf(-logit))
+    1.0F / (1.0F + @core.expf(-logit))
   } else {
-    let e = expf(logit)
+    let e = @core.expf(logit)
     e / (1.0F + e)
   }
 }

@@ -61,7 +61,7 @@ pub fn normalizing_flow_forward(
 /// Sample x from the model: draw z ~ N(0, I) and apply Glow forward.
 pub fn normalizing_flow_sample(
   model : NormalizingFlowModel,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let z : Array[Float] = Array::make(model.dim, 0.0F)
   for i in 0..<model.dim {
@@ -134,7 +134,7 @@ pub fn normalizing_flow_log_likelihood(
 /// Helper: log(2π). Local to this file (scm_log_likelihood already
 /// has its own; v0.104.0 keeps them separate to avoid file-deps).
 fn log_2pi_v2() -> Float {
-  logf(2.0F * 3.14159265F)
+  @core.logf(2.0F * 3.14159265F)
 }
 
 ///|

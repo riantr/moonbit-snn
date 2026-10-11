@@ -22,7 +22,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 8
   let param = @snn_mbt.AdExParameter::new()
   let e_pop = @snn_mbt.AdEx::new(ne, param, rng)
@@ -50,7 +50,7 @@ fn main {
       @snn_mbt.MonitorAdEx::new_v(e_pop, 0),
     ],
   }
-  @snn_mbt.adex_sim_for(model, 1000.0F * @snn_mbt.ms)
+  @snn_mbt.adex_sim_for(model, 1000.0F * @core.ms)
 
   // Look at the v trace from the monitor.
   println("adex_net.mbt: simulation done (1s)")

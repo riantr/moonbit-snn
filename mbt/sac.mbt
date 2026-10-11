@@ -50,7 +50,7 @@ pub fn Sac::new(
 
 ///|
 /// Sample action from the softmax policy.
-pub fn sac_sample_action(policy : LinearSoftmaxPolicy, state : Int, rng : Xoshiro) -> Int {
+pub fn sac_sample_action(policy : LinearSoftmaxPolicy, state : Int, rng : @core.Xoshiro) -> Int {
   let x = rl_one_hot(state, policy.n_states)
   let (_l, probs) = policy_forward(policy, x)
   let (a, _) = sample_categorical(probs, rng)
@@ -78,7 +78,7 @@ pub fn sac_soft_target(
   let n_a = sac.policy.n_actions
   for i in 0..<n_a {
     let q_min = if q1_t[i] < q2_t[i] { q1_t[i] } else { q2_t[i] }
-    let lp = if pi[i] > 0.0F { logf(pi[i]) } else { -20.0F }
+    let lp = if pi[i] > 0.0F { @core.logf(pi[i]) } else { -20.0F }
     expected = expected + pi[i] * (q_min - sac.alpha * lp)
   }
   reward + gamma * expected
@@ -168,7 +168,7 @@ pub fn sac_actor_update(
         // Q contribution: -(indicator - pi[a]) * q[a] = pi[a]*q[a] - indicator*q[a]
         q_contrib = q_contrib + (pi[a] * q[a] - indicator * q[a])
         // Entropy contribution: -α * (log pi[a] + 1) * (indicator - pi[a])
-        let lp = if pi[a] > 0.0F { logf(pi[a]) } else { -20.0F }
+        let lp = if pi[a] > 0.0F { @core.logf(pi[a]) } else { -20.0F }
         h_contrib = h_contrib + (lp + 1.0F) * (indicator - pi[a])
       }
       // Apply descent on Q - α·H (negative sign from log-of-policy gradient).
@@ -212,7 +212,7 @@ pub fn train_sac(
   batch_size : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0

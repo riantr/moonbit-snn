@@ -18,7 +18,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
   let n_pre = 4
   let n_post = 4
@@ -49,7 +49,7 @@ fn main {
   for step in 0..<n_steps {
     let _ = step
     for k in 0..<n_pre {
-      pre.fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      pre.fire[k] = @core.next_f32(rng) < 0.3F
     }
     let t_now = Float::from_int(step) * dt
     @snn_mbt.markram_stp_step_timestep(syn, entry.vars, entry.param, t_now, dt)

@@ -38,7 +38,7 @@ pub fn SpikingSynapseIZ::random(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SpikingSynapseIZ {
   let matrix = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   { pre, post, sym, matrix }

@@ -30,7 +30,7 @@ test "SpikeTimeParameter::new keeps already-sorted input" {
 
 ///|
 test "stimulate_spiketime deposits weight at each spike time" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let times : Array[Float] = [100.0F, 200.0F, 300.0F]
   let neurons : Array[Int] = [0, 1, 2]
@@ -55,7 +55,7 @@ test "stimulate_spiketime deposits weight at each spike time" {
 test "stimulate_spiketime handles multiple spikes in one step" {
   // If the simulation jumps from t=0 directly to t=250, both spike 0
   // (at 100) and spike 1 (at 200) should fire — multiple spikes per step.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let times : Array[Float] = [100.0F, 200.0F, 500.0F]
   let neurons : Array[Int] = [0, 1, 0]

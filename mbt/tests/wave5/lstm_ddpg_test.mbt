@@ -46,7 +46,7 @@ test "lstm_ddpg_select_action_deterministic_when_no_noise" {
   let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
     4, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL,
   )
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let hidden : Array[Float] = Array::make(4, 0.0F)
   let cell : Array[Float] = Array::make(4, 0.0F)
   let (action, new_h, new_c) = @snn_mbt.lstm_ddpg_select_action(
@@ -66,7 +66,7 @@ test "lstm_ddpg_select_action_with_noise_stays_in_range" {
   let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
     4, 2, 4, -0.5F, 0.5F, 0.99F, 0.005F, 0.1F, 7UL,
   )
-  let rng = @snn_mbt.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
+  let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let hidden : Array[Float] = Array::make(4, 0.0F)
   let cell : Array[Float] = Array::make(4, 0.0F)
   let (action, _, _) = @snn_mbt.lstm_ddpg_select_action(

@@ -240,18 +240,18 @@ test "istdp_potential_step: integration — random drive + varying v_post" {
   let vars = @snn_mbt.IstdpPotentialVariables::new(n_pre, n_post)
   let p = @snn_mbt.IstdpPotential::new()
   let dt = 0.125F
-  let rng = @snn_mbt.Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
   )
   for step in 0..<100 {
     let _ = step
     for k in 0..<n_pre {
-      pre_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      pre_fire[k] = @core.next_f32(rng) < 0.3F
     }
     for k in 0..<n_post {
-      post_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      post_fire[k] = @core.next_f32(rng) < 0.3F
       // Vary v_post in [-70, 50] mV.
-      v_post[k] = -70.0F + 120.0F * @snn_mbt.next_f32(rng)
+      v_post[k] = -70.0F + 120.0F * @core.next_f32(rng)
     }
     @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, Float::from_int(step) * dt, dt)
   }

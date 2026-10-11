@@ -229,7 +229,7 @@ pub fn beam_search_plan(
   reward_seq : Array[Float],
   done_seq : Array[Float],
   history_len : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let tt = planner.tt
   let state_dim = tt.state_dim
@@ -272,7 +272,7 @@ pub fn beam_search_plan(
         for i in 0..<action_dim {
           // Uniform random in [action_low, action_high] (could be replaced
           // by a policy proposal later).
-          let u = next_f32(rng)
+          let u = @core.next_f32(rng)
           action_t[i] = planner.action_low +
             u * (planner.action_high - planner.action_low)
         }

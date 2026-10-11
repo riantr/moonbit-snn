@@ -2,6 +2,7 @@
 
 import {
   "riantr/snn_mbt",
+  "riantr/snn_mbt/core",
 }
 
 options(

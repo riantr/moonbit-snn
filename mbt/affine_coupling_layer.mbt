@@ -46,11 +46,11 @@ pub fn AffineCouplingLayer::new(
   half_dim : Int,
   seed : UInt64,
 ) -> AffineCouplingLayer {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std = sqrtf(2.0F / Float::from_int(half_dim))
   let scale_w = xavier_normal(half_dim, half_dim, std, rng1)
   let scale_b : Array[Float] = Array::make(half_dim, 0.0F)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let trans_w = xavier_normal(half_dim, half_dim, std, rng2)
   let trans_b : Array[Float] = Array::make(half_dim, 0.0F)
   { half_dim, scale_w, scale_b, trans_w, trans_b }
@@ -94,7 +94,7 @@ pub fn coupling_forward(
   let y2 : Array[Float] = Array::make(half, 0.0F)
   let mut log_det = 0.0F
   for i in 0..<half {
-    let exp_s = expf(s_x1[i])
+    let exp_s = @core.expf(s_x1[i])
     y2[i] = x2[i] * exp_s + t_x1[i]
     log_det = log_det + s_x1[i]
   }
@@ -126,7 +126,7 @@ pub fn coupling_inverse(
   let t_y1 = linear_project(layer.trans_w, layer.trans_b, y1)
   let x2 : Array[Float] = Array::make(half, 0.0F)
   for i in 0..<half {
-    x2[i] = (y2[i] - t_y1[i]) * expf(-s_y1[i])
+    x2[i] = (y2[i] - t_y1[i]) * @core.expf(-s_y1[i])
   }
   let x : Array[Float] = Array::make(2 * half, 0.0F)
   for i in 0..<half {

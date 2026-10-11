@@ -40,7 +40,7 @@ pub fn T5RelativePosition::new(
   seed : UInt64,
 ) -> T5RelativePosition {
   let n_buckets = 2 * max_distance + 1
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std = sqrtf(1.0F / Float::from_int(n_buckets))
   let weight : Array[Float] = Array::make(num_heads * n_buckets, 0.0F)
   let mut i = 0

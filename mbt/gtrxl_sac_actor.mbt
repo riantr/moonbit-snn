@@ -58,16 +58,16 @@ pub fn GTrXLSACActor::new(
   action_high : Float,
   seed : UInt64,
 ) -> GTrXLSACActor {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std1 = sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(d_model, state_dim, std1, rng1)
   let mlp_b1 : Array[Float] = Array::make(d_model, 0.0F)
   let block = GTrXLBlock::new(d_model, d_ff, seed + 4UL)
-  let rng2 = Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
   let std2 = sqrtf(2.0F / Float::from_int(d_model))
   let mlp_w_mean = xavier_normal(action_dim, d_model, std2, rng2)
   let mlp_b_mean : Array[Float] = Array::make(action_dim, 0.0F)
-  let rng3 = Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)
   let mlp_w_log_std = xavier_normal(action_dim, d_model, std2, rng3)
   let mlp_b_log_std : Array[Float] = Array::make(action_dim, 0.0F)
   {
@@ -98,7 +98,7 @@ pub fn GTrXLSACActor::new(
 pub fn gtrxl_sac_actor_step(
   policy : GTrXLSACActor,
   state : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Float, GTrXLTokenCache) {
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, state)
   let x_proj = relu_forward(x_proj_pre)
@@ -122,7 +122,7 @@ pub fn gtrxl_sac_actor_step(
   let action : Array[Float] = Array::make(policy.action_dim, 0.0F)
   let mean_tanh : Array[Float] = Array::make(policy.action_dim, 0.0F)
   for i in 0..<policy.action_dim {
-    let t = tanhf(mean_pre[i])
+    let t = @core.tanhf(mean_pre[i])
     mean_tanh[i] = t
     action[i] = mid + t * scale
   }
@@ -130,9 +130,9 @@ pub fn gtrxl_sac_actor_step(
   for i in 0..<policy.action_dim {
     let (z1, _) = box_muller(rng)
     let eps = Float::from_double(z1)
-    let std_dev = expf(log_std[i])
+    let std_dev = @core.expf(log_std[i])
     let a_raw = mean_tanh[i] + std_dev * eps
-    let a_squash = tanhf(a_raw)
+    let a_squash = @core.tanhf(a_raw)
     action[i] = mid + a_squash * scale
     // log N(a_raw; mean_tanh, std) for this dim.
     let inv_std = 1.0F / std_dev
@@ -146,7 +146,7 @@ pub fn gtrxl_sac_actor_step(
     } else {
       one_minus_tanh_sq
     }
-    let squash_correction = -logf(safe_term)
+    let squash_correction = -@core.logf(safe_term)
     log_prob = log_prob + dim_log_prob + squash_correction
   }
   (action, log_prob, cache)
@@ -158,7 +158,7 @@ pub fn gtrxl_sac_actor_step(
 pub fn gtrxl_sac_select_action(
   policy : GTrXLSACActor,
   state : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], GTrXLTokenCache, Float) {
   let (a, log_prob, cache) = gtrxl_sac_actor_step(policy, state, rng)
   (a, cache, log_prob)

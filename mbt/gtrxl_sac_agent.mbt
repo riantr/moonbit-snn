@@ -96,7 +96,7 @@ pub fn SAC_GTrXL::new(
 pub fn sac_gtrxl_act(
   agent : SAC_GTrXL,
   obs : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], GTrXLTokenCache, Float) {
   let (a, log_prob, cache) = gtrxl_sac_actor_step(agent.actor, obs, rng)
   (a, cache, log_prob)
@@ -232,5 +232,5 @@ pub fn sac_gtrxl_update_alpha(
 /// Get the current alpha = exp(log_alpha). Used by callers in
 /// actor/critic updates.
 pub fn sac_gtrxl_get_alpha(agent : SAC_GTrXL) -> Float {
-  expf(agent.log_alpha)
+  @core.expf(agent.log_alpha)
 }

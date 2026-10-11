@@ -3,10 +3,10 @@
 
 ///|
 test "PoissonLayerStimulusBallAndStick::new: shapes and target fields" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let soma_param = @snn_mbt.AdExParameter::new()
   let post = @snn_mbt.BallAndStick::new(3, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(5.0F * @snn_mbt.hz, 4)
+  let pl = @snn_mbt.PoissonLayer::with_n(5.0F * @core.hz, 4)
   let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
@@ -23,10 +23,10 @@ test "PoissonLayerStimulusBallAndStick::new: shapes and target fields" {
 
 ///|
 test "PoissonLayerStimulusBallAndStick: p=1.0 → Fixed weights = μ" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let soma_param = @snn_mbt.AdExParameter::new()
   let post = @snn_mbt.BallAndStick::new(2, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(100.0F * @snn_mbt.hz, 2)
+  let pl = @snn_mbt.PoissonLayer::with_n(100.0F * @core.hz, 2)
   let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 3.0F, 0.0F, 1.0F, rng,
   )
@@ -42,10 +42,10 @@ test "PoissonLayerStimulusBallAndStick: p=1.0 → Fixed weights = μ" {
 
 ///|
 test "stimulate_layer_ball: high rate → glu_d accumulates" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let soma_param = @snn_mbt.AdExParameter::new()
   let post = @snn_mbt.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @snn_mbt.hz, 1)
+  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
   let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 2.0F, 0.0F, 1.0F, rng,
   )
@@ -76,10 +76,10 @@ test "stimulate_layer_ball: high rate → glu_d accumulates" {
 
 ///|
 test "stimulate_layer_ball: soma target → glu_s only" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let soma_param = @snn_mbt.AdExParameter::new()
   let post = @snn_mbt.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @snn_mbt.hz, 1)
+  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
   let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl, post, "soma", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
@@ -96,10 +96,10 @@ test "stimulate_layer_ball: soma target → glu_s only" {
 
 ///|
 test "stimulate_layer_ball: :gaba target → gaba_d" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let soma_param = @snn_mbt.AdExParameter::new()
   let post = @snn_mbt.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @snn_mbt.hz, 1)
+  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
   let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "gaba", 1.5F, 0.0F, 1.0F, rng,
   )
@@ -116,7 +116,7 @@ test "stimulate_layer_ball: :gaba target → gaba_d" {
 
 ///|
 test "stimulate_layer_ball: zero rate → no conductance change" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let soma_param = @snn_mbt.AdExParameter::new()
   let post = @snn_mbt.BallAndStick::new(1, soma_param, rng)
   let pl = @snn_mbt.PoissonLayer::new(0.0F)

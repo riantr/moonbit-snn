@@ -40,7 +40,7 @@ pub fn GraphLinear::new(
   seed : UInt64,
 ) -> GraphLinear {
   let std = sqrtf(2.0F / Float::from_int(in_dim))
-  let rng = Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   let w = xavier_normal(out_dim, in_dim, std, rng)

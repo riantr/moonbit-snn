@@ -70,7 +70,7 @@ test "ts_pacf: recovers AR(1) coefficient from a synthetic series" {
   // AR(1): x[t] = phi * x[t-1] + ε, with ε ~ N(0, 1).
   // For long series, PACF[1] should be near phi.
   let phi_true = 0.7F
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 8UL, 9UL, 10UL)
+  let rng = @core.Xoshiro::from_state(7UL, 8UL, 9UL, 10UL)
   let series_data : Array[Float] = Array::make(2000, 0.0F)
   // Burn-in: first 200 samples discarded later.
   for i in 1..<2000 {

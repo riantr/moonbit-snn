@@ -71,7 +71,7 @@ pub fn PINningSparseSynapse::new(
   mu : Float,
   p : Float,
   alpha : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> PINningSparseSynapse {
   let n_pre = Float::from_int(pre.n)
   let denom = (n_pre * p).sqrt()

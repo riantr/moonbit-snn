@@ -37,7 +37,7 @@ pub fn LinearGaussianQNet::new(
   n_actions : Int,
   seed : UInt64,
 ) -> LinearGaussianQNet {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let bound = 1.0F / Float::from_int(n_states).to_double().sqrt().to_float()
   let w_mu : Array[Array[Float]] = []
   let b_mu : Array[Float] = []
@@ -117,7 +117,7 @@ pub fn dsac_soft_target(
   reward : Float,
   done : Bool,
   gamma : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   if done {
     return reward
@@ -273,7 +273,7 @@ pub fn dsac_soft_update(agent : DSac, tau : Float) -> Unit {
 pub fn dsac_sample_action(
   agent : DSac,
   state : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Int {
   sac_sample_action(agent.policy, state, rng)
 }

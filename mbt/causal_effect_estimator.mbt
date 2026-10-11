@@ -165,7 +165,7 @@ pub fn bootstrap_ate(
   sample : ObservationalSample,
   n_bootstrap : Int,
   alpha : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float) {
   let n = sample.n_samples
   if n <= 0 || n_bootstrap <= 0 {
@@ -179,7 +179,7 @@ pub fn bootstrap_ate(
     let mut sum_y_untreated = 0.0F
     let mut n_untreated = 0
     for _i in 0..<n {
-      let idx = (next_u64(rng) % n.to_uint64()).to_int()
+      let idx = (@core.next_u64(rng) % n.to_uint64()).to_int()
       if sample.x[idx] > 0.5F {
         sum_y_treated = sum_y_treated + sample.y[idx]
         n_treated = n_treated + 1

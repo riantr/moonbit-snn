@@ -40,7 +40,7 @@ pub fn spikeformer_dataset_build(
   let w = 28
   let images : Array[Float] = Array::make(n_total * h * w, 0.0F)
   let labels : Array[Int] = Array::make(n_total, 0)
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
 
   for c in 0..<n_classes {
     for k in 0..<per_class {
@@ -63,7 +63,7 @@ pub fn spikeformer_dataset_build(
             _ => v = if x + y < 14 || x + y > 41 { 1.0F } else { 0.0F }  // border ring
           }
           // 5% noise flip.
-          let r = next_f32(rng)
+          let r = @core.next_f32(rng)
           if r < 0.05F {
             v = if v > 0.5F { 0.0F } else { 1.0F }
           }
@@ -96,7 +96,7 @@ pub fn spikeformer_softmax(x : Array[Float]) -> Array[Float] {
   let mut sum_exp = 0.0F
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let e = expf(x[i] - max_v)
+    let e = @core.expf(x[i] - max_v)
     out[i] = e
     sum_exp = sum_exp + e
   }
@@ -109,7 +109,7 @@ pub fn spikeformer_softmax(x : Array[Float]) -> Array[Float] {
 ///|
 /// Cross-entropy: -log(prob[target]).
 pub fn spikeformer_xent(probs : Array[Float], target : Int) -> Float {
-  -logf(probs[target])
+  -@core.logf(probs[target])
 }
 
 ///|
@@ -199,7 +199,7 @@ pub fn MiniSpikeFormer::new(
   n_classes : Int,
   seed : UInt64,
 ) -> MiniSpikeFormer {
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let patch_dim = 16
   let n_patches = 49
   // Patch embedding Linear(16, d_model): Xavier-normal.

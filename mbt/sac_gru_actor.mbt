@@ -55,16 +55,16 @@ pub fn GRUSACActor::new(
   action_high : Float,
   seed : UInt64,
 ) -> GRUSACActor {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std1 = sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(gru_hidden, state_dim, std1, rng1)
   let mlp_b1 : Array[Float] = Array::make(gru_hidden, 0.0F)
   let gru = GruCellParam::new(gru_hidden, gru_hidden, seed + 4UL)
-  let rng2 = Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
   let std2 = sqrtf(2.0F / Float::from_int(gru_hidden))
   let mlp_w_mean = xavier_normal(action_dim, gru_hidden, std2, rng2)
   let mlp_b_mean : Array[Float] = Array::make(action_dim, 0.0F)
-  let rng3 = Xoshiro::from_state(seed + 9UL, seed + 10UL, seed + 11UL, seed + 12UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 9UL, seed + 10UL, seed + 11UL, seed + 12UL)
   let mlp_w_log_std = xavier_normal(action_dim, gru_hidden, std2, rng3)
   let mlp_b_log_std : Array[Float] = Array::make(action_dim, 0.0F)
   {
@@ -95,7 +95,7 @@ pub fn sac_gru_actor_step(
   policy : GRUSACActor,
   state : Array[Float],
   hidden : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Float, Array[Float]) {
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, state)
   let x_proj = relu_forward(x_proj_pre)
@@ -120,7 +120,7 @@ pub fn sac_gru_actor_step(
   let action : Array[Float] = Array::make(policy.action_dim, 0.0F)
   let mean_tanh : Array[Float] = Array::make(policy.action_dim, 0.0F)
   for i in 0..<policy.action_dim {
-    let t = tanhf(mean_pre[i])
+    let t = @core.tanhf(mean_pre[i])
     mean_tanh[i] = t
     action[i] = mid + t * scale
   }
@@ -128,9 +128,9 @@ pub fn sac_gru_actor_step(
   for i in 0..<policy.action_dim {
     let (z1, _) = box_muller(rng)
     let eps = Float::from_double(z1)
-    let std_dev = expf(log_std[i])
+    let std_dev = @core.expf(log_std[i])
     let a_raw = mean_tanh[i] + std_dev * eps
-    let a_squash = tanhf(a_raw)
+    let a_squash = @core.tanhf(a_raw)
     action[i] = mid + a_squash * scale
     // log N(a_raw; mean_tanh, std) for this dim.
     let inv_std = 1.0F / std_dev
@@ -144,7 +144,7 @@ pub fn sac_gru_actor_step(
     } else {
       one_minus_tanh_sq
     }
-    let squash_correction = -logf(safe_term)
+    let squash_correction = -@core.logf(safe_term)
     log_prob = log_prob + dim_log_prob + squash_correction
   }
   (action, log_prob, hidden_next)
@@ -159,7 +159,7 @@ pub fn sac_gru_select_action(
   policy : GRUSACActor,
   state : Array[Float],
   hidden : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Float) {
   let (a, log_prob, hidden_next) = sac_gru_actor_step(policy, state, hidden, rng)
   (a, hidden_next, log_prob)

@@ -95,16 +95,16 @@ pub fn vstdp_clopath_step(
   // Update traces.
   for j in 0..<n_pre {
     if fire_pre[j] {
-      state.tpre[j] = state.tpre[j] * expf(-inv_tau_pre) + 1.0F
+      state.tpre[j] = state.tpre[j] * @core.expf(-inv_tau_pre) + 1.0F
     } else {
-      state.tpre[j] = state.tpre[j] * expf(-inv_tau_pre)
+      state.tpre[j] = state.tpre[j] * @core.expf(-inv_tau_pre)
     }
   }
   for i in 0..<n_post {
     if fire_post[i] {
-      state.tpost[i] = state.tpost[i] * expf(-inv_tau_post) + 1.0F
+      state.tpost[i] = state.tpost[i] * @core.expf(-inv_tau_post) + 1.0F
     } else {
-      state.tpost[i] = state.tpost[i] * expf(-inv_tau_post)
+      state.tpost[i] = state.tpost[i] * @core.expf(-inv_tau_post)
     }
   }
   // Weight updates gated by post voltage.

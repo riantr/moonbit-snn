@@ -17,8 +17,8 @@ test "network_summary_empty_model" {
 
 ///|
 test "network_summary_with_2_if_pops" {
-  let rng1 = @snn_mbt.Xoshiro::new(1UL)
-  let rng2 = @snn_mbt.Xoshiro::new(2UL)
+  let rng1 = @core.Xoshiro::new(1UL)
+  let rng2 = @core.Xoshiro::new(2UL)
   let p1 = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng1)
   let p2 = @snn_mbt.IF::new(7, @snn_mbt.IFParameter::new(), rng2)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
@@ -30,10 +30,10 @@ test "network_summary_with_2_if_pops" {
 
 ///|
 test "merge_heterogeneous_concatenates_topology" {
-  let rng1 = @snn_mbt.Xoshiro::new(1UL)
-  let rng2 = @snn_mbt.Xoshiro::new(2UL)
-  let rng3 = @snn_mbt.Xoshiro::new(3UL)
-  let rng4 = @snn_mbt.Xoshiro::new(4UL)
+  let rng1 = @core.Xoshiro::new(1UL)
+  let rng2 = @core.Xoshiro::new(2UL)
+  let rng3 = @core.Xoshiro::new(3UL)
+  let rng4 = @core.Xoshiro::new(4UL)
   let p1 = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng1)
   let p2 = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng2)
   let p3 = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng3)
@@ -50,7 +50,7 @@ test "merge_heterogeneous_concatenates_topology" {
 
 ///|
 test "merge_heterogeneous_concatenates_monitors" {
-  let rng = @snn_mbt.Xoshiro::new(1UL)
+  let rng = @core.Xoshiro::new(1UL)
   let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)
   let model_a = @snn_mbt.compose([IF_(p)], [], monitors=[mon])
@@ -76,7 +76,7 @@ test "reset_heterogeneous_full_clears_time" {
 
 ///|
 test "reset_heterogeneous_full_clears_monitors" {
-  let rng = @snn_mbt.Xoshiro::new(1UL)
+  let rng = @core.Xoshiro::new(1UL)
   let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   // Attach a Poisson stimulus that injects spikes.
   let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
@@ -103,7 +103,7 @@ test "heterogeneous_sim_for_with_log_advances_time" {
 
 ///|
 test "heterogeneous_sim_for_with_log_logs_when_monitors_active" {
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let p = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)

@@ -23,7 +23,7 @@ pub fn poisson_input_single(
   hz_rate : Float,
   interval : Float,
   dt : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Bool] {
   let n_spikes = (interval / dt).to_int()  // floor-style int cast
   let spikes : Array[Bool] = Array::make(n_spikes, false)
@@ -38,7 +38,7 @@ pub fn poisson_input_single(
     // Sample δ ~ Exponential(lambda_dt) using inverse-CDF:
     //   δ = -lambda_dt * ln(1 - u)  for u uniform in (0, 1).
     // Use next_f64() for accuracy.
-    let u = next_f64(rng)
+    let u = @core.next_f64(rng)
     let safe_u = if u <= 0.0 { 0.0001 } else { u }
     let delta_d = -lambda_dt.to_double() * @math.ln(1.0 - safe_u)
     let delta : Float = Float::from_double(delta_d)
@@ -62,7 +62,7 @@ pub fn poisson_input(
   interval : Float,
   dt : Float,
   neurons : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Array[Bool]] {
   let out : Array[Array[Bool]] = []
   for _ in 0..<neurons {

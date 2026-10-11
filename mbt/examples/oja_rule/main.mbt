@@ -12,7 +12,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 100
   let g_pop = @snn_mbt.WilsonCowan::new(n, rng)
 

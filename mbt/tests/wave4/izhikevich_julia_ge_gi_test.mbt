@@ -2,7 +2,7 @@
 
 ///|
 test "sample_julia_initial_ge_gi — output length matches n" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let (ge, gi) = @snn_mbt.sample_julia_initial_ge_gi(10, rng)
   if ge.length() != 10 { fail("ge length expected 10") }
   if gi.length() != 10 { fail("gi length expected 10") }
@@ -12,7 +12,7 @@ test "sample_julia_initial_ge_gi — output length matches n" {
 test "sample_julia_initial_ge_gi — ge mean ≈ 40 (4*10=40), gi mean ≈ 200 (20*10=200)" {
   // Mean of (1.5*z + 4)*10 = 4*10 = 40; mean of (12*z + 20)*10 = 20*10 = 200.
   // With N(0,1) Box-Muller draws, expect means within ±20 of those.
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let (ge, gi) = @snn_mbt.sample_julia_initial_ge_gi(1000, rng)
   let mut sum_ge : Float = 0.0F
   let mut sum_gi : Float = 0.0F
@@ -34,9 +34,9 @@ test "sample_julia_initial_ge_gi — ge mean ≈ 40 (4*10=40), gi mean ≈ 200 (
 
 ///|
 test "sample_julia_initial_ge_gi — seeded reproducibility" {
-  let rng1 = @snn_mbt.Xoshiro::new(42UL)
+  let rng1 = @core.Xoshiro::new(42UL)
   let (ge1, gi1) = @snn_mbt.sample_julia_initial_ge_gi(5, rng1)
-  let rng2 = @snn_mbt.Xoshiro::new(42UL)
+  let rng2 = @core.Xoshiro::new(42UL)
   let (ge2, gi2) = @snn_mbt.sample_julia_initial_ge_gi(5, rng2)
   let mut k = 0
   while k < 5 {
@@ -50,7 +50,7 @@ test "sample_julia_initial_ge_gi — seeded reproducibility" {
 test "sample_julia_initial_ge_gi — ge never negative (clamped)" {
   // Even with extreme Box-Muller draws, ge is clamped to ≥ 0
   // (matches Julia's `ge = max(0, (1.5randn + 4) * 10)`).
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let (ge, _) = @snn_mbt.sample_julia_initial_ge_gi(100, rng)
   let mut k = 0
   while k < 100 {
@@ -63,7 +63,7 @@ test "sample_julia_initial_ge_gi — ge never negative (clamped)" {
 test "sample_julia_initial_ge_gi — ge/gi distributions differ" {
   // gi should typically have larger values than ge (×10 vs ×0.2 mean
   // scaling factor in Julia source).
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let (ge, gi) = @snn_mbt.sample_julia_initial_ge_gi(100, rng)
   let mut sum_ge : Float = 0.0F
   let mut sum_gi : Float = 0.0F

@@ -127,8 +127,8 @@ pub fn turnover_plasticity(c : Turnover, step_count : Int, dt : Float) -> Unit {
     }
     ActivityDependentTurnover_(p) => {
       // Decay pre / post activity traces.
-      let decay_pre : Float = expf(-dt / p.tau_pre)
-      let decay_post : Float = expf(-dt / p.tau_post)
+      let decay_pre : Float = @core.expf(-dt / p.tau_pre)
+      let decay_post : Float = @core.expf(-dt / p.tau_post)
       let n_pre = c.pre.length()
       let n_post = c.post.length()
       let mut j = 0

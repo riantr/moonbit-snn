@@ -41,8 +41,8 @@ fn gln_fixture(
 ) -> (@snn_mbt.GlobalLayerNorm, Array[Float], Array[Float]) {
   let proto = @snn_mbt.GlobalLayerNorm::new(c)
   let n = 3
-  let x = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed), n * c * t)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed + 1UL), n * c * t)
+  let x = @core.rand_f32(@core.Xoshiro::new(seed), n * c * t)
+  let w = @core.rand_f32(@core.Xoshiro::new(seed + 1UL), n * c * t)
   // gamma = 1, beta = 0 is the identity-ish default and would leave d_gamma
   // and d_beta measuring the same thing as the pure-normalisation gradient.
   // Perturb both so all three outputs are actually exercised.

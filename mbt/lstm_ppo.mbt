@@ -37,7 +37,7 @@ pub fn lstm_ppo_collect_batch(
   max_steps : Int,
   seed : UInt64,
 ) -> RecurrentPpoBatch {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let states : Array[Int] = []
   let actions : Array[Int] = []
   let advantages : Array[Float] = []
@@ -154,7 +154,7 @@ pub fn lstm_ppo_update_step(
     let mut kl = 0.0F
     for i in 0..<n_actions {
       if cur_d[i] > 0.0F && old_d[i] > 0.0F {
-        kl = kl + cur_d[i] * logf(cur_d[i] / old_d[i])
+        kl = kl + cur_d[i] * @core.logf(cur_d[i] / old_d[i])
       }
     }
     total_kl = total_kl + kl

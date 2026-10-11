@@ -11,10 +11,10 @@
 /// otherwise 0.0F. Mirrors Julia `get_poisson_spikes(; rate, dt)`.
 /// `rate` is in kHz; `dt` is in ms (so rate*dt is dimensionless).
 /// For a kHz rate × ms dt, rate*dt ∈ [0, 1].
-pub fn get_poisson_spikes(rate : Float, dt : Float, rng : Xoshiro) -> Float {
+pub fn get_poisson_spikes(rate : Float, dt : Float, rng : @core.Xoshiro) -> Float {
   let lambda = rate * dt
   // next_f64(rng) is uniform in [0, 1). If < lambda, fire.
-  if next_f64(rng).to_float() < lambda {
+  if @core.next_f64(rng).to_float() < lambda {
     1.0F
   } else {
     0.0F

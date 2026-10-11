@@ -3,7 +3,7 @@
 ///|
 test "AdEx::new initialises v in [Vr, Vt)" {
   let param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let p = @snn_mbt.AdEx::new(5, param, rng)
   for k in 0..<5 {
     let v = p.v[k]
@@ -16,7 +16,7 @@ test "AdEx::new initialises v in [Vr, Vt)" {
 ///|
 test "AdEx::new initialises threshold to Vt" {
   let param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.AdEx::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.threshold[k], param.vt)
@@ -26,7 +26,7 @@ test "AdEx::new initialises threshold to Vt" {
 ///|
 test "AdEx::new initialises tabs to 1" {
   let param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.AdEx::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.tabs[k], 1)

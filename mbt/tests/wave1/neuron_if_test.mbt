@@ -3,7 +3,7 @@
 ///|
 test "IF::new initialises v in [Vr, Vt)" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let p = @snn_mbt.IF::new(5, param, rng)
   for k in 0..<5 {
     let v = p.v[k]
@@ -16,7 +16,7 @@ test "IF::new initialises v in [Vr, Vt)" {
 ///|
 test "IF::new zero state" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.fire[k], false)
@@ -40,7 +40,7 @@ test "IF: tab_const / dt = 16 (0.125 ms step, 2ms refractory)" {
 test "IF: step_neuron produces no fire when v is below Vt" {
   // Reset v to a value well below threshold.
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(1, param, rng)
   p.v[0] = -100.0F
   p.i[0] = 0.0F

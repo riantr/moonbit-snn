@@ -52,7 +52,7 @@ pub fn DecisionTransformer::new(
     state_dim, action_dim, d_model, max_timestep, seed,
   )
   let backbone = GTrXLBlock::new(d_model, d_ff, seed + 16UL)
-  let rng = Xoshiro::from_state(seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL)
+  let rng = @core.Xoshiro::from_state(seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL)
   let std_head = sqrtf(2.0F / Float::from_int(d_model))
   let action_w = xavier_normal(action_dim, d_model, std_head, rng)
   let action_b : Array[Float] = Array::make(action_dim, 0.0F)

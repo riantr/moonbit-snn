@@ -59,7 +59,7 @@ pub fn SacAutoAlpha::new(
 ///|
 /// Current α = exp(log_alpha).
 pub fn sac_auto_alpha_get(sac : SacAutoAlpha) -> Float {
-  expf(sac.log_alpha)
+  @core.expf(sac.log_alpha)
 }
 
 ///|
@@ -67,7 +67,7 @@ pub fn sac_auto_alpha_get(sac : SacAutoAlpha) -> Float {
 pub fn sac_auto_alpha_sample_action(
   policy : LinearSoftmaxPolicy,
   state : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Int {
   let x = rl_one_hot(state, policy.n_states)
   let (_l, probs) = policy_forward(policy, x)
@@ -97,7 +97,7 @@ pub fn sac_auto_alpha_soft_target(
   let n_a = sac.policy.n_actions
   for i in 0..<n_a {
     let q_min = if q1_t[i] < q2_t[i] { q1_t[i] } else { q2_t[i] }
-    let lp = if pi[i] > 0.0F { logf(pi[i]) } else { -20.0F }
+    let lp = if pi[i] > 0.0F { @core.logf(pi[i]) } else { -20.0F }
     expected = expected + pi[i] * (q_min - alpha * lp)
   }
   reward + gamma * expected
@@ -165,7 +165,7 @@ pub fn sac_auto_alpha_actor_update(
       for a in 0..<n_a {
         let indicator = if i == a { 1.0F } else { 0.0F }
         q_contrib = q_contrib + (pi[a] * q[a] - indicator * q[a])
-        let lp = if pi[a] > 0.0F { logf(pi[a]) } else { -20.0F }
+        let lp = if pi[a] > 0.0F { @core.logf(pi[a]) } else { -20.0F }
         h_contrib = h_contrib + (lp + 1.0F) * (indicator - pi[a])
       }
       let grad_row = lr * (q_contrib + alpha * h_contrib)
@@ -198,7 +198,7 @@ pub fn sac_auto_alpha_update_alpha(
     let (_l, pi) = policy_forward(sac.policy, x)
     let mut neg_ent = 0.0F
     for a in 0..<n_a {
-      let lp = if pi[a] > 0.0F { logf(pi[a]) } else { -20.0F }
+      let lp = if pi[a] > 0.0F { @core.logf(pi[a]) } else { -20.0F }
       neg_ent = neg_ent + pi[a] * lp
     }
     sum_neg_ent = sum_neg_ent + neg_ent
@@ -243,7 +243,7 @@ pub fn train_sac_auto_alpha(
   batch_size : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0

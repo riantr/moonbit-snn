@@ -26,7 +26,7 @@ pub(all) struct SeParam {
 
 ///|
 pub fn SeParam::new(channels : Int, bottleneck : Int, seed : UInt64) -> SeParam {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   {
     w1: tn_randn(bottleneck * channels, 0.05F, rng),
     b1: Array::make(bottleneck, 0.0F),
@@ -213,7 +213,7 @@ fn tn_se_gate(u : Array[Float], n : Int, p : SeParam) -> (Array[Float], Array[Fl
 ///|
 /// Element-wise logistic, local because three modules need it.
 pub fn tn_sigmoid(z : Float) -> Float {
-  1.0F / (1.0F + expf(-z))
+  1.0F / (1.0F + @core.expf(-z))
 }
 
 ///|
@@ -236,7 +236,7 @@ pub(all) struct CtseParam {
 /// The paper's default: reduction ratio 2, kernel sizes (3, 5, 9), no
 /// subband grouping.
 pub fn CtseParam::new(channels : Int, seed : UInt64) -> CtseParam {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let c_red = channels / 2
   let cr = if c_red < 1 { 1 } else { c_red }
   {
@@ -260,7 +260,7 @@ fn tn_depthwise(
   channels : Int,
   k : Int,
   std : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Conv1DDepthwise {
   let p = Conv1DDepthwise::new(channels, k, 1, k / 2)
   let w = tn_randn(channels * k, std, rng)

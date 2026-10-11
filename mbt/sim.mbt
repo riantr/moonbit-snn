@@ -92,9 +92,9 @@ pub fn record_zero(model : Model) -> Unit {
 
 ///|
 /// Run one simulation step.
-pub fn step_model(model : Model, time : Time) -> Unit {
+pub fn step_model(model : Model, time : @core.Time) -> Unit {
   // 1a. deliver pending spikes (delays scheduled in prior steps)
-  let t_now = get_time(time)
+  let t_now = @core.get_time(time)
   for c in model.conns {
     deliver_pending_synapse(c, t_now)
   }
@@ -115,15 +115,15 @@ pub fn step_model(model : Model, time : Time) -> Unit {
     record_one(m, time.t[0])
   }
   // 4. update_time!
-  update_time(time, dt)
+  @core.update_time(time, dt)
 }
 
 ///|
 /// Run the simulation for `duration` ms starting from t=0.
 pub fn sim_for(model : Model, duration : Float) -> Unit {
   let dt = 0.125F
-  let time = Time::new()
-  set_dt(time, dt)
+  let time = @core.Time::new()
+  @core.set_dt(time, dt)
   let steps : Int = (duration / dt).to_int()
   record_zero(model)
   for _ in 0..<steps {
@@ -199,7 +199,7 @@ pub fn SpikingSynapseAdEx::random(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SpikingSynapseAdEx {
   let matrix = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   { pre, post, sym, matrix }
@@ -215,7 +215,7 @@ pub fn SpikingSynapseAdEx::random_with_rule(
   sigma : Float,
   p : Float,
   rule : ConnectRule,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SpikingSynapseAdEx {
   let matrix = SparseMatrixCSR::random_with_rule(
     pre.n, post.n, mu, sigma, p, rule, rng,
@@ -241,7 +241,7 @@ pub fn forward_adex_synapse(c : SpikingSynapseAdEx) -> Unit {
 }
 
 ///|
-pub fn step_adex_model(model : AdExModel, time : Time) -> Unit {
+pub fn step_adex_model(model : AdExModel, time : @core.Time) -> Unit {
   for c in model.conns {
     forward_adex_synapse(c)
   }
@@ -254,14 +254,14 @@ pub fn step_adex_model(model : AdExModel, time : Time) -> Unit {
   for m in model.monitors {
     record_one_adex(m, time.t[0])
   }
-  update_time(time, dt)
+  @core.update_time(time, dt)
 }
 
 ///|
 pub fn adex_sim_for(model : AdExModel, duration : Float) -> Unit {
   let dt = 0.125F
-  let time = Time::new()
-  set_dt(time, dt)
+  let time = @core.Time::new()
+  @core.set_dt(time, dt)
   let steps : Int = (duration / dt).to_int()
   for m in model.monitors {
     record_one_adex(m, 0.0F)

@@ -55,18 +55,18 @@ pub fn TTEmbeddings::new(
   max_timestep : Int,
   seed : UInt64,
 ) -> TTEmbeddings {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std_state = sqrtf(2.0F / Float::from_int(state_dim))
   let state_w = xavier_normal(d_model, state_dim, std_state, rng1)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std_action = sqrtf(2.0F / Float::from_int(action_dim))
   let action_w = xavier_normal(d_model, action_dim, std_action, rng2)
-  let rng3 = Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
   let std_scalar = sqrtf(2.0F / 1.0F)
   let reward_w = xavier_normal(d_model, 1, std_scalar, rng3)
-  let rng4 = Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)
+  let rng4 = @core.Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)
   let done_w = xavier_normal(d_model, 1, std_scalar, rng4)
-  let rng5 = Xoshiro::from_state(seed + 16UL, seed + 17UL, seed + 18UL, seed + 19UL)
+  let rng5 = @core.Xoshiro::from_state(seed + 16UL, seed + 17UL, seed + 18UL, seed + 19UL)
   let std_ts = 0.02F
   let timestep_emb = xavier_normal(max_timestep, d_model, std_ts, rng5)
   {
@@ -200,15 +200,15 @@ pub fn TrajectoryTransformer::new(
     state_dim, action_dim, d_model, max_timestep, seed,
   )
   let backbone = GTrXLBlock::new(d_model, d_ff, seed + 20UL)
-  let rng1 = Xoshiro::from_state(seed + 24UL, seed + 25UL, seed + 26UL, seed + 27UL)
+  let rng1 = @core.Xoshiro::from_state(seed + 24UL, seed + 25UL, seed + 26UL, seed + 27UL)
   let std_h = sqrtf(2.0F / Float::from_int(d_model))
   let state_w = xavier_normal(state_dim, d_model, std_h, rng1)
   let state_b : Array[Float] = Array::make(state_dim, 0.0F)
-  let rng2 = Xoshiro::from_state(seed + 28UL, seed + 29UL, seed + 30UL, seed + 31UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 28UL, seed + 29UL, seed + 30UL, seed + 31UL)
   let reward_w = xavier_normal(1, d_model, std_h, rng2)
-  let rng3 = Xoshiro::from_state(seed + 32UL, seed + 33UL, seed + 34UL, seed + 35UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 32UL, seed + 33UL, seed + 34UL, seed + 35UL)
   let done_w = xavier_normal(1, d_model, std_h, rng3)
-  let rng4 = Xoshiro::from_state(seed + 36UL, seed + 37UL, seed + 38UL, seed + 39UL)
+  let rng4 = @core.Xoshiro::from_state(seed + 36UL, seed + 37UL, seed + 38UL, seed + 39UL)
   let value_w = xavier_normal(1, d_model, std_h, rng4)
   {
     state_dim,

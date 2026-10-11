@@ -42,7 +42,7 @@ test "noisy_qnet_param_count" {
 test "noisy_q_forward_shape" {
   let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 7UL)
   let x : Array[Float] = [1.0F, 0.5F, -0.5F, 0.2F]
-  let q = @snn_mbt.noisy_q_forward(n, x, @snn_mbt.Xoshiro::new(123UL))
+  let q = @snn_mbt.noisy_q_forward(n, x, @core.Xoshiro::new(123UL))
   if q.length() != 3 {
     fail("q.length() = \{q.length()}, expected 3")
   }
@@ -101,7 +101,7 @@ test "noisy_q_argmax_eval_action_in_range" {
 test "noisy_q_argmax_action_in_range" {
   let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 11UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let a = @snn_mbt.noisy_q_argmax(n, x, @snn_mbt.Xoshiro::new(7UL))
+  let a = @snn_mbt.noisy_q_argmax(n, x, @core.Xoshiro::new(7UL))
   if a < 0 || a >= 3 {
     fail("argmax returned \{a}, expected in [0, 3)")
   }
@@ -115,8 +115,8 @@ test "noisy_q_forward_two_seeds_differ" {
   // Both nets have the same initial weights (same seed in `new`),
   // so any output difference must come from the forward-time RNG.
   let x : Array[Float] = [1.0F, 0.5F, -0.5F, 0.2F]
-  let q_a = @snn_mbt.noisy_q_forward(n_a, x, @snn_mbt.Xoshiro::new(100UL))
-  let q_b = @snn_mbt.noisy_q_forward(n_b, x, @snn_mbt.Xoshiro::new(200UL))
+  let q_a = @snn_mbt.noisy_q_forward(n_a, x, @core.Xoshiro::new(100UL))
+  let q_b = @snn_mbt.noisy_q_forward(n_b, x, @core.Xoshiro::new(200UL))
   let mut any_diff = false
   for i in 0..<q_a.length() {
     if (q_a[i] - q_b[i]).abs() > 1.0e-6F {
@@ -133,8 +133,8 @@ test "noisy_q_forward_same_seed_deterministic" {
   let n_a = @snn_mbt.NoisyQNet::new(4, 8, 3, 5UL)
   let n_b = @snn_mbt.NoisyQNet::new(4, 8, 3, 5UL)
   let x : Array[Float] = [0.3F, -0.7F, 0.6F, -0.1F]
-  let q_a = @snn_mbt.noisy_q_forward(n_a, x, @snn_mbt.Xoshiro::new(99UL))
-  let q_b = @snn_mbt.noisy_q_forward(n_b, x, @snn_mbt.Xoshiro::new(99UL))
+  let q_a = @snn_mbt.noisy_q_forward(n_a, x, @core.Xoshiro::new(99UL))
+  let q_b = @snn_mbt.noisy_q_forward(n_b, x, @core.Xoshiro::new(99UL))
   for i in 0..<q_a.length() {
     if q_a[i] != q_b[i] {
       fail("forward differs at \{i}: \{q_a[i]} vs \{q_b[i]}")

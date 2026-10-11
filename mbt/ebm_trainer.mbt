@@ -36,7 +36,7 @@ pub fn EBMTrainer::new(ebm : EBM, lr : Float, sigma : Float) -> EBMTrainer {
 pub fn ebm_train_step(
   trainer : EBMTrainer,
   x : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let n = x.length()
   let sigma = trainer.sigma
@@ -79,7 +79,7 @@ pub fn ebm_train_step(
 pub fn ebm_train_batch(
   trainer : EBMTrainer,
   batch : Array[Array[Float]],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let m = batch.length()
   let mut total = 0.0F
@@ -96,7 +96,7 @@ pub fn ebm_eval_loss(
   trainer : EBMTrainer,
   batch : Array[Array[Float]],
 ) -> Float {
-  let rng = Xoshiro::new(0UL)
+  let rng = @core.Xoshiro::new(0UL)
   let m = batch.length()
   let mut total = 0.0F
   let n = batch[0].length()

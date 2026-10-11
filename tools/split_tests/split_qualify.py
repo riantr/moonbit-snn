@@ -211,9 +211,54 @@ TUPLE_BIND = re.compile(
     r'(?:let\s+mut\s+|let\s+)(\([^=\n]*?\)|\[[^\]\n]*?\])\s*=(?!=)')
 
 
+# `fn f(\n  name : String,\n)` — a parameter is a local binding for the whole
+# body, exactly like a `let`. Without collecting these, a parameter whose name
+# collides with a package symbol gets the prefix and the declaration stops
+# parsing: `pub fn[A] Tape::op1(self : Tape[A], @core.name : String, ...)`.
+_SIGNATURE = re.compile(r'^(?:pub(?:\([a-z]+\))?\s+)?fn(?:\[[^\]]*\])?[^(\n]*\(')
+
+
+def param_names(lines, idx):
+    """Names bound as parameters of the function whose `fn` is at `idx`.
+
+    Walks from the `(` after the function name to its matching `)`, collecting
+    the identifier that starts each parameter entry. Handles both the
+    `name : Type` and bare `Type` forms; a bare-type parameter cannot collide
+    with a value symbol and is skipped.
+    """
+    text = '\n'.join(lines[idx:])
+    m = _SIGNATURE.match(lines[idx])
+    if not m:
+        return set()
+    start = m.end() - 1
+    depth, n = 0, len(text)
+    for i in range(start, n):
+        if text[i] == '(':
+            depth += 1
+        elif text[i] == ')':
+            depth -= 1
+            if depth == 0:
+                text = text[start + 1:i]
+                break
+    else:
+        text = text[start + 1:]
+    names = set()
+    for entry in text.split(','):
+        mm = re.match(r'\s*([A-Za-z_][\w]*)\s*(?::|$)', entry)
+        if mm:
+            names.add(mm.group(1))
+    return names
+
+
 def shadowed_names(src):
     """Names this file binds locally; prefixing them would be a type error."""
     names = set()
+    lines = src.split('\n')
+    sig_lines = set()
+    for i, line in enumerate(lines):
+        if _SIGNATURE.match(line):
+            sig_lines.add(i)
+            names |= param_names(lines, i)
     for is_code, text in split_code(src):
         if not is_code:
             continue

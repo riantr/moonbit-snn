@@ -107,7 +107,7 @@ pub fn LstmPolicy::new(
   let cell = LstmCellParam::new(d_x, d_h, seed)
   let n_actions = 2
   let std = sqrtf(1.0F / Float::from_int(d_h))
-  let rng = Xoshiro::from_state(seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL)
+  let rng = @core.Xoshiro::from_state(seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL)
   let w_out = xavier_normal(n_actions, d_h, std, rng)
   let b_out : Array[Float] = Array::make(n_actions, 0.0F)
   { cell, w_out, b_out }
@@ -128,7 +128,7 @@ pub fn lstm_policy_forward(
   obs_seq : Array[Array[Float]],
   h0 : Array[Float],
   c0 : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Int], LstmPolicyCache) {
   let n = obs_seq.length()
   let cell_caches : Array[LstmCellCache] = []
@@ -158,7 +158,7 @@ pub fn lstm_policy_forward(
     let ps : Array[Float] = Array::make(n_actions, 0.0F)
     let mut sum_e = 0.0F
     for i in 0..<n_actions {
-      let e = expf(logits[i] - max_l)
+      let e = @core.expf(logits[i] - max_l)
       ps[i] = e
       sum_e = sum_e + e
     }
@@ -296,7 +296,7 @@ pub fn train_lstm_reinforce(
   max_steps : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let mut total_return = 0.0F
   let start = env_n_cells / 2
   for _ep in 0..<n_episodes {

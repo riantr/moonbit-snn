@@ -48,7 +48,7 @@ test "scnn_demo / cross-entropy is zero for perfect predictions" {
   let target : Array[Float] = [0.0F, 1.0F, 0.0F]
   let prob : Array[Float] = [0.001F, 0.998F, 0.001F]
   let loss = @snn_mbt.cross_entropy_one(prob, target)
-  let expected = -1.0F * @snn_mbt.logf(0.998F)
+  let expected = -1.0F * @core.logf(0.998F)
   if (loss - expected).abs() > 0.001F {
     fail("loss should be ~\{expected}, got \{loss}")
   }

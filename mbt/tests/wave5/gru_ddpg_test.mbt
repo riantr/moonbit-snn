@@ -48,7 +48,7 @@ test "ddpg_gru_select_action: deterministic with noise_std=0" {
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let (a1, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h, 0.0F, rng)
   let (a2, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h, 0.0F, rng)
   for i in 0..<a1.length() {
@@ -63,7 +63,7 @@ test "ddpg_gru_select_action: noise clipped to action range" {
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let (action, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h, 5.0F, rng)
   // noise_std=5 is far larger than the [-1, 1] range; the result must
   // be clipped.
@@ -79,7 +79,7 @@ test "ddpg_gru_select_action: hidden state evolves" {
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h_zero : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let h_other : Array[Float] = [0.7F, -0.4F, 0.2F, -0.1F]
-  let rng = @snn_mbt.Xoshiro::from_state(31UL, 37UL, 41UL, 43UL)
+  let rng = @core.Xoshiro::from_state(31UL, 37UL, 41UL, 43UL)
   let (a1, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h_zero, 0.0F, rng)
   let (a2, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h_other, 0.0F, rng)
   let mut diff = false

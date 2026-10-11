@@ -126,7 +126,7 @@ test "dsac_soft_update_convex_combination" {
 ///|
 test "dsac_soft_target_zero_when_done" {
   let agent = @snn_mbt.DSac::new(3, 2, 0.1F, 17UL)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   // When done=true, target is exactly reward (no bootstrap).
   let target_val = @snn_mbt.dsac_soft_target(
     agent.q1_target, agent.q2_target, agent.policy, agent.alpha,
@@ -139,7 +139,7 @@ test "dsac_soft_target_zero_when_done" {
 ///|
 test "dsac_soft_target_finite_when_not_done" {
   let agent = @snn_mbt.DSac::new(3, 2, 0.1F, 19UL)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let target_val = @snn_mbt.dsac_soft_target(
     agent.q1_target, agent.q2_target, agent.policy, agent.alpha,
     0, 1.0F, false, 0.9F, rng,
@@ -151,7 +151,7 @@ test "dsac_soft_target_finite_when_not_done" {
 ///|
 test "dsac_sample_action_returns_valid_action" {
   let agent = @snn_mbt.DSac::new(3, 2, 0.1F, 23UL)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   for _k in 0..<10 {
     let a = @snn_mbt.dsac_sample_action(agent, 0, rng)
     assert_true(a >= 0 && a < 2)

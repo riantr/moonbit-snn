@@ -50,7 +50,7 @@ pub fn iwae_per_sample_bound(
     }
     // log p(z_k) under N(0, I)
     let mut log_pz_k = -0.5F * Float::from_int(latent_dim) *
-      logf(2.0F * 3.14159265F)
+      @core.logf(2.0F * 3.14159265F)
     for i in 0..<latent_dim {
       log_pz_k = log_pz_k - 0.5F * z_k[k * latent_dim + i] *
         z_k[k * latent_dim + i]
@@ -59,10 +59,10 @@ pub fn iwae_per_sample_bound(
     // shared across samples (encoder output). We use the k-th sample's
     // own σ² from log_var_k for variance.
     let mut log_qz_k_x = -0.5F * Float::from_int(latent_dim) *
-      logf(2.0F * 3.14159265F)
+      @core.logf(2.0F * 3.14159265F)
     for i in 0..<latent_dim {
       let diff = z_k[k * latent_dim + i] - mu[i]
-      let inv_var = expf(-log_var_k[k * latent_dim + i])
+      let inv_var = @core.expf(-log_var_k[k * latent_dim + i])
       log_qz_k_x = log_qz_k_x -
         0.5F * (diff * diff * inv_var + log_var_k[k * latent_dim + i])
     }
@@ -75,10 +75,10 @@ pub fn iwae_per_sample_bound(
   // Second pass: log-sum-exp.
   let mut sum_exp = 0.0F
   for k in 0..<k_samples {
-    sum_exp = sum_exp + expf(log_ws[k] - max_log_w)
+    sum_exp = sum_exp + @core.expf(log_ws[k] - max_log_w)
   }
-  let log_sum = max_log_w + logf(sum_exp)
-  let log_mean = log_sum - logf(Float::from_int(k_samples))
+  let log_sum = max_log_w + @core.logf(sum_exp)
+  let log_mean = log_sum - @core.logf(Float::from_int(k_samples))
   log_mean
 }
 
@@ -91,7 +91,7 @@ pub fn iwae_train_step(
   model : VAEModel,
   x : Array[Float],
   k_samples : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (VAEModel, Float) {
   let (mu, log_var) = vae_encode(model.encoder, x)
   // Sample K latents via reparameterization.

@@ -4,11 +4,11 @@
 test "kde — known Gaussian dataset, t=mean → peak" {
   // 1000 samples from N(0, 1).
   let data : Array[Double] = []
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   for _ in 0..<1000 {
     // Box-Muller via next_f64 → std normal.
-    let u1 = @snn_mbt.next_f64(rng)
-    let u2 = @snn_mbt.next_f64(rng)
+    let u1 = @core.next_f64(rng)
+    let u2 = @core.next_f64(rng)
     let r = (-2.0 * @math.ln(u1)).sqrt()
     let theta = 2.0 * 3.141592653589793 * u2
     let z = r * @math.cos(theta)
@@ -101,10 +101,10 @@ test "count_maxima — counts only real maxima above ratio" {
 test "critical_window — unimodal Gaussian data returns small h" {
   // 100 samples from N(0,1) — single peak expected at small bandwidths.
   let data : Array[Double] = []
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   for _ in 0..<100 {
-    let u1 = @snn_mbt.next_f64(rng)
-    let u2 = @snn_mbt.next_f64(rng)
+    let u1 = @core.next_f64(rng)
+    let u2 = @core.next_f64(rng)
     let r = (-2.0 * @math.ln(u1)).sqrt()
     let theta = 2.0 * 3.141592653589793 * u2
     data.push(r * @math.cos(theta))

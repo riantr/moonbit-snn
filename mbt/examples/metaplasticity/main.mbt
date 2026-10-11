@@ -19,7 +19,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 20
   let dt = 0.125F
 

@@ -71,7 +71,7 @@ pub fn dynamic_routing(
       }
       let mut sum_exp = 0.0F
       for i in 0..<n_low {
-        c[i] = expf(logits[lbase + i] - m)
+        c[i] = @core.expf(logits[lbase + i] - m)
         sum_exp = sum_exp + c[i]
       }
       for i in 0..<n_low {
@@ -149,7 +149,7 @@ pub fn routing_coefficients(
       }
       let mut sum_exp = 0.0F
       for i in 0..<n_low {
-        c[i] = expf(logits[lbase + i] - m)
+        c[i] = @core.expf(logits[lbase + i] - m)
         sum_exp = sum_exp + c[i]
       }
       for i in 0..<n_low {

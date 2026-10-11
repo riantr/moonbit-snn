@@ -18,7 +18,7 @@ test "InhomogeneousPoisson — long-run rate converges to r0" {
   // Note: fire[j] is reset at the start of each step (line 112),
   // so we need to track total fires with an external counter.
   let param = @snn_mbt.InhomogeneousPoissonParam::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
   let dt = 0.125F
   let n_steps = 32000  // 4s sim time
@@ -48,7 +48,7 @@ test "InhomogeneousPoisson — long-run rate converges to r0" {
 ///|
 test "InhomogeneousPoisson — no NaN states after long sim" {
   let param = @snn_mbt.InhomogeneousPoissonParam::new()
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let p = @snn_mbt.InhomogeneousPoisson::new(50, param, rng)
   let dt = 0.125F
   let n_steps = 10000
@@ -72,8 +72,8 @@ test "InhomogeneousPoisson — different seed produces different trajectory" {
   // Two simulations with different RNG seeds should have different
   // fire patterns (sanity check that the RNG is actually being used).
   let param = @snn_mbt.InhomogeneousPoissonParam::new()
-  let rng1 = @snn_mbt.Xoshiro::new(1UL)
-  let rng2 = @snn_mbt.Xoshiro::new(2UL)
+  let rng1 = @core.Xoshiro::new(1UL)
+  let rng2 = @core.Xoshiro::new(2UL)
   let p1 = @snn_mbt.InhomogeneousPoisson::new(20, param, rng1)
   let p2 = @snn_mbt.InhomogeneousPoisson::new(20, param, rng2)
   let dt = 0.125F
@@ -110,7 +110,7 @@ test "InhomogeneousPoisson — β = 0 reduces to homogeneous Poisson" {
   // and the process becomes a homogeneous Poisson with rate r0.
   // Verify the empirical rate is close to r0 (1.0).
   let param = @snn_mbt.InhomogeneousPoissonParam::custom(0.0F, 50.0F, 1.0F)
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
   let dt = 0.125F
   let n_steps = 16000    // 2s

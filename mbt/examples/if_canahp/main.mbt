@@ -20,7 +20,7 @@
 fn main {
   let n = 100
   let param = @snn_mbt.IFCANAHParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IFCANAHP::new(n=n, param=param)
   // Drive each neuron with 50 pA / cm^2 (normalised units).
   for k in 0..<n {
@@ -29,7 +29,7 @@ fn main {
   // Build a heterogeneous model (the heterogeneous dispatcher includes
   // IF_CANAHP since v0.49.0) and run for 100 ms.
   let model = @snn_mbt.compose([@snn_mbt.IFCANAHP_(pop)], [])
-  @snn_mbt.heterogeneous_sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, 100.0F * @core.ms)
   // Tally spikes across the population.
   let mut total_spikes = 0
   let mut neurons_spiked = 0

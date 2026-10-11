@@ -49,12 +49,12 @@ pub fn GRUDeterministicPolicy::new(
   action_high : Float,
   seed : UInt64,
 ) -> GRUDeterministicPolicy {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let mlp_w1_std = sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(gru_hidden, state_dim, mlp_w1_std, rng1)
   let mlp_b1 : Array[Float] = Array::make(gru_hidden, 0.0F)
   let gru = GruCellParam::new(gru_hidden, gru_hidden, seed + 4UL)
-  let rng2 = Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
   let mlp_w2_std = sqrtf(2.0F / Float::from_int(gru_hidden))
   let mlp_w2 = xavier_normal(action_dim, gru_hidden, mlp_w2_std, rng2)
   let mlp_b2 : Array[Float] = Array::make(action_dim, 0.0F)
@@ -94,7 +94,7 @@ pub fn gru_deterministic_policy_step(
   let mid = (policy.action_high + policy.action_low) * 0.5F
   let action : Array[Float] = Array::make(policy.action_dim, 0.0F)
   for i in 0..<policy.action_dim {
-    action[i] = tanhf(a_pre[i]) * half_range + mid
+    action[i] = @core.tanhf(a_pre[i]) * half_range + mid
   }
   (action, hidden_next)
 }

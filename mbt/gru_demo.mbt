@@ -182,7 +182,7 @@ pub fn gru_identity_dataset(
   d_target : Int,
   seed : UInt64,
 ) -> (Array[Array[Float]], Array[Array[Float]]) {
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let xs : Array[Array[Float]] = Array::make(seq_len, [])
   let target : Array[Array[Float]] = Array::make(seq_len, [])
   for t in 0..<seq_len {

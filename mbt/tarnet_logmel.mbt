@@ -63,13 +63,13 @@ extern "C" fn tn_sinf(x : Float) -> Float = "sinf"
 /// dividing by ln(10) is exact enough here: the HTK mel scale multiplies by
 /// 2595 afterwards, and a float32 ln(10) is good to 7 digits.
 fn tn_log10f(x : Float) -> Float {
-  logf(x) / LN10_F
+  @core.logf(x) / LN10_F
 }
 
 ///|
 /// 10^x, as the inverse of `tn_log10f`.
 fn tn_pow10f(x : Float) -> Float {
-  expf(x * LN10_F)
+  @core.expf(x * LN10_F)
 }
 
 ///|
@@ -468,7 +468,7 @@ pub fn tn_log_mel(
   // +1e-6 BEFORE the log: a floor on the power, not a clamp on the log.
   let mut i = 0
   while i < mel.length() {
-    mel[i] = logf(mel[i] + 1.0e-6F)
+    mel[i] = @core.logf(mel[i] + 1.0e-6F)
     i = i + 1
   }
   // mean-normalise across time, per mel band

@@ -160,7 +160,7 @@ test "ifcanahp_example_smoke — 100 neurons, 100ms sim produces finite state" {
     ignore(pop.i.set(k, 50.0F))
   }
   let model : @snn_mbt.HeterogeneousModel = @snn_mbt.compose([IFCANAHP_(pop)], [])
-  @snn_mbt.heterogeneous_sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, 100.0F * @core.ms)
   // After 100 ms at default params with I=50, all neurons should be in a
   // finite state. With default gl=50000 the system is unstable under dt=0.125
   // for any reasonable I, so we only require finite values here.

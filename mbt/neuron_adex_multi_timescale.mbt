@@ -133,8 +133,8 @@ pub fn update_synapses_adex_multi(
   while receptor < nr {
     let tau_r_n = tau_r[receptor]
     let tau_d_n = tau_d[receptor]
-    let exp_decay = expf(-dt / tau_d_n)
-    let exp_rise = expf(-dt / tau_r_n)
+    let exp_decay = @core.expf(-dt / tau_d_n)
+    let exp_rise = @core.expf(-dt / tau_r_n)
     let mut k : Int = 0
     while k < n {
       let idx = k + receptor * n

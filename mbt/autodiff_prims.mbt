@@ -74,21 +74,21 @@ pub struct MathPrims {
 /// Build the `MathPrims` bundle around the given Float tape.
 pub fn MathPrims::on(tape : Tape[Float]) -> MathPrims {
   // exp(x) = e^x; bwd(g, x) = g * e^x = g * expf(x)
-  let exp = tape.op1("exp", fn(a) { expf(a) }, fn(g, x) { g * expf(x) })
+  let exp = tape.op1("exp", fn(a) { @core.expf(a) }, fn(g, x) { g * @core.expf(x) })
   // ln(x); bwd(g, x) = g / x
-  let ln = tape.op1("ln", fn(a) { logf(a) }, fn(g, x) { g / x })
+  let ln = tape.op1("ln", fn(a) { @core.logf(a) }, fn(g, x) { g / x })
   // sin(x); bwd(g, x) = g * cos(x)
   let sin = tape.op1("sin", fn(a) { sinf(a) }, fn(g, x) { g * cosf(x) })
   // cos(x); bwd(g, x) = -g * sin(x)
   let cos = tape.op1("cos", fn(a) { cosf(a) }, fn(g, x) { -g * sinf(x) })
   // tanh(x); bwd(g, x) = g * (1 - tanh^2(x))
-  let tanh = tape.op1("tanh", fn(a) { tanhf(a) }, fn(g, x) {
-    let t = tanhf(x)
+  let tanh = tape.op1("tanh", fn(a) { @core.tanhf(a) }, fn(g, x) {
+    let t = @core.tanhf(x)
     g * (1.0F - t * t)
   })
   // sigmoid(x) = 1 / (1 + exp(-x)); bwd(g, x) = g * s * (1 - s)
-  let sigmoid = tape.op1("sigmoid", fn(a) { sigmoid_f32(a) }, fn(g, x) {
-    let s = sigmoid_f32(x)
+  let sigmoid = tape.op1("sigmoid", fn(a) { @core.sigmoid_f32(a) }, fn(g, x) {
+    let s = @core.sigmoid_f32(x)
     g * s * (1.0F - s)
   })
   { tape, exp, ln, sin, cos, tanh, sigmoid }

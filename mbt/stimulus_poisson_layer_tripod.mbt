@@ -26,7 +26,7 @@ pub struct PoissonLayerStimulusTripod {
   connectivity : Array[Bool]   // row-major [post.N, param.n_sources]
   target_compartment : String  // "soma" | "d1" | "d2"
   target_kind : String         // "glu" | "gaba"
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -41,7 +41,7 @@ pub fn PoissonLayerStimulusTripod::new(
   mu : Float,
   sigma : Float,
   p_conn : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> PoissonLayerStimulusTripod {
   let n_pre = param.n_sources
   let n_post = post.n
@@ -51,10 +51,10 @@ pub fn PoissonLayerStimulusTripod::new(
   for i in 0..<n_pre {
     for j in 0..<n_post {
       let idx = j * n_pre + i
-      if next_f32(rng) < p_conn {
+      if @core.next_f32(rng) < p_conn {
         connectivity[idx] = true
         weights[idx] = if use_normal {
-          mu + next_f32(rng) * sigma
+          mu + @core.next_f32(rng) * sigma
         } else {
           mu
         }

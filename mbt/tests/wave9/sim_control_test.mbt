@@ -16,7 +16,7 @@ test "get_time: zero before sim" {
 
 ///|
 test "get_time: advances after sim_for" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::with_el(-49.0F)
   let pop = @snn_mbt.IF::new(10, if_param, rng)
   let any_pop : @snn_mbt.AnyPop = @snn_mbt.IF_(pop)
@@ -34,7 +34,7 @@ test "get_time: advances after sim_for" {
 
 ///|
 test "reset_time_heterogeneous: resets to zero" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
   let any_pop : @snn_mbt.AnyPop = @snn_mbt.IF_(pop)
   let model : @snn_mbt.HeterogeneousModel = @snn_mbt.compose(
@@ -57,7 +57,7 @@ test "reset_time_heterogeneous: resets to zero" {
 test "Monitor: spike count accumulates over sim" {
   // Mirrors Julia's "clear_records! — empties fire record" test:
   // after sim!(model, 300ms), sum(length, spiketimes(E)) > 0.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::with_el(-49.0F)
   let pop = @snn_mbt.IF::new(10, if_param, rng)
   let m = @snn_mbt.Monitor::new_fire(pop, 0)
@@ -87,7 +87,7 @@ test "Monitor: spike count accumulates over sim" {
 ///|
 test "Monitor::new_v with sampling rate stores sr" {
   // Mirrors Julia's "monitor! — sr keyword stored" test.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
   let m = @snn_mbt.Monitor::new_v_sr(pop, 0, 500.0F)
   if m.rec_step < 1 {
@@ -98,7 +98,7 @@ test "Monitor::new_v with sampling rate stores sr" {
 
 ///|
 test "HeterogeneousModel: compose with multiple pops + conns" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::random(

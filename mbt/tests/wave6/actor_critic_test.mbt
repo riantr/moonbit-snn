@@ -32,7 +32,7 @@ test "actor_critic_rollout: shapes + done flag at terminal" {
   let env = @snn_mbt.GridWorld::new(2, 2, 5)
   let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 13UL)
   let v = @snn_mbt.LinearValueNet::new(4, 17UL)
-  let rng = @snn_mbt.Xoshiro::from_state(19UL, 23UL, 29UL, 31UL)
+  let rng = @core.Xoshiro::from_state(19UL, 23UL, 29UL, 31UL)
   let ep = @snn_mbt.actor_critic_rollout(env, p, v, 5, rng)
   assert_eq(ep.states.length(), ep.actions.length())
   assert_eq(ep.states.length(), ep.rewards.length())
@@ -57,7 +57,7 @@ test "actor_critic_rollout: next_value=0 at terminal" {
   p.w[1][0] = 20.0F
   p.w[3][2] = 20.0F
   let v = @snn_mbt.LinearValueNet::new(4, 23UL)
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let ep = @snn_mbt.actor_critic_rollout(env, p, v, 10, rng)
   assert_eq(ep.states.length(), 2)
   // Last step: state=2, action=3, next=3 (goal), so done=true.
@@ -93,7 +93,7 @@ test "actor_critic_update: zero TD error on perfect value function" {
       w_policy_before[i][j] = p.w[i][j]
     }
   }
-  let rng = @snn_mbt.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
+  let rng = @core.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
   let ep = @snn_mbt.actor_critic_rollout(env, p, v, 5, rng)
   let mean_delta = @snn_mbt.actor_critic_update(p, v, ep, 1.0F, 0.1F, 0.1F)
   // With perfect value, mean |delta| should be small (sampling noise only).
@@ -115,7 +115,7 @@ test "actor_critic_update: critic weight increases on positive TD error" {
   let v = @snn_mbt.LinearValueNet::new(4, 59UL)
   v.w[0] = 0.0F
   let v_w0_before = v.w[0]
-  let rng = @snn_mbt.Xoshiro::from_state(61UL, 67UL, 71UL, 73UL)
+  let rng = @core.Xoshiro::from_state(61UL, 67UL, 71UL, 73UL)
   let ep = @snn_mbt.actor_critic_rollout(env, p, v, 5, rng)
   let _ = @snn_mbt.actor_critic_update(p, v, ep, 0.9F, 0.01F, 0.5F)
   // At state 0, after rollout the TD error δ_0 is nonzero (sample

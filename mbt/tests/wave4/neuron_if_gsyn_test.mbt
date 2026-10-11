@@ -26,7 +26,7 @@ test "IFParameterGsyn::from_base — uses supplied base" {
 test "IFParameterGsyn::apply — sets every neuron's gsyn arrays" {
   // Build a 5-neuron IF and apply a uniform gsyn scale.
   let base = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.IF::new(5, base, rng)
   // Default: gsyn_e[i] = gsyn_i[i] = 1.0.
   assert_eq(p.gsyn_e[0], 1.0F)
@@ -45,7 +45,7 @@ test "IFParameterGsyn::apply — sets every neuron's gsyn arrays" {
 ///|
 test "IF::with_gsyn — convenience constructor applies scales" {
   let base = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.IF::with_gsyn(8, base, 1.5F, 2.0F, rng)
   assert_eq(p.n, 8)
   assert_eq(p.gsyn_e[0], 1.5F)
@@ -58,7 +58,7 @@ test "synaptic_current — gsyn_e scales the excitatory drive" {
   // With gsyn_e = 2.0, the excitatory synaptic current is doubled
   // compared to the default gsyn_e = 1.0.
   let base = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let dt = 0.125F
   let p_baseline = @snn_mbt.IF::with_gsyn(1, base, 1.0F, 1.0F, rng)
   let p_scaled = @snn_mbt.IF::with_gsyn(1, base, 2.0F, 1.0F, rng)

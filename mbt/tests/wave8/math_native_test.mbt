@@ -7,14 +7,14 @@
 ///|
 test "expf(0) = 1" {
   // Julia: expf(0.0f0) = 1.0f0
-  assert_eq(@snn_mbt.expf(0.0F), 1.0F)
+  assert_eq(@core.expf(0.0F), 1.0F)
 }
 
 ///|
 test "expf(1) is bit-exact" {
   // Julia: expf(1.0f0) = 2.7182817459106445f0
   // (last bit of Float32 e^1)
-  let got = @snn_mbt.expf(1.0F)
+  let got = @core.expf(1.0F)
   // 2.7182817459106445 rounds to 2.7182817f0 in standard Float32 print
   // but the bit pattern is the same.
   assert_eq(got, 2.7182817F)
@@ -22,9 +22,9 @@ test "expf(1) is bit-exact" {
 
 ///|
 test "expf is monotonic" {
-  let a = @snn_mbt.expf(-2.0F)
-  let b = @snn_mbt.expf(0.0F)
-  let c = @snn_mbt.expf(2.0F)
+  let a = @core.expf(-2.0F)
+  let b = @core.expf(0.0F)
+  let c = @core.expf(2.0F)
   if !(a < b && b < c) {
     fail("expf not monotonic: \{a}, \{b}, \{c}")
   }
@@ -33,13 +33,13 @@ test "expf is monotonic" {
 ///|
 test "sigmoid_f32(0) = 0.5" {
   // Julia: 1 / (1 + expf(0.0f0)) = 0.5
-  assert_eq(@snn_mbt.sigmoid_f32(0.0F), 0.5F)
+  assert_eq(@core.sigmoid_f32(0.0F), 0.5F)
 }
 
 ///|
 test "sigmoid_f32 is in (0, 1)" {
   for v in [-3.0F, -1.0F, 0.0F, 1.0F, 3.0F] {
-    let s = @snn_mbt.sigmoid_f32(v)
+    let s = @core.sigmoid_f32(v)
     if s <= 0.0F || s >= 1.0F {
       fail("sigmoid(\{v}) = \{s} not in (0, 1)")
     }

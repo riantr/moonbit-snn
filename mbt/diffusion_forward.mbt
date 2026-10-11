@@ -79,7 +79,7 @@ pub fn cosine_schedule(num_steps : Int, s : Float) -> DiffusionSchedule {
 fn pow_cosf(x : Float, p : Float) -> Float {
   let c = cosf(x)
   let abs_c = if c < 0.0F { -c } else { c }
-  expf(logf(abs_c) * p)
+  @core.expf(@core.logf(abs_c) * p)
 }
 
 ///|
@@ -131,7 +131,7 @@ pub fn q_sample_pair(
   x0 : Array[Float],
   t : Int,
   sched : DiffusionSchedule,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float]) {
   let n = x0.length()
   let noise : Array[Float] = Array::make(n, 0.0F)

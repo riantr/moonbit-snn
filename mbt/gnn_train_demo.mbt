@@ -319,13 +319,13 @@ pub fn gnn_train_graph() -> Graph {
   s[k] = 1
   d[k] = per + 1
   k = k + 1
-  let rng = Xoshiro::from_state(11UL, 22UL, 33UL, 44UL)
+  let rng = @core.Xoshiro::from_state(11UL, 22UL, 33UL, 44UL)
   let feats : Array[Float] = Array::make(n * feat_dim, 0.0F)
   for v in 0..<n {
     let sign = if v < per { 1.0F } else { 0.0F - 1.0F }
     for c in 0..<feat_dim {
       let signal = if c == 0 { 0.90F * sign } else { 0.0F }
-      feats[v * feat_dim + c] = signal + (next_f32(rng) - 0.5F) * 4.0F
+      feats[v * feat_dim + c] = signal + (@core.next_f32(rng) - 0.5F) * 4.0F
     }
   }
   Graph::new(n, feat_dim, feats, s, d, Array::make(0, 0.0F))

@@ -67,7 +67,7 @@ pub fn nmda_gating(v : Float, nmda : NMDAVoltageDependency) -> Float {
   } else if arg > 88.0F {
     1.0e38F  // saturating exp without overflow
   } else {
-    expf(arg)
+    @core.expf(arg)
   }
   let denom = 1.0F + (nmda.mg / nmda.b) * exp_arg
   1.0F / denom
@@ -127,8 +127,8 @@ pub fn Receptor::nmda(
 /// norm_synapse(τr, τd) = 1 / (-exp(-t_p/τr) + exp(-t_p/τd))
 /// where t_p = τr * τd / (τd - τr) * log(τd / τr).
 pub fn norm_synapse(tau_r : Float, tau_d : Float) -> Float {
-  let t_p = tau_r * tau_d / (tau_d - tau_r) * logf(tau_d / tau_r)
-  1.0F / (-expf(-t_p / tau_r) + expf(-t_p / tau_d))
+  let t_p = tau_r * tau_d / (tau_d - tau_r) * @core.logf(tau_d / tau_r)
+  1.0F / (-@core.expf(-t_p / tau_r) + @core.expf(-t_p / tau_d))
 }
 
 ///|
@@ -235,8 +235,8 @@ pub fn step_receptor(
   let alpha = r.alpha
   let tr_inv = r.tau_r_inv
   let td_inv = r.tau_d_inv
-  let decay_d = expf(-dt * td_inv)
-  let decay_r = expf(-dt * tr_inv)
+  let decay_d = @core.expf(-dt * td_inv)
+  let decay_r = @core.expf(-dt * tr_inv)
   for i in 0..<n {
     h[i] = h[i] + target[i] * alpha
     g[i] = decay_d * (g[i] + dt * h[i])

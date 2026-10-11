@@ -42,7 +42,7 @@ pub fn arima_synthesize(
   ma_thetas : Array[Float],
   seed : UInt64,
 ) -> Array[Float] {
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   // Step 1: generate the stationary ARMA(p, q) series z.
   let z : Array[Float] = Array::make(n, 0.0F)
   if n == 0 {

@@ -15,7 +15,7 @@
 ///|
 test "IZ bit-exact — fixed seed, 10pA, 100ms: v[0] at key indices" {
   // Same seed/params as izhikevich_debug.mbt.
-  let rng = @snn_mbt.Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
   let param = @snn_mbt.IZParameter::rs()
@@ -61,7 +61,7 @@ test "IZ bit-exact — fixed seed, 10pA, 100ms: v[0] at key indices" {
 test "IZ bit-exact — two runs from same seed produce identical trace" {
   // Determinism check: run twice with same seed, compare v[0] at
   // each step. Any drift would indicate a non-deterministic bug.
-  let rng1 = @snn_mbt.Xoshiro::from_state(
+  let rng1 = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
   let param1 = @snn_mbt.IZParameter::rs()
@@ -74,7 +74,7 @@ test "IZ bit-exact — two runs from same seed produce identical trace" {
     trace1.push(pop1.v[0])
   }
 
-  let rng2 = @snn_mbt.Xoshiro::from_state(
+  let rng2 = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
   let param2 = @snn_mbt.IZParameter::rs()
@@ -98,7 +98,7 @@ test "IZ bit-exact — two runs from same seed produce identical trace" {
 test "IZ bit-exact — single run trace summary (regression guard)" {
   // This test prints the trace summary. It always passes but
   // documents the expected min/max/mean for the canonical run.
-  let rng = @snn_mbt.Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
   let param = @snn_mbt.IZParameter::rs()

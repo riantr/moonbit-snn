@@ -20,7 +20,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
   let rate_khz = 1.0F  // 1 kHz Poisson drive
 

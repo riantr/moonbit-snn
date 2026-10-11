@@ -67,7 +67,7 @@ pub(all) struct InhomogeneousPoisson {
 pub fn InhomogeneousPoisson::new(
   n : Int,
   param : InhomogeneousPoissonParam,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> InhomogeneousPoisson {
   let fire : Array[Bool] = Array::make(n, false)
   let r : Array[Float] = Array::make(n, param.r0)
@@ -75,7 +75,7 @@ pub fn InhomogeneousPoisson::new(
   let randcache_beta : Array[Float] = Array::make(n, 0.0F)
   let mut i = 0
   while i < n {
-    randcache_beta[i] = next_f32(rng)
+    randcache_beta[i] = @core.next_f32(rng)
     i = i + 1
   }
   { n, param, fire, r, noise, randcache_beta }
@@ -98,7 +98,7 @@ pub fn InhomogeneousPoisson::new(
 pub fn step_inhomogeneous_poisson(
   p : InhomogeneousPoisson,
   dt : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Unit {
   let n = p.n
   let r0 = p.param.r0
@@ -108,7 +108,7 @@ pub fn step_inhomogeneous_poisson(
   // 1. Re-draw uniform noise cache.
   let mut i = 0
   while i < n {
-    p.randcache_beta[i] = next_f32(rng)
+    p.randcache_beta[i] = @core.next_f32(rng)
     p.fire[i] = false
     i = i + 1
   }
@@ -128,8 +128,8 @@ pub fn step_inhomogeneous_poisson(
     let erate = if erate_pre > 0.0F { erate_pre } else { 0.0F }
     p.r[j] = p.r[j] + (r0 - erate) / rate_ts * dt
     // p_spike = 1 - exp(-erate * dt). For small erate*dt, use expf.
-    let p_spike = 1.0F - expf(-erate * dt)
-    p.fire[j] = next_f32(rng) < p_spike
+    let p_spike = 1.0F - @core.expf(-erate * dt)
+    p.fire[j] = @core.next_f32(rng) < p_spike
     j = j + 1
   }
 }

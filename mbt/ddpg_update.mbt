@@ -84,7 +84,7 @@ pub fn ContinuousReplayBuffer::push(
 pub fn ContinuousReplayBuffer::sample(
   self : ContinuousReplayBuffer,
   batch_size : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Array[Float], Array[Float], Array[Float]) {
   let states : Array[Float] = Array::make(batch_size * self.state_dim, 0.0F)
   let actions : Array[Float] = Array::make(batch_size * self.action_dim, 0.0F)

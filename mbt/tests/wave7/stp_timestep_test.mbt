@@ -44,7 +44,7 @@ test "MarkramSTPEntryTimestep::new: fields populated, vars initialised" {
 ///|
 test "markram_stp_step_timestep: no-spike continuous decay toward baseline" {
   // With no firing, u should drift toward U (0.5) and x toward 1.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(2, if_param, rng)
   let post = @snn_mbt.IF::new(2, if_param, rng)
@@ -79,7 +79,7 @@ test "markram_stp_step_timestep: no-spike continuous decay toward baseline" {
 test "markram_stp_step_timestep: spike bump before continuous update" {
   // Pre-spike: u[j] += U*(1 - u[j]); x[j] += -u[j]*x[j] FIRST.
   // Then continuous Euler.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, if_param, rng)
   let post = @snn_mbt.IF::new(1, if_param, rng)
@@ -113,7 +113,7 @@ test "markram_stp_step_timestep: spike bump before continuous update" {
 
 ///|
 test "markram_stp_step_timestep: rho broadcast to all outgoing connections" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, if_param, rng)
   let post = @snn_mbt.IF::new(3, if_param, rng)
@@ -141,7 +141,7 @@ test "markram_stp_step_timestep: rho broadcast to all outgoing connections" {
 
 ///|
 test "markram_stp_step_timestep: rho stays in (0, 1) bounds over time" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(4, if_param, rng)
   let post = @snn_mbt.IF::new(4, if_param, rng)
@@ -153,13 +153,13 @@ test "markram_stp_step_timestep: rho stays in (0, 1) bounds over time" {
   }
   @snn_mbt.SpikingSynapse::init_rho(syn)
   let entry = @snn_mbt.MarkramSTPEntryTimestep::new(0, 4, 4)
-  let rng2 = @snn_mbt.Xoshiro::from_state(
+  let rng2 = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
   )
   for step in 0..<500 {
     let _ = step
     for k in 0..<4 {
-      pre.fire[k] = @snn_mbt.next_f32(rng2) < 0.3F
+      pre.fire[k] = @core.next_f32(rng2) < 0.3F
     }
     @snn_mbt.markram_stp_step_timestep(syn, entry.vars, entry.param, Float::from_int(step) * 0.125F, 0.125F)
   }
@@ -180,7 +180,7 @@ test "markram_stp_step_timestep: rho stays in (0, 1) bounds over time" {
 test "markram_stp_step_timestep: weights stay finite over many steps" {
   // Mirrors Julia's `with_plasticity.jl` MarkramSTPParameterTimestep
   // testset: after many random steps, all vals stay finite.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(4, if_param, rng)
   let post = @snn_mbt.IF::new(4, if_param, rng)
@@ -192,13 +192,13 @@ test "markram_stp_step_timestep: weights stay finite over many steps" {
   }
   @snn_mbt.SpikingSynapse::init_rho(syn)
   let entry = @snn_mbt.MarkramSTPEntryTimestep::new(0, 4, 4)
-  let rng2 = @snn_mbt.Xoshiro::from_state(
+  let rng2 = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
   )
   for step in 0..<200 {
     let _ = step
     for k in 0..<4 {
-      pre.fire[k] = @snn_mbt.next_f32(rng2) < 0.3F
+      pre.fire[k] = @core.next_f32(rng2) < 0.3F
     }
     @snn_mbt.markram_stp_step_timestep(syn, entry.vars, entry.param, Float::from_int(step) * 0.125F, 0.125F)
   }
@@ -211,7 +211,7 @@ test "markram_stp_step_timestep: weights stay finite over many steps" {
 
 ///|
 test "markram_stp_step_timestep: inactive flag disables rule" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, if_param, rng)
   let post = @snn_mbt.IF::new(1, if_param, rng)

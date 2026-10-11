@@ -23,7 +23,7 @@
 pub fn noisy_dqn_select_action(
   net : NoisyQNet,
   state : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Int {
   let x = rl_one_hot(state, net.n_states)
   noisy_q_argmax(net, x, rng)
@@ -95,7 +95,7 @@ pub fn noisy_dqn_update_step(
   dones : Array[Bool],
   gamma : Float,
   lr : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let n = states.length()
   let mut total_abs_delta = 0.0F
@@ -242,7 +242,7 @@ pub fn train_noisy_dqn(
   batch_size : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0

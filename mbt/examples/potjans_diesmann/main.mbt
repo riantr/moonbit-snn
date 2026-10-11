@@ -21,7 +21,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   // 120 E + 40 I (scaled down from Potjans-Diesmann totals).
   let ne = 120
   let ni = 40

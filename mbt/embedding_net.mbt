@@ -51,7 +51,7 @@ pub fn EmbeddingNet::new(
   normalize : Bool,
   seed : UInt64,
 ) -> EmbeddingNet {
-  let rng1 = Xoshiro::from_state(
+  let rng1 = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   let std1 = sqrtf(2.0F / Float::from_int(input_dim))
@@ -64,7 +64,7 @@ pub fn EmbeddingNet::new(
     num_layers - 1, Array::make(0, 0.0F),
   )
   for l in 0..<(num_layers - 1) {
-    let rng_l = Xoshiro::from_state(
+    let rng_l = @core.Xoshiro::from_state(
       seed + (l + 100).to_uint64() * 7UL,
       seed + (l + 100).to_uint64() * 11UL,
       seed + (l + 100).to_uint64() * 13UL,
@@ -74,7 +74,7 @@ pub fn EmbeddingNet::new(
     hidden_w[l] = xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
     hidden_b[l] = Array::make(hidden_dim, 0.0F)
   }
-  let rng_out = Xoshiro::from_state(
+  let rng_out = @core.Xoshiro::from_state(
     seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL,
   )
   let std_out = sqrtf(2.0F / Float::from_int(hidden_dim))

@@ -124,7 +124,7 @@ pub struct HetRec {
 ///                                  or 1 with probability `overlap`
 ///       M is then transposed to M' (dendrites × somas) and stored
 ///       as CSC with colptr = soma indices, i_syn = dendrite indices.
-pub fn HetRec::new(n : Int, param : HetRecParameter, rng : Xoshiro) -> HetRec {
+pub fn HetRec::new(n : Int, param : HetRecParameter, rng : @core.Xoshiro) -> HetRec {
   let nd = param.nd
   let total_d = n * nd
   let v_d : Array[Float] = Array::make(total_d, 0.0F)
@@ -133,13 +133,13 @@ pub fn HetRec::new(n : Int, param : HetRecParameter, rng : Xoshiro) -> HetRec {
   // Sample baseline firing rates from Uniform(rate_low, rate_high).
   let r : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let u = next_f32(rng)
+    let u = @core.next_f32(rng)
     r[i] = param.rate_low + u * (param.rate_high - param.rate_low)
   }
   // Sample dendritic time constants from Uniform(tau_d_low, tau_d_high).
   let tau_d : Array[Float] = Array::make(total_d, 0.0F)
   for i in 0..<total_d {
-    let u = next_f32(rng)
+    let u = @core.next_f32(rng)
     tau_d[i] = param.tau_d_low + u * (param.tau_d_high - param.tau_d_low)
   }
   let fire : Array[Bool] = Array::make(n, false)
@@ -165,7 +165,7 @@ pub fn HetRec::new(n : Int, param : HetRecParameter, rng : Xoshiro) -> HetRec {
         if k == i {
           continue
         }
-        let u = next_f32(rng)
+        let u = @core.next_f32(rng)
         if u < param.overlap {
           let d_idx2 = j * n + k
           i_syn.push(d_idx2)
@@ -186,10 +186,10 @@ pub fn HetRec::new(n : Int, param : HetRecParameter, rng : Xoshiro) -> HetRec {
 ///|
 /// Fill the random cache from the Xoshiro stream (Float32 path).
 /// Mirrors Julia's `rand!(randcache)` which draws Float32 values.
-pub fn hetrec_refresh_random(p : HetRec, rng : Xoshiro) -> Unit {
+pub fn hetrec_refresh_random(p : HetRec, rng : @core.Xoshiro) -> Unit {
   let n = p.n
   for i in 0..<n {
-    p.randcache[i] = next_f32(rng)
+    p.randcache[i] = @core.next_f32(rng)
   }
 }
 
@@ -261,7 +261,7 @@ pub fn step_hetrec(p : HetRec, dt : Float) -> Unit {
       // Saturating: exp(large) → Inf → sigmoid ≈ 0
       0.0F
     } else {
-      p.r[i] * dt / (1.0F + expf(sigmoid_arg))
+      p.r[i] * dt / (1.0F + @core.expf(sigmoid_arg))
     }
     if p.randcache[i] < rate {
       p.fire[i] = true

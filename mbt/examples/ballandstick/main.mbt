@@ -20,7 +20,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // 1 BallAndStick neuron with default AdEx soma + default dendrite.

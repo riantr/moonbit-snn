@@ -10,8 +10,8 @@ fn main {
   let rate_hz = 5.0F
   let duration_s = 100.0F
   let dt = 0.125F
-  let rng = @snn_mbt.Xoshiro::default()
-  let pop = @snn_mbt.Poisson::new(n_neurons, rate_hz * @snn_mbt.hz, rng)
+  let rng = @core.Xoshiro::default()
+  let pop = @snn_mbt.Poisson::new(n_neurons, rate_hz * @core.hz, rng)
   let total_steps : Int = (duration_s * 1000.0F / dt).to_int()
   let mut total_fires : Int = 0
   for _ in 0..<total_steps {

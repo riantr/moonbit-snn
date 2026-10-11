@@ -53,23 +53,23 @@ pub fn ViT::new(
 ) -> ViT {
   let patch_embed = PatchEmbedding::new(c, h, w, p, d_model, seed)
   let cls_token : Array[Float] = Array::make(d_model, 0.0F)
-  let rng_cls = Xoshiro::from_state(
+  let rng_cls = @core.Xoshiro::from_state(
     seed + 100UL, seed + 101UL, seed + 102UL, seed + 103UL,
   )
   let std_cls = sqrtf(2.0F / Float::from_int(d_model))
   for i in 0..<d_model {
-    cls_token[i] = std_cls * (next_f32(rng_cls) * 2.0F - 1.0F)
+    cls_token[i] = std_cls * (@core.next_f32(rng_cls) * 2.0F - 1.0F)
   }
   let n_patches = patch_embed.n_patches
   // Positional embeddings: (n_patches + 1) tokens, each of dim d_model.
   let seq_len = n_patches + 1
   let pos_embed : Array[Float] = Array::make(seq_len * d_model, 0.0F)
-  let rng_pos = Xoshiro::from_state(
+  let rng_pos = @core.Xoshiro::from_state(
     seed + 200UL, seed + 201UL, seed + 202UL, seed + 203UL,
   )
   let std_pos = sqrtf(2.0F / Float::from_int(d_model))
   for i in 0..<(seq_len * d_model) {
-    pos_embed[i] = std_pos * (next_f32(rng_pos) * 2.0F - 1.0F)
+    pos_embed[i] = std_pos * (@core.next_f32(rng_pos) * 2.0F - 1.0F)
   }
   // Stack of ViTBlocks.
   let blocks : Array[ViTBlock] = Array::make(num_blocks, ViTBlock::new(
@@ -79,7 +79,7 @@ pub fn ViT::new(
     blocks[i] = ViTBlock::new(d_model, num_heads, mlp_hidden, seed + (i + 1).to_uint64() * 1000UL)
   }
   // Classification head.
-  let rng_head = Xoshiro::from_state(
+  let rng_head = @core.Xoshiro::from_state(
     seed + 300UL, seed + 301UL, seed + 302UL, seed + 303UL,
   )
   let std_head = sqrtf(2.0F / Float::from_int(d_model))

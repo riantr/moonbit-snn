@@ -138,7 +138,7 @@ pub struct AdEx {
 ///|
 /// Construct a new AdEx population with `n` neurons, using the
 /// default PostSpike (At=0mV, τA=10ms).
-pub fn AdEx::new(n : Int, param : AdExParameter, rng : Xoshiro) -> AdEx {
+pub fn AdEx::new(n : Int, param : AdExParameter, rng : @core.Xoshiro) -> AdEx {
   AdEx::new_with_spike(n, param, AdExPostSpike::new(), rng)
 }
 
@@ -148,12 +148,12 @@ pub fn AdEx::new_with_spike(
   n : Int,
   param : AdExParameter,
   spike : AdExPostSpike,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> AdEx {
   let v = Array::make(n, 0.0F)
   let spread = param.vt - param.vr
   for k in 0..<n {
-    v[k] = param.vr + next_f32(rng) * spread
+    v[k] = param.vr + @core.next_f32(rng) * spread
   }
   let w : Array[Float] = Array::make(n, 0.0F)
   let fire : Array[Bool] = Array::make(n, false)
@@ -214,7 +214,7 @@ pub fn step_adex(p : AdEx, dt : Float) -> Unit {
     let exp_term = if dt_slope < 0.0F {
       0.0F
     } else {
-      dt_slope * expf((p.v[i] - p.threshold[i]) / dt_slope)
+      dt_slope * @core.expf((p.v[i] - p.threshold[i]) / dt_slope)
     }
     p.v[i] = p.v[i] +
       dt *
@@ -344,14 +344,14 @@ pub struct AdExHet {
 pub fn AdExHet::new(
   n : Int,
   param : AdExParameterHet,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> AdExHet {
   let v : Array[Float] = Array::make(n, 0.0F)
   // Init: v[i] = param.vr[i] + rand * (param.vt[i] - param.vr[i]).
   let mut k = 0
   while k < n {
     let spread = param.vt[k] - param.vr[k]
-    v[k] = param.vr[k] + next_f32(rng) * spread
+    v[k] = param.vr[k] + @core.next_f32(rng) * spread
     k = k + 1
   }
   let w : Array[Float] = Array::make(n, 0.0F)
@@ -419,7 +419,7 @@ pub fn step_adex_het(p : AdExHet, dt : Float) -> Unit {
     let exp_term = if p.param.dt_slope[i] < 0.0F {
       0.0F
     } else {
-      p.param.dt_slope[i] * expf(
+      p.param.dt_slope[i] * @core.expf(
         (p.v[i] - p.threshold[i]) / p.param.dt_slope[i],
       )
     }

@@ -34,7 +34,7 @@ test "BalancedParameter: custom values" {
     kIE=2.0F,
     beta=0.1F,
     tau=100.0F,
-    r0=2.0F * @snn_mbt.khz,
+    r0=2.0F * @core.khz,
     w=2.0F,
     wIE=3.0F,
     same_input=true,
@@ -64,7 +64,7 @@ test "BalancedParameter: custom values" {
 
 ///|
 test "BalancedStimulus::new: zero-initialized state" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_param = @snn_mbt.IFParameter::new()
   let pop = @snn_mbt.IF::new(8, if_param, rng)
   let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", seed=0xDEADBEEFUL)
@@ -90,9 +90,9 @@ test "BalancedStimulus::new: drives post.receptors (alias-check via stimulate)" 
   // The constructor sets ge/gi to pop.glu/pop.gaba. Verify by running
   // a few steps and confirming pop.glu/pop.gaba accumulate 鈥?if the
   // arrays were independent, post-synaptic receptors would stay at 0.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(r0=2.0F * @snn_mbt.khz, w=1.0F, wIE=1.0F)
+  let p = @snn_mbt.BalancedParameter::new(r0=2.0F * @core.khz, w=1.0F, wIE=1.0F)
   let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=1UL)
   let dt = 0.125F
   for _ in 0..<20 {
@@ -115,12 +115,12 @@ test "BalancedStimulus::new: drives post.receptors (alias-check via stimulate)" 
 ///|
 test "stimulate_balanced: writes to ge/gi, fires sometimes" {
   // High rate 鈫?strong drive 鈫?most neurons should fire at least once.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(20, @snn_mbt.IFParameter::new(), rng)
   let p = @snn_mbt.BalancedParameter::new(
     kIE=2.0F,
     beta=0.0F,
-    r0=2.0F * @snn_mbt.khz, // 2 kHz 鈫?strong drive
+    r0=2.0F * @core.khz, // 2 kHz 鈫?strong drive
     w=1.0F,
     wIE=1.0F,
   )
@@ -156,7 +156,7 @@ test "stimulate_balanced: writes to ge/gi, fires sometimes" {
 
 ///|
 test "stimulate_balanced: zero rate 鈫?no change" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
   let p = @snn_mbt.BalancedParameter::new(r0=0.0F, w=1.0F, wIE=1.0F)
   let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=2UL)
@@ -179,11 +179,11 @@ test "stimulate_balanced: rate adaptation drives r toward r0" {
   // Initial r=0 (set by overriding default), constant drive: r should
   // climb toward r0 with time constant 400ms. Run for 3 seconds (well
   // past the adaptation time constant) and confirm r is within 5% of r0.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let p = @snn_mbt.BalancedParameter::new(
     beta=0.0F,
-    r0=1.0F * @snn_mbt.khz, // 1 kHz internal = 1.0
+    r0=1.0F * @core.khz, // 1 kHz internal = 1.0
     w=1.0F,
     wIE=1.0F,
   )
@@ -204,11 +204,11 @@ test "stimulate_balanced: rate adaptation drives r toward r0" {
 
 ///|
 test "stimulate_balanced: same_input=true broadcasts ge to all neurons" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(6, @snn_mbt.IFParameter::new(), rng)
   let p = @snn_mbt.BalancedParameter::new(
     beta=0.0F,
-    r0=1.0F * @snn_mbt.khz,
+    r0=1.0F * @core.khz,
     w=2.0F,
     wIE=1.0F,
     same_input=true,
@@ -231,9 +231,9 @@ test "stimulate_balanced: same_input=true broadcasts ge to all neurons" {
 
 ///|
 test "reset_balanced: clears r, noise, fire" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(r0=3.0F * @snn_mbt.khz, w=1.0F)
+  let p = @snn_mbt.BalancedParameter::new(r0=3.0F * @core.khz, w=1.0F)
   let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=11UL)
   let dt = 0.125F
   for _ in 0..<50 {

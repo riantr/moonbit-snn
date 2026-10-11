@@ -2,7 +2,7 @@
 
 ///|
 test "WilsonCowan::new initialises x from Normal(0, 0.5)" {
-  let rng = @snn_mbt.Xoshiro::from_state(0xDEAD_BEEF_UL, 1UL, 2UL, 3UL)
+  let rng = @core.Xoshiro::from_state(0xDEAD_BEEF_UL, 1UL, 2UL, 3UL)
   let p = @snn_mbt.WilsonCowan::new(100, rng)
   assert_eq(p.n, 100)
   assert_eq(p.x.length(), 100)
@@ -20,7 +20,7 @@ test "WilsonCowan::new initialises x from Normal(0, 0.5)" {
 
 ///|
 test "step_wc: x decays toward 0 with I=0, g=0" {
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let p = @snn_mbt.WilsonCowan::new(5, rng)
   // Set x to +2.0, I=0, g=0. Each step: x += dt * (-x + 0 + 0)
   // = x * (1 - dt). With dt=0.125, x decays as x * 0.875 per step.
@@ -42,7 +42,7 @@ test "step_wc: x decays toward 0 with I=0, g=0" {
 
 ///|
 test "step_wc: r = tanh(x) after integration" {
-  let rng = @snn_mbt.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
+  let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let p = @snn_mbt.WilsonCowan::new(2, rng)
   p.x[0] = 0.0F
   p.x[1] = 1.0F
@@ -62,7 +62,7 @@ test "step_wc: r = tanh(x) after integration" {
 
 ///|
 test "RateSynapse::new and forward_rate" {
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 1UL, 1UL, 1UL)
+  let rng = @core.Xoshiro::from_state(1UL, 1UL, 1UL, 1UL)
   let pre = @snn_mbt.WilsonCowan::new(3, rng)
   let post = @snn_mbt.WilsonCowan::new(2, rng)
   // All-to-all: 3 pres × 2 posts = 6 connections.
@@ -91,7 +91,7 @@ test "RateSynapse::new and forward_rate" {
 
 ///|
 test "WC_ integrates via AnyPop enum" {
-  let rng = @snn_mbt.Xoshiro::from_state(0xC0FFEE_UL, 0xBAD_F00D_UL, 0UL, 0UL)
+  let rng = @core.Xoshiro::from_state(0xC0FFEE_UL, 0xBAD_F00D_UL, 0UL, 0UL)
   let wc = @snn_mbt.WilsonCowan::new(5, rng)
   let pops : Array[@snn_mbt.AnyPop] = [WC_(wc)]
   let total_n = @snn_mbt.n_total(pops)

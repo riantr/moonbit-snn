@@ -19,7 +19,7 @@ fn main {
   let n_exc = 32
   let n_inh = 8
   let dt = 0.125F
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
 
   // Two IF populations with different El. Use the with_el constructor.
   let exc_param = @snn_mbt.IFParameter::with_el(-49.0F)
@@ -48,7 +48,7 @@ fn main {
       @snn_mbt.Monitor::new_fire(inh_pop, 0),
     ],
   }
-  @snn_mbt.sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.sim_for(model, 100.0F * @core.ms)
 
   // Count spikes
   let e_spikes = model.monitors[0].count_spikes()

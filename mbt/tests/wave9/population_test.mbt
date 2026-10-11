@@ -3,7 +3,7 @@
 ///|
 test "AnyPop sim — IF only" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(3, param, rng)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(p)]
   @snn_mbt.sim_any_pops_for(pops, 10.0F, 0.125F)
@@ -21,7 +21,7 @@ test "AnyPop sim — heterogeneous 5 populations" {
   let iz_param = @snn_mbt.IZParameter::rs()
   let ml_param = @snn_mbt.MorrisLecarParameter::new()
   let hh_param = @snn_mbt.HHParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_pop = @snn_mbt.IF::new(2, if_param, rng)
   let adex_pop = @snn_mbt.AdEx::new(1, adex_param, rng)
   let iz_pop = @snn_mbt.IZ::new(1, iz_param, rng)
@@ -50,7 +50,7 @@ test "AnyPop sim — heterogeneous 5 populations" {
 
 ///|
 test "AnyPop n_neurons" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let if_pop = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
   let ml_pop = @snn_mbt.MorrisLecar::new(3, @snn_mbt.MorrisLecarParameter::new(), rng)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(if_pop), ML_(ml_pop)]

@@ -44,7 +44,7 @@ pub fn PatchEmbedding::new(
   seed : UInt64,
 ) -> PatchEmbedding {
   let patch_dim = c * p * p
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std = sqrtf(2.0F / Float::from_int(patch_dim))
   let proj = xavier_normal(d_model, patch_dim, std, rng)
   let bias : Array[Float] = Array::make(d_model, 0.0F)

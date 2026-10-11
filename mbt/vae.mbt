@@ -71,15 +71,15 @@ pub fn VAEEncoder::new(
   latent_dim : Int,
   seed : UInt64,
 ) -> VAEEncoder {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std_in = sqrtf(2.0F / Float::from_int(x_dim))
   let in_w = xavier_normal(hidden_dim, x_dim, std_in, rng1)
   let in_b : Array[Float] = Array::make(hidden_dim, 0.0F)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std_mu = sqrtf(2.0F / Float::from_int(hidden_dim))
   let mu_w = xavier_normal(latent_dim, hidden_dim, std_mu, rng2)
   let mu_b : Array[Float] = Array::make(latent_dim, 0.0F)
-  let rng3 = Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
+  let rng3 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
   let logvar_w = xavier_normal(latent_dim, hidden_dim, std_mu, rng3)
   let logvar_b : Array[Float] = Array::make(latent_dim, 0.0F)
   { x_dim, hidden_dim, latent_dim, in_w, in_b, mu_w, mu_b, logvar_w, logvar_b }
@@ -93,11 +93,11 @@ pub fn VAEDecoder::new(
   x_dim : Int,
   seed : UInt64,
 ) -> VAEDecoder {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std_in = sqrtf(2.0F / Float::from_int(latent_dim))
   let in_w = xavier_normal(hidden_dim, latent_dim, std_in, rng1)
   let in_b : Array[Float] = Array::make(hidden_dim, 0.0F)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std_out = sqrtf(2.0F / Float::from_int(hidden_dim))
   let out_w = xavier_normal(x_dim, hidden_dim, std_out, rng2)
   let out_b : Array[Float] = Array::make(x_dim, 0.0F)
@@ -129,7 +129,7 @@ pub fn vae_encode(
     for k in 0..<encoder.x_dim {
       s = s + encoder.in_w[i][k] * x[k]
     }
-    hidden[i] = tanhf(s)
+    hidden[i] = @core.tanhf(s)
   }
   let mu : Array[Float] = Array::make(encoder.latent_dim, 0.0F)
   let log_var : Array[Float] = Array::make(encoder.latent_dim, 0.0F)
@@ -158,7 +158,7 @@ pub fn vae_decode(
     for k in 0..<decoder.latent_dim {
       s = s + decoder.in_w[i][k] * z[k]
     }
-    hidden[i] = tanhf(s)
+    hidden[i] = @core.tanhf(s)
   }
   let x_recon : Array[Float] = Array::make(decoder.x_dim, 0.0F)
   for i in 0..<decoder.x_dim {
@@ -177,7 +177,7 @@ pub fn vae_decode(
 pub fn vae_forward(
   model : VAEModel,
   x : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Array[Float], Array[Float]) {
   let (mu, log_var) = vae_encode(model.encoder, x)
   let sample = gaussian_reparameterize_with_rng(mu, log_var, rng)
@@ -210,7 +210,7 @@ pub fn vae_train_step(
   model : VAEModel,
   x_batch : Array[Float],
   batch : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   _lr : Float,
 ) -> (VAEModel, Float) {
   // For v0.107.0 we ship a single-sample mini-batch update via

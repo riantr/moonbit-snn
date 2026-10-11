@@ -51,7 +51,7 @@ pub fn LstmCellParam::new(
 ) -> LstmCellParam {
   let in_dim = d_h + d_x
   let std = sqrtf(2.0F / Float::from_int(d_h + in_dim))
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let wf = xavier_normal(d_h, in_dim, std, rng)
   let wi = xavier_normal(d_h, in_dim, std, rng)
   let wc = xavier_normal(d_h, in_dim, std, rng)
@@ -138,7 +138,7 @@ pub fn xavier_normal(
   rows : Int,
   cols : Int,
   std : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Array[Float]] {
   let w : Array[Array[Float]] = Array::make(rows, [])
   for i in 0..<rows {
@@ -157,7 +157,7 @@ pub fn sigmoid_vec(x : Array[Float]) -> Array[Float] {
   let n = x.length()
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    out[i] = sigmoid_f32(x[i])
+    out[i] = @core.sigmoid_f32(x[i])
   }
   out
 }
@@ -166,7 +166,7 @@ pub fn tanh_vec(x : Array[Float]) -> Array[Float] {
   let n = x.length()
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    out[i] = tanhf(x[i])
+    out[i] = @core.tanhf(x[i])
   }
   out
 }

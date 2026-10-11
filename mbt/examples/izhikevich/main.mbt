@@ -6,7 +6,7 @@
 ///|
 fn main {
   let n = 1
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.IZParameter::rs()
   let pop = @snn_mbt.IZ::new(n, param, rng)
 

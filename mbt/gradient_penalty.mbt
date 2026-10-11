@@ -25,8 +25,8 @@
 
 ///|
 /// Sample an interpolation coefficient eps ~ U(0, 1).
-pub fn gp_sample_eps(rng : Xoshiro) -> Float {
-  next_f32(rng)
+pub fn gp_sample_eps(rng : @core.Xoshiro) -> Float {
+  @core.next_f32(rng)
 }
 
 ///|
@@ -90,7 +90,7 @@ pub fn gradient_penalty(
   real_image : Array[Float],
   fake_image : Array[Float],
   fd_eps : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let eps = gp_sample_eps(rng)
   let x_hat = gp_interpolate(real_image, fake_image, eps)
@@ -110,7 +110,7 @@ pub fn wgan_gp_critic_loss(
   fake_image : Array[Float],
   lambda_gp : Float,
   fd_eps : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let w_loss = w_critic_loss(c, real_image, fake_image)
   let gp = gradient_penalty(c, real_image, fake_image, fd_eps, rng)
@@ -125,7 +125,7 @@ pub fn gradient_penalty_diagnostic(
   real_batch : Array[Array[Float]],
   fake_batch : Array[Array[Float]],
   fd_eps : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float) {
   let m = real_batch.length()
   let mut norm_sum = 0.0F

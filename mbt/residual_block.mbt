@@ -86,7 +86,7 @@ pub struct ResidualGrads {
 /// Build an identity-shortcut basic block (input shape must match
 /// block output: c_in == c_out, stride == 1).
 pub fn ResidualBlock::identity(c : Int, seed : UInt64) -> ResidualBlock {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let w1 = he_init(rng, c * c * 3 * 3, c * 3 * 3)
   let b1 : Array[Float] = Array::make(c, 0.0F)
   let conv1 = Conv2dParam::new(w1, b1, c, c, 3, 3, stride=1, pad=1)
@@ -106,7 +106,7 @@ pub fn ResidualBlock::projection(
   stride : Int,
   seed : UInt64,
 ) -> ResidualBlock {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let w1 = he_init(rng, c_out * c_in * 3 * 3, c_in * 3 * 3)
   let b1 : Array[Float] = Array::make(c_out, 0.0F)
   let conv1 = Conv2dParam::new(w1, b1, c_out, c_in, 3, 3, stride=stride, pad=1)

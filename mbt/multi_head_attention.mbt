@@ -87,7 +87,7 @@ pub struct AttnCache {
 /// Fill an Array[Float] with Xavier-normal draws:
 /// N(0, sqrt(2 / (fan_in + fan_out))). Uses Float32 Box-Muller.
 pub fn xavier_normal_init(
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   n : Int,
   fan_in : Int,
   fan_out : Int,
@@ -106,7 +106,7 @@ pub fn xavier_normal_init(
 ///|
 /// Build a square LinearParam with Xavier-normal init + zero bias.
 pub fn linear_xavier(
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   d : Int,
 ) -> LinearParam {
   let weight = xavier_normal_init(rng, d * d, d, d)
@@ -128,7 +128,7 @@ pub fn MultiHeadAttention::new(
   if d_model % num_heads != 0 {
     abort("MultiHeadAttention::new: d_model \{d_model} not divisible by num_heads \{num_heads}")
   }
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w_q = linear_xavier(rng, d_model)
   let w_k = linear_xavier(rng, d_model)
   let w_v = linear_xavier(rng, d_model)
@@ -200,7 +200,7 @@ pub fn multi_head_attention_forward(
       let mut sum_exp = 0.0F
       t = 0
       while t < seq_len {
-        let e = expf(scores[s_row + t] - max_v)
+        let e = @core.expf(scores[s_row + t] - max_v)
         weights[s_row + t] = e
         sum_exp = sum_exp + e
         t = t + 1

@@ -25,7 +25,7 @@ test "LIF closed-form — v(t) tracks analytical solution within 2mV" {
   // Single IF, constant input current I = 1.0.
   // R = 0.06, τm = 15.0 → V(∞) = V_rest + 1.0 * 0.06 = V_rest + 0.06.
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.IF::new(1, param, rng)
   // Set constant tonic current.
   p.i[0] = 1.0F
@@ -42,7 +42,7 @@ test "LIF closed-form — v(t) tracks analytical solution within 2mV" {
   let t_ms = Float::from_int(n_steps) * dt
   // Analytical: V(t) = el + i * r * (1 - exp(-t / tm)).
   let ratio = t_ms / param.tm
-  let exp_term = @snn_mbt.expf(-ratio)
+  let exp_term = @core.expf(-ratio)
   let one_minus_exp = 1.0F - exp_term
   let v_analytical = param.el + p.i[0] * param.r * one_minus_exp
   // Compare.
@@ -57,7 +57,7 @@ test "LIF closed-form — v(t) approaches V_rest + I*R for large t" {
   // After 1000ms (>> τm = 15ms), the membrane should be near
   // steady-state V_rest + I*R = -70 + 1*0.06 = -69.94.
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.IF::new(1, param, rng)
   p.i[0] = 1.0F
   p.v[0] = param.el
@@ -88,7 +88,7 @@ test "LIF closed-form — decay to rest when I=0" {
   // With I = 0, V(t) = V_rest + (V(0) - V_rest) * exp(-t/tm).
   // Starting at V(0) = -50 (well above rest), decay to V_rest = -70.
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.IF::new(1, param, rng)
   p.i[0] = 0.0F
   p.v[0] = -50.0F
@@ -101,7 +101,7 @@ test "LIF closed-form — decay to rest when I=0" {
   }
   let t_ms = Float::from_int(n_steps) * dt
   let ratio = t_ms / param.tm
-  let exp_term = @snn_mbt.expf(-ratio)
+  let exp_term = @core.expf(-ratio)
   let v_analytical = param.el + (-50.0F - param.el) * exp_term
   // Note: this neuron starts at -50 which is > vt=-50; would
   // fire on step 0. But we forced v[0] directly to -50 and
@@ -119,7 +119,7 @@ test "LIF closed-form — exponential decay constant matches τm" {
   // Verify the time-constant: at t = τm, v should be at
   // (1 - e^{-1}) ≈ 63.2% of the way from rest to V∞.
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.IF::new(1, param, rng)
   p.i[0] = 1.0F
   p.v[0] = param.el

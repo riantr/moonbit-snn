@@ -38,7 +38,7 @@ pub fn CompartmentSynapseBall::random(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> CompartmentSynapseBall {
   let m = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   { pre, post, sym, target, matrix: m, rho: [], delays: [],
@@ -70,7 +70,7 @@ pub fn CompartmentSynapseTripod::random(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> CompartmentSynapseTripod {
   let m = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   { pre, post, sym, target, matrix: m, rho: [], delays: [],

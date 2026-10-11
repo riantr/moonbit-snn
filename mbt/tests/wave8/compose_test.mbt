@@ -3,7 +3,7 @@
 ///|
 test "compose builds HeterogeneousModel" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p1 = @snn_mbt.IF::new(2, param, rng)
   let p2 = @snn_mbt.IF::new(2, param, rng)
   let conn = @snn_mbt.SpikingSynapse::new(p1, p2, "ge")
@@ -16,7 +16,7 @@ test "compose builds HeterogeneousModel" {
 ///|
 test "step_heterogeneous integrates" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p1 = @snn_mbt.IF::new(1, param, rng)
   let p2 = @snn_mbt.IF::new(1, param, rng)
   let conn = @snn_mbt.SpikingSynapse::new(p1, p2, "ge")
@@ -36,7 +36,7 @@ test "step_heterogeneous integrates" {
 ///|
 test "heterogeneous_sim_for runs the loop" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(1, param, rng)
   // Set v close to threshold so even a small current drives a spike.
   p.v[0] = -51.0F
@@ -53,7 +53,7 @@ test "heterogeneous_sim_for runs the loop" {
 ///|
 test "compose with Poisson stimulus drives the network" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   // 1 IF neuron at v just below threshold.
   let p = @snn_mbt.IF::new(1, param, rng)
   p.v[0] = -55.0F
@@ -70,7 +70,7 @@ test "compose with Poisson stimulus drives the network" {
 ///|
 test "CurrentStimulus injects i_base into I[i]" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(3, param, rng)
   // 5 pA constant current to all 3 neurons.
   let stim = @snn_mbt.CurrentStimulusIF::new(p, 5.0F, rng)
@@ -90,7 +90,7 @@ test "CurrentStimulus injects i_base into I[i]" {
 ///|
 test "compose with CurrentStimulus drives spiking" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(1, param, rng)
   // Start at v just below threshold.
   p.v[0] = -55.0F
@@ -107,7 +107,7 @@ test "compose with CurrentStimulus drives spiking" {
 ///|
 test "get_time_heterogeneous starts at 0 and advances" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(1, param, rng)
   let s = @snn_mbt.SpikingSynapse::new(p, p, "ge")
   let model = @snn_mbt.compose([IF_(p)], [s])
@@ -125,7 +125,7 @@ test "get_time_heterogeneous starts at 0 and advances" {
 ///|
 test "reset_time_heterogeneous resets clock to 0" {
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.IF::new(1, param, rng)
   let s = @snn_mbt.SpikingSynapse::new(p, p, "ge")
   let model = @snn_mbt.compose([IF_(p)], [s])

@@ -43,7 +43,7 @@ fn summarize(label : String, m : @snn_mbt.SparseMatrixCSR) -> Unit {
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n_pre = 40
   let n_post = 40
   let p = 0.1F

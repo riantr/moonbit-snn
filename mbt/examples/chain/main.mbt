@@ -28,7 +28,7 @@
 fn main {
   let n = 3
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(n, param, rng)
 
   // Inject 30 pA into the first neuron
@@ -50,7 +50,7 @@ fn main {
   }
 
   // Simulate for 100 ms
-  @snn_mbt.sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.sim_for(model, 100.0F * @core.ms)
 
   // Print final values
   println("chain.mbt: simulation done")

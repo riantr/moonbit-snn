@@ -103,7 +103,7 @@ test "double_dqn_update_step: finite mean |δ| on random batch" {
   let env = @snn_mbt.GridWorld::new(2, 2, 5)
   let q = @snn_mbt.LinearQNet::new(4, 4, 47UL)
   let target = @snn_mbt.LinearQNet::new(4, 4, 53UL)
-  let rng = @snn_mbt.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
+  let rng = @core.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
   let buffer = @snn_mbt.ReplayBuffer::new(20)
   for k in 0..<10 {
     buffer.push(k % 4, k % 4, 0.0F, (k + 1) % 4, false)

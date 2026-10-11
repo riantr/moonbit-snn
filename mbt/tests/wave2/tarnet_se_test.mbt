@@ -193,7 +193,7 @@ test "channel-time SE: every parameter class matches central differences" {
   let t = 6
   let x = tn_fixture(n, c, t, 67UL)
   let p = tn_ctse_awake(@snn_mbt.CtseParam::new(c, 71UL), 0.5F)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(73UL), n * c * t)
+  let w = @core.rand_f32(@core.Xoshiro::new(73UL), n * c * t)
   // forward sanity: the gate is a per-channel multiplier, so the output keeps
   // the input's shape
   let (y, cache) = @snn_mbt.ctse_forward(x, n, p)
@@ -285,7 +285,7 @@ test "channel-time SE: directional derivative over all parameters" {
   let t = 6
   let x = tn_fixture(n, c, t, 67UL)
   let p = tn_ctse_awake(@snn_mbt.CtseParam::new(c, 71UL), 0.5F)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(73UL), n * c * t)
+  let w = @core.rand_f32(@core.Xoshiro::new(73UL), n * c * t)
   let (_y, cache) = @snn_mbt.ctse_forward(x, n, p)
   let g = @snn_mbt.ctse_backward(w, n, p, cache)
   let flat = @snn_mbt.ctse_flatten(p)
@@ -296,7 +296,7 @@ test "channel-time SE: directional derivative over all parameters" {
   // three independent directions
   let mut d = 0
   while d < 3 {
-    let u = @snn_mbt.tn_randn(gf.length(), 1.0F, @snn_mbt.Xoshiro::new(101UL + d.to_uint64()))
+    let u = @snn_mbt.tn_randn(gf.length(), 1.0F, @core.Xoshiro::new(101UL + d.to_uint64()))
     let up = flat.copy()
     let dn = flat.copy()
     let mut an = 0.0F

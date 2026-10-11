@@ -18,21 +18,21 @@ pub fn place_populations_e_i(
   n_i : Int,
   grid_x : Float,
   grid_y : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> PlacedPops {
   let e_arr : Array[Point2D] = Array::make(n_e, { x: 0.0F, y: 0.0F })
   let i_arr : Array[Point2D] = Array::make(n_i, { x: 0.0F, y: 0.0F })
   let mut k = 0
   while k < n_e {
-    let rx = next_f32(rng) * grid_x
-    let ry = next_f32(rng) * grid_y
+    let rx = @core.next_f32(rng) * grid_x
+    let ry = @core.next_f32(rng) * grid_y
     e_arr[k] = { x: rx, y: ry }
     k = k + 1
   }
   k = 0
   while k < n_i {
-    let rx = next_f32(rng) * grid_x
-    let ry = next_f32(rng) * grid_y
+    let rx = @core.next_f32(rng) * grid_x
+    let ry = @core.next_f32(rng) * grid_y
     i_arr[k] = { x: rx, y: ry }
     k = k + 1
   }
@@ -90,7 +90,7 @@ pub fn linear_network_with(
       }
       let two_sigma_sq = 2.0F * sigma_w * sigma_w
       let exponent = -(d_min * d_min) / two_sigma_sq
-      let gauss = expf(exponent)
+      let gauss = @core.expf(exponent)
       w_arr[i * n + j] = w_max * gauss
       j = j + 1
     }

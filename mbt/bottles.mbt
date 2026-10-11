@@ -22,20 +22,20 @@
 ///|
 /// Fill an Array[Float] of length `n` with He-init (Kaiming) draws:
 /// N(0, sqrt(2 / fan_in)) using a xoshiro RNG and Float32 Box-Muller.
-pub fn he_init(rng : Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
+pub fn he_init(rng : @core.Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
   let std = sqrtf(2.0F / Float::from_int(fan_in))
   let mut i = 0
   while i + 1 < n {
     // Box-Muller on Float32 (consume 2 uniforms -> 2 normals).
     let u1 = {
-      let mut v = next_f32(rng)
+      let mut v = @core.next_f32(rng)
       if v < 0.000001F { v = 0.000001F }
       v
     }
-    let u2 = next_f32(rng)
-    let z1 = sqrtf(-2.0F * logf(u1)) * cosf(2.0F * 3.14159265F * u2)
-    let z2 = sqrtf(-2.0F * logf(u1)) * sin_f32(2.0F * 3.14159265F * u2)
+    let u2 = @core.next_f32(rng)
+    let z1 = sqrtf(-2.0F * @core.logf(u1)) * cosf(2.0F * 3.14159265F * u2)
+    let z2 = sqrtf(-2.0F * @core.logf(u1)) * sin_f32(2.0F * 3.14159265F * u2)
     out[i] = z1 * std
     out[i + 1] = z2 * std
     i = i + 2
@@ -43,12 +43,12 @@ pub fn he_init(rng : Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
   if i < n {
     // Last one if odd length.
     let u1 = {
-      let mut v = next_f32(rng)
+      let mut v = @core.next_f32(rng)
       if v < 0.000001F { v = 0.000001F }
       v
     }
-    let u2 = next_f32(rng)
-    let z1 = sqrtf(-2.0F * logf(u1)) * cosf(2.0F * 3.14159265F * u2)
+    let u2 = @core.next_f32(rng)
+    let z1 = sqrtf(-2.0F * @core.logf(u1)) * cosf(2.0F * 3.14159265F * u2)
     out[i] = z1 * std
   }
   out
@@ -79,7 +79,7 @@ pub struct MLP {
 /// (sqrt(2/n_in) per Linear layer). Use the same seed for reproducible
 /// bottles.
 pub fn MLP::new(sizes : Array[Int], seed : UInt64) -> MLP {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let layers : Array[Layer] = []
   for i in 0..<(sizes.length() - 1) {
     let in_f = sizes[i]
@@ -158,7 +158,7 @@ pub struct SimpleCNN {
 /// Build a SimpleCNN. `in_c` is input channels (1 for MNIST, 3 for
 /// color images).
 pub fn SimpleCNN::new(in_c : Int, c1 : Int, c2 : Int, seed : UInt64) -> SimpleCNN {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   // First conv: in_c -> c1, 3x3, pad=1.
   let w1 = he_init(rng, c1 * in_c * 3 * 3, in_c * 3 * 3)
   let b1 : Array[Float] = Array::make(c1, 0.0F)
@@ -229,7 +229,7 @@ pub struct LeNet5 {
 ///|
 /// Build a LeNet5. Always 32x32 grayscale input -> 10 classes.
 pub fn LeNet5::new(seed : UInt64) -> LeNet5 {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   // C1: 1 -> 6, 5x5, stride=1, pad=0.
   let w1 = he_init(rng, 6 * 1 * 5 * 5, 1 * 5 * 5)
   let b1 : Array[Float] = Array::make(6, 0.0F)

@@ -3,11 +3,11 @@
 
 ///|
 test "PoissonLayerStimulusTripod::new: shapes and target fields" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(3, base)
   let post = @snn_mbt.TripodHet::new(3, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(5.0F * @snn_mbt.hz, 4)  // 5 Hz, 4 sources
+  let pl = @snn_mbt.PoissonLayer::with_n(5.0F * @core.hz, 4)  // 5 Hz, 4 sources
   let s = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
@@ -27,11 +27,11 @@ test "PoissonLayerStimulusTripod::new: shapes and target fields" {
 
 ///|
 test "PoissonLayerStimulusTripod: p=1.0 → all weights = μ (Fixed)" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(2, base)
   let post = @snn_mbt.TripodHet::new(2, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(100.0F * @snn_mbt.hz, 2)  // 100 Hz, 2 sources
+  let pl = @snn_mbt.PoissonLayer::with_n(100.0F * @core.hz, 2)  // 100 Hz, 2 sources
   let s = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 3.0F, 0.0F, 1.0F, rng,
   )
@@ -47,12 +47,12 @@ test "PoissonLayerStimulusTripod: p=1.0 → all weights = μ (Fixed)" {
 
 ///|
 test "stimulate_layer_tripod: high rate → glu_d1 accumulates" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
   let post = @snn_mbt.TripodHet::new(1, param, rng)
   // 10 kHz, 1 source, Fixed μ=2.0 → lambda = 10 * 0.125 = 1.25 per step
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @snn_mbt.hz, 1)
+  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
   let s = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 2.0F, 0.0F, 1.0F, rng,
   )
@@ -90,11 +90,11 @@ test "stimulate_layer_tripod: high rate → glu_d1 accumulates" {
 
 ///|
 test "stimulate_layer_tripod: :gaba target → gaba_d1 buffer" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
   let post = @snn_mbt.TripodHet::new(1, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @snn_mbt.hz, 1)
+  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
   let s = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "gaba", 1.5F, 0.0F, 1.0F, rng,
   )
@@ -111,11 +111,11 @@ test "stimulate_layer_tripod: :gaba target → gaba_d1 buffer" {
 
 ///|
 test "stimulate_layer_tripod: soma target → glu_s only" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
   let post = @snn_mbt.TripodHet::new(1, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @snn_mbt.hz, 1)
+  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
   let s = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl, post, "soma", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
@@ -132,7 +132,7 @@ test "stimulate_layer_tripod: soma target → glu_s only" {
 
 ///|
 test "stimulate_layer_tripod: zero rate → no conductance change" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
   let post = @snn_mbt.TripodHet::new(1, param, rng)
@@ -150,12 +150,12 @@ test "stimulate_layer_tripod: zero rate → no conductance change" {
 
 ///|
 test "stimulate_layer_tripod: inactive source → no fire" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
   let post = @snn_mbt.TripodHet::new(1, param, rng)
   let active : Array[Bool] = [false]
-  let pl = @snn_mbt.PoissonLayer::with_active(10000.0F * @snn_mbt.hz, 1, active)
+  let pl = @snn_mbt.PoissonLayer::with_active(10000.0F * @core.hz, 1, active)
   let s = @snn_mbt.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 1.0F, 0.0F, 1.0F, rng,
   )

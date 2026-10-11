@@ -24,7 +24,7 @@ test "chain — final voltages stay in expected range" {
   // Reproduce the chain.mbt setup with the default Xoshiro state.
   let n = 3
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
@@ -39,7 +39,7 @@ test "chain — final voltages stay in expected range" {
     ],
   }
   // Run 100ms at default dt (0.125ms → 800 steps).
-  @snn_mbt.sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.sim_for(model, 100.0F * @core.ms)
   // Final voltages: stay in physiological range.
   let v0 = e_pop.v[0]
   let v1 = e_pop.v[1]
@@ -60,7 +60,7 @@ test "chain — recorded step count matches sim duration" {
   // 100ms at dt=0.125ms = 800 steps + initial state = 801 records.
   let n = 3
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
@@ -71,7 +71,7 @@ test "chain — recorded step count matches sim duration" {
     conns: [ee],
     monitors: [@snn_mbt.Monitor::new_v(e_pop, 0)],
   }
-  @snn_mbt.sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.sim_for(model, 100.0F * @core.ms)
   // Monitor should have one record per step (initial state + each step).
   let n_records = model.monitors[0].data.length()
   // 1 initial + 800 step records = 801.
@@ -91,7 +91,7 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
   // came close to firing).
   let n = 3
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
@@ -102,7 +102,7 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
     conns: [ee],
     monitors: [@snn_mbt.Monitor::new_v(e_pop, 0)],
   }
-  @snn_mbt.sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.sim_for(model, 100.0F * @core.ms)
   // Compute the maximum recorded v[0] across all records.
   let mut max_v = -1.0e10F
   let mut i = 0
@@ -127,7 +127,7 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
 test "chain — no NaN values in final state" {
   let n = 3
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
@@ -138,7 +138,7 @@ test "chain — no NaN values in final state" {
     conns: [ee],
     monitors: [@snn_mbt.Monitor::new_v(e_pop, 0)],
   }
-  @snn_mbt.sim_for(model, 100.0F * @snn_mbt.ms)
+  @snn_mbt.sim_for(model, 100.0F * @core.ms)
   // NaN check: NaN != NaN in IEEE 754.
   if e_pop.v[0] != e_pop.v[0] {
     fail("v[0] is NaN")

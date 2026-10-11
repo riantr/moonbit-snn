@@ -94,7 +94,7 @@ pub struct PoissonLayerStimulus {
   fire : Array[Bool]
   weights : Array[Float]
   connectivity : Array[Bool]
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -108,7 +108,7 @@ pub fn PoissonLayerStimulus::new(
   param : PoissonLayer,
   post : IF,
   sym : String,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> PoissonLayerStimulus {
   let n_pre = param.n_sources
   let n_post = post.n
@@ -122,7 +122,7 @@ pub fn PoissonLayerStimulus::new(
   for i in 0..<n_pre {
     for j in 0..<n_post {
       let idx = j * n_pre + i
-      if next_f32(rng) < p_conn {
+      if @core.next_f32(rng) < p_conn {
         connectivity[idx] = true
         weights[idx] = if use_normal {
           // Box-Muller: draw N(0, 1), scale to N(μ, σ).

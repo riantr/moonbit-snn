@@ -3,7 +3,7 @@
 ///|
 test "BallAndStick::new — initial state" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.BallAndStick::new(3, soma_param, rng)
   assert_eq(p.n, 3)
   assert_eq(p.v_s.length(), 3)
@@ -47,7 +47,7 @@ test "BallAndStick::new — initial state" {
 ///|
 test "BallAndStick — no input, v_s and v_d decay toward el" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
   // Start both soma and dendrite at rest.
   p.v_s[0] = soma_param.el
@@ -73,7 +73,7 @@ test "BallAndStick — no input, v_s and v_d decay toward el" {
 ///|
 test "BallAndStick — soma spike fires when threshold reached" {
   let soma_param = @snn_mbt.AdExParameter::with_vr(-60.0F)  // closer to LKD Vr
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
   // Drive the soma strongly with 1500 pA (default AdEx params need a lot).
   p.i_s[0] = 1500.0F
@@ -98,7 +98,7 @@ test "BallAndStick — soma spike fires when threshold reached" {
 ///|
 test "BallAndStick — single-exp synapse step on soma" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
   // Inject a spike into glu_s.
   p.glu_s[0] = 1.0F
@@ -118,7 +118,7 @@ test "BallAndStick — single-exp synapse step on soma" {
 ///|
 test "BallAndStick — single-exp synapse step on dendrite" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
   p.gaba_d[0] = 1.0F
   let dt = 0.125F
@@ -133,7 +133,7 @@ test "BallAndStick — single-exp synapse step on dendrite" {
 ///|
 test "BallAndStick — Heun integration runs without NaN" {
   let soma_param = @snn_mbt.AdExParameter::with_vr(-60.0F)
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.BallAndStick::new(2, soma_param, rng)
   p.i_s[0] = 1000.0F
   p.i_s[1] = -100.0F  // hyperpolarizing

@@ -214,12 +214,12 @@ pub fn graph_cross_entropy_grad(
   }
   let mut z = 0.0F
   for i in 0..<n {
-    z = z + expf(logits[i] - m)
+    z = z + @core.expf(logits[i] - m)
   }
   let p = if target >= 0 && target < n { target } else { 0 }
   let d : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let soft = expf(logits[i] - m) / z
+    let soft = @core.expf(logits[i] - m) / z
     d[i] = if i == p { soft - 1.0F } else { soft }
   }
   d

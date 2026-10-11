@@ -22,7 +22,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.AdExParameter::with_vr(-55.0F)
   let pop = @snn_mbt.AdEx::new(1, param, rng)
 

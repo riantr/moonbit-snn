@@ -7,7 +7,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL)
+  let rng = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL)
   let param = @snn_mbt.IZParameter::rs()
   let pop = @snn_mbt.IZ::new(1, param, rng)
 

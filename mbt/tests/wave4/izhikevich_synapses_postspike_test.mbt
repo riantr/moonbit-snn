@@ -6,7 +6,7 @@
 test "step_iz_synapses_postspike — decayed ge with no refractory" {
   // Default IZ::new has tabs_const=0 → no refractory; same as
   // step_iz_synapses.
-  let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(1UL))
+  let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(1UL))
   pop.ge[0] = 1.0F
   pop.gi[0] = 0.5F
   @snn_mbt.step_iz_synapses_postspike(pop, 0.125F)
@@ -52,7 +52,7 @@ test "step_iz_synapses_postspike — does NOT modify v or u" {
 
 ///|
 test "step_iz_synapses_postspike — tabs_const=0 ≡ step_iz_synapses" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), rng)
   pop_a.ge[0] = 1.0F
   @snn_mbt.step_iz_synapses(pop_a, 0.125F)

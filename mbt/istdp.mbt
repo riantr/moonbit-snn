@@ -51,7 +51,7 @@ pub(all) struct IstdpRate {
 pub fn IstdpRate::new() -> IstdpRate {
   {
     eta: 0.01F,
-    r: 3.0F * hz, // 3 Hz = 3 * 0.001 = 0.003 (internal units rate/ms)
+    r: 3.0F * @core.hz, // 3 Hz = 3 * 0.001 = 0.003 (internal units rate/ms)
     tau_y: 50.0F,
     w_max: 243.0F,
     w_min: 0.01F,

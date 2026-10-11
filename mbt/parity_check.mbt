@@ -57,10 +57,10 @@ pub fn parity_hash_floats(data : Array[Float]) -> Int {
 /// `seed` and advancing `n` steps. Caller must use the same seed +
 /// step count on the Julia side to verify.
 pub fn parity_hash_xoshiro(seed : UInt64, n : Int) -> Int {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let samples : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    samples[i] = next_f32(rng)
+    samples[i] = @core.next_f32(rng)
   }
   parity_hash_floats(samples)
 }
@@ -77,7 +77,7 @@ pub fn parity_hash_if_trajectory(
   i_drive : Float,
   seed : UInt64,
 ) -> Int {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let param = IFParameter::new()
   let pop = IF::new(1, param, rng)
   // Set tonic current to all neurons.
@@ -112,7 +112,7 @@ pub fn parity_hash_sparse_matrix(
   p : Float,
   seed : UInt64,
 ) -> Int {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let m = SparseMatrixCSR::random(n_pre, n_post, mu, sigma, p, rng)
   // Hash vals + colptr (rowptr is structural, not state).
   let combined : Array[Float] = []

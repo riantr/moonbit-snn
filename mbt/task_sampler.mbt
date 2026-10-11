@@ -41,11 +41,11 @@ pub fn MLPModel::new(
   output_dim : Int,
   seed : UInt64,
 ) -> MLPModel {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std1 = sqrtf(2.0F / Float::from_int(input_dim))
   let w1 = xavier_normal(hidden_dim, input_dim, std1, rng1)
   let b1 : Array[Float] = Array::make(hidden_dim, 0.0F)
-  let rng2 = Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
+  let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std2 = sqrtf(2.0F / Float::from_int(hidden_dim))
   let w2 = xavier_normal(output_dim, hidden_dim, std2, rng2)
   let b2 : Array[Float] = Array::make(output_dim, 0.0F)
@@ -63,7 +63,7 @@ pub fn mlp_model_forward(model : MLPModel, input : Array[Float]) -> Array[Float]
     for k in 0..<model.input_dim {
       s = s + model.w1[i][k] * input[k]
     }
-    hidden[i] = tanhf(s)
+    hidden[i] = @core.tanhf(s)
   }
   // output = w2 · hidden + b2
   let output : Array[Float] = Array::make(model.output_dim, 0.0F)
@@ -141,7 +141,7 @@ pub fn sample_task(
   let meta = family.meta_model
   let input_dim = meta.input_dim
   let output_dim = meta.output_dim
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   // 1. Perturb the meta-model weights to get a task-specific model.
   let task_w1 : Array[Array[Float]] = Array::make(
     meta.hidden_dim, Array::make(meta.input_dim, 0.0F),
@@ -247,7 +247,7 @@ pub fn sample_meta_batch(
 
 ///|
 /// Helper: standard normal noise via Box-Muller (mean 0, std 1).
-fn gaussian_noise(r : Xoshiro) -> Float {
+fn gaussian_noise(r : @core.Xoshiro) -> Float {
   let (z1, _) = box_muller(r)
   Float::from_double(z1)
 }

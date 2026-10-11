@@ -25,10 +25,10 @@ fn dn_fixture(
   seed : UInt64,
 ) -> (@snn_mbt.DragonNet, Array[Float], Array[Float], Array[Float]) {
   let net = @snn_mbt.DragonNet::new(dim, width=6, half=4, seed=seed, std=0.2F)
-  let rng = @snn_mbt.Xoshiro::new(seed + 7UL)
-  let x : Array[Float] = @snn_mbt.rand_f32(rng, n * dim)
-  let t : Array[Float] = @snn_mbt.rand_f32(rng, n)
-  let y : Array[Float] = @snn_mbt.rand_f32(rng, n)
+  let rng = @core.Xoshiro::new(seed + 7UL)
+  let x : Array[Float] = @core.rand_f32(rng, n * dim)
+  let t : Array[Float] = @core.rand_f32(rng, n)
+  let y : Array[Float] = @core.rand_f32(rng, n)
   (net, x, y, t)
 }
 
@@ -316,7 +316,7 @@ test "elu is identity above zero and alpha*(e^x-1) below" {
   let xs : Array[Float] = [-2.0F, -0.5F, 0.0F, 0.25F, 1.5F]
   let out = @snn_mbt.elu_forward(xs)
   for i in 0..<xs.length() {
-    let want = if xs[i] > 0.0F { xs[i] } else { @snn_mbt.expf(xs[i]) - 1.0F }
+    let want = if xs[i] > 0.0F { xs[i] } else { @core.expf(xs[i]) - 1.0F }
     if (out[i] - want).abs() > 1.0e-6F {
       fail("elu(\{xs[i]}) = \{out[i]}, expected \{want}")
     }
@@ -459,15 +459,15 @@ fn dn_semisynth(
   ate : Float,
   seed : UInt64,
 ) -> (Array[Float], Array[Float], Array[Float]) {
-  let rng = @snn_mbt.Xoshiro::new(seed)
-  let x : Array[Float] = @snn_mbt.rand_f32(rng, n * dim)
-  let u : Array[Float] = @snn_mbt.rand_f32(rng, n)
-  let v : Array[Float] = @snn_mbt.rand_f32(rng, n)
+  let rng = @core.Xoshiro::new(seed)
+  let x : Array[Float] = @core.rand_f32(rng, n * dim)
+  let u : Array[Float] = @core.rand_f32(rng, n)
+  let v : Array[Float] = @core.rand_f32(rng, n)
   let t : Array[Float] = Array::make(n, 0.0F)
   let y : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
     let z = x[i * dim] * 1.2F
-    let p = 1.0F / (1.0F + @snn_mbt.expf(-z))
+    let p = 1.0F / (1.0F + @core.expf(-z))
     let ti = if u[i] < p { 1.0F } else { 0.0F }
     t[i] = ti
     y[i] = 0.2F * x[i * dim] + (v[i] - 0.5F) + ate * ti
@@ -602,10 +602,10 @@ test "the paper's 200-wide configuration builds, runs and stays finite" {
   // Built directly, not via dn_fixture: that one is deliberately narrow, and
   // reusing it here checked the fixture's width rather than the default.
   let net = @snn_mbt.DragonNet::new(dim, seed=71UL)
-  let rng = @snn_mbt.Xoshiro::new(78UL)
-  let x : Array[Float] = @snn_mbt.rand_f32(rng, n * dim)
-  let t : Array[Float] = @snn_mbt.rand_f32(rng, n)
-  let y : Array[Float] = @snn_mbt.rand_f32(rng, n)
+  let rng = @core.Xoshiro::new(78UL)
+  let x : Array[Float] = @core.rand_f32(rng, n * dim)
+  let t : Array[Float] = @core.rand_f32(rng, n)
+  let y : Array[Float] = @core.rand_f32(rng, n)
   let out = @snn_mbt.dragonnet_forward(net, x, n)
   if out.phi.length() != n * 200 {
     fail("phi width is \{out.phi.length() / n}, expected 200")

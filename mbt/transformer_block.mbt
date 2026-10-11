@@ -84,7 +84,7 @@ pub fn TransformerBlock::new(
   let ln_1 = LayerNorm::new(1, 1, d_model)
   let ln_2 = LayerNorm::new(1, 1, d_model)
   let mha = MultiHeadAttention::new(d_model, num_heads, seed + 100UL)
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   // FFN linear1: (d_model -> d_ff), linear2: (d_ff -> d_model).
   let w1_weight = xavier_normal_init(rng, d_model * actual_d_ff, d_model, actual_d_ff)
   let w1_bias : Array[Float] = Array::make(actual_d_ff, 0.0F)

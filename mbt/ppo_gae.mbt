@@ -34,7 +34,7 @@ pub fn ppo_gae_collect_batch(
   max_steps : Int,
   seed : UInt64,
 ) -> Array[PpoGaeEpisode] {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let episodes : Array[PpoGaeEpisode] = []
   for _ep in 0..<n_episodes {
     let states : Array[Int] = []

@@ -321,7 +321,7 @@ pub fn tarnet_softmax_dlogits(
     let mut sum = 0.0F
     k = 0
     while k < n_classes {
-      let e = expf(logits[row + k] - mx)
+      let e = @core.expf(logits[row + k] - mx)
       d[row + k] = e
       sum = sum + e
       k = k + 1
@@ -339,7 +339,7 @@ pub fn tarnet_softmax_dlogits(
         // (p_k - onehot_k)/n, so `d_logits` was right while `loss` was wrong --
         // which makes the model-level sweep fail on every coordinate and looks
         // exactly like a broken backward pass.
-        loss = loss - logf(p)
+        loss = loss - @core.logf(p)
       }
       k = k + 1
     }

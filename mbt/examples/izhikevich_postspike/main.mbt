@@ -22,7 +22,7 @@ fn main {
 
   // Three populations: no refractory, short refractory (8 steps), long
   // refractory (20 steps). Same IZParameter, same tonic input.
-  let pop_none = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::default())
+  let pop_none = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::default())
   let pop_short = @snn_mbt.IZ::init_with_postspike(
     1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(8),
   )

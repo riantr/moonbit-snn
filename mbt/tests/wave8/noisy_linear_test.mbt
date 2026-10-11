@@ -2,7 +2,7 @@
 
 ///|
 test "noisy_linear_init_shapes_and_values" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let p = @snn_mbt.NoisyLinearParam::init(4, 3, rng)
   if p.in_features != 4 {
     fail("in_features = \{p.in_features}, expected 4")
@@ -44,7 +44,7 @@ test "noisy_linear_init_shapes_and_values" {
 ///|
 test "noisy_linear_init_weights_bounded" {
   // μ weights must lie in [-1/sqrt(in), +1/sqrt(in)].
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let p = @snn_mbt.NoisyLinearParam::init(64, 32, rng)
   let bound = 1.0F / 8.0F  // 1/sqrt(64) = 0.125
   for k in 0..<p.weight_mu.length() {
@@ -59,7 +59,7 @@ test "noisy_linear_init_weights_bounded" {
 
 ///|
 test "noisy_linear_param_count" {
-  let rng = @snn_mbt.Xoshiro::new(0UL)
+  let rng = @core.Xoshiro::new(0UL)
   // 4→3 layer: 12 weight + 3 bias params, ×2 for μ+σ = 30.
   let p = @snn_mbt.NoisyLinearParam::init(4, 3, rng)
   if @snn_mbt.noisy_linear_param_count(p) != 30 {
@@ -92,7 +92,7 @@ test "noisy_linear_forward_eval_matches_linear" {
 
 ///|
 test "noisy_linear_forward_output_shape" {
-  let rng = @snn_mbt.Xoshiro::new(1UL)
+  let rng = @core.Xoshiro::new(1UL)
   let p = @snn_mbt.NoisyLinearParam::init(5, 4, rng)
   let n = 3
   let input : Array[Float] = Array::make(n * 5, 1.0F)
@@ -112,7 +112,7 @@ test "noisy_linear_forward_zero_input_gives_bias_only" {
   let b_mu : Array[Float] = [1.0F, 2.0F, 3.0F]
   let b_sig : Array[Float] = Array::make(out_f, 0.0F)
   let p = @snn_mbt.NoisyLinearParam::new(w_mu, w_sig, b_mu, b_sig, in_f, out_f)
-  let rng = @snn_mbt.Xoshiro::new(99UL)
+  let rng = @core.Xoshiro::new(99UL)
   let input : Array[Float] = Array::make(in_f, 0.0F)
   let out = @snn_mbt.noisy_linear_forward(input, 1, p, rng)
   if (out[0] - 1.0F).abs() > 1.0e-5F {
@@ -129,11 +129,11 @@ test "noisy_linear_forward_zero_input_gives_bias_only" {
 ///|
 test "noisy_linear_forward_noise_affects_output" {
   // With non-zero σ, two different RNGs should produce different outputs.
-  let rng1 = @snn_mbt.Xoshiro::new(1UL)
+  let rng1 = @core.Xoshiro::new(1UL)
   let p1 = @snn_mbt.NoisyLinearParam::init(8, 4, rng1)
   let input : Array[Float] = Array::make(8, 0.5F)
   let out1 = @snn_mbt.noisy_linear_forward(input, 1, p1, rng1)
-  let rng2 = @snn_mbt.Xoshiro::new(2UL)
+  let rng2 = @core.Xoshiro::new(2UL)
   let p2 = @snn_mbt.NoisyLinearParam::init(8, 4, rng2)
   let out2 = @snn_mbt.noisy_linear_forward(input, 1, p2, rng2)
   // p1/p2 are independent random init, but RNG also differs.
@@ -154,13 +154,13 @@ test "noisy_linear_forward_same_seed_deterministic" {
   // Same seed → same forward output (bit-exact reproducibility).
   let in_f = 4
   let out_f = 3
-  let rng_init_a = @snn_mbt.Xoshiro::new(5UL)
+  let rng_init_a = @core.Xoshiro::new(5UL)
   let p_a = @snn_mbt.NoisyLinearParam::init(in_f, out_f, rng_init_a)
-  let rng_init_b = @snn_mbt.Xoshiro::new(5UL)
+  let rng_init_b = @core.Xoshiro::new(5UL)
   let p_b = @snn_mbt.NoisyLinearParam::init(in_f, out_f, rng_init_b)
   // Both rngs reseeded before forward pass.
-  let rng_forward_a = @snn_mbt.Xoshiro::new(1234UL)
-  let rng_forward_b = @snn_mbt.Xoshiro::new(1234UL)
+  let rng_forward_a = @core.Xoshiro::new(1234UL)
+  let rng_forward_b = @core.Xoshiro::new(1234UL)
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let out_a = @snn_mbt.noisy_linear_forward(input, 1, p_a, rng_forward_a)
   let out_b = @snn_mbt.noisy_linear_forward(input, 1, p_b, rng_forward_b)
@@ -194,7 +194,7 @@ test "f_sign_sqrt_basic" {
 ///|
 test "sample_gaussians_count_and_bounded" {
   // n samples must come out; 99% of |z| ≤ 3 (3σ) for a healthy RNG.
-  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let rng = @core.Xoshiro::new(7UL)
   let n = 1000
   let z = @snn_mbt.sample_gaussians(n, rng)
   if z.length() != n {

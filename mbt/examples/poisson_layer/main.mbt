@@ -24,7 +24,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // Build the post-synaptic IF population (El = -49 mV per Julia test).
@@ -43,7 +43,7 @@ fn main {
     a
   }
   let param = @snn_mbt.PoissonLayer::with_conn(
-    2.0F * @snn_mbt.hz, // 2 Hz (converted via hz_unit = 0.001)
+    2.0F * @core.hz, // 2 Hz (converted via hz_unit = 0.001)
     10, // n_sources
     active, // all active
     2.0F, // μ

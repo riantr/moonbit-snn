@@ -66,7 +66,7 @@ pub fn scm_intervene(
 /// (the intervened node has b[node][j] = 0, so it's just intercept).
 pub fn scm_intervened_sample(
   mscm : MutilatedSCM,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n = mscm.n
   let x : Array[Float] = Array::make(n, 0.0F)
@@ -99,7 +99,7 @@ pub fn scm_do_expectation(
   value : Float,
   target_idx : Int,
   n_samples : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let mscm = scm_intervene(scm, node_idx, value)
   let mut sum = 0.0F
@@ -121,7 +121,7 @@ pub fn scm_estimate_ate(
   c1 : Float,
   outcome_idx : Int,
   n_samples : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float, Float) {
   let e0 = scm_do_expectation(
     scm, treatment_idx, c0, outcome_idx, n_samples, rng,

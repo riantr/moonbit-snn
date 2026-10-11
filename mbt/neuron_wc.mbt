@@ -41,13 +41,13 @@ pub struct WilsonCowan {
 ///|
 /// Build a WilsonCowan population. Initial x is Normal(0, 0.5),
 /// matching `0.5randn(N)` in the Julia source.
-pub fn WilsonCowan::new(n : Int, rng : Xoshiro) -> WilsonCowan {
+pub fn WilsonCowan::new(n : Int, rng : @core.Xoshiro) -> WilsonCowan {
   let x : Array[Float] = Array::make(n, 0.0F)
   let r : Array[Float] = Array::make(n, 0.0F)
   for k in 0..<n {
     let (z1, _) = box_muller(rng)
     x[k] = 0.5F * Float::from_double(z1)
-    r[k] = tanhf(x[k])
+    r[k] = @core.tanhf(x[k])
   }
   let g : Array[Float] = Array::make(n, 0.0F)
   let i : Array[Float] = Array::make(n, 0.0F)
@@ -63,7 +63,7 @@ pub fn step_wc(p : WilsonCowan, dt : Float) -> Unit {
   let n = p.n
   for k in 0..<n {
     p.x[k] = p.x[k] + dt * (-p.x[k] + p.g[k] + p.i[k])
-    p.r[k] = tanhf(p.x[k])
+    p.r[k] = @core.tanhf(p.x[k])
     p.g[k] = 0.0F
   }
 }

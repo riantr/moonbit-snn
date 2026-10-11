@@ -12,7 +12,7 @@
 fn main {
   let n = 1
   let param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.AdEx::new(n, param, rng)
 
   // 65 pA injection
@@ -28,7 +28,7 @@ fn main {
   }
 
   // Simulate 300 ms
-  @snn_mbt.adex_sim_for(model, 300.0F * @snn_mbt.ms)
+  @snn_mbt.adex_sim_for(model, 300.0F * @core.ms)
 
   // Print final state
   println("adex_neuron.mbt: simulation done")

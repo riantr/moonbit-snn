@@ -22,12 +22,12 @@ pub fn make_random_weights(
   n_post : Int,
   mu : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let total = n_pre * n_post
   let arr : Array[Float] = Array::make(total, 0.0F)
   for k in 0..<total {
-    if next_f32(rng) < p {
+    if @core.next_f32(rng) < p {
       arr[k] = mu
     }
   }

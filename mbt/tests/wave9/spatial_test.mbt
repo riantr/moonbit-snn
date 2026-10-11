@@ -12,7 +12,7 @@
 
 ///|
 test "place_populations - random placement (E=40, I=10)" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pops = @snn_mbt.place_populations_e_i(40, 10, 1.0F, 1.0F, rng)
   // Verify counts
   assert_eq(pops.e.length(), 40)

@@ -31,7 +31,7 @@ fn xavier_normal_3d(
   cols : Int,
   depth : Int,
   std : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Array[Array[Float]]] {
   let w : Array[Array[Array[Float]]] = Array::make(rows, [])
   for i in 0..<rows {
@@ -75,7 +75,7 @@ pub fn C51Net::new(
   seed : UInt64,
 ) -> C51Net {
   let std = sqrtf(1.0F / Float::from_int(n_states * n_atoms))
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w = xavier_normal_3d(n_actions, n_states, n_atoms, std, rng)
   let b : Array[Array[Float]] = Array::make(n_actions, [])
   for a in 0..<n_actions {
@@ -115,7 +115,7 @@ pub fn c51_softmax_atoms(logits : Array[Float]) -> Array[Float] {
   let mut sum_e = 0.0F
   let exps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let e = expf(logits[i] - max_l)
+    let e = @core.expf(logits[i] - max_l)
     exps[i] = e
     sum_e = sum_e + e
   }
@@ -332,7 +332,7 @@ pub fn c51_update(
     // Cross-entropy: -Σ m[i] · log p[i]
     let mut loss = 0.0F
     for i in 0..<c51.n_atoms {
-      let lp = if p[i] > 0.0F { logf(p[i]) } else { -20.0F }
+      let lp = if p[i] > 0.0F { @core.logf(p[i]) } else { -20.0F }
       loss = loss - m[i] * lp
     }
     total_loss = total_loss + loss

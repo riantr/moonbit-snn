@@ -2,7 +2,7 @@
 
 ///|
 test "SpikingSynapseIZ::new builds empty matrix" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IZ::new(5, @snn_mbt.IZParameter::rs(), rng)
   let post = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), rng)
   let s = @snn_mbt.SpikingSynapseIZ::new(pre, post, "ge")
@@ -13,7 +13,7 @@ test "SpikingSynapseIZ::new builds empty matrix" {
 
 ///|
 test "SpikingSynapseIZ::random populates with non-zero weights" {
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let pre = @snn_mbt.IZ::new(10, @snn_mbt.IZParameter::rs(), rng)
   let post = @snn_mbt.IZ::new(10, @snn_mbt.IZParameter::rs(), rng)
   let s = @snn_mbt.SpikingSynapseIZ::random(pre, post, "ge", 1.0F, 0.0F, 0.5F, rng)
@@ -26,7 +26,7 @@ test "SpikingSynapseIZ::random populates with non-zero weights" {
 
 ///|
 test "SpikingSynapseIZ::forward deposits weight into post.ge on pre fire" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng)
   let post = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng)
   let s = @snn_mbt.SpikingSynapseIZ::new(pre, post, "ge")
@@ -47,7 +47,7 @@ test "SpikingSynapseIZ::forward deposits weight into post.ge on pre fire" {
 
 ///|
 test "SpikingSynapseIZ::forward routes gi to post.gi" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng)
   let post = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng)
   let s = @snn_mbt.SpikingSynapseIZ::new(pre, post, "gi")

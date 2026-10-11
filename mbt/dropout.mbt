@@ -37,7 +37,7 @@ pub fn Dropout::new(p? : Float = 0.5F) -> Dropout {
 pub fn dropout_forward(
   input : Array[Float],
   d : Dropout,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float]) {
   let n = input.length()
   let out : Array[Float] = Array::make(n, 0.0F)
@@ -61,7 +61,7 @@ pub fn dropout_forward(
   let keep_p = 1.0F - d.p
   let inv_keep = 1.0F / keep_p
   for i in 0..<n {
-    let r = next_f32(rng)
+    let r = @core.next_f32(rng)
     if r < keep_p {
       mask[i] = 1.0F
       out[i] = input[i] * inv_keep

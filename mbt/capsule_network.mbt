@@ -56,12 +56,12 @@ pub fn CapsuleNetwork::new(
     ch, Array::make(conv_in, 0.0F),
   )
   let std_c = sqrtf(2.0F / Float::from_int(conv_in))
-  let rng_c = Xoshiro::from_state(
+  let rng_c = @core.Xoshiro::from_state(
     seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL,
   )
   for o in 0..<ch {
     for i in 0..<conv_in {
-      conv_w[o][i] = std_c * (next_f32(rng_c) * 2.0F - 1.0F)
+      conv_w[o][i] = std_c * (@core.next_f32(rng_c) * 2.0F - 1.0F)
     }
   }
   let conv_b : Array[Float] = Array::make(ch, 0.0F)
@@ -78,12 +78,12 @@ pub fn CapsuleNetwork::new(
     n_classes, Array::make(rdim, 0.0F),
   )
   let std_r = sqrtf(2.0F / Float::from_int(rdim))
-  let rng_r = Xoshiro::from_state(
+  let rng_r = @core.Xoshiro::from_state(
     seed + 21UL, seed + 22UL, seed + 23UL, seed + 24UL,
   )
   for j in 0..<n_classes {
     for i in 0..<rdim {
-      route_w[j][i] = std_r * (next_f32(rng_r) * 2.0F - 1.0F)
+      route_w[j][i] = std_r * (@core.next_f32(rng_r) * 2.0F - 1.0F)
     }
   }
   { c_in, in_h, in_w, ch, conv_k, c1_h, c1_w, primary, n_low, n_classes, capsule_dim, n_routing, conv_w, conv_b, route_w }

@@ -103,7 +103,7 @@ pub fn td3_select_action_eval(
 pub fn td3_select_action(
   td3 : TD3,
   state : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let action = td3_select_action_eval(td3, state)
   let noisy : Array[Float] = Array::make(td3.actor.action_dim, 0.0F)
@@ -127,7 +127,7 @@ pub fn td3_select_action(
 fn td3_smoothed_target_action(
   td3 : TD3,
   next_state : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   hidden_buf : Array[Float],
 ) -> Array[Float] {
   let target_act = deterministic_policy_forward(
@@ -175,7 +175,7 @@ pub fn td3_update_step(
   lr_critic : Float,
   lr_actor : Float,
   step_count : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let (states_b, actions_b, rewards_b, next_states_b, dones_b) = batch
   let batch_size = rewards_b.length()
@@ -387,7 +387,7 @@ pub fn train_td3(
   max_steps : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ContinuousReplayBuffer::new(buffer_capacity, env_state_dim, env_action_dim)
   let mut total_return = 0.0F
   let mut return_count = 0

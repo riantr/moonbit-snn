@@ -159,7 +159,7 @@ pub fn sample_trajectory_window(
   buf : TrajectoryBuffer,
   batch_size : Int,
   seq_len : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Array[Float], Array[Int]) {
   let rtg_batch : Array[Float] = Array::make(batch_size * seq_len, 0.0F)
   let state_batch : Array[Float] = Array::make(
@@ -175,7 +175,7 @@ pub fn sample_trajectory_window(
       continue
     }
     // Pick a trajectory uniformly at random.
-    let traj_idx = (next_u64(rng) % buf.num_loaded.to_uint64()).to_int()
+    let traj_idx = (@core.next_u64(rng) % buf.num_loaded.to_uint64()).to_int()
     let traj = buf.trajectories[traj_idx]
     if traj.length == 0 {
       continue
@@ -189,7 +189,7 @@ pub fn sample_trajectory_window(
     let start = if max_start == 0 {
       0
     } else {
-      (next_u64(rng) % (max_start + 1).to_uint64()).to_int()
+      (@core.next_u64(rng) % (max_start + 1).to_uint64()).to_int()
     }
     // Copy seq_len steps; timesteps are absolute indices (used by DT
     // timestep embedding).

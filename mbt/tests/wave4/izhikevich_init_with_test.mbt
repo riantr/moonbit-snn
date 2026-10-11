@@ -62,7 +62,7 @@ test "IZ::init_with — restart-from-state preserves simulation continuity" {
   // Build a population, run 50 steps, save (v, u). Then build a second
   // population with init_with(saved v, u). The second population should
   // evolve identically to the first from step 51 onward.
-  let rng1 = @snn_mbt.Xoshiro::new(123UL)
+  let rng1 = @core.Xoshiro::new(123UL)
   let p1 = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng1)
   p1.i[0] = 5.0F
   p1.i[1] = 5.0F
@@ -90,7 +90,7 @@ test "IZ::init_with — restart-from-state preserves simulation continuity" {
   // Now start a fresh RNG with same seed but call init_with(snapshot)
   // — v/u should be set to snapshot values, then evolve identically
   // for the next 50 steps (same xoshiro state is required for exactness).
-  let rng2 = @snn_mbt.Xoshiro::new(123UL)
+  let rng2 = @core.Xoshiro::new(123UL)
   // Drain rng2 to match p1's RNG state after 50 steps (skip rng consumption).
   let _ = rng2
   // We can't easily drain rng, but we can verify init_with sets v/u correctly.

@@ -16,7 +16,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 8
   let ni = 4
   let e_pop = @snn_mbt.HH::new(ne, @snn_mbt.HHParameter::new(), rng)

@@ -68,19 +68,19 @@ pub struct BallAndStick {
 pub fn BallAndStick::new(
   n : Int,
   soma_param : AdExParameter,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> BallAndStick {
   // Soma initial v_s in [vr, vt].
   let v_s = Array::make(n, 0.0F)
   let spread = soma_param.vt - soma_param.vr
   for k in 0..<n {
-    v_s[k] = soma_param.vr + next_f32(rng) * spread
+    v_s[k] = soma_param.vr + @core.next_f32(rng) * spread
   }
   let w_s : Array[Float] = Array::make(n, 0.0F)
   // Dendrite initial v_d also in [vr, vt].
   let v_d = Array::make(n, 0.0F)
   for k in 0..<n {
-    v_d[k] = soma_param.vr + next_f32(rng) * spread
+    v_d[k] = soma_param.vr + @core.next_f32(rng) * spread
   }
   let fire : Array[Bool] = Array::make(n, false)
   let threshold : Array[Float] = Array::make(n, soma_param.vt)
@@ -220,7 +220,7 @@ fn ballandstick_heun_step(
     let exp_term = if dt_slope < 0.0F {
       0.0F
     } else {
-      dt_slope * expf((p.v_s[k] + ds - p.threshold[k]) / dt_slope)
+      dt_slope * @core.expf((p.v_s[k] + ds - p.threshold[k]) / dt_slope)
     }
     // Julia: dv_s = 1/c * (gl*(El - v_s - ds) + exp_term - w_s - dw - syn_curr_s - ic + i_s)
     let dv_s_val = (gl * (el - p.v_s[k] - ds) + exp_term -

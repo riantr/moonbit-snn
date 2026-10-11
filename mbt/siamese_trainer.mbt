@@ -34,7 +34,7 @@ pub fn build_siamese_batch(
   samples : Array[Array[Float]],
   labels : Array[Int],
   batch_size : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> SiameseBatch {
   let n = samples.length()
   let anchors : Array[Array[Float]] = Array::make(batch_size, Array::make(0, 0.0F))
@@ -49,15 +49,15 @@ pub fn build_siamese_batch(
     if n == 0 {
       break
     }
-    let ai = (next_u64(rng) % n_u64).to_int()
+    let ai = (@core.next_u64(rng) % n_u64).to_int()
     let label = labels[ai]
     // Find a positive with the same label.
-    let pi = (next_u64(rng) % n_u64).to_int()
+    let pi = (@core.next_u64(rng) % n_u64).to_int()
     if pi == ai || labels[pi] != label {
       continue
     }
     // Find a negative with a different label.
-    let ni = (next_u64(rng) % n_u64).to_int()
+    let ni = (@core.next_u64(rng) % n_u64).to_int()
     if labels[ni] == label {
       continue
     }
@@ -121,7 +121,7 @@ pub fn siamese_train_step(
   trainer : SiameseTrainer,
   samples : Array[Array[Float]],
   labels : Array[Int],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float, Float) {
   let batch = build_siamese_batch(
     samples, labels, trainer.batch_size, rng,

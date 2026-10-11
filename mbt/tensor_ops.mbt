@@ -108,11 +108,11 @@ pub fn tensor_log_softmax(x : Tensor) -> Tensor {
 ///|
 /// Float32 exp via libm FFI (matches Julia's `exp(Float32, x)`).
 pub fn math_exp_f32(x : Float) -> Float {
-  expf(x)
+  @core.expf(x)
 }
 
 ///|
 /// Float32 log via libm FFI (matches Julia's `log(Float32, x)`).
 pub fn math_log_f32(x : Float) -> Float {
-  logf(x)
+  @core.logf(x)
 }

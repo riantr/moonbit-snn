@@ -24,7 +24,7 @@ pub struct CurrentStimulusIF {
   active : Array[Bool]
   pop : IF
   noise_sigma : Float
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -32,7 +32,7 @@ pub struct CurrentStimulusIF {
 pub fn CurrentStimulusIF::new(
   pop : IF,
   i_base : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   noise_sigma? : Float = 0.0F,
 ) -> CurrentStimulusIF {
   { i_base, active: [true], pop, noise_sigma, rng }
@@ -84,7 +84,7 @@ pub struct CurrentStimulusArray {
   i : Array[Float]
   n : Int
   noise_sigma : Float
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -94,7 +94,7 @@ pub fn CurrentStimulusArray::new(
   i : Array[Float],
   n : Int,
   i_base : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
   noise_sigma? : Float = 0.0F,
 ) -> CurrentStimulusArray {
   { i_base, active: [true], i, n, noise_sigma, rng }

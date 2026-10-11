@@ -62,8 +62,8 @@ fn tn_model_fixture(
     att_hidden=8,
     seed=seed,
   )
-  let x = @snn_mbt.rand_f32(
-    @snn_mbt.Xoshiro::new(seed + 1000UL), n * in_chan * t,
+  let x = @core.rand_f32(
+    @core.Xoshiro::new(seed + 1000UL), n * in_chan * t,
   )
   let targets = []
   let mut i = 0

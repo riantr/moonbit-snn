@@ -45,7 +45,7 @@ pub fn sinusoidal_position_encoding(
 ///|
 /// Helper: `10000^x` for Float32 via natural log / exp.
 fn pow_10000(x : Float) -> Float {
-  expf(x * 4.605170185988091F) // 10000 = e^(ln 10000)
+  @core.expf(x * 4.605170185988091F) // 10000 = e^(ln 10000)
 }
 
 ///|
@@ -65,7 +65,7 @@ pub fn PositionalEmbedding::new(
   d_model : Int,
   seed : UInt64,
 ) -> PositionalEmbedding {
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std = sqrtf(2.0F / Float::from_int(1 + d_model))
   let weight : Array[Float] = Array::make(max_len * d_model, 0.0F)
   let mut i = 0

@@ -51,7 +51,7 @@ pub fn DeterministicPolicy::new(
   action_high : Float,
   seed : UInt64,
 ) -> DeterministicPolicy {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let bound_w1 = Float::from_double(@math.pow(1.0 / Float::from_int(state_dim).to_double(), 0.5))
   let bound_w2 = Float::from_double(@math.pow(1.0 / Float::from_int(hidden).to_double(), 0.5))
   let w1 : Array[Array[Float]] = Array::make(hidden, [])
@@ -168,7 +168,7 @@ pub fn QNetworkContinuous::new(
   hidden : Int,
   seed : UInt64,
 ) -> QNetworkContinuous {
-  let rng = Xoshiro::from_state(seed, seed + 11UL, seed + 23UL, seed + 37UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 11UL, seed + 23UL, seed + 37UL)
   let in_dim = state_dim + action_dim
   let bound_w1 = Float::from_double(@math.pow(1.0 / Float::from_int(in_dim).to_double(), 0.5))
   let bound_w2 = Float::from_double(@math.pow(1.0 / Float::from_int(hidden).to_double(), 0.5))
@@ -318,7 +318,7 @@ pub fn ddpg_select_action_eval(
 pub fn ddpg_select_action(
   ddpg : DDPG,
   state : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let action = ddpg_select_action_eval(ddpg, state)
   let noisy : Array[Float] = Array::make(ddpg.actor.action_dim, 0.0F)
@@ -413,7 +413,7 @@ pub fn train_ddpg(
   max_steps : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ContinuousReplayBuffer::new(buffer_capacity, env_state_dim, env_action_dim)
   let mut total_return = 0.0F
   let mut return_count = 0

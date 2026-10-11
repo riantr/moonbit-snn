@@ -129,7 +129,7 @@ pub fn tt_agent_step(
   prev_action : Array[Float],
   prev_reward : Float,
   prev_done : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   tt_agent_append(agent, state, prev_action, prev_reward, prev_done)
   // Use only the first history_len entries for the planner.

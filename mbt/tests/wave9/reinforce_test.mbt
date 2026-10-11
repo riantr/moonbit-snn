@@ -96,7 +96,7 @@ test "compute_returns: with discount" {
 test "policy_rollout: episode length bounded by max_steps" {
   let env = @snn_mbt.GridWorld::new(3, 3, 8)
   let p = @snn_mbt.LinearSoftmaxPolicy::new(9, 4, 17UL)
-  let rng = @snn_mbt.Xoshiro::from_state(19UL, 23UL, 29UL, 31UL)
+  let rng = @core.Xoshiro::from_state(19UL, 23UL, 29UL, 31UL)
   let ep = @snn_mbt.policy_rollout(env, p, 8, rng)
   assert_true(ep.states.length() <= 8)
   assert_eq(ep.states.length(), ep.actions.length())
@@ -116,7 +116,7 @@ test "policy_rollout: ends at goal on optimal play" {
   }
   p.w[1][0] = 20.0F // down from state 0 -> state 2
   p.w[3][2] = 20.0F // right from state 2 -> state 3 (goal)
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let ep = @snn_mbt.policy_rollout(env, p, 10, rng)
   // Should reach state 3 (goal) in 2 steps. The last stored state
   // is the FROM state (before the final action); the goal reward

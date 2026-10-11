@@ -3,7 +3,7 @@
 
 ///|
 test "TripodHet::new: shapes and init" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 3
   let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
   let p = @snn_mbt.TripodHet::new(n, param, rng)
@@ -39,7 +39,7 @@ test "TripodHet::new: shapes and init" {
 
 ///|
 test "TripodHet::new: per-neuron vt/vr values respected" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 2
   let base = @snn_mbt.AdExParameter::new()
   let vt_arr : Array[Float] = [-48.0F, -49.0F]
@@ -73,7 +73,7 @@ test "TripodHet::new: per-neuron vt/vr values respected" {
 
 ///|
 test "step_tripod_het: tonic drive produces spikes" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 2
   let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
   let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
@@ -98,7 +98,7 @@ test "step_tripod_het: tonic drive produces spikes" {
 
 ///|
 test "step_tripod_het: zero drive, no spikes (passive decay)" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 1
   let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
   let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
@@ -119,7 +119,7 @@ test "step_tripod_het: zero drive, no spikes (passive decay)" {
 
 ///|
 test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 3
   let base = @snn_mbt.AdExParameter::new()
   let vt_arr : Array[Float] = [-50.0F, -30.0F, -30.0F]
@@ -174,7 +174,7 @@ test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
 
 ///|
 test "step_tripod_het: v_d1/v_d2 finite (no runaway) under heavy drive" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 1
   let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
   let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
@@ -197,7 +197,7 @@ test "step_tripod_het: v_d1/v_d2 finite (no runaway) under heavy drive" {
 
 ///|
 test "tripod_het_soma_step_synapses: glu_s → ge_s decay" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 1
   let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
   let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
@@ -217,7 +217,7 @@ test "step_tripod_het: spike counter via repeat-with-reset pattern" {
   // Verify heterogeneous vt with manual spike counting using a
   // different approach: count fires by polling fire array each step
   // and accumulating into a sum outside the struct.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 3
   let base = @snn_mbt.AdExParameter::new()
   let vt_arr : Array[Float] = [-50.0F, -30.0F, -30.0F]

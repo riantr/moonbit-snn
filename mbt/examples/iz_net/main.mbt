@@ -18,7 +18,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 16
   let ni = 4
   // RS (regular spiking) for E, FS (fast spiking) for I.

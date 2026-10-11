@@ -25,7 +25,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // 1-neuron IF populations E1 and E2 with Vr=-55mV.

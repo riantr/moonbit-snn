@@ -77,7 +77,7 @@ test "markram_stp_step: first spike primes state — first ρ broadcast = U" {
   //   Then u = U + U*(1-U) = 0.2*1.8 = 0.36
   //        x = 1 - 0.36*1 = 0.64
   //   After: vars.u[0] = 0.36, vars.x[0] = 0.64, syn.rho[0] = 0.2
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -103,7 +103,7 @@ test "markram_stp_step: first spike primes state — first ρ broadcast = U" {
 test "markram_stp_step: forward_synapse applies ρ scaling on first spike" {
   // Drive a spike through the synapse. Expected post.glu increment:
   //   W * ρ = 1.0 * 0.2 = 0.2 (after STP first-spike priming).
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -136,7 +136,7 @@ test "markram_stp_step: long ΔT restores u → U and x → 1 (full recovery)" {
   //   x2 = 1 - (1 - 0.64) * 0 = 1
   //   ρ = 0.2
   //   Then u3 = 0.2 + 0.2*0.8 = 0.36, x3 = 1 - 0.36 = 0.64
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -169,7 +169,7 @@ test "markram_stp_step: short ΔT — depression visible (x drops further)" {
   // Then bump:
   //   u = 0.358936 + 0.2*(1 - 0.358936) = 0.358936 + 0.128213 = 0.487149
   //   x = 0.657557 - 0.487149*0.657557 = 0.657557 - 0.320297 = 0.337260
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -212,7 +212,7 @@ test "markram_stp_step: short ΔT — depression visible (x drops further)" {
 test "markram_stp_step: ρ broadcasts to all outgoing connections" {
   // 1 pre, 3 post — all connected. Single pre spike should broadcast
   // the same ρ value to all 3 outgoing edges.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -237,7 +237,7 @@ test "markram_stp_step: ρ broadcasts to all outgoing connections" {
 ///|
 test "markram_stp_step: pre[0] fires, pre[1] silent — only pre[0] state updates" {
   // 2 pre, 1 post. Only pre[0] fires; pre[1] state must remain initial.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -277,7 +277,7 @@ test "compose with STPEntryKind: scales post.he by ρ automatically" {
   // post.glu gets W * ρ = 1.0 * 0.2 = 0.2 added. The integrate step
   // (phase 4) then accumulates glu into he (and resets glu to 0).
   // Verify via post.he[0] which survives the integrate step.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -310,7 +310,7 @@ test "compose with STPEntryKind: scales post.he by ρ automatically" {
 
 ///|
 test "markram_stp_step: active=[false] is a no-op" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -335,7 +335,7 @@ test "markram_stp_step: active=[false] is a no-op" {
 test "forward_synapse: rho empty — applies full weight (existing behavior)" {
   // Backward-compat: when rho[] is empty (default for synapses without
   // STP), forward_synapse should apply the full weight unchanged.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -396,7 +396,7 @@ test "markram_stp_step_het: first spike primes state with per-pre U[j] and τF[j
   //   u[j] = U[j] + U[j]*(1-U[j]) = U[j]*(2-U[j])
   //   x[j] = 1 - u[j] = 1 - U[j]*(2-U[j]) = (1-U[j])^2
   //   ρ broadcast = U[j]
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -433,7 +433,7 @@ test "markram_stp_step_het: per-pre params produce different recoveries at same 
   // For pre[0]: u = 0.2 - (0.2 - 0.36) * 0.9934 = 0.3589
   // For pre[1]: u = 0.2 - (0.2 - 0.36) * 0.9802 = 0.3568
   // (smaller because faster τF means more recovery)
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -484,7 +484,7 @@ test "markram_stp_step_het: per-pre params produce different recoveries at same 
 test "compose with STPEntryKind::MarkramSTPHet_: dispatches per-pre params" {
   // 2-pre, 1-post with heterogeneous params. After step_heterogeneous,
   // post.he should have received some input.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -517,7 +517,7 @@ test "compose with STPEntryKind::MarkramSTPHet_: dispatches per-pre params" {
 ///|
 test "markram_stp_step_het: rho empty — silent no-op (backward-compat guard)" {
   // Don't init_rho, verify the function returns silently.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -552,7 +552,7 @@ test "bit-exactness: 3-spike trajectory @ ISI=10ms matches analytical formula" {
   // Default params: τD=200, τF=1500, U=0.2.
   // exp(-10/1500) ≈ 0.99335 (Float32)
   // exp(-10/200)  ≈ 0.95123 (Float32)
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -607,7 +607,7 @@ test "bit-exactness: long ΔT (100000ms) — expf underflows to 0 for Float32" {
   // underflows to 0 in Float32 (smallest positive normal ~1.2e-38,
   // exp(-88) ≈ 6.7e-39, exp(-500) = 0). Same for τF.
   // So u recovers EXACTLY to U, x recovers EXACTLY to 1.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")

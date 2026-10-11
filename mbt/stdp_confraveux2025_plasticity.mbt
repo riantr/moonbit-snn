@@ -89,7 +89,7 @@ pub fn stdp_confraveux2025_step(
     } else {
       0.0F
     }
-    let decay = expf(-dt_pre * inv_tau_pre)
+    let decay = @core.expf(-dt_pre * inv_tau_pre)
     if fire_pre[j] {
       state.tpre[j] = state.tpre[j] * decay + 1.0F
       state.last_pre[j] = now
@@ -103,7 +103,7 @@ pub fn stdp_confraveux2025_step(
     } else {
       0.0F
     }
-    let decay = expf(-dt_post * inv_tau_post)
+    let decay = @core.expf(-dt_post * inv_tau_post)
     if fire_post[i] {
       state.tpost[i] = state.tpost[i] * decay + 1.0F
       state.last_post[i] = now

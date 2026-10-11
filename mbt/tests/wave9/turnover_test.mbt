@@ -48,7 +48,7 @@ test "ActivityDependentTurnover::new custom fraction" {
 
 ///|
 test "Turnover::new initial state" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_pop = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng)
   let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
@@ -75,7 +75,7 @@ test "Turnover::new initial state" {
 ///|
 test "turnover_plasticity — τ=0 disables periodic gate" {
   // τ=0 → never fires (matches Julia default). No-op path.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
@@ -99,7 +99,7 @@ test "turnover_plasticity — τ=0 disables periodic gate" {
 ///|
 test "turnover_plasticity — period_steps fires" {
   // τ = 0.5ms / dt = 0.125ms → period=4. Steps 0, 4, 8 fire.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
@@ -130,7 +130,7 @@ test "turnover_plasticity — period_steps fires" {
 ///|
 test "turnover_plasticity — ActivityDependent pre/post trace decay" {
   // Verify the activity-trace update runs without firing.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
@@ -154,7 +154,7 @@ test "turnover_plasticity — ActivityDependent pre/post trace decay" {
 ///|
 test "synaptic_turnover — no candidates when p_values > threshold" {
   // Set p_values[0] = 1.0 and threshold = 0.5 → 1.0 > 0.5 → skip.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
@@ -172,7 +172,7 @@ test "synaptic_turnover — no candidates when p_values > threshold" {
 test "synaptic_turnover — rewires when p_values < threshold" {
   // Set p_values[0] = 0.0, p_values[1] = 1.0, threshold = 0.5.
   // Only s=0 is below threshold → rewire.
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post_pop = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")

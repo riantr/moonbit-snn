@@ -91,7 +91,7 @@ pub fn gaussian_smooth(
   while k < offsets.length() {
     let off_f = Float::from_int(offsets[k]) * step_x
     let x_sq = off_f * off_f
-    kernel[k] = expf(-x_sq / two_sigma_sq)
+    kernel[k] = @core.expf(-x_sq / two_sigma_sq)
     k = k + 1
   }
   // Normalise kernel.

@@ -38,7 +38,7 @@ pub fn ppo_collect_batch(
   max_steps : Int,
   seed : UInt64,
 ) -> PpoBatch {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let states : Array[Int] = []
   let actions : Array[Int] = []
   let returns_arr : Array[Float] = []

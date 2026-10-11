@@ -53,7 +53,7 @@ pub fn wgan_critic_step(
   real_image : Array[Float],
   lambda_gp : Float,
   fd_eps : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float, Array[Float]) {
   let z = dcgan_sample_latent(wgan.latent_dim, rng)
   let fake = dcgan_generator_forward(wgan.g, z)
@@ -74,7 +74,7 @@ pub fn wgan_critic_step(
 /// (g_loss, fake_image).
 pub fn wgan_generator_step(
   wgan : WGAN,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Array[Float]) {
   let z = dcgan_sample_latent(wgan.latent_dim, rng)
   let fake = dcgan_generator_forward(wgan.g, z)
@@ -114,7 +114,7 @@ pub fn WGANTrainer::new(
 pub fn wgan_train_step(
   trainer : WGANTrainer,
   real_batch : Array[Array[Float]],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float, Float) {
   let m = real_batch.length()
   let mut w_total = 0.0F
@@ -156,7 +156,7 @@ pub fn wgan_eval(
   trainer : WGANTrainer,
   held_out : Array[Array[Float]],
 ) -> (Float, Float, Float) {
-  let rng = Xoshiro::new(0UL)
+  let rng = @core.Xoshiro::new(0UL)
   let m = held_out.length()
   let mut real_sum = 0.0F
   let mut fake_sum = 0.0F

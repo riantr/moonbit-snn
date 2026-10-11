@@ -33,7 +33,7 @@ pub fn elbo_kl_gaussian(
   }
   let mut kl = 0.0F
   for i in 0..<dim {
-    kl = kl - 0.5F * (1.0F + log_var[i] - mu[i] * mu[i] - expf(log_var[i]))
+    kl = kl - 0.5F * (1.0F + log_var[i] - mu[i] * mu[i] - @core.expf(log_var[i]))
   }
   kl
 }

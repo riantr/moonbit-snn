@@ -19,7 +19,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
   let n_pre = 4
   let n_post = 4
@@ -59,10 +59,10 @@ fn main {
   for step in 0..<n_steps {
     let _ = step
     for k in 0..<n_pre {
-      pre_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      pre_fire[k] = @core.next_f32(rng) < 0.3F
     }
     for k in 0..<n_post {
-      post_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      post_fire[k] = @core.next_f32(rng) < 0.3F
     }
     let t_now = Float::from_int(step) * dt
     @snn_mbt.stdp_confavreux_step(

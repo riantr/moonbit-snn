@@ -124,8 +124,8 @@ pub fn n_pair_loss(
   // Stable softmax; the correct class is index 0.
   let mut sum_exp = 0.0F
   for j in 0..<k {
-    sum_exp = sum_exp + expf(logits[j] - m)
+    sum_exp = sum_exp + @core.expf(logits[j] - m)
   }
   // L = log(sum_exp) - logits[0] (since the max cancels).
-  logf(sum_exp) - (logits[0] - m)
+  @core.logf(sum_exp) - (logits[0] - m)
 }

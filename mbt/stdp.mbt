@@ -257,11 +257,11 @@ pub fn gerstner_kernel(
   if dt > 0.0F {
     // LTP: post after pre.
     let arg = -dt / tau_pre
-    a_pre * expf(arg)
+    a_pre * @core.expf(arg)
   } else if dt < 0.0F {
     // LTD: post before pre.
     let arg = dt / tau_post
-    -a_post * expf(arg)
+    -a_post * @core.expf(arg)
   } else {
     0.0F
   }
@@ -429,7 +429,7 @@ pub fn mexican_hat_kernel(x : Float) -> Float {
     0.0F
   } else {
     let arg = -x / 1.41421356F // sqrt(2)
-    let v = (1.0F - x) * expf(arg)
+    let v = (1.0F - x) * @core.expf(arg)
     if v.is_nan() {
       0.0F
     } else {
@@ -497,7 +497,7 @@ pub fn stdp_mexican_hat_step(
       while s < end {
         let post_idx = colptr[s]
         let ratio = tpre[j] / tpost[post_idx]
-        let lnx = logf(ratio)
+        let lnx = @core.logf(ratio)
         let x = lnx * lnx
         let dw = param.a * mexican_hat_kernel(x)
         w[s] = w[s] + dw
@@ -517,7 +517,7 @@ pub fn stdp_mexican_hat_step(
       // binary-search rowptr (rows are pre-synaptic).
       let j_pre = find_pre_for_conn(rowptr, s2)
       let ratio = tpre[j_pre] / tpost[post_idx]
-      let lnx = logf(ratio)
+      let lnx = @core.logf(ratio)
       let x = lnx * lnx
       let dw = param.a * mexican_hat_kernel(x)
       w[s2] = w[s2] + dw
@@ -920,8 +920,8 @@ pub fn stdp_step(
   // Decay traces.
   let n_pre = pre_fire.length()
   let n_post = post_fire.length()
-  let decay_pre : Float = expf(-dt / param.tau_pre)
-  let decay_post : Float = expf(-dt / param.tau_post)
+  let decay_pre : Float = @core.expf(-dt / param.tau_pre)
+  let decay_post : Float = @core.expf(-dt / param.tau_post)
   let mut j = 0
   while j < n_pre {
     vars.tpre[j] = vars.tpre[j] * decay_pre
@@ -1090,8 +1090,8 @@ pub fn stdp_confavreux_step(
 ) -> Unit {
   let n_pre = pre_fire.length()
   let n_post = post_fire.length()
-  let decay_pre : Float = expf(-dt / param.tau_pre)
-  let decay_post : Float = expf(-dt / param.tau_post)
+  let decay_pre : Float = @core.expf(-dt / param.tau_pre)
+  let decay_post : Float = @core.expf(-dt / param.tau_post)
   // 1. Decay traces + bump on spike.
   let mut j = 0
   while j < n_pre {

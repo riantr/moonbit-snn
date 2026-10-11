@@ -11,7 +11,7 @@
 
 ///|
 test "CompartmentSynapseBall::random: matrix shape and target" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(5, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -30,7 +30,7 @@ test "CompartmentSynapseBall::random: matrix shape and target" {
 
 ///|
 test "CompartmentSynapseBall: pre-fire onto :soma → glu_s accumulates" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -61,7 +61,7 @@ test "CompartmentSynapseBall: pre-fire onto :soma → glu_s accumulates" {
 
 ///|
 test "CompartmentSynapseBall: target=:d routes to glu_d not glu_s" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -82,7 +82,7 @@ test "CompartmentSynapseBall: target=:d routes to glu_d not glu_s" {
 
 ///|
 test "CompartmentSynapseBall: :gi sym routes to gaba buffers" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -106,7 +106,7 @@ test "CompartmentSynapseBall: :gi sym routes to gaba buffers" {
 
 ///|
 test "CompartmentSynapseBall: non-firing pre → no conductance change" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(2, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -126,7 +126,7 @@ test "CompartmentSynapseBall: non-firing pre → no conductance change" {
 
 ///|
 test "CompartmentSynapseBall: pending queue delays delivery" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -154,7 +154,7 @@ test "CompartmentSynapseBall: pending queue delays delivery" {
 
 ///|
 test "CompartmentSynapseTripod: target=:d2 routes to glu_d2" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -176,7 +176,7 @@ test "CompartmentSynapseTripod: target=:d2 routes to glu_d2" {
 
 ///|
 test "CompartmentSynapseTripod: target=:soma routes to glu_s" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -194,7 +194,7 @@ test "CompartmentSynapseTripod: target=:soma routes to glu_s" {
 
 ///|
 test "CompartmentSynapseTripod: :gi sym writes to gaba_d1" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -212,7 +212,7 @@ test "CompartmentSynapseTripod: :gi sym writes to gaba_d1" {
 
 ///|
 test "CompartmentSynapseTripod: pending queue delays delivery" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()
@@ -233,7 +233,7 @@ test "CompartmentSynapseTripod: pending queue delays delivery" {
 
 ///|
 test "CompartmentSynapseBall: rho scaling applied to weights" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pre_param = @snn_mbt.IFParameter::new()
   let pre = @snn_mbt.IF::new(1, pre_param, rng)
   let soma_param = @snn_mbt.AdExParameter::new()

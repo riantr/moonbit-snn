@@ -25,7 +25,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // Build 4 TripodHet neurons (scaled down from Julia's 100).
@@ -35,13 +35,13 @@ fn main {
   let post : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n_post, param, rng)
 
   // 20 exc Poisson sources @ 20 Hz → :glu, :d1.
-  let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @snn_mbt.hz, 20)
+  let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @core.hz, 20)
   let stim_exc = @snn_mbt.PoissonLayerStimulusTripod::new(
     poisson_exc, post, "d1", "glu", 0.1F, 0.0F, 1.0F, rng,
   )
 
   // 20 inh Poisson sources @ 3 Hz → :gaba, :d1.
-  let poisson_inh = @snn_mbt.PoissonLayer::with_n(3.0F * @snn_mbt.hz, 20)
+  let poisson_inh = @snn_mbt.PoissonLayer::with_n(3.0F * @core.hz, 20)
   let stim_inh = @snn_mbt.PoissonLayerStimulusTripod::new(
     poisson_inh, post, "d1", "gaba", 0.1F, 0.0F, 1.0F, rng,
   )

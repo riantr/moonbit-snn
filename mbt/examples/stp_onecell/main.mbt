@@ -26,7 +26,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
 
   // IF as pre_pop (since SpikingSynapse requires IF). Drive
   // pre_pop.fire[0] = true each step to simulate continuous drive.

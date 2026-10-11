@@ -175,7 +175,7 @@ test "IF has DoubleExpSynapse-style scalar time constants" {
   // the default IF constructor behaviour. Verify the time constants
   // exist with their Julia defaults.
   let p = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.IF::new(2, p, rng)
   if pop.tre != 1.0F {
     fail("tre (τr of excitatory) = \{pop.tre}, expected 1.0")

@@ -17,7 +17,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.IFParameter::new()
   let pop = @snn_mbt.IF::new(1, param, rng)
 
@@ -36,7 +36,7 @@ fn main {
   println("  base current = 400 pA, noise sigma = 100 pA")
 
   // 2 s = 2000 ms = 16000 steps at dt=0.125F
-  @snn_mbt.heterogeneous_sim_for(model, 2000.0F * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, 2000.0F * @core.ms)
 
   let spikes = fm.count_spikes()
   let hz = Float::from_int(spikes) * 1000.0F / 2000.0F

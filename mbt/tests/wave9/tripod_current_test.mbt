@@ -5,16 +5,16 @@
 
 ///|
 fn build_tripod_current_test() -> (@snn_mbt.TripodHet, @snn_mbt.PoissonLayerStimulusTripod, @snn_mbt.PoissonLayerStimulusTripod) {
-  let rng = @snn_mbt.Xoshiro::new(456UL)
+  let rng = @core.Xoshiro::new(456UL)
   let n_post = 4
   let base = @snn_mbt.AdExParameter::new()
   let param = @snn_mbt.AdExParameterHet::homogeneous(n_post, base)
   let post : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n_post, param, rng)
-  let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @snn_mbt.hz, 20)
+  let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @core.hz, 20)
   let stim_exc = @snn_mbt.PoissonLayerStimulusTripod::new(
     poisson_exc, post, "d1", "glu", 0.1F, 0.0F, 1.0F, rng,
   )
-  let poisson_inh = @snn_mbt.PoissonLayer::with_n(3.0F * @snn_mbt.hz, 20)
+  let poisson_inh = @snn_mbt.PoissonLayer::with_n(3.0F * @core.hz, 20)
   let stim_inh = @snn_mbt.PoissonLayerStimulusTripod::new(
     poisson_inh, post, "d1", "gaba", 0.1F, 0.0F, 1.0F, rng,
   )

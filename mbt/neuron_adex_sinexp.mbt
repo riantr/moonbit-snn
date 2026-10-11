@@ -106,7 +106,7 @@ pub struct AdExSinExp {
 pub fn AdExSinExp::new(
   n : Int,
   param : AdExSinExpParameter,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> AdExSinExp {
   AdExSinExp::new_with_spike(n, param, AdExPostSpike::new(), rng)
 }
@@ -117,12 +117,12 @@ pub fn AdExSinExp::new_with_spike(
   n : Int,
   param : AdExSinExpParameter,
   spike : AdExPostSpike,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> AdExSinExp {
   let v = Array::make(n, 0.0F)
   let spread = param.vt - param.vr
   for k in 0..<n {
-    v[k] = param.vr + next_f32(rng) * spread
+    v[k] = param.vr + @core.next_f32(rng) * spread
   }
   let w : Array[Float] = Array::make(n, 0.0F)
   let fire : Array[Bool] = Array::make(n, false)
@@ -222,7 +222,7 @@ pub fn step_adex_sinexp(p : AdExSinExp, dt : Float) -> Unit {
     let exp_term = if dt_slope < 0.0F {
       0.0F
     } else {
-      dt_slope * expf((p.v[i] - p.threshold[i]) / dt_slope)
+      dt_slope * @core.expf((p.v[i] - p.threshold[i]) / dt_slope)
     }
     p.v[i] = p.v[i] +
       dt *

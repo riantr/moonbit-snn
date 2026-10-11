@@ -84,7 +84,7 @@ pub struct IFSinExp {
 pub fn IFSinExp::new(
   n : Int,
   param : IFSinExpParameter,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> IFSinExp {
   let v : Array[Float] = Array::make(n, param.el)
   let w : Array[Float] = Array::make(n, 0.0F)

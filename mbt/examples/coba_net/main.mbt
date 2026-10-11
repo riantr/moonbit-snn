@@ -39,7 +39,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 80
   let ni = 20
   let dt = 0.125F
@@ -95,8 +95,8 @@ fn main {
   }
 
   // Manual sim loop: phase 1 (1s with drive) + phase 2 (5s without).
-  let time = @snn_mbt.Time::new()
-  @snn_mbt.set_dt(time, dt)
+  let time = @core.Time::new()
+  @core.set_dt(time, dt)
   let total_steps : Int = (6000.0F / dt).to_int()
   let phase_step : Int = (1000.0F / dt).to_int()
 

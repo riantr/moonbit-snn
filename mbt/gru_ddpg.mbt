@@ -98,7 +98,7 @@ pub fn ddpg_gru_select_action(
   obs : Array[Float],
   hidden : Array[Float],
   noise_std : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float]) {
   let (action, hidden_next) = gru_deterministic_policy_step(agent.actor, obs, hidden)
   if noise_std <= 0.0F {

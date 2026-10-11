@@ -77,7 +77,7 @@ pub fn sac_lstm_act(
   obs : Array[Float],
   hidden : Array[Float],
   cell : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float], Array[Float], Float) {
   let (action, log_prob, hidden_next, cell_next) = sac_lstm_actor_step(
     agent.actor, obs, hidden, cell, rng,
@@ -204,5 +204,5 @@ pub fn sac_lstm_update_alpha(
 ///|
 /// Get the current alpha = exp(log_alpha).
 pub fn sac_lstm_get_alpha(agent : SAC_LSTM) -> Float {
-  expf(agent.log_alpha)
+  @core.expf(agent.log_alpha)
 }

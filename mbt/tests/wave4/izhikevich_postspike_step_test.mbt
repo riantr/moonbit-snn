@@ -69,7 +69,7 @@ test "step_iz_with_postspike — synapse decay runs during refractory" {
 test "step_iz_with_postspike — tabs_const=0 behaves like step_iz" {
   // Build a regular IZ (no postspike) and a postspike IZ with
   // tabs_const=0. Both should behave identically (no refractory).
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(1UL))
+  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(1UL))
   let ps = @snn_mbt.IZPostSpike::custom(0)
   let pop_b = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, ps)
   // Set identical initial conditions.

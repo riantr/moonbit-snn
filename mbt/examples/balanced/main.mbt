@@ -26,7 +26,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // Build the post-synaptic IF population (El = -49 mV per Julia test).
@@ -40,7 +40,7 @@ fn main {
     kIE=2.0F,
     beta=0.1F,
     tau=100.0F,
-    r0=2.0F * @snn_mbt.khz, // 2 kHz → 2.0 internal
+    r0=2.0F * @core.khz, // 2 kHz → 2.0 internal
     w=1.0F,
     wIE=2.0F,
     same_input=true,

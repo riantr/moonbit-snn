@@ -49,7 +49,7 @@ test "per_state_kl: zero when one side has zero mass on entry" {
   let pi_b : Array[Float] = [0.5F, 0.5F, 0.0F, 0.0F]
   let kl = @snn_mbt.per_state_kl(pi_a, pi_b)
   // Only action 0 has nonzero mass in π_a; KL = 1 · log(1/0.5).
-  let expected = @snn_mbt.logf(1.0F / 0.5F)
+  let expected = @core.logf(1.0F / 0.5F)
   let diff = if kl > expected { kl - expected } else { expected - kl }
   assert_true(diff < 1.0e-5F)
 }

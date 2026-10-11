@@ -62,7 +62,7 @@ test "arma_residuals: ARMA(1, 1) recursion" {
 test "arma_residual_loss: zero for ARMA(1, 1) generated data" {
   // y[t] = 0.5·y[t-1] + ε[t] + 0.3·ε[t-1]
   // Recursion recovers ε exactly.
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let n = 30
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
@@ -87,7 +87,7 @@ test "arma_residual_loss: zero for ARMA(1, 1) generated data" {
 
 ///|
 test "arma_grad: matches finite difference for ARMA(1, 1)" {
-  let rng = @snn_mbt.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
+  let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let n = 50
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
@@ -118,7 +118,7 @@ test "arma_grad: matches finite difference for ARMA(1, 1)" {
 
 ///|
 test "arma_grad: matches finite difference for ARMA(2, 2)" {
-  let rng = @snn_mbt.Xoshiro::from_state(9UL, 10UL, 11UL, 12UL)
+  let rng = @core.Xoshiro::from_state(9UL, 10UL, 11UL, 12UL)
   let n = 60
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
@@ -172,7 +172,7 @@ test "arma_grad: matches finite difference for ARMA(2, 2)" {
 ///|
 test "arma_fit: gradient descent recovers ARMA(1, 1) coefficients" {
   // Generate ARMA(1, 1) with phi=0.5, theta=0.3, then fit.
-  let rng = @snn_mbt.Xoshiro::from_state(13UL, 14UL, 15UL, 16UL)
+  let rng = @core.Xoshiro::from_state(13UL, 14UL, 15UL, 16UL)
   let n = 500
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {

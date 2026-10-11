@@ -117,7 +117,7 @@ pub fn LinearSoftmaxPolicy::new(
   seed : UInt64,
 ) -> LinearSoftmaxPolicy {
   let std = sqrtf(1.0F / Float::from_int(n_states))
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w = xavier_normal(n_actions, n_states, std, rng)
   { n_states, n_actions, w }
 }
@@ -147,7 +147,7 @@ pub fn policy_forward(
   let probs : Array[Float] = Array::make(n_actions, 0.0F)
   let mut sum_e = 0.0F
   for i in 0..<n_actions {
-    let e = expf(logits[i] - max_l)
+    let e = @core.expf(logits[i] - max_l)
     probs[i] = e
     sum_e = sum_e + e
   }
@@ -161,7 +161,7 @@ pub fn policy_forward(
 ///|
 /// Sample action from a categorical distribution. Returns
 /// `(action, log_prob)`. `log_prob` is clamped to -20 to avoid -inf.
-pub fn sample_categorical(probs : Array[Float], rng : Xoshiro) -> (Int, Float) {
+pub fn sample_categorical(probs : Array[Float], rng : @core.Xoshiro) -> (Int, Float) {
   let n = probs.length()
   let (u_raw, _) = box_muller(rng)
   let u = Float::from_double(u_raw).abs()
@@ -181,7 +181,7 @@ pub fn sample_categorical(probs : Array[Float], rng : Xoshiro) -> (Int, Float) {
     }
   }
   let lp = if probs[a] > 0.0F {
-    logf(probs[a])
+    @core.logf(probs[a])
   } else {
     -20.0F
   }
@@ -202,7 +202,7 @@ pub fn policy_rollout(
   env : GridWorld,
   policy : LinearSoftmaxPolicy,
   max_steps : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Episode {
   let states : Array[Int] = []
   let actions : Array[Int] = []
@@ -294,7 +294,7 @@ pub fn train_reinforce(
   max_steps : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let mut total_return = 0.0F
   for _ep in 0..<n_episodes {
     let episode = policy_rollout(env, policy, max_steps, rng)

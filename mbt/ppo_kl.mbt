@@ -41,7 +41,7 @@ pub fn ppo_kl_collect_batch(
   max_steps : Int,
   seed : UInt64,
 ) -> PpoKlBatch {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let states : Array[Int] = []
   let actions : Array[Int] = []
   let advantages : Array[Float] = []
@@ -115,7 +115,7 @@ pub fn per_state_kl(pi_cur : Array[Float], pi_old : Array[Float]) -> Float {
   let mut kl = 0.0F
   for i in 0..<n {
     if pi_cur[i] > 0.0F && pi_old[i] > 0.0F {
-      kl = kl + pi_cur[i] * logf(pi_cur[i] / pi_old[i])
+      kl = kl + pi_cur[i] * @core.logf(pi_cur[i] / pi_old[i])
     }
   }
   kl
@@ -169,7 +169,7 @@ pub fn ppo_kl_update_step(
       for k in 0..<n_a {
         let indicator_k = if i == k { 1.0F } else { 0.0F }
         let lp = if probs[k] > 0.0F && old_dist[k] > 0.0F {
-          logf(probs[k] / old_dist[k])
+          @core.logf(probs[k] / old_dist[k])
         } else {
           0.0F
         }

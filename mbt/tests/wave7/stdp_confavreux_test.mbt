@@ -127,7 +127,7 @@ test "stdp_confavreux_step: pre spike adds kappa * tpost[i] + alpha" {
   // tpost[0] was decayed before the weight update by `decay_post = exp(-dt/tau_post)`.
   // exp(-0.125/20) 鈮?0.99376. So tpost[0] after decay 鈮?0.5 * 0.99376 鈮?0.49688.
   // 螖w = 0.01 * (1 * 0.49688 + 0.1) = 0.01 * 0.59688 鈮?0.0059688.
-  let expected = 0.01F * (0.5F * @snn_mbt.expf(-dt / 20.0F) + 0.1F)
+  let expected = 0.01F * (0.5F * @core.expf(-dt / 20.0F) + 0.1F)
   if (w[0] - (0.5F + expected)).abs() > 1.0e-5F {
     fail("w[0] = \{w[0]}, expected ~\{0.5F + expected}")
   }
@@ -158,7 +158,7 @@ test "stdp_confavreux_step: post spike adds gamma * tpre[j] + beta" {
   }
   let dt = 0.125F
   @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
-  let expected = 0.01F * (1.0F * 0.7F * @snn_mbt.expf(-dt / 20.0F) + 0.2F)
+  let expected = 0.01F * (1.0F * 0.7F * @core.expf(-dt / 20.0F) + 0.2F)
   if (w[0] - (0.3F + expected)).abs() > 1.0e-5F {
     fail("w[0] = \{w[0]}, expected ~\{0.3F + expected}")
   }
@@ -194,8 +194,8 @@ test "stdp_confavreux_step: pre + post both fire same step 鈥?additive" {
   @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   // tpre after step: 0.3 * decay_pre + 1.0 (spike bump)
   // tpost after step: 0.4 * decay_post + 1.0
-  let decay_pre : Float = @snn_mbt.expf(-dt / 20.0F)
-  let decay_post : Float = @snn_mbt.expf(-dt / 20.0F)
+  let decay_pre : Float = @core.expf(-dt / 20.0F)
+  let decay_post : Float = @core.expf(-dt / 20.0F)
   let tpre_after = 0.3F * decay_pre + 1.0F
   let tpost_after = 0.4F * decay_post + 1.0F
   // Both spikes apply on this connection (it's the only one, j=0, post_idx=0).
@@ -287,16 +287,16 @@ test "stdp_confavreux_step: integration 鈥?random pre/post spikes" {
   let vars = @snn_mbt.STDPVariables::new(n_pre, n_post)
   let p = @snn_mbt.STDPConfavreux2025::new()
   let dt = 0.125F
-  let rng = @snn_mbt.Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
   )
   for step in 0..<100 {
     let _ = step
     for k in 0..<n_pre {
-      pre_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      pre_fire[k] = @core.next_f32(rng) < 0.3F
     }
     for k in 0..<n_post {
-      post_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      post_fire[k] = @core.next_f32(rng) < 0.3F
     }
     @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }

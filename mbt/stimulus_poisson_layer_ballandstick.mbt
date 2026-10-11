@@ -22,7 +22,7 @@ pub struct PoissonLayerStimulusBallAndStick {
   connectivity : Array[Bool]
   target_compartment : String  // "soma" or "d"
   target_kind : String         // "glu" or "gaba"
-  rng : Xoshiro
+  rng : @core.Xoshiro
 }
 
 ///|
@@ -36,7 +36,7 @@ pub fn PoissonLayerStimulusBallAndStick::new(
   mu : Float,
   sigma : Float,
   p_conn : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> PoissonLayerStimulusBallAndStick {
   let n_pre = param.n_sources
   let n_post = post.n
@@ -46,10 +46,10 @@ pub fn PoissonLayerStimulusBallAndStick::new(
   for i in 0..<n_pre {
     for j in 0..<n_post {
       let idx = j * n_pre + i
-      if next_f32(rng) < p_conn {
+      if @core.next_f32(rng) < p_conn {
         connectivity[idx] = true
         weights[idx] = if use_normal {
-          mu + next_f32(rng) * sigma
+          mu + @core.next_f32(rng) * sigma
         } else {
           mu
         }

@@ -72,7 +72,7 @@ pub fn TarnetBlock::new(
   t : Int,
   seed : UInt64,
 ) -> TarnetBlock {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let dw = Conv1DDepthwise::new(
     hid,
     kernel,
@@ -240,7 +240,7 @@ pub fn Tarnet::new(
   att_hidden~ : Int = 256,
   seed~ : UInt64 = 7UL,
 ) -> Tarnet {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let dil_s = [1, 2]
   let dil_m = [4, 8]
   let dil_l = [16]
@@ -997,7 +997,7 @@ pub fn tn_stack_bump(
     let dir = tn_randn(
       fb.length(),
       1.0F,
-      Xoshiro::new(seed + i.to_uint64() * 7919UL),
+      @core.Xoshiro::new(seed + i.to_uint64() * 7919UL),
     )
     let bumped = fb.copy()
     let mut k = 0

@@ -20,7 +20,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 100
   let g = @snn_mbt.WilsonCowan::new(n, rng)
   // All-to-all self-connection with μ=1.2, p=1.0. The

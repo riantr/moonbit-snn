@@ -78,7 +78,7 @@ pub struct HH {
 
 ///|
 /// Construct a new HH population with `n` neurons.
-pub fn HH::new(n : Int, param : HHParameter, rng : Xoshiro) -> HH {
+pub fn HH::new(n : Int, param : HHParameter, rng : @core.Xoshiro) -> HH {
   // v[i] = El + 5(randn() - 1) → mean El - 5, std 5
   // m, n = 0; h = 1
   // ge, gi = 0 (zeroed for stability — see IZ note)
@@ -131,29 +131,29 @@ pub fn step_hh(p : HH, dt : Float) -> Unit {
     // m update (sigmoid-like with expf)
     let am_num = 13.0F - v + vt
     let bm_num = v - vt - 40.0F
-    let am = if expf(am_num / 4.0F) - 1.0F != 0.0F {
-      0.32F * am_num / (expf(am_num / 4.0F) - 1.0F)
+    let am = if @core.expf(am_num / 4.0F) - 1.0F != 0.0F {
+      0.32F * am_num / (@core.expf(am_num / 4.0F) - 1.0F)
     } else {
       0.0F
     }
-    let bm = if expf(bm_num / 5.0F) - 1.0F != 0.0F {
-      0.28F * bm_num / (expf(bm_num / 5.0F) - 1.0F)
+    let bm = if @core.expf(bm_num / 5.0F) - 1.0F != 0.0F {
+      0.28F * bm_num / (@core.expf(bm_num / 5.0F) - 1.0F)
     } else {
       0.0F
     }
     p.m[i] = m + dt * (am * (1.0F - m) - bm * m)
     // n update
     let an_num = 15.0F - v + vt
-    let an = if expf(an_num / 5.0F) - 1.0F != 0.0F {
-      0.032F * an_num / (expf(an_num / 5.0F) - 1.0F)
+    let an = if @core.expf(an_num / 5.0F) - 1.0F != 0.0F {
+      0.032F * an_num / (@core.expf(an_num / 5.0F) - 1.0F)
     } else {
       0.0F
     }
-    let bn = 0.5F * expf((10.0F - v + vt) / 40.0F)
+    let bn = 0.5F * @core.expf((10.0F - v + vt) / 40.0F)
     p.n_gate[i] = nn + dt * (an * (1.0F - nn) - bn * nn)
     // h update
-    let ah = 0.128F * expf((17.0F - v + vt) / 18.0F)
-    let bh_denom = 1.0F + expf((40.0F - v + vt) / 5.0F)
+    let ah = 0.128F * @core.expf((17.0F - v + vt) / 18.0F)
+    let bh_denom = 1.0F + @core.expf((40.0F - v + vt) / 5.0F)
     let bh = if bh_denom != 0.0F { 4.0F / bh_denom } else { 0.0F }
     p.h[i] = h + dt * (ah * (1.0F - h) - bh * h)
     // v update

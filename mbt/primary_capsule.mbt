@@ -58,12 +58,12 @@ pub fn PrimaryCapsule::new(
   let out_dim = c_out * capsule_dim
   let rows : Array[Array[Float]] = Array::make(out_dim, Array::make(in_dim, 0.0F))
   let std = sqrtf(2.0F / Float::from_int(in_dim))
-  let rng = Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   for o in 0..<out_dim {
     for i in 0..<in_dim {
-      rows[o][i] = std * (next_f32(rng) * 2.0F - 1.0F)
+      rows[o][i] = std * (@core.next_f32(rng) * 2.0F - 1.0F)
     }
   }
   let b : Array[Float] = Array::make(out_dim, 0.0F)

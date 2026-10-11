@@ -27,7 +27,7 @@ pub fn vit_softmax(logits : Array[Float]) -> Array[Float] {
   let exp_logits : Array[Float] = Array::make(n, 0.0F)
   let mut sum_exp = 0.0F
   for i in 0..<n {
-    let e = expf(logits[i] - m)
+    let e = @core.expf(logits[i] - m)
     exp_logits[i] = e
     sum_exp = sum_exp + e
   }
@@ -45,7 +45,7 @@ pub fn vit_cross_entropy(logits : Array[Float], target : Int) -> Float {
   // Add a tiny epsilon for numerical safety (avoid log(0)).
   let eps = 1.0e-12F
   let p = if probs[target] > eps { probs[target] } else { eps }
-  -logf(p)
+  -@core.logf(p)
 }
 
 ///|
@@ -64,7 +64,7 @@ pub fn vit_train_step_head(
   let d_model = vit.d_model
   // Cross-entropy gradient: dL/dlogits[k] = softmax[k] - 1[k == target].
   let probs = vit_softmax(logits)
-  let loss = -logf(if probs[target] > 1.0e-12F { probs[target] } else { 1.0e-12F })
+  let loss = -@core.logf(if probs[target] > 1.0e-12F { probs[target] } else { 1.0e-12F })
   // d_logits[k] = probs[k] - (k == target ? 1 : 0).
   let d_logits : Array[Float] = Array::make(num_classes, 0.0F)
   for k in 0..<num_classes {
@@ -167,7 +167,7 @@ pub fn vit_eval_loss(
     } else {
       1.0e-12F
     }
-    total = total + (-logf(p))
+    total = total + (-@core.logf(p))
   }
   total / Float::from_int(n)
 }

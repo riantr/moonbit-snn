@@ -66,7 +66,7 @@ pub fn DCGANGenerator::new(
   seed : UInt64,
 ) -> DCGANGenerator {
   let proj_dim = c_base * 4 * 4
-  let rng0 = Xoshiro::from_state(
+  let rng0 = @core.Xoshiro::from_state(
     seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL,
   )
   let std0 = sqrtf(2.0F / Float::from_int(latent_dim))
@@ -101,10 +101,10 @@ fn xavier_normal_conv(
   let in_dim = c_in * k * k
   let rows : Array[Array[Float]] = Array::make(c_out, Array::make(in_dim, 0.0F))
   let std = sqrtf(2.0F / Float::from_int(in_dim))
-  let rng = Xoshiro::new(20261004UL + c_out.to_uint64() * 31UL + c_in.to_uint64())
+  let rng = @core.Xoshiro::new(20261004UL + c_out.to_uint64() * 31UL + c_in.to_uint64())
   for o in 0..<c_out {
     for i in 0..<in_dim {
-      rows[o][i] = std * (next_f32(rng) * 2.0F - 1.0F)
+      rows[o][i] = std * (@core.next_f32(rng) * 2.0F - 1.0F)
     }
   }
   rows
@@ -250,7 +250,7 @@ pub fn dcgan_generator_forward(
   let c3 = conv3x3(f3, g.c_base, 32, 32, g.conv3_w, g.c_out, g.conv3_b)
   let out : Array[Float] = Array::make(c3.length(), 0.0F)
   for i in 0..<c3.length() {
-    out[i] = tanhf(c3[i])
+    out[i] = @core.tanhf(c3[i])
   }
   out
 }

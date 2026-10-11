@@ -2,7 +2,7 @@
 
 ///|
 test "get_poisson_spikes — rate=0 always returns 0" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   for _ in 0..<100 {
     let s = @snn_mbt.get_poisson_spikes(0.0F, 0.1F, rng)
     if s != 0.0F { fail("rate=0 should always be 0, got \{s}") }
@@ -11,7 +11,7 @@ test "get_poisson_spikes — rate=0 always returns 0" {
 
 ///|
 test "get_poisson_spikes — rate*dt=1 always returns 1" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   for _ in 0..<100 {
     let s = @snn_mbt.get_poisson_spikes(10.0F, 0.1F, rng)
     // lambda = 1.0 → always 1 (since rand() < 1.0 is always true for rand ∈ [0,1))
@@ -21,8 +21,8 @@ test "get_poisson_spikes — rate*dt=1 always returns 1" {
 
 ///|
 test "get_poisson_spikes — seeded reproducibility" {
-  let rng1 = @snn_mbt.Xoshiro::new(42UL)
-  let rng2 = @snn_mbt.Xoshiro::new(42UL)
+  let rng1 = @core.Xoshiro::new(42UL)
+  let rng2 = @core.Xoshiro::new(42UL)
   let mut same = true
   for _ in 0..<100 {
     let a = @snn_mbt.get_poisson_spikes(5.0F, 0.1F, rng1)
@@ -36,7 +36,7 @@ test "get_poisson_spikes — seeded reproducibility" {
 test "get_poisson_spikes — frequency approximation (mean ≈ rate*dt)" {
   // 10 kHz × 0.1 ms = 1.0 → all spikes. Use a lower lambda.
   // 2 kHz × 0.1 ms = 0.2 → 20% spikes
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let mut total : Float = 0.0F
   let n = 10000
   for _ in 0..<n {

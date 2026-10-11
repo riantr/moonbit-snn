@@ -16,7 +16,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
 
   // Build IF pre (1 neuron) — will be forced to fire each step.
   let if_param = @snn_mbt.IFParameter::new()

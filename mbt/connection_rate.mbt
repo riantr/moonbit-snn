@@ -39,7 +39,7 @@ pub fn RateSynapse::new(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> RateSynapse {
   // Weight std = μ / sqrt(p * N) (Julia's RateSynapse constructor).
   let n_pre = Float::from_int(pre.n)

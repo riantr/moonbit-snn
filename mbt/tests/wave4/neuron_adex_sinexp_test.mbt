@@ -44,7 +44,7 @@ test "AdExSinExpParameter::lkd_adex — LKD 2014 values" {
 ///|
 test "AdExSinExp::new — initial state" {
   let p = @snn_mbt.AdExSinExpParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.AdExSinExp::new(5, p, rng)
   assert_eq(pop.n, 5)
   assert_eq(pop.v.length(), 5)
@@ -81,7 +81,7 @@ test "AdExSinExp::new — initial state" {
 ///|
 test "AdExSinExp — no input, v decays toward el (steady state)" {
   let p = @snn_mbt.AdExSinExpParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
   // Start with v at the resting potential (skip first-step init noise).
   pop.v[0] = -70.6F
@@ -104,7 +104,7 @@ test "AdExSinExp — no input, v decays toward el (steady state)" {
 ///|
 test "AdExSinExp — sin-exp synapse step: glu is consumed into ge" {
   let p = @snn_mbt.AdExSinExpParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
   // Inject a spike into the glu buffer (simulating a pre-synaptic spike).
   pop.glu[0] = 1.0F
@@ -132,7 +132,7 @@ test "AdExSinExp — strong current drives v to threshold and fires" {
   // I=350pA, v_ss = -70 + 350/15 ≈ -46.7mV, which is above Vt=-52
   // and the exponential term pushes it over 0 quickly.
   let p = @snn_mbt.AdExSinExpParameter::lkd_adex()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
   pop.v[0] = p.el  // start at rest
   pop.i[0] = 350.0F  // tonic current
@@ -159,7 +159,7 @@ test "AdExSinExp — strong current drives v to threshold and fires" {
 test "AdExSinExp — gaba injection into inhibitory channel" {
   // Verify the gi side of the sin-exp synapse (gaba → gi with τi decay).
   let p = @snn_mbt.AdExSinExpParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
   pop.gaba[0] = 1.0F
   let dt = 0.125F

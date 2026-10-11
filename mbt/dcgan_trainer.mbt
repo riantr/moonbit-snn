@@ -41,7 +41,7 @@ pub fn DCGANTrainer::new(
 pub fn dcgan_train_step(
   trainer : DCGANTrainer,
   real_batch : Array[Array[Float]],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float) {
   let m = real_batch.length()
   let mut d_total = 0.0F
@@ -64,7 +64,7 @@ pub fn dcgan_eval(
   trainer : DCGANTrainer,
   held_out : Array[Array[Float]],
 ) -> (Float, Float, Float) {
-  let rng = Xoshiro::new(0UL)
+  let rng = @core.Xoshiro::new(0UL)
   let m = held_out.length()
   let mut d_total = 0.0F
   let mut g_total = 0.0F
@@ -94,7 +94,7 @@ pub fn dcgan_eval(
 pub fn dcgan_sample_grid_stats(
   gan : DCGAN,
   n_samples : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Float, Float, Float) {
   let batch = dcgan_generate_batch(gan, n_samples, rng)
   let first = batch[0]

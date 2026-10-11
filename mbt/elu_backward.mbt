@@ -22,7 +22,7 @@ pub fn elu_backward(
   let d_input : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
     let v = input[i]
-    let g = if v > 0.0F { 1.0F } else { alpha * expf(v) }
+    let g = if v > 0.0F { 1.0F } else { alpha * @core.expf(v) }
     d_input[i] = d_output[i] * g
   }
   d_input

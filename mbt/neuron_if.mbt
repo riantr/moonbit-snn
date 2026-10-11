@@ -110,11 +110,11 @@ pub struct IF {
 
 ///|
 /// Construct a new IF population with `n` neurons.
-pub fn IF::new(n : Int, param : IFParameter, rng : Xoshiro) -> IF {
+pub fn IF::new(n : Int, param : IFParameter, rng : @core.Xoshiro) -> IF {
   let v = Array::make(n, 0.0F)
   let spread = param.vt - param.vr
   for k in 0..<n {
-    v[k] = param.vr + next_f32(rng) * spread
+    v[k] = param.vr + @core.next_f32(rng) * spread
   }
   let w : Array[Float] = Array::make(n, 0.0F)
   let fire : Array[Bool] = Array::make(n, false)

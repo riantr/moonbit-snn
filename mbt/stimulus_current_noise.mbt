@@ -53,7 +53,7 @@ pub fn CurrentNoise::custom(
 pub fn stimulate_noise(
   param : CurrentNoise,
   i_target : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Unit {
   let n = param.n
   let i_base = param.i_base
@@ -71,10 +71,10 @@ pub fn stimulate_noise(
 
 ///|
 /// box_muller_unit — single N(0, 1) sample from two uniform Float32 draws.
-fn box_muller_unit(rng : Xoshiro) -> Float {
-  let u1 = next_f64(rng)
+fn box_muller_unit(rng : @core.Xoshiro) -> Float {
+  let u1 = @core.next_f64(rng)
   let u1_safe = if u1 < 1.0e-15 { 1.0e-15 } else { u1 }
-  let u2 = next_f64(rng)
+  let u2 = @core.next_f64(rng)
   let r : Double = (-2.0 * @math.ln(u1_safe)).sqrt()
   let theta : Double = 2.0 * 3.141592653589793 * u2
   Float::from_double(r * @math.cos(theta))

@@ -63,7 +63,7 @@ pub fn ReceptorSynapse::new(
   mu : Float,
   sigma : Float,
   p : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> ReceptorSynapse {
   let m = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   let n = m.vals.length()

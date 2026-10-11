@@ -18,7 +18,7 @@ test "HetRecParameter::new — Julia defaults" {
 
 ///|
 test "HetRec::new — array sizes match Julia HetRec layout" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::new()
   let n = 4
   let p = @snn_mbt.HetRec::new(n, param, rng)
@@ -54,7 +54,7 @@ test "HetRec::new — array sizes match Julia HetRec layout" {
 
 ///|
 test "HetRec::new — baseline rates uniform in [0, 1]" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::new()
   let n = 200
   let p = @snn_mbt.HetRec::new(n, param, rng)
@@ -80,7 +80,7 @@ test "HetRec::new — baseline rates uniform in [0, 1]" {
 
 ///|
 test "HetRec::new — dendritic time constants uniform in [10, 100] ms" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::new()
   let n = 50
   let p = @snn_mbt.HetRec::new(n, param, rng)
@@ -94,7 +94,7 @@ test "HetRec::new — dendritic time constants uniform in [10, 100] ms" {
 
 ///|
 test "HetRec::new — overlap=0 → only own dendrites per soma" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::{
     nd: 2,
     overlap: 0.0F,
@@ -129,7 +129,7 @@ test "HetRec::new — overlap=0 → only own dendrites per soma" {
 
 ///|
 test "step_hetrec — zero input → v_d, v_s stay at 0, no spikes" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::new()
   let p = @snn_mbt.HetRec::new(5, param, rng)
   let dt = 0.125F
@@ -150,7 +150,7 @@ test "step_hetrec — zero input → v_d, v_s stay at 0, no spikes" {
 
 ///|
 test "step_hetrec — constant is_ drives v_d, then v_s via M" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::new()
   let n = 2
   let p = @snn_mbt.HetRec::new(n, param, rng)
@@ -201,7 +201,7 @@ test "step_hetrec — constant is_ drives v_d, then v_s via M" {
 
 ///|
 test "step_hetrec — long sim no NaN, mean v_s in reasonable range" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HetRecParameter::new()
   let n = 30
   let p = @snn_mbt.HetRec::new(n, param, rng)
@@ -211,7 +211,7 @@ test "step_hetrec — long sim no NaN, mean v_s in reasonable range" {
     // of current into a random subset of dendrites.
     if step % 10 == 0 {
       for d in 0..<p.is_.length() {
-        let u = @snn_mbt.next_f32(rng)
+        let u = @core.next_f32(rng)
         if u < 0.3F {
           p.is_[d] = 5.0F
         } else {

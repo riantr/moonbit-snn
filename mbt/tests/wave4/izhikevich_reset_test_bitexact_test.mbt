@@ -11,8 +11,8 @@
 ///|
 test "iz_reset / two fresh populations with same seed are bit-exact" {
   // Same constructor + same RNG seed -> bit-exact trajectory.
-  let pop_a = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(42UL))
-  let pop_b = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(42UL))
+  let pop_a = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(42UL))
+  let pop_b = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(42UL))
   // Identical external drive.
   pop_a.i[0] = 8.0F
   pop_a.i[1] = 12.0F
@@ -62,8 +62,8 @@ test "iz_reset / post-reset trajectory matches fresh-population trajectory bit-e
   // pop_b's first K1 steps, which are erased by iz_reset).
   let k1 = 20
   let k2 = 30
-  let pop_a = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(99UL))
-  let pop_b = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(99UL))
+  let pop_a = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(99UL))
+  let pop_b = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(99UL))
   pop_a.i[0] = 6.0F
   pop_a.i[1] = 10.0F
   pop_b.i[0] = 6.0F
@@ -122,8 +122,8 @@ test "iz_reset / single neuron 50-step + reset + 50-step is bit-exact" {
   // reset + 50 steps with same i restored each step. Should be
   // bit-exact (verifies iz_reset determinism).
   let n_reset_at = 50
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(7UL))
-  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(7UL))
+  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
+  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
   pop_a.i[0] = 7.5F
   pop_b.i[0] = 7.5F
   // Phase 1: both run 50 steps.
@@ -160,8 +160,8 @@ test "iz_reset / single neuron 50-step + reset + 50-step is bit-exact" {
 ///|
 test "iz_reset / bit-exactness across FS parameters" {
   // Same test but for FS (Fast Spiking) parameters.
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @snn_mbt.Xoshiro::new(11UL))
-  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @snn_mbt.Xoshiro::new(11UL))
+  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @core.Xoshiro::new(11UL))
+  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @core.Xoshiro::new(11UL))
   pop_a.i[0] = 25.0F
   pop_b.i[0] = 25.0F
   for _ in 0..<40 {
@@ -196,8 +196,8 @@ test "iz_reset / bit-exactness across FS parameters" {
 ///|
 test "iz_reset / bit-exactness across custom IB-like parameters" {
   // Intrinsically Bursting-like (a=0.02, b=0.2, c=-55, d=4) via custom.
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @snn_mbt.Xoshiro::new(31UL))
-  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @snn_mbt.Xoshiro::new(31UL))
+  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @core.Xoshiro::new(31UL))
+  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @core.Xoshiro::new(31UL))
   pop_a.i[0] = 15.0F
   pop_b.i[0] = 15.0F
   for _ in 0..<50 {

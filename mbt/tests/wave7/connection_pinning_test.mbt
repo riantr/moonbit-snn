@@ -3,7 +3,7 @@
 
 ///|
 test "PINningSparseSynapse::new 鈥?fields populated" {
-  let rng = @snn_mbt.Xoshiro::from_state(42UL, 1UL, 2UL, 3UL)
+  let rng = @core.Xoshiro::from_state(42UL, 1UL, 2UL, 3UL)
   let pre = @snn_mbt.WilsonCowan::new(4, rng)
   let post = @snn_mbt.WilsonCowan::new(2, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.5F, 1.0F, 1.0F, rng)
@@ -23,7 +23,7 @@ test "PINningSparseSynapse::new 鈥?fields populated" {
 ///|
 test "PINningSparseSynapse::new 鈥?P diagonal = 伪, off-diagonal = 0" {
   // p=1.0 all-to-all, so every (j,i) pair exists.
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let pre = @snn_mbt.WilsonCowan::new(3, rng)
   let post = @snn_mbt.WilsonCowan::new(3, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 2.5F, rng)
@@ -44,7 +44,7 @@ test "PINningSparseSynapse::new 鈥?P diagonal = 伪, off-diagonal = 0" {
 
 ///|
 test "PINningSparseSynapse::set_target 鈥?sets f[i]" {
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let pre = @snn_mbt.WilsonCowan::new(2, rng)
   let post = @snn_mbt.WilsonCowan::new(2, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
@@ -59,7 +59,7 @@ test "forward_pinning_synapse 鈥?q and g updated from P*W*rJ" {
   // 1 pre, 1 post; pre.r = [3], post.r = [0].
   // Setup: build a single connection (j=0 鈫?i=0) with W=2, P=1.
   // Expected: q[0] = P * rJ[0] = 1 * 3 = 3; g[0] = W * rJ[0] = 2 * 3 = 6.
-  let rng = @snn_mbt.Xoshiro::from_state(100UL, 200UL, 300UL, 400UL)
+  let rng = @core.Xoshiro::from_state(100UL, 200UL, 300UL, 400UL)
   let pre = @snn_mbt.WilsonCowan::new(1, rng)
   let post = @snn_mbt.WilsonCowan::new(1, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
@@ -77,7 +77,7 @@ test "forward_pinning_synapse 鈥?q and g updated from P*W*rJ" {
 
 ///|
 test "forward_pinning_synapse 鈥?resets q and g before update" {
-  let rng = @snn_mbt.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
+  let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let pre = @snn_mbt.WilsonCowan::new(1, rng)
   let post = @snn_mbt.WilsonCowan::new(1, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
@@ -96,7 +96,7 @@ test "forward_pinning_synapse 鈥?resets q and g before update" {
 test "pinning_plasticity 鈥?C = 1/(1+dot(q,rI)) scaling" {
   // Single connection: dot(q,rI) = q[0]*rI[0]. If q[0]=1, rI[0]=1,
   // dot=1, C = 1/2 = 0.5.
-  let rng = @snn_mbt.Xoshiro::from_state(11UL, 22UL, 33UL, 44UL)
+  let rng = @core.Xoshiro::from_state(11UL, 22UL, 33UL, 44UL)
   let pre = @snn_mbt.WilsonCowan::new(1, rng)
   let post = @snn_mbt.WilsonCowan::new(1, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
@@ -117,7 +117,7 @@ test "pinning_plasticity 鈥?C = 1/(1+dot(q,rI)) scaling" {
 
 ///|
 test "pinning_plasticity 鈥?C = 1/(1+0) = 1 when q路rI = 0" {
-  let rng = @snn_mbt.Xoshiro::from_state(2UL, 4UL, 6UL, 8UL)
+  let rng = @core.Xoshiro::from_state(2UL, 4UL, 6UL, 8UL)
   let pre = @snn_mbt.WilsonCowan::new(1, rng)
   let post = @snn_mbt.WilsonCowan::new(1, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
@@ -139,7 +139,7 @@ test "pinning_plasticity 鈥?C = 1/(1+0) = 1 when q路rI = 0" {
 test "pinning_plasticity 鈥?multi-neuron dot(q, rI)" {
   // 2 pre, 2 post. q = [2, 3], rI = [4, 5] 鈫?dot = 8 + 15 = 23.
   // C = 1 / (1 + 23) = 1/24 鈮?0.04167
-  let rng = @snn_mbt.Xoshiro::from_state(50UL, 60UL, 70UL, 80UL)
+  let rng = @core.Xoshiro::from_state(50UL, 60UL, 70UL, 80UL)
   let pre = @snn_mbt.WilsonCowan::new(2, rng)
   let post = @snn_mbt.WilsonCowan::new(2, rng)
   let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)

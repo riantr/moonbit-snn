@@ -111,7 +111,7 @@ pub fn pow_fast(x : Float, y : Float) -> Float {
   if x <= 0.0F {
     return 0.0F
   }
-  expf(y * logf(x))
+  @core.expf(y * @core.logf(x))
 }
 
 ///|
@@ -120,7 +120,7 @@ pub fn pow_fast(x : Float, y : Float) -> Float {
 pub fn PrioritizedBuffer::sample(
   self : PrioritizedBuffer,
   batch_size : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Int], Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool], Array[Float]) {
   let indices : Array[Int] = Array::make(batch_size, 0)
   let states : Array[Int] = Array::make(batch_size, 0)

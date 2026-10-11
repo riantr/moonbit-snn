@@ -48,8 +48,8 @@ fn tn_default_width_fixture(
     t,
     seed=seed,
   )
-  let x = @snn_mbt.rand_f32(
-    @snn_mbt.Xoshiro::new(seed + 7UL), n * 80 * t,
+  let x = @core.rand_f32(
+    @core.Xoshiro::new(seed + 7UL), n * 80 * t,
   )
   let targets : Array[Int] = Array::make(n, 0)
   let mut i = 0
@@ -155,8 +155,8 @@ test "TARNet: ONE model runs utterances of different lengths" {
   let mut li = 0
   while li < lengths.length() {
     let t = lengths[li]
-    let x = @snn_mbt.rand_f32(
-      @snn_mbt.Xoshiro::new(400UL + t.to_uint64()), n * 6 * t,
+    let x = @core.rand_f32(
+      @core.Xoshiro::new(400UL + t.to_uint64()), n * 6 * t,
     )
     let (out, cache) = @snn_mbt.tarnet_forward_full(net, x, n)
     if out.logits.length() != n * n_classes {

@@ -44,7 +44,7 @@ test "td3_select_action_with_noise_stays_in_range" {
     3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.5F, 0.2F, 0.5F, 2, 7UL,
   )
   let state : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let mut k = 0
   while k < 100 {
     let action = @snn_mbt.td3_select_action(td3, state, rng)
@@ -66,7 +66,7 @@ test "td3_policy_delay_skips_actor_update" {
   let buf = @snn_mbt.ContinuousReplayBuffer::new(8, 2, 1)
   buf.push([0.1F, 0.1F], [0.2F], 0.5F, [0.2F, 0.2F], false)
   buf.push([0.2F, 0.2F], [0.1F], 0.4F, [0.3F, 0.3F], false)
-  let rng = @snn_mbt.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
+  let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let w2_before = td3.actor.w2[0][0]
   let b2_before = td3.actor.b2[0]
   // step_count=1: NOT a multiple of policy_delay=2, so actor skip.
@@ -124,7 +124,7 @@ test "td3_update_step_runs_finite" {
     )
     i = i + 1
   }
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let batch = buf.sample(4, rng)
   let td = @snn_mbt.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
   if td != td {
@@ -149,7 +149,7 @@ test "td3_target_noise_clipped_to_clip_range" {
     )
     i = i + 1
   }
-  let rng = @snn_mbt.Xoshiro::from_state(99UL, 88UL, 77UL, 66UL)
+  let rng = @core.Xoshiro::from_state(99UL, 88UL, 77UL, 66UL)
   let batch = buf.sample(4, rng)
   let _ = @snn_mbt.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
   let b1_after = td3.critic1_target.b1[0]

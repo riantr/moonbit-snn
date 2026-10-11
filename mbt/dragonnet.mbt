@@ -74,7 +74,7 @@ pub(all) struct DragonNet {
 /// Flat N(0, std) weights + zero bias. `Xoshiro` mutates through value
 /// passing (`next_u64` writes `r.s0`..`r.s3`), so looping here advances the
 /// stream rather than redrawing the same number.
-fn dn_linear(rng : Xoshiro, in_f : Int, out_f : Int, std : Float) -> LinearParam {
+fn dn_linear(rng : @core.Xoshiro, in_f : Int, out_f : Int, std : Float) -> LinearParam {
   let w : Array[Float] = Array::make(out_f * in_f, 0.0F)
   for i in 0..<(out_f * in_f) {
     let (z1, z2) = box_muller(rng)
@@ -101,7 +101,7 @@ pub fn DragonNet::new(
   std~ : Float = 0.05F,
   t_sigmoid~ : Bool = true,
 ) -> DragonNet {
-  let rng = Xoshiro::new(seed)
+  let rng = @core.Xoshiro::new(seed)
   let eps : Float = Float::from_double({
     let (z1, z2) = box_muller(rng)
     if z1 != 0.0 { z1 } else { z2 }
@@ -149,7 +149,7 @@ pub(all) struct DragonNetOut {
 fn dn_sigmoid_all(x : Array[Float], n : Int) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    out[i] = 1.0F / (1.0F + expf(-x[i]))
+    out[i] = 1.0F / (1.0F + @core.expf(-x[i]))
   }
   out
 }
@@ -304,7 +304,7 @@ pub fn dragonnet_loss(
     // vanilla classification term; `dn_prop` decides the clipping, and the
     // loss uses the same value the gradient differentiates
     let (p, _dp) = dn_prop(out.t_hat[i], DN_BCE_SMOOTH, DN_BCE_SCALE)
-    total = total - (ti * logf(p) + (1.0F - ti) * logf(1.0F - p))
+    total = total - (ti * @core.logf(p) + (1.0F - ti) * @core.logf(1.0F - p))
     // targeted regularisation term
     let (pt, _dpt) = dn_prop(out.t_hat[i], DN_TARREG_SMOOTH, DN_TARREG_SCALE)
     let h = ti / pt - (1.0F - ti) / (1.0F - pt)

@@ -207,10 +207,10 @@ pub fn graph_cross_entropy(logits : Array[Float], target : Int) -> Float {
   }
   let mut sum_exp = 0.0F
   for i in 0..<n {
-    sum_exp = sum_exp + expf(logits[i] - m)
+    sum_exp = sum_exp + @core.expf(logits[i] - m)
   }
   let p = if target >= 0 && target < n { target } else { 0 }
-  m - logits[p] + logf(sum_exp)
+  m - logits[p] + @core.logf(sum_exp)
 }
 
 ///|

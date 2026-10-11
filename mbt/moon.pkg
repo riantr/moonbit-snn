@@ -6,4 +6,5 @@ options(
 import {
   "moonbitlang/core/math",
   "riantr/moonbit_image",
+  "riantr/snn_mbt/core",
 }

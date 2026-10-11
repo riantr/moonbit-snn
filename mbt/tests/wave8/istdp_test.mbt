@@ -12,7 +12,7 @@ test "IstdpRate::new: defaults match Julia" {
     fail("eta = \{p.eta}, expected 0.01")
   }
   // r = 3 Hz = 3 * hz = 3 * 0.001 = 0.003 (internal units rate/ms).
-  if (p.r - 3.0F * @snn_mbt.hz).abs() > 1.0e-6F {
+  if (p.r - 3.0F * @core.hz).abs() > 1.0e-6F {
     fail("r = \{p.r}, expected 3.0 * hz")
   }
   if p.tau_y != 50.0F {
@@ -72,7 +72,7 @@ test "IstdpRateEntry::change_plasticity: swaps param, preserves vars" {
   e.vars.tpost[1] = 0.5F
   let new_param : @snn_mbt.IstdpRate = {
     eta: 0.05F,
-    r: 0.1F * @snn_mbt.hz,
+    r: 0.1F * @core.hz,
     tau_y: 100.0F,
     w_max: 50.0F,
     w_min: -1.0F,
@@ -233,16 +233,16 @@ test "istdp_rate_step: integration — random pre/post spikes" {
   let vars = @snn_mbt.IstdpRateVariables::new(n_pre, n_post)
   let p = @snn_mbt.IstdpRate::new()
   let dt = 0.125F
-  let rng = @snn_mbt.Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
   )
   for step in 0..<100 {
     let _ = step
     for k in 0..<n_pre {
-      pre_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      pre_fire[k] = @core.next_f32(rng) < 0.3F
     }
     for k in 0..<n_post {
-      post_fire[k] = @snn_mbt.next_f32(rng) < 0.3F
+      post_fire[k] = @core.next_f32(rng) < 0.3F
     }
     @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }

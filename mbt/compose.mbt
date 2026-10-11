@@ -21,7 +21,7 @@ pub(all) struct HeterogeneousModel {
   conns : Array[SpikingSynapse]
   stims : Array[AnyStim]
   // Shared time tracker so the sim loop can advance it.
-  time : Time
+  time : @core.Time
   // Monitors (optional). Driven in the inner loop so users can plot
   // :v, :fire, etc. across the simulation.
   monitors : Array[Monitor]
@@ -61,14 +61,14 @@ pub(all) enum AnyStim {
 
 ///|
 /// Dispatch one stimulate! call based on the enum variant.
-pub fn stimulate_any(s : AnyStim, t : Time, dt : Float) -> Unit {
+pub fn stimulate_any(s : AnyStim, t : @core.Time, dt : Float) -> Unit {
   match s {
-    PoissonIF_(x) => stimulate_if(x, get_time(t), dt)
-    PoissonLayer_(x) => stimulate_layer(x, get_time(t), dt)
-    BalancedIF_(x) => stimulate_balanced(x, get_time(t), dt)
+    PoissonIF_(x) => stimulate_if(x, @core.get_time(t), dt)
+    PoissonLayer_(x) => stimulate_layer(x, @core.get_time(t), dt)
+    BalancedIF_(x) => stimulate_balanced(x, @core.get_time(t), dt)
     CurrentIF_(x) => stimulate_current_if(x)
     CurrentArr_(x) => stimulate_current_array(x)
-    TimedStim_(x, w) => stimulate_spiketime(x, get_time(t), w)
+    TimedStim_(x, w) => stimulate_spiketime(x, @core.get_time(t), w)
   }
 }
 
@@ -84,7 +84,7 @@ pub fn compose(
   stdp? : Array[STDPEntryKind] = [],
   stp? : Array[STPEntryKind] = [],
 ) -> HeterogeneousModel {
-  { pops, conns, stims, time: Time::new(), monitors, stdp_entries: stdp,
+  { pops, conns, stims, time: @core.Time::new(), monitors, stdp_entries: stdp,
     stp_entries: stp }
 }
 
@@ -104,7 +104,7 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
   }
   // 2a. deliver pending spikes (delays scheduled in prior steps)
   for c in m.conns {
-    deliver_pending_synapse(c, get_time(m.time))
+    deliver_pending_synapse(c, @core.get_time(m.time))
   }
   // 2b. update STP traces — refresh per-connection ρ before forward
   // so that Markram scaling reflects current u/x state.
@@ -112,22 +112,22 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
     match entry {
       MarkramSTP_(e) => {
         let syn = m.conns[e.conn_index]
-        markram_stp_step(syn, e.vars, e.param, get_time(m.time))
+        markram_stp_step(syn, e.vars, e.param, @core.get_time(m.time))
       }
       MarkramSTPHet_(e) => {
         let syn = m.conns[e.conn_index]
-        markram_stp_step_het(syn, e.vars, e.param, get_time(m.time))
+        markram_stp_step_het(syn, e.vars, e.param, @core.get_time(m.time))
       }
       MarkramSTPTimestep_(e) => {
         let syn = m.conns[e.conn_index]
-        markram_stp_step_timestep(syn, e.vars, e.param, get_time(m.time), dt)
+        markram_stp_step_timestep(syn, e.vars, e.param, @core.get_time(m.time), dt)
       }
     }
   }
   // 2c. forward! propagate spikes (no-delay: immediate; with delays:
   // schedule for future delivery)
   for c in m.conns {
-    forward_synapse(c, get_time(m.time))
+    forward_synapse(c, @core.get_time(m.time))
   }
   // 3. apply STDP! (plasticity mutates weights in-place)
   for entry in m.stdp_entries {
@@ -260,10 +260,10 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
   }
   // 5. record! monitors
   for mon in m.monitors {
-    record_one(mon, get_time(m.time))
+    record_one(mon, @core.get_time(m.time))
   }
   // 6. advance time
-  update_time(m.time, dt)
+  @core.update_time(m.time, dt)
 }
 
 ///|
@@ -279,12 +279,12 @@ pub fn heterogeneous_sim_for(m : HeterogeneousModel, duration : Float) -> Unit {
 ///|
 /// Return the current simulation time (ms) of the model.
 pub fn get_time_heterogeneous(m : HeterogeneousModel) -> Float {
-  get_time(m.time)
+  @core.get_time(m.time)
 }
 
 ///|
 /// Reset the model's simulation clock back to 0. Does not clear
 /// monitors or weight values — only the time tracker.
 pub fn reset_time_heterogeneous(m : HeterogeneousModel) -> Unit {
-  reset_time(m.time)
+  @core.reset_time(m.time)
 }

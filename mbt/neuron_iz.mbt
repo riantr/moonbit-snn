@@ -102,7 +102,7 @@ pub(all) struct IZ {
 
 ///|
 /// Construct a new IZ population with `n` neurons.
-pub fn IZ::new(n : Int, param : IZParameter, rng : Xoshiro) -> IZ {
+pub fn IZ::new(n : Int, param : IZParameter, rng : @core.Xoshiro) -> IZ {
   // v[i] = -65.0 (uniform, no rand)
   let v = Array::make(n, -65.0F)
   // u[i] = b * v[i]
@@ -239,7 +239,7 @@ pub fn iz_reset_with_postspike(p : IZ, postspike : IZPostSpike) -> Unit {
 /// but the exact sequence differs.
 pub fn sample_julia_initial_ge_gi(
   n : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Float], Array[Float]) {
   let ge : Array[Float] = Array::make(n, 0.0F)
   let gi : Array[Float] = Array::make(n, 0.0F)
@@ -291,11 +291,11 @@ pub fn IZ::init_with_postspike(
 /// Box-Muller transform: produce a pair of N(0, 1) Float64 from
 /// two uniform Float64 draws. Matches Julia's `randn()` which uses
 /// the same algorithm.
-pub fn box_muller(rng : Xoshiro) -> (Double, Double) {
-  let u1 = next_f64(rng)
+pub fn box_muller(rng : @core.Xoshiro) -> (Double, Double) {
+  let u1 = @core.next_f64(rng)
   // Avoid log(0)
   let u1_safe = if u1 < 1.0e-15 { 1.0e-15 } else { u1 }
-  let u2 = next_f64(rng)
+  let u2 = @core.next_f64(rng)
   let r = (-2.0 * @math.ln(u1_safe)).sqrt()
   let theta = 2.0 * 3.141592653589793 * u2
   (r * @math.cos(theta), r * @math.sin(theta))

@@ -17,7 +17,7 @@ pub fn gelu_grad(x : Float) -> Float {
   let x2 = x * x
   let x3 = x2 * x
   let inner = 0.7978845608028654F * (x + 0.044715F * x3)
-  let t = tanhf(inner)
+  let t = @core.tanhf(inner)
   let sech2 = 1.0F - t * t
   let d_inner_dx = 0.7978845608028654F * (1.0F + 3.0F * 0.044715F * x2)
   0.5F * (1.0F + t) + 0.5F * x * sech2 * d_inner_dx

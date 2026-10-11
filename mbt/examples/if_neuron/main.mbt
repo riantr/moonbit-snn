@@ -17,7 +17,7 @@
 fn main {
   let n = 1
   let param = @snn_mbt.IFParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(n, param, rng)
 
   // 50Hz * 300 = 15000 Hz
@@ -43,8 +43,8 @@ fn main {
   // Knuth Poisson sampler at these rates; expected rate is the same).
   let total_steps : Int = (1.0F * 1000.0F / 0.125F).to_int()
   let dt = 0.125F
-  let time = @snn_mbt.Time::new()
-  @snn_mbt.set_dt(time, dt)
+  let time = @core.Time::new()
+  @core.set_dt(time, dt)
   @snn_mbt.record_zero(model)
   let mut spikes : Int = 0
   for _ in 0..<total_steps {
@@ -59,7 +59,7 @@ fn main {
       spikes = spikes + 1
     }
     @snn_mbt.record_one(model.monitors[0], time.t[0])
-    @snn_mbt.update_time(time, dt)
+    @core.update_time(time, dt)
   }
 
   println("if_neuron.mbt: simulation done (1s of 10s)")

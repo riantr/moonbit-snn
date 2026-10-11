@@ -161,7 +161,7 @@ test "SE: the full and thin forward are bit-identical" {
   let c = 6
   let t = 5
   let p = @snn_mbt.SeParam::new(c, 4, 91UL)
-  let x = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(92UL), n * c * t)
+  let x = @core.rand_f32(@core.Xoshiro::new(92UL), n * c * t)
   let a = @snn_mbt.se_forward(x, n, p)
   let (b, _cache) = @snn_mbt.se_forward_full(x, n, p)
   let mut i = 0
@@ -178,8 +178,8 @@ test "SE: every parameter class matches central differences" {
   let c = 6
   let t = 5
   let proto = tn_se_awake(@snn_mbt.SeParam::new(c, 4, 93UL), 0.5F, 4.0F)
-  let x = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(94UL), n * c * t)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(95UL), n * c * t)
+  let x = @core.rand_f32(@core.Xoshiro::new(94UL), n * c * t)
+  let w = @core.rand_f32(@core.Xoshiro::new(95UL), n * c * t)
   let (_y, cache) = @snn_mbt.se_forward_full(x, n, proto)
   let g = @snn_mbt.se_backward(x, w, n, proto, cache)
   let gf = tn_se_grad_flat(g, proto)
@@ -250,8 +250,8 @@ test "SE: the input gradient matches central differences" {
   let c = 6
   let t = 5
   let p = tn_se_awake(@snn_mbt.SeParam::new(c, 4, 97UL), 0.5F, 4.0F)
-  let x = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(98UL), n * c * t)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(99UL), n * c * t)
+  let x = @core.rand_f32(@core.Xoshiro::new(98UL), n * c * t)
+  let w = @core.rand_f32(@core.Xoshiro::new(99UL), n * c * t)
   let (_y, cache) = @snn_mbt.se_forward_full(x, n, p)
   let g = @snn_mbt.se_backward(x, w, n, p, cache)
   let f_base = tn_obj_se(x, n, p, w)

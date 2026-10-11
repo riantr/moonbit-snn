@@ -28,7 +28,7 @@ pub fn LinearQNet::new(
   seed : UInt64,
 ) -> LinearQNet {
   let std = sqrtf(0.1F / Float::from_int(n_states))
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w : Array[Array[Float]] = Array::make(n_actions, [])
   for i in 0..<n_actions {
     let row : Array[Float] = Array::make(n_states, 0.0F)
@@ -131,7 +131,7 @@ pub fn ReplayBuffer::len(self : ReplayBuffer) -> Int {
 pub fn ReplayBuffer::sample(
   self : ReplayBuffer,
   batch_size : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> (Array[Int], Array[Int], Array[Float], Array[Int], Array[Bool]) {
   let states : Array[Int] = Array::make(batch_size, 0)
   let actions : Array[Int] = Array::make(batch_size, 0)
@@ -245,7 +245,7 @@ pub fn eps_greedy_action(
   q_net : LinearQNet,
   state : Int,
   epsilon : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Int {
   if epsilon <= 0.0F {
     let x = rl_one_hot(state, q_net.n_states)
@@ -299,7 +299,7 @@ pub fn train_dqn(
   batch_size : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ReplayBuffer::new(buffer_capacity)
   let n_states = env.n_states()
   let mut total_return = 0.0F

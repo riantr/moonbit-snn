@@ -25,7 +25,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // 50 HetRec neurons with default parameters (Nd=2, overlap=0.5,
@@ -44,7 +44,7 @@ fn main {
     // into a random subset of dendrites.
     if step % burst_period == 0 {
       for d in 0..<pop.is_.length() {
-        let u = @snn_mbt.next_f32(rng)
+        let u = @core.next_f32(rng)
         pop.is_[d] = if u < 0.3F { 5.0F } else { 0.0F }
       }
     } else {

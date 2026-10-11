@@ -48,15 +48,15 @@ pub fn GATLayer::new(
   seed : UInt64,
 ) -> GATLayer {
   let std = sqrtf(2.0F / Float::from_int(in_dim))
-  let rng = Xoshiro::from_state(
+  let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   let w = xavier_normal(out_dim, in_dim, std, rng)
   let a_src : Array[Float] = Array::make(out_dim, 0.0F)
   let a_dst : Array[Float] = Array::make(out_dim, 0.0F)
   for i in 0..<out_dim {
-    a_src[i] = next_f32(rng) * 2.0F - 1.0F
-    a_dst[i] = next_f32(rng) * 2.0F - 1.0F
+    a_src[i] = @core.next_f32(rng) * 2.0F - 1.0F
+    a_dst[i] = @core.next_f32(rng) * 2.0F - 1.0F
   }
   { in_dim, out_dim, w, a_src, a_dst }
 }
@@ -138,7 +138,7 @@ pub fn gat_layer_forward(
       if g.edge_dst[e] != v {
         continue
       }
-      let x = expf(logits[e] - m)
+      let x = @core.expf(logits[e] - m)
       alpha[e] = x
       sum_exp = sum_exp + x
     }
@@ -247,7 +247,7 @@ pub fn gat_stack_node_dim(net : GraphAttention) -> Int {
 /// helper: ELU activation (x > 0 ? x : exp(x) - 1), the GAT hidden
 /// activation.
 pub fn gat_elu(x : Float) -> Float {
-  if x > 0.0F { x } else { expf(x) - 1.0F }
+  if x > 0.0F { x } else { @core.expf(x) - 1.0F }
 }
 
 ///|

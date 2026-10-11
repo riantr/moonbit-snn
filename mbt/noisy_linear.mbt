@@ -64,7 +64,7 @@ pub fn NoisyLinearParam::new(
 pub fn NoisyLinearParam::init(
   in_features : Int,
   out_features : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> NoisyLinearParam {
   let bound : Float = 1.0F /
     Float::from_int(in_features).to_double().sqrt().to_float()
@@ -74,7 +74,7 @@ pub fn NoisyLinearParam::init(
   let b_sig : Array[Float] = Array::make(out_features, 0.017F)
   for k in 0..<w_mu.length() {
     // Uniform in [-bound, +bound] via next_f32.
-    w_mu[k] = (next_f32(rng) * 2.0F - 1.0F) * bound
+    w_mu[k] = (@core.next_f32(rng) * 2.0F - 1.0F) * bound
   }
   NoisyLinearParam::new(w_mu, w_sig, b_mu, b_sig, in_features, out_features)
 }
@@ -92,12 +92,12 @@ pub fn f_sign_sqrt(x : Float) -> Float {
 
 ///|
 /// Sample N standard-normals via Box-Muller (consumes 2·N draws).
-pub fn sample_gaussians(n : Int, rng : Xoshiro) -> Array[Float] {
+pub fn sample_gaussians(n : Int, rng : @core.Xoshiro) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
   let mut k = 0
   while k < n {
-    let u1 = next_f32(rng)
-    let u2 = next_f32(rng)
+    let u1 = @core.next_f32(rng)
+    let u2 = @core.next_f32(rng)
     // Box-Muller: z0 = sqrt(-2 ln u1) cos(2π u2)
     let safe_u1 = if u1 < 1.0e-7F { 1.0e-7F } else { u1 }
     let r : Float = (-2.0F *
@@ -126,7 +126,7 @@ pub fn noisy_linear_forward(
   input : Array[Float],
   n : Int,
   param : NoisyLinearParam,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let in_f = param.in_features
   let out_f = param.out_features

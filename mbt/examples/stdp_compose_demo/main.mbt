@@ -20,7 +20,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let n = 4
   let e1 = @snn_mbt.IF::new(n, @snn_mbt.IFParameter::new(), rng)
   let e2 = @snn_mbt.IF::new(n, @snn_mbt.IFParameter::new(), rng)

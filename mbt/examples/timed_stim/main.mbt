@@ -16,7 +16,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let e_pop = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   // Prescribed spike times (in ms) and pre-synaptic neuron indices.
   let spiketimes : Array[Float] = [100.0F, 200.0F, 300.0F]

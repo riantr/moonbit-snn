@@ -29,7 +29,7 @@ pub fn gelu(x : Float) -> Float {
   let x3 = x2 * x
   // √(2/π) ≈ 0.7978845608028654
   let inner = 0.7978845608028654F * (x + 0.044715F * x3)
-  let t = tanhf(inner)
+  let t = @core.tanhf(inner)
   0.5F * x * (1.0F + t)
 }
 

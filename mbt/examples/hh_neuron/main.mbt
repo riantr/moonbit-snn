@@ -7,7 +7,7 @@
 ///|
 fn main {
   let n = 1
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.HHParameter::new()
   let pop = @snn_mbt.HH::new(n, param, rng)
 

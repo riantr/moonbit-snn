@@ -76,7 +76,7 @@ test "recurrent_sac_alpha_grows_when_policy_too_random" {
     sac.policy.b_out[i] = 0.0F
   }
   let ep = make_zero_episode(4, 3)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let before = sac.log_alpha
   let delta = @snn_mbt.recurrent_sac_update_alpha(sac, ep, rng)
   assert_true(delta > 0.0F)
@@ -96,7 +96,7 @@ test "recurrent_sac_alpha_shrinks_when_policy_too_deterministic" {
     sac.policy.b_out[i] = 0.0F
   }
   let ep = make_zero_episode(4, 3)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let before = sac.log_alpha
   let delta = @snn_mbt.recurrent_sac_update_alpha(sac, ep, rng)
   assert_true(delta < 0.0F)
@@ -109,7 +109,7 @@ test "recurrent_sac_alpha_shrinks_when_policy_too_deterministic" {
 test "recurrent_sac_log_alpha_stays_finite" {
   let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.3F, 33UL)
   let ep = make_zero_episode(4, 3)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   for _iter in 0..<30 {
     let _ = @snn_mbt.recurrent_sac_update_alpha(sac, ep, rng)
     assert_true(sac.log_alpha == sac.log_alpha)  // NaN check
@@ -149,7 +149,7 @@ test "recurrent_sac_critic_update_produces_positive_loss" {
     dones.push(false)
   }
   let ep = @snn_mbt.RecurrentSacEpisode::new(obs, obs2, acts, rews, dones, 2, 1)
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let loss = @snn_mbt.recurrent_sac_critic_update(sac, ep, 0.9F, 0.05F, rng)
   assert_true(loss == loss)  // NaN check
   assert_true(loss > 0.0F)

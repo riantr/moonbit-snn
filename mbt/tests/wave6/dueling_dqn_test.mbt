@@ -133,7 +133,7 @@ test "dueling_eps_greedy_action: epsilon=0 -> argmax" {
   q.value.w[0][0] = 5.0F
   q.advantage.w[0][0] = 1.0F
   q.advantage.w[1][0] = 0.0F
-  let rng = @snn_mbt.Xoshiro::from_state(43UL, 47UL, 53UL, 59UL)
+  let rng = @core.Xoshiro::from_state(43UL, 47UL, 53UL, 59UL)
   let a = @snn_mbt.dueling_eps_greedy_action(q, 0, 0.0F, rng)
   // For state 0: V=5, A=[1,0], mean=0.5. Q=[5.5, 4.5]. argmax=0.
   assert_eq(a, 0)

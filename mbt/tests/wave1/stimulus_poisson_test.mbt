@@ -2,7 +2,7 @@
 
 ///|
 test "sample_poisson(0) = 0" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   for _ in 0..<10 {
     if @snn_mbt.sample_poisson(rng, 0.0F) != 0 {
       fail("sample_poisson(0) should be 0")
@@ -12,7 +12,7 @@ test "sample_poisson(0) = 0" {
 
 ///|
 test "sample_poisson(negative) = 0" {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   if @snn_mbt.sample_poisson(rng, -1.0F) != 0 {
     fail("sample_poisson(negative) should be 0")
   }
@@ -22,7 +22,7 @@ test "sample_poisson(negative) = 0" {
 test "sample_poisson mean is approximately lambda" {
   // Sample many times and check the mean is close to λ.
   // For λ=0.5, E[k] = 0.5 over 1000 samples → expect ~500.
-  let rng = @snn_mbt.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL)
+  let rng = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL)
   let n = 10000
   let mut sum = 0
   for _ in 0..<n {
@@ -40,7 +40,7 @@ test "sample_poisson mean is approximately lambda" {
 test "ornstein_uhlenbeck_step: stationary mean ~ μ" {
   // OU process X_t with X_0=μ should remain close to μ for θ>0,
   // σ small, many steps.
-  let rng = @snn_mbt.Xoshiro::from_state(0x12345678UL, 0x9ABCDEF0UL, 0xFEDCBA98UL, 0x76543210UL)
+  let rng = @core.Xoshiro::from_state(0x12345678UL, 0x9ABCDEF0UL, 0xFEDCBA98UL, 0x76543210UL)
   let mu = 5.0F
   let theta = 0.5F
   let sigma = 0.1F
@@ -63,7 +63,7 @@ test "ornstein_uhlenbeck_step: stationary mean ~ μ" {
 test "ornstein_uhlenbeck_step: clamps negative to 0" {
   // With large θ and μ=0, large σ*ξ*sqrt(dt) can drive X negative.
   // The function should clamp to 0.
-  let rng = @snn_mbt.Xoshiro::from_state(0x11111111UL, 0x22222222UL, 0x33333333UL, 0x44444444UL)
+  let rng = @core.Xoshiro::from_state(0x11111111UL, 0x22222222UL, 0x33333333UL, 0x44444444UL)
   let x = 0.5F
   let result = @snn_mbt.ornstein_uhlenbeck_step(rng, x, 1.0F, 0.0F, 10.0F, 1.0F)
   if result < 0.0F {

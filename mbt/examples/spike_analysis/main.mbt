@@ -14,7 +14,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let dt = 0.125F
 
   // 20 IF neurons with El=-49mV (highly excitable — 1 mV below vt=-50mV)

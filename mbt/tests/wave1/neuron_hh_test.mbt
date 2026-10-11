@@ -22,7 +22,7 @@ test "HHParameter defaults" {
 ///|
 test "HH::new initial state" {
   let param = @snn_mbt.HHParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.HH::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.m[k], 0.0F)

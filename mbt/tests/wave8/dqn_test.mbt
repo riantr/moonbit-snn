@@ -67,7 +67,7 @@ test "replay_buffer: push + len" {
 ///|
 test "replay_buffer: sample returns valid transitions" {
   let b = @snn_mbt.ReplayBuffer::new(5)
-  let rng = @snn_mbt.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
+  let rng = @core.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
   for k in 0..<5 {
     b.push(k, k % 4, Float::from_int(k), (k + 1) % 5, false)
   }
@@ -161,7 +161,7 @@ test "eps_greedy_action: epsilon=0 -> argmax" {
   q.w[0][1] = 0.0F
   q.w[1][0] = 0.0F
   q.w[1][1] = 0.0F
-  let rng = @snn_mbt.Xoshiro::from_state(47UL, 53UL, 59UL, 61UL)
+  let rng = @core.Xoshiro::from_state(47UL, 53UL, 59UL, 61UL)
   let a = @snn_mbt.eps_greedy_action(q, 0, 0.0F, rng)
   assert_eq(a, 0)
 }

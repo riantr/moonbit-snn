@@ -33,7 +33,7 @@ test "step_iz_with_postspike — fire rate bounded by refractory" {
   // Inject a strong enough tonic input so both populations fire at
   // least once. The refractory version should fire strictly fewer
   // times because each spike costs at least tabs_const=4 timesteps.
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @snn_mbt.Xoshiro::new(7UL))
+  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
   pop_a.i[0] = 30.0F  // strong tonic drive
   let mut fires_a : Int = 0
   for _ in 0..<200 {

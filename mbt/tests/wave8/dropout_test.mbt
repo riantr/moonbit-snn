@@ -20,7 +20,7 @@ test "dropout_forward: inference mode is identity" {
   let d = @snn_mbt.Dropout::new(p=0.5F)
   d.training = false
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F]
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
   for i in 0..<input.length() {
     if !drop_eps(out[i], input[i], 0.0001F) {
@@ -37,7 +37,7 @@ test "dropout_forward: training mode zeros ~p fraction + scales by 1/(1-p)" {
   let d = @snn_mbt.Dropout::new(p=0.5F)
   let n = 1000
   let input : Array[Float] = Array::make(n, 1.0F)
-  let rng = @snn_mbt.Xoshiro::from_state(42UL, 0UL, 0UL, 0UL)
+  let rng = @core.Xoshiro::from_state(42UL, 0UL, 0UL, 0UL)
   let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
   // Count kept positions (mask == 1)
   let mut kept = 0
@@ -68,8 +68,8 @@ test "dropout_forward: training mode zeros ~p fraction + scales by 1/(1-p)" {
 test "dropout_forward: deterministic same-seed → same mask" {
   let d = @snn_mbt.Dropout::new(p=0.3F)
   let input : Array[Float] = Array::make(50, 0.7F)
-  let rng_a = @snn_mbt.Xoshiro::from_state(7UL, 0UL, 0UL, 0UL)
-  let rng_b = @snn_mbt.Xoshiro::from_state(7UL, 0UL, 0UL, 0UL)
+  let rng_a = @core.Xoshiro::from_state(7UL, 0UL, 0UL, 0UL)
+  let rng_b = @core.Xoshiro::from_state(7UL, 0UL, 0UL, 0UL)
   let (_out_a, mask_a) = @snn_mbt.dropout_forward(input, d, rng_a)
   let (_out_b, mask_b) = @snn_mbt.dropout_forward(input, d, rng_b)
   for i in 0..<mask_a.length() {
@@ -83,7 +83,7 @@ test "dropout_forward: deterministic same-seed → same mask" {
 test "dropout_forward: p=0 → identity (no-op)" {
   let d = @snn_mbt.Dropout::new(p=0.0F)
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
   for i in 0..<input.length() {
     if !drop_eps(out[i], input[i], 0.0001F) {
@@ -99,7 +99,7 @@ test "dropout_forward: p=0 → identity (no-op)" {
 test "dropout_forward: p=1 → all zeros (full dropout)" {
   let d = @snn_mbt.Dropout::new(p=1.0F)
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
   for i in 0..<input.length() {
     if out[i] != 0.0F {
@@ -115,7 +115,7 @@ test "dropout_forward: p=1 → all zeros (full dropout)" {
 test "dropout_backward: matches forward (mask * scale) + zero d_output" {
   let d = @snn_mbt.Dropout::new(p=0.5F)
   let input : Array[Float] = Array::make(8, 0.7F)
-  let rng = @snn_mbt.Xoshiro::from_state(11UL, 0UL, 0UL, 0UL)
+  let rng = @core.Xoshiro::from_state(11UL, 0UL, 0UL, 0UL)
   let (_out, mask) = @snn_mbt.dropout_forward(input, d, rng)
   let d_output : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F,
                                   0.5F, 0.6F, 0.7F, 0.8F]

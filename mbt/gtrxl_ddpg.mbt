@@ -90,7 +90,7 @@ pub fn gtrxl_ddpg_select_action(
   agent : GTrXL_DDPG,
   obs : Array[Float],
   noise_std : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let (action, _cache) = gtrxl_actor_step(agent.actor, obs)
   if noise_std <= 0.0F {

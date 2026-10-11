@@ -4,7 +4,7 @@
 test "average_weight — empty intersection returns 0.0" {
   let pre_pop : Array[Int] = []
   let post_pop : Array[Int] = []
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -16,7 +16,7 @@ test "average_weight — empty intersection returns 0.0" {
 test "average_weight — full connectivity uniform weight" {
   let pre_pop : Array[Int] = [0, 1, 2]
   let post_pop : Array[Int] = [0, 1]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -35,7 +35,7 @@ test "average_weight — full connectivity uniform weight" {
 test "average_weight — partial connectivity (1 of 4 edges)" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [0]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -48,7 +48,7 @@ test "average_weight — partial connectivity (1 of 4 edges)" {
 test "average_weight — mixed pre-pop excludes non-listed pre" {
   let pre_pop : Array[Int] = [0]  // only pre=0
   let post_pop : Array[Int] = [0, 1]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -68,7 +68,7 @@ test "average_weight — mixed pre-pop excludes non-listed pre" {
 test "average_weight — pre=full, post=subset (filters post)" {
   let pre_pop : Array[Int] = [0, 1]
   let post_pop : Array[Int] = [1]  // only post=1
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -85,7 +85,7 @@ test "average_weight — pre=full, post=subset (filters post)" {
 test "average_weight — out-of-bounds post filter returns 0.0" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [5]  // out of bounds for post.n=2
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -100,7 +100,7 @@ test "average_weight — out-of-bounds post filter returns 0.0" {
 test "average_weight_dynamics — uniform weights, 3 timesteps" {
   let pre_pop : Array[Int] = [0, 1]
   let post_pop : Array[Int] = [0]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -129,7 +129,7 @@ test "average_weight_dynamics — uniform weights, 3 timesteps" {
 test "average_weight_dynamics — no matched edges returns zeros" {
   let pre_pop : Array[Int] = []
   let post_pop : Array[Int] = []
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -144,7 +144,7 @@ test "average_weight_dynamics — no matched edges returns zeros" {
 test "weights_indices — full connectivity" {
   let pre_pop : Array[Int] = [0, 1]
   let post_pop : Array[Int] = [0, 1]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -160,7 +160,7 @@ test "weights_indices — full connectivity" {
 test "weights_indices — partial filter (pre=0 only)" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [0, 1]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -177,7 +177,7 @@ test "weights_indices — partial filter (pre=0 only)" {
 test "update_weight — multiplies matched edges by factor" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [0, 1]
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
@@ -197,7 +197,7 @@ test "update_weight — multiplies matched edges by factor" {
 test "update_weight — no matched edges is no-op" {
   let pre_pop : Array[Int] = []
   let post_pop : Array[Int] = []
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")

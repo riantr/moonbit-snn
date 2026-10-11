@@ -3,7 +3,7 @@
 ///|
 test "Tripod::new — initial state" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.Tripod::new(3, soma_param, rng)
   assert_eq(p.n, 3)
   assert_eq(p.v_s.length(), 3)
@@ -48,7 +48,7 @@ test "Tripod::new — initial state" {
 ///|
 test "Tripod — no input, all compartments decay toward el" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.Tripod::new(1, soma_param, rng)
   p.v_s[0] = soma_param.el
   p.v_d1[0] = soma_param.el
@@ -78,7 +78,7 @@ test "Tripod — no input, all compartments decay toward el" {
 ///|
 test "Tripod — soma spike fires under strong current" {
   let soma_param = @snn_mbt.AdExParameter::with_vr(-60.0F)
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.Tripod::new(1, soma_param, rng)
   p.i_s[0] = 1500.0F
   let dt = 0.125F
@@ -101,7 +101,7 @@ test "Tripod — soma spike fires under strong current" {
 ///|
 test "Tripod — single-exp synapse step on soma" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.Tripod::new(1, soma_param, rng)
   p.glu_s[0] = 1.0F
   let dt = 0.125F
@@ -116,7 +116,7 @@ test "Tripod — single-exp synapse step on soma" {
 ///|
 test "Tripod — single-exp synapse step on both dendrites" {
   let soma_param = @snn_mbt.AdExParameter::new()
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.Tripod::new(1, soma_param, rng)
   p.glu_d1[0] = 1.0F
   p.gaba_d2[0] = 1.0F
@@ -143,7 +143,7 @@ test "Tripod — single-exp synapse step on both dendrites" {
 ///|
 test "Tripod — Heun integration runs without NaN" {
   let soma_param = @snn_mbt.AdExParameter::with_vr(-60.0F)
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let p = @snn_mbt.Tripod::new(2, soma_param, rng)
   p.i_s[0] = 1000.0F
   p.i_s[1] = -100.0F

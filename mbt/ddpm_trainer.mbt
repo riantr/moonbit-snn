@@ -36,11 +36,11 @@ pub fn DDPMTrainer::new(ddpm : DDPM, lr : Float) -> DDPMTrainer {
 pub fn ddpm_train_step(
   trainer : DDPMTrainer,
   x0 : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let num_T = trainer.ddpm.schedule.num_steps
   // Sample t uniformly in [0, T-1].
-  let t = (next_u64(rng) % num_T.to_uint64()).to_int()
+  let t = (@core.next_u64(rng) % num_T.to_uint64()).to_int()
   let (xt, noise) = q_sample_pair(x0, t, trainer.ddpm.schedule, rng)
   // Predict noise from x_t.
   let pred = score_network_predict(trainer.ddpm.net, xt, t)
@@ -61,7 +61,7 @@ pub fn ddpm_train_step(
 pub fn ddpm_train_batch(
   trainer : DDPMTrainer,
   batch : Array[Array[Float]],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Float {
   let mut total = 0.0F
   let m = batch.length()
@@ -79,7 +79,7 @@ pub fn ddpm_eval_loss(
   trainer : DDPMTrainer,
   batch : Array[Array[Float]],
 ) -> Float {
-  let rng = Xoshiro::new(0UL)
+  let rng = @core.Xoshiro::new(0UL)
   let mut total = 0.0F
   let m = batch.length()
   for e in 0..<m {

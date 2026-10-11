@@ -135,7 +135,7 @@ test "ddpg_select_action_eval_in_range" {
 test "ddpg_select_action_with_noise_stays_in_range" {
   let ddpg = @snn_mbt.DDPG::new(3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.5F, 7UL)
   let state : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let mut k = 0
   while k < 100 {
     let action = @snn_mbt.ddpg_select_action(ddpg, state, rng)
@@ -180,7 +180,7 @@ test "ddpg_update_critic_runs_without_crash" {
     )
     i = i + 1
   }
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let batch = buf.sample(4, rng)
   let td = @snn_mbt.ddpg_update_critic(ddpg, batch, 0.001F)
   if td != td {
@@ -196,7 +196,7 @@ test "ddpg_update_actor_modifies_w2" {
   buf.push([0.2F, 0.2F], [0.1F], 0.4F, [0.3F, 0.3F], false)
   let w2_before = ddpg.actor.w2[0][0]
   let b2_before = ddpg.actor.b2[0]
-  let rng = @snn_mbt.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
+  let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let batch = buf.sample(2, rng)
   @snn_mbt.ddpg_update_actor(ddpg, batch, 0.001F)
   let w2_after = ddpg.actor.w2[0][0]

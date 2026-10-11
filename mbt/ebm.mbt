@@ -59,7 +59,7 @@ pub fn ebm_sample(
   ebm : EBM,
   init : Array[Float],
   n_steps : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   langevin_chain(ebm.net, init, n_steps, ebm.step_size, ebm.fd_eps, rng)
 }
@@ -71,14 +71,14 @@ pub fn ebm_sample_batch(
   ebm : EBM,
   init_batch : Array[Array[Float]],
   n_steps : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Array[Float]] {
   let n = init_batch.length()
   let out : Array[Array[Float]] = Array::make(n, Array::make(0, 0.0F))
   for c in 0..<n {
     // Advance the RNG state per call so each chain is independent.
-    let chain_rng = Xoshiro::new(
-      next_u64(rng) ^ (c + 1).to_uint64() * 7919UL,
+    let chain_rng = @core.Xoshiro::new(
+      @core.next_u64(rng) ^ (c + 1).to_uint64() * 7919UL,
     )
     out[c] = ebm_sample(ebm, init_batch[c], n_steps, chain_rng)
   }

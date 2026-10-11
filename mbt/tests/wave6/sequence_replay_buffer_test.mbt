@@ -60,7 +60,7 @@ test "sequence_replay_buffer_sample_seq_batch_shape" {
       false,
     )
   }
-  let rng = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let (obs_seq, action_seq, reward_seq, next_obs_seq, done_seq, term_mask, hidden_init) = buf.sample_seq_batch(3, 4, rng)
   assert_eq(obs_seq.length(), 3 * 4 * 3)  // 36
   assert_eq(action_seq.length(), 3 * 4 * 2)  // 24
@@ -77,7 +77,7 @@ test "sequence_replay_buffer_sample_seq_batch_empty_buffer_zero_pads" {
   // without crashing. With safe_max=0, every sequence is zero-padded
   // and the terminal_mask is set for every step.
   let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 2, 1)
-  let rng = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let (obs_seq, _act_seq, _r_seq, _next_seq, _done_seq, term_mask, hidden_init) = buf.sample_seq_batch(2, 3, rng)
   assert_eq(obs_seq.length(), 2 * 3 * 2)
   // Every slot is zero-initialised.
@@ -113,7 +113,7 @@ test "sequence_replay_buffer_sample_seq_batch_window_crosses_done" {
   let mut found_terminal = false
   let mut draw_seed : UInt64 = 42UL
   while draw_seed < 60UL && not(found_terminal) {
-    let rng = @snn_mbt.Xoshiro::from_state(draw_seed, draw_seed + 1UL, draw_seed + 2UL, draw_seed + 3UL)
+    let rng = @core.Xoshiro::from_state(draw_seed, draw_seed + 1UL, draw_seed + 2UL, draw_seed + 3UL)
     let (_o, _a, _r, _n, _d, term_mask, _h) = buf.sample_seq_batch(8, 4, rng)
     // Scan for any non-zero terminal_mask slot.
     for j in 0..<term_mask.length() {
@@ -140,8 +140,8 @@ test "sequence_replay_buffer_sample_seq_batch_reproducible_under_seed" {
     buf1.push(s, a, Float::from_int(i), ns, false)
     buf2.push(s, a, Float::from_int(i), ns, false)
   }
-  let rng1 = @snn_mbt.Xoshiro::from_state(99UL, 100UL, 101UL, 102UL)
-  let rng2 = @snn_mbt.Xoshiro::from_state(99UL, 100UL, 101UL, 102UL)
+  let rng1 = @core.Xoshiro::from_state(99UL, 100UL, 101UL, 102UL)
+  let rng2 = @core.Xoshiro::from_state(99UL, 100UL, 101UL, 102UL)
   let (o1, a1, r1, n1, d1, m1, h1) = buf1.sample_seq_batch(2, 3, rng1)
   let (o2, a2, r2, n2, d2, m2, h2) = buf2.sample_seq_batch(2, 3, rng2)
   // Element-wise equality across the two batches.
@@ -180,7 +180,7 @@ test "sequence_replay_buffer_dones_propagate_in_window" {
   let mut found_done : Bool = false
   let mut draw_seed : UInt64 = 100UL
   while draw_seed < 150UL && not(found_done) {
-    let rng = @snn_mbt.Xoshiro::from_state(draw_seed, draw_seed + 1UL, draw_seed + 2UL, draw_seed + 3UL)
+    let rng = @core.Xoshiro::from_state(draw_seed, draw_seed + 1UL, draw_seed + 2UL, draw_seed + 3UL)
     let (_o, _a, _r, _n, done_seq, _m, _h) = buf.sample_seq_batch(4, 5, rng)
     for j in 0..<done_seq.length() {
       if done_seq[j] > 0.5F {

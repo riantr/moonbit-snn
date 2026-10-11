@@ -45,12 +45,12 @@ pub fn GRUForecaster::new(
   output_dim : Int,
   seed : UInt64,
 ) -> GRUForecaster {
-  let rng1 = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std_in = sqrtf(2.0F / Float::from_int(input_dim))
   let in_w = xavier_normal(hidden_dim, input_dim, std_in, rng1)
   let in_b : Array[Float] = Array::make(hidden_dim, 0.0F)
   let gru = GruCellParam::new(input_dim, hidden_dim, seed + 4UL)
-  let rng2 = Xoshiro::from_state(
+  let rng2 = @core.Xoshiro::from_state(
     seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL,
   )
   let std_out = sqrtf(2.0F / Float::from_int(hidden_dim))

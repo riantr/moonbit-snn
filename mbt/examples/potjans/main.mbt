@@ -17,7 +17,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let ne = 10
   let ni = 3
   let exc_param = @snn_mbt.IFParameter::with_el(-60.0F)
@@ -58,7 +58,7 @@ fn main {
   )
 
   // Simulate 200ms.
-  @snn_mbt.heterogeneous_sim_for(model, 200.0F * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, 200.0F * @core.ms)
 
   let e_spikes = fm_e.count_spikes()
   let i_spikes = fm_i.count_spikes()

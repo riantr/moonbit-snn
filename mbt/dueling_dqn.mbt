@@ -180,7 +180,7 @@ pub fn dueling_eps_greedy_action(
   q_net : DuelingQNet,
   state : Int,
   epsilon : Float,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Int {
   if epsilon <= 0.0F {
     let x = rl_one_hot(state, q_net.n_states)
@@ -226,7 +226,7 @@ pub fn train_dueling_dqn(
   batch_size : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let buffer = ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0

@@ -22,7 +22,7 @@ pub struct LinearValueNet {
 ///|
 pub fn LinearValueNet::new(n_states : Int, seed : UInt64) -> LinearValueNet {
   let std = sqrtf(0.1F / Float::from_int(n_states))
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w : Array[Float] = Array::make(n_states, 0.0F)
   for i in 0..<n_states {
     let (z1, _) = box_muller(rng)
@@ -59,7 +59,7 @@ pub fn actor_critic_rollout(
   policy : LinearSoftmaxPolicy,
   value_net : LinearValueNet,
   max_steps : Int,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> EpisodeWithValues {
   let states : Array[Int] = []
   let actions : Array[Int] = []
@@ -157,7 +157,7 @@ pub fn train_actor_critic(
   max_steps : Int,
   seed : UInt64,
 ) -> Float {
-  let rng = Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
   let mut total_return = 0.0F
   for _ep in 0..<n_episodes {
     let episode = actor_critic_rollout(env, policy, value_net, max_steps, rng)

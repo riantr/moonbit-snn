@@ -86,7 +86,7 @@ pub fn SpikingMultiHeadAttention::new(
   if d_model % num_heads != 0 {
     abort("SpikingMultiHeadAttention::new: d_model not divisible by num_heads")
   }
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w_q = linear_xavier(rng, d_model)
   let w_k = linear_xavier(rng, d_model)
   let w_v = linear_xavier(rng, d_model)
@@ -361,7 +361,7 @@ pub fn SpikingCrossAttention::new(
   if d_model % num_heads != 0 {
     abort("SpikingCrossAttention::new: d_model not divisible by num_heads")
   }
-  let rng = Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
+  let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w_q = linear_xavier(rng, d_model)
   let w_k = linear_xavier(rng, d_model)
   let w_v = linear_xavier(rng, d_model)

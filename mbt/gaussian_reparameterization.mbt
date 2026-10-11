@@ -40,7 +40,7 @@ pub fn gaussian_reparameterize(
   let dim = mu.length()
   let z : Array[Float] = Array::make(dim, 0.0F)
   for i in 0..<dim {
-    let std = expf(0.5F * log_var[i])
+    let std = @core.expf(0.5F * log_var[i])
     z[i] = mu[i] + std * eps[i]
   }
   { mu, log_var, z, dim }
@@ -52,7 +52,7 @@ pub fn gaussian_reparameterize(
 pub fn gaussian_reparameterize_with_rng(
   mu : Array[Float],
   log_var : Array[Float],
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> ReparameterizedGaussian {
   let dim = mu.length()
   let eps : Array[Float] = Array::make(dim, 0.0F)
@@ -71,7 +71,7 @@ pub fn gaussian_reparameterize_log_prob(z : Array[Float]) -> Float {
   if dim == 0 {
     return 0.0F
   }
-  let mut lp = -0.5F * Float::from_int(dim) * logf(2.0F * 3.14159265F)
+  let mut lp = -0.5F * Float::from_int(dim) * @core.logf(2.0F * 3.14159265F)
   for i in 0..<dim {
     lp = lp - 0.5F * z[i] * z[i]
   }
@@ -91,10 +91,10 @@ pub fn gaussian_reparameterize_log_q(
   if dim == 0 {
     return 0.0F
   }
-  let mut lp = -0.5F * Float::from_int(dim) * logf(2.0F * 3.14159265F)
+  let mut lp = -0.5F * Float::from_int(dim) * @core.logf(2.0F * 3.14159265F)
   for i in 0..<dim {
     let diff = z[i] - mu[i]
-    let inv_var = expf(-log_var[i])
+    let inv_var = @core.expf(-log_var[i])
     lp = lp - 0.5F * (diff * diff * inv_var + log_var[i])
   }
   lp

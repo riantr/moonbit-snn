@@ -1,0 +1,9 @@
+// core/ — the bottom of the dependency graph.
+//
+// Four of these five files (math_native, rng, units, time) have no
+// cross-file dependencies at all; util.mbt reaches only into rng and units.
+// Nothing imports core, so it can never participate in an import loop -- which
+// is the property the rest of the sub-package split depends on.
+//
+// `math_native.mbt` binds libm through `extern "C"`, so this package is
+// native-only, the same constraint the root moon.mod already declares.

@@ -79,7 +79,7 @@ test "lstm_policy_forward: action + cache lengths match obs_seq" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(17UL, 19UL, 23UL, 29UL)
+  let rng = @core.Xoshiro::from_state(17UL, 19UL, 23UL, 29UL)
   let (actions, cache) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng)
   assert_eq(actions.length(), 3)
   for t in 0..<3 {
@@ -105,7 +105,7 @@ test "lstm_policy_gradient_update: zero returns -> no change" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
+  let rng = @core.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
   let (actions, cache) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng)
   // Snapshot weights before update.
   let w0_snapshot : Array[Array[Float]] = Array::make(2, [])
@@ -148,14 +148,14 @@ test "lstm_policy_gradient_update: positive return increases chosen prob" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let rng = @snn_mbt.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
+  let rng = @core.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
   let (actions, cache) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng)
   // Set all returns positive.
   let returns : Array[Float] = [1.0F, 1.0F, 1.0F]
   @snn_mbt.lstm_policy_gradient_update(p, actions, returns, cache, 0.5F)
   // After update, probabilities for the chosen actions should have
   // increased or stayed the same (REINFORCE with positive return).
-  let rng2 = @snn_mbt.Xoshiro::from_state(73UL, 79UL, 83UL, 89UL)
+  let rng2 = @core.Xoshiro::from_state(73UL, 79UL, 83UL, 89UL)
   let (_a2, cache2) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng2)
   for t in 0..<3 {
     let a = actions[t]

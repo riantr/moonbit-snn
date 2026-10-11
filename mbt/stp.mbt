@@ -226,10 +226,10 @@ pub fn markram_stp_step(
       vars.last_spike[j] = t_now
       // u[j] = U - (U - u[j]) * exp(-ΔT / τF)
       let arg_f = -dt_pre / tau_f
-      vars.u[j] = u_baseline - (u_baseline - vars.u[j]) * expf(arg_f)
+      vars.u[j] = u_baseline - (u_baseline - vars.u[j]) * @core.expf(arg_f)
       // x[j] = 1 - (1 - x[j]) * exp(-ΔT / τD)
       let arg_d = -dt_pre / tau_d
-      vars.x[j] = 1.0F - (1.0F - vars.x[j]) * expf(arg_d)
+      vars.x[j] = 1.0F - (1.0F - vars.x[j]) * @core.expf(arg_d)
       // _ρ[j] = u[j] * x[j]
       vars.rho_pre[j] = vars.u[j] * vars.x[j]
       // Broadcast to all outgoing connections of pre j.
@@ -367,9 +367,9 @@ pub fn markram_stp_step_het(
       let dt_pre = if dt_pre < 0.0F { 0.0F } else { dt_pre }
       vars.last_spike[j] = t_now
       let arg_f = -dt_pre / tau_f_j
-      vars.u[j] = u_baseline_j - (u_baseline_j - vars.u[j]) * expf(arg_f)
+      vars.u[j] = u_baseline_j - (u_baseline_j - vars.u[j]) * @core.expf(arg_f)
       let arg_d = -dt_pre / tau_d_j
-      vars.x[j] = 1.0F - (1.0F - vars.x[j]) * expf(arg_d)
+      vars.x[j] = 1.0F - (1.0F - vars.x[j]) * @core.expf(arg_d)
       vars.rho_pre[j] = vars.u[j] * vars.x[j]
       let start = syn.matrix.rowptr[j]
       let end = syn.matrix.rowptr[j + 1]

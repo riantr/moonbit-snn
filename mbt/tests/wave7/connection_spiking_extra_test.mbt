@@ -17,13 +17,13 @@ fn make_if(n : Int) -> @snn_mbt.IF {
   // Use the public with_el constructor (IFParameter struct is not
   // pub(all), so we can't write it as a literal here).
   let param = @snn_mbt.IFParameter::with_el(-49.0F)
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   @snn_mbt.IF::new(n, param, rng)
 }
 
 ///|
 test "spiking_synapse::new — (p, μ) random connections" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre : @snn_mbt.IF = make_if(30)
   let post : @snn_mbt.IF = make_if(15)
   let s = @snn_mbt.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.0F, 0.3F, rng)
@@ -33,7 +33,7 @@ test "spiking_synapse::new — (p, μ) random connections" {
 
 ///|
 test "spiking_synapse::new — (p, μ, σ) random connections" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre : @snn_mbt.IF = make_if(20)
   let post : @snn_mbt.IF = make_if(10)
   let s = @snn_mbt.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.2F, 0.5F, rng)
@@ -56,7 +56,7 @@ test "spiking_synapse::new — identity (1-to-1) matrix has N nnz" {
 
 ///|
 test "spiking_synapse::new — inhibitory :gi" {
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre : @snn_mbt.IF = make_if(10)
   let post : @snn_mbt.IF = make_if(20)
   let s = @snn_mbt.SpikingSynapse::random(pre, post, "gi", 2.0F, 0.0F, 0.4F, rng)
@@ -119,7 +119,7 @@ test "spiking_synapse — explicit dense matrix via from_dense" {
   // SpikingSynapse accepts a sparse CSR via its matrix field. The
   // Julia test passes a Matrix{Float32} as `conn`. We emulate this
   // by building the CSR from `from_dense` and assigning it directly.
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pre : @snn_mbt.IF = make_if(8)
   let post : @snn_mbt.IF = make_if(6)
   // Build a dense 8×6 random-weights matrix.

@@ -44,7 +44,7 @@ fn tn_gap(fd : Float, an : Float) -> Float {
 ///|
 /// Deterministic small fixture: n = 3 samples, c = 4 channels, t = 6 frames.
 fn tn_fixture(n : Int, c : Int, t : Int, seed : UInt64) -> Array[Float] {
-  @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed), n * c * t)
+  @core.rand_f32(@core.Xoshiro::new(seed), n * c * t)
 }
 
 ///|
@@ -199,7 +199,7 @@ test "ASP: every gradient matches central differences" {
   let t = 7
   let x = tn_fixture(n, c, t, 41UL)
   let p = @snn_mbt.AspParam::new(c, 6, 43UL)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(47UL), n * 2 * c)
+  let w = @core.rand_f32(@core.Xoshiro::new(47UL), n * 2 * c)
   let (y, cache) = @snn_mbt.asp_forward(x, n, p)
   if y.length() != n * 2 * c {
     fail("ASP output length is not n*2c")
@@ -436,8 +436,8 @@ const DN_H_DIR : Float = 8.0e-4F
 fn tn_block_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
   -> (@snn_mbt.TarnetBlock, Array[Float], Array[Float]) {
   let b = @snn_mbt.TarnetBlock::new(chan, 8, 3, 2, t, seed)
-  let x = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed + 1UL), n * chan * t)
-  let u = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(seed + 2UL), n * chan * t)
+  let x = @core.rand_f32(@core.Xoshiro::new(seed + 1UL), n * chan * t)
+  let u = @core.rand_f32(@core.Xoshiro::new(seed + 2UL), n * chan * t)
   (b, x, u)
 }
 
@@ -663,7 +663,7 @@ test "layer_norm: d_input matches central differences at every coordinate" {
   let c = 5
   let t = 8
   let ln = @snn_mbt.LayerNorm::new(c, 1, t, eps=1.0e-4F)
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @snn_mbt.Xoshiro::new(133UL))
+  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(133UL))
   // an arbitrary upstream gradient, asymmetric in position so a layout
   // mistake cannot hide behind a symmetric one
   let w : Array[Float] = Array::make(n * c * t, 0.0F)
@@ -739,10 +739,10 @@ test "tn_conv1x1: d_input, d_weight and d_bias all match central differences" {
   let in_ch = 5
   let out_ch = 4
   let t = 8
-  let x = @snn_mbt.tn_randn(n * in_ch * t, 1.0F, @snn_mbt.Xoshiro::new(211UL))
-  let w = @snn_mbt.tn_randn(out_ch * in_ch, 0.4F, @snn_mbt.Xoshiro::new(212UL))
-  let b = @snn_mbt.tn_randn(out_ch, 0.2F, @snn_mbt.Xoshiro::new(213UL))
-  let u = @snn_mbt.tn_randn(n * out_ch * t, 1.0F, @snn_mbt.Xoshiro::new(214UL))
+  let x = @snn_mbt.tn_randn(n * in_ch * t, 1.0F, @core.Xoshiro::new(211UL))
+  let w = @snn_mbt.tn_randn(out_ch * in_ch, 0.4F, @core.Xoshiro::new(212UL))
+  let b = @snn_mbt.tn_randn(out_ch, 0.2F, @core.Xoshiro::new(213UL))
+  let u = @snn_mbt.tn_randn(n * out_ch * t, 1.0F, @core.Xoshiro::new(214UL))
   let y = @snn_mbt.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
   if y.length() != n * out_ch * t {
     fail("forward length wrong")
@@ -826,8 +826,8 @@ fn tn_stack_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
   let b0 = @snn_mbt.TarnetBlock::new(chan, 8, 3, 1, t, seed)
   let b1 = @snn_mbt.TarnetBlock::new(chan, 8, 3, 2, t, seed + 5UL)
   let stack = [b0, b1]
-  let x = @snn_mbt.tn_randn(n * chan * t, 1.0F, @snn_mbt.Xoshiro::new(seed + 9UL))
-  let u = @snn_mbt.tn_randn(n * chan * t, 1.0F, @snn_mbt.Xoshiro::new(seed + 13UL))
+  let x = @snn_mbt.tn_randn(n * chan * t, 1.0F, @core.Xoshiro::new(seed + 9UL))
+  let u = @snn_mbt.tn_randn(n * chan * t, 1.0F, @core.Xoshiro::new(seed + 13UL))
   (stack, x, u)
 }
 
@@ -912,8 +912,8 @@ test "layer_norm: d_beta matches central differences in BETA" {
   let c = 8
   let t = 8
   let chw = c * t
-  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @snn_mbt.Xoshiro::new(321UL))
-  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @snn_mbt.Xoshiro::new(322UL))
+  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @core.Xoshiro::new(321UL))
+  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @core.Xoshiro::new(322UL))
   let ln : @snn_mbt.LayerNorm = {
     gamma: g0,
     beta: b0,
@@ -922,7 +922,7 @@ test "layer_norm: d_beta matches central differences in BETA" {
     h: 1,
     w: t,
   }
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @snn_mbt.Xoshiro::new(323UL))
+  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(323UL))
   let u : Array[Float] = Array::make(n * c * t, 0.0F)
   let mut i = 0
   while i < u.length() {
@@ -1014,8 +1014,8 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
   let c = 8
   let t = 8
   let chw = c * t
-  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @snn_mbt.Xoshiro::new(311UL))
-  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @snn_mbt.Xoshiro::new(312UL))
+  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @core.Xoshiro::new(311UL))
+  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @core.Xoshiro::new(312UL))
   let ln : @snn_mbt.LayerNorm = {
     gamma: g0,
     beta: b0,
@@ -1024,7 +1024,7 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
     h: 1,
     w: t,
   }
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @snn_mbt.Xoshiro::new(313UL))
+  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(313UL))
   let u : Array[Float] = Array::make(n * c * t, 0.0F)
   let mut i = 0
   while i < u.length() {
@@ -1161,12 +1161,12 @@ test "depthwise dilated conv1d: forward and backward agree with differences" {
   let k = 3
   let d = 2
   let x = tn_fixture(n, c, t, 11UL)
-  let rng = @snn_mbt.Xoshiro::new(29UL)
+  let rng = @core.Xoshiro::new(29UL)
   let p = @snn_mbt.Conv1DDepthwise::new(c, k, d, (k - 1) * d / 2)
   let wv = @snn_mbt.tn_randn(c * k, 0.4F, rng)
   let bv = @snn_mbt.tn_randn(c, 0.3F, rng)
   let p = tn_dw_with(p, wv, bv)
-  let w = @snn_mbt.rand_f32(@snn_mbt.Xoshiro::new(31UL), n * c * t)
+  let w = @core.rand_f32(@core.Xoshiro::new(31UL), n * c * t)
   // ---- forward sanity: shape preserved ----
   let y = @snn_mbt.conv1d_depthwise_forward(x, n, p)
   if y.length() != x.length() {

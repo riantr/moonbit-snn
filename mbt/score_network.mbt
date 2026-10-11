@@ -47,7 +47,7 @@ pub fn ScoreNetwork::new(
   seed : UInt64,
 ) -> ScoreNetwork {
   let combined = input_dim + time_dim
-  let rng1 = Xoshiro::from_state(
+  let rng1 = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   let std1 = sqrtf(2.0F / Float::from_int(combined))
@@ -58,7 +58,7 @@ pub fn ScoreNetwork::new(
   )
   let hidden_b : Array[Array[Float]] = Array::make(num_layers - 1, Array::make(0, 0.0F))
   for l in 0..<(num_layers - 1) {
-    let rng_l = Xoshiro::from_state(
+    let rng_l = @core.Xoshiro::from_state(
       seed + (l + 100).to_uint64() * 7UL,
       seed + (l + 100).to_uint64() * 11UL,
       seed + (l + 100).to_uint64() * 13UL,
@@ -68,7 +68,7 @@ pub fn ScoreNetwork::new(
     hidden_w[l] = xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
     hidden_b[l] = Array::make(hidden_dim, 0.0F)
   }
-  let rng_out = Xoshiro::from_state(
+  let rng_out = @core.Xoshiro::from_state(
     seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL,
   )
   let std_out = sqrtf(2.0F / Float::from_int(hidden_dim))
@@ -92,7 +92,7 @@ pub fn sinusoidal_time_embedding(
     // omega_k = 10000^(-2k / time_dim) = exp(-2k * ln(10000) / time_dim).
     let two_k_f = Float::from_int(2 * k)
     let denom = Float::from_int(time_dim)
-    let omega = expf(-two_k_f * 9.21034F / denom)
+    let omega = @core.expf(-two_k_f * 9.21034F / denom)
     let arg = Float::from_int(t) * omega
     out[2 * k] = sinf(arg)
     out[2 * k + 1] = cosf(arg)

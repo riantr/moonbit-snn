@@ -64,7 +64,7 @@ pub fn LinearGaussianSCM::new(
 /// works).
 pub fn scm_sample(
   scm : LinearGaussianSCM,
-  rng : Xoshiro,
+  rng : @core.Xoshiro,
 ) -> Array[Float] {
   let n = scm.n
   let x : Array[Float] = Array::make(n, 0.0F)
@@ -107,7 +107,7 @@ pub fn scm_log_likelihood(
   for i in 0..<n {
     let sigma_sq = scm.sigma_sq[i]
     if sigma_sq > 0.0F {
-      ll = ll - 0.5F * logf(sigma_sq)
+      ll = ll - 0.5F * @core.logf(sigma_sq)
     }
   }
   // Compute ε = (I - B) · x in topological order.
@@ -134,5 +134,5 @@ pub fn scm_log_likelihood(
 ///|
 /// Helper: log(2π).
 fn log_2pi() -> Float {
-  logf(2.0F * 3.14159265F)
+  @core.logf(2.0F * 3.14159265F)
 }

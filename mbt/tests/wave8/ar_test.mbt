@@ -115,7 +115,7 @@ test "ar_grad_coeffs: sign matches expected direction off the optimum" {
 test "ar_fit_yule_walker: recovers phi = 0.7 from synthetic AR(1)" {
   // Generate y[t] = 0.7 · y[t-1] + noise. Long series, so Yule-Walker
   // should be very close to 0.7.
-  let rng = @snn_mbt.Xoshiro::from_state(11UL, 12UL, 13UL, 14UL)
+  let rng = @core.Xoshiro::from_state(11UL, 12UL, 13UL, 14UL)
   let n = 2000
   let y : Array[Float] = Array::make(n, 0.0F)
   y[0] = 0.0F
@@ -133,7 +133,7 @@ test "ar_fit_yule_walker: recovers phi = 0.7 from synthetic AR(1)" {
 
 ///|
 test "ar_fit_ols: recovers phi = 0.7 from synthetic AR(1)" {
-  let rng = @snn_mbt.Xoshiro::from_state(21UL, 22UL, 23UL, 24UL)
+  let rng = @core.Xoshiro::from_state(21UL, 22UL, 23UL, 24UL)
   let n = 2000
   let y : Array[Float] = Array::make(n, 0.0F)
   y[0] = 0.0F
@@ -155,7 +155,7 @@ test "ar_fit_ols: recovers phi = 0.7 from synthetic AR(1)" {
 ///|
 test "ar_fit_ols: recovers AR(2) phi_1, phi_2 from synthetic series" {
   // y[t] = 0.5 * y[t-1] + 0.3 * y[t-2] + noise.
-  let rng = @snn_mbt.Xoshiro::from_state(31UL, 32UL, 33UL, 34UL)
+  let rng = @core.Xoshiro::from_state(31UL, 32UL, 33UL, 34UL)
   let n = 3000
   let y : Array[Float] = Array::make(n, 0.0F)
   y[0] = 0.0F

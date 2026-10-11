@@ -133,7 +133,7 @@ test "single_if_constant_current_matches_closed_form" {
   let current = 30.0F
   let v_eq = el + r * current
   let one_minus_alpha = 1.0F - alpha
-  let p = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), @snn_mbt.Xoshiro::default())
+  let p = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), @core.Xoshiro::default())
   p.v[0] = el
   p.i[0] = current
   let n_steps = 100
@@ -180,7 +180,7 @@ test "single_if_higher_current_matches_closed_form" {
   let current = 100.0F
   let v_eq = el + r * current
   let one_minus_alpha = 1.0F - alpha
-  let p = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), @snn_mbt.Xoshiro::default())
+  let p = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), @core.Xoshiro::default())
   p.v[0] = el
   p.i[0] = current
   let n_steps = 200

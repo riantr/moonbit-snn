@@ -18,7 +18,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.AdExParameter::with_vr(-50.0F)
   let spike = @snn_mbt.AdExPostSpike::with_at(10.0F, 10.0F)
   let pop = @snn_mbt.AdEx::new_with_spike(1, param, spike, rng)

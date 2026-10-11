@@ -17,7 +17,7 @@ pub fn synthetic_mnist_build() -> (Array[Array[Float]], Array[Int]) {
   let total = n_per_class * classes
   let images : Array[Array[Float]] = Array::make(total, [])
   let labels : Array[Int] = Array::make(total, 0)
-  let rng = Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let mut cls = 0
   while cls < classes {
     let mut sample = 0
@@ -112,7 +112,7 @@ pub fn synthetic_mnist_build() -> (Array[Array[Float]], Array[Int]) {
       // Add noise.
       let mut i = 0
       while i < 28 * 28 {
-        let u = next_f32(rng)
+        let u = @core.next_f32(rng)
         let original = img[i]
         let is_bright = original > 0.5F
         let flipped : Float = if is_bright { 0.0F } else { 1.0F }
@@ -150,7 +150,7 @@ pub fn softmax_row(x : Array[Float]) -> Array[Float] {
   let mut sum = 0.0F
   let mut j = 0
   while j < n {
-    out[j] = expf(x[j] - max_v)
+    out[j] = @core.expf(x[j] - max_v)
     sum = sum + out[j]
     j = j + 1
   }
@@ -168,7 +168,7 @@ pub fn cross_entropy_one(prob : Array[Float], target : Array[Float]) -> Float {
   let mut s = 0.0F
   let mut j = 0
   while j < prob.length() {
-    s = s - target[j] * logf(prob[j])
+    s = s - target[j] * @core.logf(prob[j])
     j = j + 1
   }
   s

@@ -6,8 +6,8 @@
 
 ///|
 test "next_u64 advances state" {
-  let r = @snn_mbt.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let _ = @snn_mbt.next_u64(r)
+  let r = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
+  let _ = @core.next_u64(r)
   // State must have changed.
   if r.s0 == 1UL && r.s1 == 2UL && r.s2 == 3UL && r.s3 == 4UL {
     fail("state did not advance")
@@ -16,9 +16,9 @@ test "next_u64 advances state" {
 
 ///|
 test "next_f32 returns Float32 in [0, 1)" {
-  let r = @snn_mbt.Xoshiro::from_state(0xDEADBEEFCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL, 0xABCDEF0123456789UL)
+  let r = @core.Xoshiro::from_state(0xDEADBEEFCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL, 0xABCDEF0123456789UL)
   for i in 0..<100 {
-    let v = @snn_mbt.next_f32(r)
+    let v = @core.next_f32(r)
     if v < 0.0F || v >= 1.0F {
       fail("next_f32 out of range: \{v}")
     }
@@ -27,8 +27,8 @@ test "next_f32 returns Float32 in [0, 1)" {
 
 ///|
 test "rand_f32 produces n values" {
-  let r = @snn_mbt.Xoshiro::default()
-  let arr = @snn_mbt.rand_f32(r, 5)
+  let r = @core.Xoshiro::default()
+  let arr = @core.rand_f32(r, 5)
   assert_eq(arr.length(), 5)
   // Each value must be in [0, 1)
   for i in 0..<5 {
@@ -41,22 +41,22 @@ test "rand_f32 produces n values" {
 
 ///|
 test "two Xoshiro with same seed produce same sequence" {
-  let r1 = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
-  let r2 = @snn_mbt.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let r1 = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
+  let r2 = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   for _ in 0..<10 {
-    let a = @snn_mbt.next_f64(r1)
-    let b = @snn_mbt.next_f64(r2)
+    let a = @core.next_f64(r1)
+    let b = @core.next_f64(r2)
     assert_eq(a, b)
   }
 }
 
 ///|
 test "Xoshiro::new is deterministic" {
-  let r1 = @snn_mbt.Xoshiro::new(42UL)
-  let r2 = @snn_mbt.Xoshiro::new(42UL)
+  let r1 = @core.Xoshiro::new(42UL)
+  let r2 = @core.Xoshiro::new(42UL)
   for _ in 0..<20 {
-    let a = @snn_mbt.next_f32(r1)
-    let b = @snn_mbt.next_f32(r2)
+    let a = @core.next_f32(r1)
+    let b = @core.next_f32(r2)
     assert_eq(a, b)
   }
 }

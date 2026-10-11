@@ -16,7 +16,7 @@
 
 ///|
 fn main {
-  let rng = @snn_mbt.Xoshiro::default()
+  let rng = @core.Xoshiro::default()
   let param = @snn_mbt.IFParameter::new()
   // E: 32 exc, I: 8 inh (32+8 = 40 total, like if_net)
   let e_pop = @snn_mbt.IF::new(32, param, rng)
@@ -58,7 +58,7 @@ fn main {
   println("  II connections: " + ii.matrix.nnz().to_string())
 
   // Simulate 200 ms
-  @snn_mbt.heterogeneous_sim_for(model, 200.0F * @snn_mbt.ms)
+  @snn_mbt.heterogeneous_sim_for(model, 200.0F * @core.ms)
 
   // Count spikes in E[0] and I[0] from the recorded fire monitor.
   let e_spikes = fm_e.count_spikes()

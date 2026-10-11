@@ -30,7 +30,7 @@
 /// submodule so the whole network draws from one stream, in construction
 /// order -- which is what makes a seed reproduce a whole model rather than
 /// one layer.
-pub fn tn_randn(n : Int, std : Float, rng : Xoshiro) -> Array[Float] {
+pub fn tn_randn(n : Int, std : Float, rng : @core.Xoshiro) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
   let mut i = 0
   while i < n {

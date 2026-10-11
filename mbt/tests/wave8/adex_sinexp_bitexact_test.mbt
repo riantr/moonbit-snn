@@ -14,7 +14,7 @@
 ///|
 test "AdExSinExp — tonic drive produces no NaN state" {
   let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
   // Tonic drive above firing threshold.
   let mut k = 0
@@ -47,7 +47,7 @@ test "AdExSinExp — tonic drive produces no NaN state" {
 ///|
 test "AdExSinExp — voltages stay in physiological range" {
   let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
   let mut k = 0
   while k < 10 {
@@ -77,7 +77,7 @@ test "AdExSinExp — fires at least once under tonic drive" {
   // With 400pA tonic drive (above firing threshold), some neurons
   // should fire within 100ms.
   let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
   let mut k = 0
   while k < 10 {
@@ -113,7 +113,7 @@ test "AdExSinExp — firing rate bounded (no runaway)" {
   // We allow up to 300 Hz to leave plenty of headroom for different
   // tonic settings.
   let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
-  let rng = @snn_mbt.Xoshiro::new(42UL)
+  let rng = @core.Xoshiro::new(42UL)
   let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
   let mut k = 0
   while k < 10 {
