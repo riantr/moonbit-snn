@@ -368,7 +368,7 @@ fn tn_take(flat : Array[Float], off : Int, len : Int) -> Array[Float] {
 
 ///|
 /// Write `src` into `dst` at `off`; returns the next free offset.
-fn tn_put(dst : Array[Float], off : Int, src : Array[Float]) -> Int {
+pub fn tn_put(dst : Array[Float], off : Int, src : Array[Float]) -> Int {
   let mut i = 0
   while i < src.length() {
     dst[off + i] = src[i]

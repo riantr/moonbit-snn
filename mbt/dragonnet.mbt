@@ -390,7 +390,7 @@ pub(all) struct DragonNetGrad {
 /// The bias gradient passes through untouched -- Keras' `l2` regularizer is
 /// declared on the kernel, not the bias, so dropping `d_bias` here would
 /// silently train a network whose biases never move.
-fn dn_l2(
+pub fn dn_l2(
   d_weight : Array[Float],
   d_bias : Array[Float],
   weight : Array[Float],

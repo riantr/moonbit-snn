@@ -120,7 +120,7 @@ pub fn dt_train_step(
 }
 
 // Helper: flatten a 2D row-major Array[Array[Float]] into a 1D Array[Float].
-fn flatten_2d(a : Array[Array[Float]]) -> Array[Float] {
+pub fn flatten_2d(a : Array[Array[Float]]) -> Array[Float] {
   let mut total = 0
   for i in 0..<a.length() {
     total = total + a[i].length()
@@ -137,7 +137,7 @@ fn flatten_2d(a : Array[Array[Float]]) -> Array[Float] {
 }
 
 // Helper: reshape 1D back to 2D row-major.
-fn unflatten_2d(a : Array[Float], rows : Int, cols : Int) -> Array[Array[Float]] {
+pub fn unflatten_2d(a : Array[Float], rows : Int, cols : Int) -> Array[Array[Float]] {
   let out : Array[Array[Float]] = Array::make(
     rows, Array::make(cols, 0.0F),
   )

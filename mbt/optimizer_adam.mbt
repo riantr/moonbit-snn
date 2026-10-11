@@ -157,7 +157,7 @@ pub fn adam_update_conv(
 ///|
 /// Compute `beta^t` for Float32 `beta` and Int `t >= 0` via
 /// exponentiation by squaring. Returns 1.0 when `t == 0`.
-fn pow_beta(beta : Float, t : Int) -> Float {
+pub fn pow_beta(beta : Float, t : Int) -> Float {
   let mut result = 1.0F
   let mut b = beta
   let mut n = t

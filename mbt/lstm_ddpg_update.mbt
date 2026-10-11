@@ -168,7 +168,7 @@ pub fn lstm_ddpg_update_critic_seq(
 
 ///|
 /// LSTM critic forward step that exposes (q_val, x_proj, cache).
-fn lstm_critic_step_with_cache(
+pub fn lstm_critic_step_with_cache(
   qnet : LSTMQNetworkContinuous,
   state : Array[Float],
   action : Array[Float],

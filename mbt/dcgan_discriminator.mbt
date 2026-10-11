@@ -131,7 +131,7 @@ fn conv4x4_stride2(
 
 ///|
 /// helper: LeakyReLU with slope 0.2.
-fn leaky_relu(x : Array[Float]) -> Array[Float] {
+pub fn leaky_relu(x : Array[Float]) -> Array[Float] {
   let out : Array[Float] = Array::make(x.length(), 0.0F)
   for i in 0..<x.length() {
     out[i] = if x[i] > 0.0F { x[i] } else { 0.2F * x[i] }

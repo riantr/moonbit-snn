@@ -184,7 +184,7 @@ fn lstm_deterministic_policy_soft_update(
 ///|
 /// Polyak averaging for LSTMQNetworkContinuous. Same as policy version plus
 /// scalar mlp_b2.
-fn lstm_qnetwork_continuous_soft_update(
+pub fn lstm_qnetwork_continuous_soft_update(
   target : LSTMQNetworkContinuous,
   source : LSTMQNetworkContinuous,
   tau : Float,

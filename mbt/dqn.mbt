@@ -229,7 +229,7 @@ pub fn dqn_update_step(
 
 ///|
 /// Max of an array (helper).
-fn q_max(q : Array[Float]) -> Float {
+pub fn q_max(q : Array[Float]) -> Float {
   let mut m = q[0]
   for i in 1..<q.length() {
     if q[i] > m {

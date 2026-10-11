@@ -310,7 +310,7 @@ pub fn beam_search_plan(
 }
 
 /// Helper: γ^n as Float.
-fn BeamSearchPlanner::gamma_power(self : BeamSearchPlanner, n : Int) -> Float {
+pub fn BeamSearchPlanner::gamma_power(self : BeamSearchPlanner, n : Int) -> Float {
   let mut p = 1.0F
   for _i in 0..<n {
     p = p * self.gamma

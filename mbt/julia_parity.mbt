@@ -212,7 +212,7 @@ pub fn parse_parity_csv(content : String) -> ParityTrace {
 
 ///|
 /// Helper: substring by char indices. Bounds-checked.
-fn substring(s : String, start : Int, end : Int) -> String {
+pub fn substring(s : String, start : Int, end : Int) -> String {
   let mut out = ""
   let mut i = start
   if end > s.length() {
@@ -362,7 +362,7 @@ fn try_parse_float(s : String) -> Float? {
 
 ///|
 /// Trim leading/trailing whitespace from a String.
-fn trim(s : String) -> String {
+pub fn trim(s : String) -> String {
   let n = s.length()
   let mut start = 0
   while start < n && (s[start] == ' ' || s[start] == '\t') {

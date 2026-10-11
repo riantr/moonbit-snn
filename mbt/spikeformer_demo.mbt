@@ -455,7 +455,7 @@ fn clip_value(v : Float, clip : Float) -> Float {
 
 ///|
 /// In-place clip an Array[Float] to [-clip, clip] per element.
-fn clip_grad_array(arr : Array[Float], clip : Float) -> Unit {
+pub fn clip_grad_array(arr : Array[Float], clip : Float) -> Unit {
   let n = arr.length()
   for i in 0..<n {
     arr[i] = clip_value(arr[i], clip)

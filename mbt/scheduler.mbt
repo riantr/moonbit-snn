@@ -139,7 +139,7 @@ pub fn CosineAnnealingLR::next(self : CosineAnnealingLR) -> CosineAnnealingLR {
 ///|
 /// Float32 cos via libm. Wraps the `cosf` symbol exposed by moonbit's
 /// built-in math.
-extern "C" fn cosf(x : Float) -> Float = "cosf"
+pub extern "C" fn cosf(x : Float) -> Float = "cosf"
 
 ///|
 fn cos_f32(x : Float) -> Float {

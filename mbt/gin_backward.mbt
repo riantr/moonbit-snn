@@ -100,7 +100,7 @@ fn gin_layer_intermediates(
 /// 1 where the pre-activation was positive, 0 elsewhere. ReLU is
 /// non-differentiable at exactly 0; the forward's `x > 0` test makes
 /// the subgradient 0 there, which is what this reproduces.
-fn relu_mask(pre : Array[Float]) -> Array[Float] {
+pub fn relu_mask(pre : Array[Float]) -> Array[Float] {
   let m : Array[Float] = Array::make(pre.length(), 0.0F)
   for i in 0..<pre.length() {
     m[i] = if pre[i] > 0.0F { 1.0F } else { 0.0F }

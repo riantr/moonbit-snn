@@ -189,7 +189,7 @@ pub fn ddpg_update_critic(
 
 ///|
 /// Apply gradient `delta` to a continuous Q-network.
-fn critic_apply_grad(
+pub fn critic_apply_grad(
   net : QNetworkContinuous,
   state : Array[Float],
   action : Array[Float],

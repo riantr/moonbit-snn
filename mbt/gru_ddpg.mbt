@@ -208,7 +208,7 @@ fn gru_deterministic_policy_soft_update(
 ///|
 /// Polyak averaging for the GRUQNetworkContinuous. Same pattern as
 /// `gru_deterministic_policy_soft_update` plus the scalar `mlp_b2`.
-fn gru_qnetwork_continuous_soft_update(
+pub fn gru_qnetwork_continuous_soft_update(
   target : GRUQNetworkContinuous,
   source : GRUQNetworkContinuous,
   tau : Float,

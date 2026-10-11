@@ -343,7 +343,7 @@ pub fn deliver_pending_synapse(c : SpikingSynapse, t_now : Float) -> Unit {
 
 ///|
 /// Helper: apply a single weight to the post-synaptic receptor.
-fn apply_weight(c : SpikingSynapse, post_idx : Int, w : Float) -> Unit {
+pub fn apply_weight(c : SpikingSynapse, post_idx : Int, w : Float) -> Unit {
   if c.sym == "ge" {
     c.post.glu[post_idx] = c.post.glu[post_idx] + w
   } else {

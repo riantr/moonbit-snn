@@ -22,7 +22,7 @@
 ///|
 /// Fill an Array[Float] of length `n` with He-init (Kaiming) draws:
 /// N(0, sqrt(2 / fan_in)) using a xoshiro RNG and Float32 Box-Muller.
-fn he_init(rng : Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
+pub fn he_init(rng : Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
   let std = sqrtf(2.0F / Float::from_int(fan_in))
   let mut i = 0
@@ -56,7 +56,7 @@ fn he_init(rng : Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
 
 ///|
 /// Float32 sin via libm.
-extern "C" fn sinf(x : Float) -> Float = "sinf"
+pub extern "C" fn sinf(x : Float) -> Float = "sinf"
 
 ///|
 fn sin_f32(x : Float) -> Float { sinf(x) }

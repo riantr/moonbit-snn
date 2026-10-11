@@ -350,7 +350,7 @@ fn format_axis_label(v : Float) -> String {
 ///|
 /// Replace the character at position `pos` in `s` with `ch`.
 /// Returns the new string. Builds via StringBuilder.
-fn row_int_set_char(s : String, pos : Int, ch : Char) -> String {
+pub fn row_int_set_char(s : String, pos : Int, ch : Char) -> String {
   let sb = StringBuilder::new(size_hint=s.length())
   let len = s.length()
   // Write prefix [0, pos), then ch, then suffix [pos+1, len).

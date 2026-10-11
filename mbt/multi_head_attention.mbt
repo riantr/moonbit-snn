@@ -86,7 +86,7 @@ pub struct AttnCache {
 ///|
 /// Fill an Array[Float] with Xavier-normal draws:
 /// N(0, sqrt(2 / (fan_in + fan_out))). Uses Float32 Box-Muller.
-fn xavier_normal_init(
+pub fn xavier_normal_init(
   rng : Xoshiro,
   n : Int,
   fan_in : Int,
@@ -105,7 +105,7 @@ fn xavier_normal_init(
 
 ///|
 /// Build a square LinearParam with Xavier-normal init + zero bias.
-fn linear_xavier(
+pub fn linear_xavier(
   rng : Xoshiro,
   d : Int,
 ) -> LinearParam {

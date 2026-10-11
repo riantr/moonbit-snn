@@ -173,7 +173,7 @@ pub fn gru_ddpg_update_critic_seq(
 /// Critic forward step that exposes the (q_val, x_proj, cache) triple
 /// needed for BPTT. Mirrors `gru_qnetwork_continuous_step` but
 /// returns the x_proj pre-activation vector AND the gru_cell cache.
-fn gru_critic_step_with_cache(
+pub fn gru_critic_step_with_cache(
   qnet : GRUQNetworkContinuous,
   state : Array[Float],
   action : Array[Float],

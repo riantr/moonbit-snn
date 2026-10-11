@@ -125,7 +125,7 @@ pub fn LstmCellGrad::zero(param : LstmCellParam) -> LstmCellGrad {
   }
 }
 
-fn zero_copy(a : Array[Float]) -> Array[Float] {
+pub fn zero_copy(a : Array[Float]) -> Array[Float] {
   let n = a.length()
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
@@ -134,7 +134,7 @@ fn zero_copy(a : Array[Float]) -> Array[Float] {
   out
 }
 
-fn xavier_normal(
+pub fn xavier_normal(
   rows : Int,
   cols : Int,
   std : Float,
@@ -153,7 +153,7 @@ fn xavier_normal(
   w
 }
 
-fn sigmoid_vec(x : Array[Float]) -> Array[Float] {
+pub fn sigmoid_vec(x : Array[Float]) -> Array[Float] {
   let n = x.length()
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
@@ -162,7 +162,7 @@ fn sigmoid_vec(x : Array[Float]) -> Array[Float] {
   out
 }
 
-fn tanh_vec(x : Array[Float]) -> Array[Float] {
+pub fn tanh_vec(x : Array[Float]) -> Array[Float] {
   let n = x.length()
   let out : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
@@ -174,7 +174,7 @@ fn tanh_vec(x : Array[Float]) -> Array[Float] {
 ///|
 /// Matrix-vector product `y = W · x + b`. Local helper to avoid
 /// collision with `linear_forward` in `linear.mbt`.
-fn matvec(
+pub fn matvec(
   w : Array[Array[Float]],
   b : Array[Float],
   x : Array[Float],
@@ -196,7 +196,7 @@ fn matvec(
 /// Backward through `matvec` accumulating parameter gradients.
 /// Given d_y, computes d_x = Wᵀ · d_y and updates d_b += d_y,
 /// d_W += d_y ⊗ x. Returns d_x.
-fn matvec_backward_acc(
+pub fn matvec_backward_acc(
   w : Array[Array[Float]],
   d_b_acc : Array[Float],
   d_w_acc : Array[Array[Float]],
@@ -222,7 +222,7 @@ fn matvec_backward_acc(
 
 ///|
 /// Concatenate two vectors [a; b].
-fn vec_concat(
+pub fn vec_concat(
   a : Array[Float],
   b : Array[Float],
 ) -> Array[Float] {

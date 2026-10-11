@@ -192,7 +192,7 @@ fn gtrxl_deterministic_policy_soft_update(
 ///|
 /// Polyak averaging for GTrXLQNetworkContinuous. Same as policy version
 /// plus scalar mlp_b2.
-fn gtrxl_qnetwork_continuous_soft_update(
+pub fn gtrxl_qnetwork_continuous_soft_update(
   target : GTrXLQNetworkContinuous,
   source : GTrXLQNetworkContinuous,
   tau : Float,
