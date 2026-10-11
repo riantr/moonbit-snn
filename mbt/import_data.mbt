@@ -158,7 +158,7 @@ pub fn parse_csv_row(line : String) -> Array[Float] {
 /// avoid String::split (which returns Iter, not Array).
 fn split_csv_line(line : String) -> Array[String] {
   let out : Array[String] = []
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let n = line.length()
   let mut i = 0
   while i < n {
@@ -182,7 +182,7 @@ fn split_csv_line(line : String) -> Array[String] {
 pub fn parse_csv(text : String) -> Array[Array[Float]] {
   let out : Array[Array[Float]] = []
   let n = text.length()
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut i = 0
   while i < n {
     let c = text[i]

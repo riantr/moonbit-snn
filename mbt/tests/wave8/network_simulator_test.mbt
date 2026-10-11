@@ -1,0 +1,135 @@
+// network_simulator_test.mbt — Tests for the unified Network Simulator helpers.
+
+///|
+test "network_summary_empty_model" {
+  let model = @snn_mbt.compose([], [])
+  let s = @snn_mbt.network_summary(model)
+  assert_eq(s.n_populations, 0)
+  assert_eq(s.n_connections, 0)
+  assert_eq(s.n_stimuli, 0)
+  assert_eq(s.n_monitors, 0)
+  assert_eq(s.n_stdp_entries, 0)
+  assert_eq(s.n_stp_entries, 0)
+  assert_eq(s.total_neurons, 0)
+  // Time starts at 0.
+  assert_eq(s.current_time, 0.0F)
+}
+
+///|
+test "network_summary_with_2_if_pops" {
+  let rng1 = @snn_mbt.Xoshiro::new(1UL)
+  let rng2 = @snn_mbt.Xoshiro::new(2UL)
+  let p1 = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng1)
+  let p2 = @snn_mbt.IF::new(7, @snn_mbt.IFParameter::new(), rng2)
+  let pops : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
+  let model = @snn_mbt.compose(pops, [])
+  let s = @snn_mbt.network_summary(model)
+  assert_eq(s.n_populations, 2)
+  assert_eq(s.total_neurons, 12)
+}
+
+///|
+test "merge_heterogeneous_concatenates_topology" {
+  let rng1 = @snn_mbt.Xoshiro::new(1UL)
+  let rng2 = @snn_mbt.Xoshiro::new(2UL)
+  let rng3 = @snn_mbt.Xoshiro::new(3UL)
+  let rng4 = @snn_mbt.Xoshiro::new(4UL)
+  let p1 = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng1)
+  let p2 = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng2)
+  let p3 = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng3)
+  let p4 = @snn_mbt.IF::new(6, @snn_mbt.IFParameter::new(), rng4)
+  let pops_a : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
+  let pops_b : Array[@snn_mbt.AnyPop] = [IF_(p3), IF_(p4)]
+  let model_a = @snn_mbt.compose(pops_a, [])
+  let model_b = @snn_mbt.compose(pops_b, [])
+  let merged = @snn_mbt.merge_heterogeneous(model_a, model_b)
+  let s = @snn_mbt.network_summary(merged)
+  assert_eq(s.n_populations, 4)
+  assert_eq(s.total_neurons, 18)
+}
+
+///|
+test "merge_heterogeneous_concatenates_monitors" {
+  let rng = @snn_mbt.Xoshiro::new(1UL)
+  let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
+  let mon = @snn_mbt.Monitor::new_fire(p, 0)
+  let model_a = @snn_mbt.compose([IF_(p)], [], monitors=[mon])
+  let p2 = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng)
+  let model_b = @snn_mbt.compose([IF_(p2)], [])
+  let merged = @snn_mbt.merge_heterogeneous(model_a, model_b)
+  let s = @snn_mbt.network_summary(merged)
+  assert_eq(s.n_monitors, 1)
+  assert_eq(s.n_populations, 2)
+}
+
+///|
+test "reset_heterogeneous_full_clears_time" {
+  let model = @snn_mbt.compose([], [])
+  // Advance the time.
+  @snn_mbt.heterogeneous_sim_for(model, 50.0F)
+  let s_before = @snn_mbt.network_summary(model)
+  assert_true(s_before.current_time > 0.0F)
+  @snn_mbt.reset_heterogeneous_full(model)
+  let s_after = @snn_mbt.network_summary(model)
+  assert_eq(s_after.current_time, 0.0F)
+}
+
+///|
+test "reset_heterogeneous_full_clears_monitors" {
+  let rng = @snn_mbt.Xoshiro::new(1UL)
+  let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
+  // Attach a Poisson stimulus that injects spikes.
+  let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
+  let mon = @snn_mbt.Monitor::new_fire(p, 0)
+  let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
+  @snn_mbt.heterogeneous_sim_for(model, 100.0F)
+  let mon_spikes_before = mon.count_spikes()
+  @snn_mbt.reset_heterogeneous_full(model)
+  let mon_spikes_after = mon.count_spikes()
+  assert_true(mon_spikes_before > 0)
+  assert_eq(mon_spikes_after, 0)
+}
+
+///|
+test "heterogeneous_sim_for_with_log_advances_time" {
+  let model = @snn_mbt.compose([], [])
+  let logs = @snn_mbt.heterogeneous_sim_for_with_log(model, 50.0F, 10.0F)
+  // Time after should be 50.0.
+  let s = @snn_mbt.network_summary(model)
+  assert_true(s.current_time > 49.0F)
+  // Logs may be empty if the model has no monitors; that's OK.
+  let _ = logs
+}
+
+///|
+test "heterogeneous_sim_for_with_log_logs_when_monitors_active" {
+  let rng = @snn_mbt.Xoshiro::new(7UL)
+  let p = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
+  let mon = @snn_mbt.Monitor::new_fire(p, 0)
+  let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
+  let logs = @snn_mbt.heterogeneous_sim_for_with_log(model, 30.0F, 5.0F)
+  // Should have at least 1 log entry (final time >= 5.0).
+  assert_true(logs.length() >= 1)
+  // First log entry's t should be >= 5.0.
+  let first_t = logs[0].t
+  assert_true(first_t >= 4.9F)
+}
+
+///|
+test "step_heterogeneous_with_record_invokes_callback" {
+  let model = @snn_mbt.compose([], [])
+  // Step 5 times with a closure that captures the time.
+  let captured : Array[Float] = []
+  for _k in 0..<5 {
+    @snn_mbt.step_heterogeneous_with_record(model, 0.125F, fn(t : Float) { captured.push(t) })
+  }
+  assert_eq(captured.length(), 5)
+  // Each time should be 0.125 apart (in dt units).
+  let dt = 0.125F
+  for k in 1..<captured.length() {
+    let diff = captured[k] - captured[k - 1]
+    let diff_diff = if diff > dt { diff - dt } else { dt - diff }
+    assert_true(diff_diff < 1.0e-3F)
+  }
+}

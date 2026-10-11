@@ -54,7 +54,7 @@ const SEP_2D_ROW : Char = '|'
 /// bit-identical to `x` even for Float32 values that do not have a
 /// short decimal representation (e.g. 0.1F).
 fn encode_float_list(xs : Array[Float]) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_char('[')
   for i in 0..<xs.length() {
     if i > 0 {
@@ -91,7 +91,7 @@ fn decode_float_list(s : String) -> Array[Float] {
 /// bit-exact Int representation of each Float. Rows are joined by '|'
 /// so the entire matrix fits on one line.
 fn encode_float_matrix(xs : Array[Array[Float]]) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_char('[')
   for i in 0..<xs.length() {
     if i > 0 {
@@ -157,7 +157,7 @@ fn parse_float_strict(s : String) -> Float {
   if hi == lo {
     return 0.0F
   }
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in lo..<hi {
     buf.write_char(s[i].unsafe_to_char())
   }
@@ -169,7 +169,7 @@ fn parse_float_strict(s : String) -> Float {
 /// non-empty pieces (empty pieces are dropped).
 fn split_on(s : String, sep : Char) -> Array[String] {
   let out : Array[String] = []
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let n = s.length()
   let mut i = 0
   while i < n {
@@ -215,7 +215,7 @@ fn strip_brackets(s : String) -> String {
     lo = lo + 1
     hi = hi - 1
   }
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in lo..<hi {
     buf.write_char(s[i].unsafe_to_char())
   }
@@ -242,7 +242,7 @@ fn header_lookup(lines : Array[String], key : String) -> String {
         }
       }
       if match_ok {
-        let buf = StringBuilder::new()
+        let buf = StringBuilder()
         for j in prefix.length()..<line.length() {
           buf.write_char(line[j].unsafe_to_char())
         }
@@ -259,7 +259,7 @@ fn header_lookup(lines : Array[String], key : String) -> String {
 fn split_header_lines(s : String) -> Array[String] {
   let out : Array[String] = []
   let n = s.length()
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in 0..<n {
     let c = s[i]
     if c == '\n' {
@@ -298,7 +298,7 @@ fn split_header_lines(s : String) -> Array[String] {
 /// weight/bias fields. Optimizer state is NOT included; use
 /// `serialize_qnet_checkpoint` for a full checkpoint.
 pub fn serialize_linear_qnet(q : LinearQNet) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=LinearQNet\n")
   buf.write_string("n_states=")
@@ -348,7 +348,7 @@ pub fn deserialize_linear_qnet(s : String) -> LinearQNet {
 /// -> scalar Q). Header `kind=QNetworkContinuous` plus shape metadata
 /// (state_dim, action_dim, hidden) and the four weight/bias fields.
 pub fn serialize_qnetwork_continuous(q : QNetworkContinuous) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=QNetworkContinuous\n")
   buf.write_string("state_dim=")
@@ -407,7 +407,7 @@ pub fn deserialize_qnetwork_continuous(s : String) -> QNetworkContinuous {
 /// Serialize a `DeterministicPolicy` (DDPG/TD3 actor head). Header
 /// `kind=DeterministicPolicy` plus shape and squash range.
 pub fn serialize_deterministic_policy(p : DeterministicPolicy) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=DeterministicPolicy\n")
   buf.write_string("state_dim=")
@@ -481,7 +481,7 @@ pub fn deserialize_deterministic_policy(s : String) -> DeterministicPolicy {
 /// keyed by `kind=AdamState`. Bias moments are length 1 for scalar
 /// critics (QNetworkContinuous.b2) so the array is preserved as-is.
 pub fn serialize_adam_state(opt : AdamState) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=AdamState\n")
   buf.write_string("step=")
@@ -547,7 +547,7 @@ pub fn serialize_qnet_checkpoint(
   opt : AdamState,
   step : Int,
 ) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=QNetCheckpoint\n")
   buf.write_string("model=")
@@ -580,7 +580,7 @@ pub fn deserialize_qnet_checkpoint(s : String) -> (LinearQNet, AdamState, Int) {
 /// key=value line: each '\n' becomes "\\n" so the outer parser sees
 /// it as one line.
 fn encode_inline_block(s : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in 0..<s.length() {
     let c = s[i]
     if c == '\n' {
@@ -597,7 +597,7 @@ fn encode_inline_block(s : String) -> String {
 ///|
 /// Inverse of `encode_inline_block`.
 fn decode_inline_block(s : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let n = s.length()
   let mut i = 0
   while i < n {

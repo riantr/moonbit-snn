@@ -1,3 +1,6 @@
+# Throwaway probe projects (capability / gate experiments)
+_scratch/
+
 # Build artifacts
 _build/
 _disabled/

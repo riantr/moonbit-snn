@@ -112,7 +112,7 @@ pub fn dump_weights_dense(synapse : SpikingSynapse) -> Array[Array[Float]] {
 /// string. Useful for offline inspection / Python interop.
 pub fn dump_weights_to_csv(synapse : SpikingSynapse) -> String {
   let triples = dump_weights_with_indices(synapse)
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in 0..<triples.length() {
     let (pre, post, w) = triples[i]
     buf.write_string(pre.to_string())

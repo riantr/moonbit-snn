@@ -12,9 +12,15 @@
 // `fast_sigmoid_forward` from `surrogate.mbt` (v0.22.0) and use
 // `fast_sigmoid_surrogate` as the backward gradient.
 //
-// Backward-compat: `SpikingAttention` is typealiased to
-// `SpikingMultiHeadAttention`, so existing calls in `spiking_attention.mbt`
-// keep working.
+// Backward-compat: the v0.24.0 name `SpikingAttention` survives as an empty
+// carrier for the associated constructor in `spiking_attention.mbt`. That shim
+// returns a `SpikingMultiHeadAttention`, and it has to be written as
+// `SpikingAttention::new` to keep the old call sites compiling, so the struct
+// has to exist even though nothing ever constructs it — drop the struct and
+// `moon check` reports `The type/trait SpikingAttention is not found`.
+//
+// `SpikingAttnCache` had no such attachment and was genuinely dead, so it is
+// gone.
 
 // ============================================================================
 // Multi-head self-attention
@@ -50,9 +56,14 @@ pub struct SpikingMultiHeadAttnCache {
 }
 
 ///|
-/// Backward-compat struct (was the v0.24.0 name for multi-head
-/// self-attention). Structurally identical to `SpikingMultiHeadAttention`.
-/// New code should use `SpikingMultiHeadAttention` directly.
+/// The v0.24.0 parameter container. Kept because `SpikingAttention::new` is
+/// attached to it as an associated function in `spiking_attention.mbt`, and
+/// removing the struct would remove the constructor with it.
+///
+/// It is NOT the type that constructor returns — it hands back a
+/// `SpikingMultiHeadAttention`. Nothing constructs this struct directly, which
+/// is why `moon check` reports it as never constructed; the warning is accurate
+/// and the type stays only to carry the compat entry point.
 pub struct SpikingAttention {
   d_model : Int
   num_heads : Int
@@ -62,22 +73,6 @@ pub struct SpikingAttention {
   w_k : LinearParam
   w_v : LinearParam
   w_o : LinearParam
-}
-
-///|
-/// Backward-compat cache (was `SpikingAttnCache` in v0.24.0).
-pub struct SpikingAttnCache {
-  seq_len : Int
-  x : Array[Float]
-  q : Array[Float]
-  k : Array[Float]
-  v : Array[Float]
-  scores : Array[Float]
-  weights : Array[Float]
-  out_pre : Array[Float]
-  mask : Array[Float]
-  scale : Float
-  beta : Float
 }
 
 ///|

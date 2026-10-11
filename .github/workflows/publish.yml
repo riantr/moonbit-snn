@@ -56,6 +56,30 @@ jobs:
         # WasmGC and Js before a single file is checked.
         run: moon check --target native
 
+      # The root package cannot host a test target at all: moon inlines every
+      # source path into the Windows command line and the package exceeds the
+      # 32K limit, so `moon test` on the root dies with
+      # CreateProcessW ERROR_FILENAME_EXCED_RANGE. The consequence is easy to
+      # miss and worse than a red build: a `*_test.mbt` left in the root is not
+      # a failing test, it is a test that never runs and still reports green.
+      #
+      # So the failure mode is inverted here -- the guard passes only when the
+      # root is clean. It started as `continue-on-error` while 207 root tests
+      # were still being moved into tests/waveN/; the root is empty now, so a
+      # new `*_test.mbt` there is a genuine regression and fails the build.
+      - name: Guard against unrunnable root-package tests
+        run: |
+          cd mbt
+          leftover=$(ls *_test.mbt 2>/dev/null | wc -l)
+          if [ "$leftover" -ne 0 ]; then
+            echo "::error::${leftover} 个 *_test.mbt 留在根包，它们不会被 CI 执行"
+            echo "根包 moon test 撞 Win32 CreateProcessW 32K 上限，无法链接。"
+            echo "请移入 tests/waveN/ 子包 —— 工具与说明见 tools/split_tests/README.md"
+            ls *_test.mbt
+            exit 1
+          fi
+          echo "根包无残留测试文件。"
+
       # `moon fmt --check` is deliberately NOT a gate. The package has ~998
       # files and ten of them carry pre-existing formatting diffs that predate
       # any of this work; enabling the check now would fail a release over
@@ -65,13 +89,42 @@ jobs:
 
       # NOT `moon test` on the root package. It fails with CreateProcessW
       # ERROR_FILENAME_EXCED_RANGE (the 32K Windows command-line limit) because
-      # moon inlines every source path. The two test sub-packages are the
-      # supported entry points.
+      # moon inlines every source path. The test sub-packages are the supported
+      # entry points.
+      #
+      # Every `*_test.mbt` now lives in one of these. The root is empty of tests,
+      # so the guard above passes for real rather than by exemption, and
+      # `continue-on-error` can come off.
       - name: moon test wave1
         run: moon test ./tests/wave1 --target native
 
       - name: moon test wave2
         run: moon test ./tests/wave2 --target native
+
+      # Waves 3-9 hold the tests that used to sit in the root package and never
+      # ran at all: 207 files covering the neuron models, recurrent/RL, synapse
+      # plasticity and the remaining DL surface. wave8 additionally imports
+      # riantr/moonbit_image because `image_test.mbt` decodes a BMP through it.
+      - name: moon test wave3
+        run: moon test ./tests/wave3 --target native
+
+      - name: moon test wave4
+        run: moon test ./tests/wave4 --target native
+
+      - name: moon test wave5
+        run: moon test ./tests/wave5 --target native
+
+      - name: moon test wave6
+        run: moon test ./tests/wave6 --target native
+
+      - name: moon test wave7
+        run: moon test ./tests/wave7 --target native
+
+      - name: moon test wave8
+        run: moon test ./tests/wave8 --target native
+
+      - name: moon test wave9
+        run: moon test ./tests/wave9 --target native
 
       - name: Publish to mooncakes.io
         run: |

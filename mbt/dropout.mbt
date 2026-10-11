@@ -100,9 +100,3 @@ pub fn dropout_backward(
   }
   d_input
 }
-
-///|
-/// Convenience: dropout_forward + cache wrapper for chain-style use.
-pub struct DropoutCache {
-  mask : Array[Float]
-}
