@@ -165,8 +165,6 @@ test "conv2d_backward / gradient check d_bias vs numerical" {
   let weight : Array[Float] = Array::make(2 * 1 * 3 * 3, 1.0F)
   let bias : Array[Float] = [0.0F, 0.0F]
   let param = @snn_mbt.Conv2dParam::new(weight, bias, 2, 1, 3, 3, stride=1, pad=0)
-  let ho = 1
-  let wo = 1
   let d_output : Array[Float] = [1.0F, 2.0F]
   let (_, _, d_bias) = @snn_mbt.conv2d_backward(input, d_output, 1, 1, 3, 3, param)
   // d_bias[0] = sum d_output[0..0] = 1

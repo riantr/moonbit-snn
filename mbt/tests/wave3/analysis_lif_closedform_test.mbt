@@ -131,7 +131,6 @@ test "LIF closed-form — exponential decay constant matches τm" {
     @snn_mbt.synaptic_current(p)
     @snn_mbt.step_neuron(p, dt)
   }
-  let v_steady = param.el + p.i[0] * param.r
   // Expected: V(τm) ≈ V_rest + 0.632 * (V_steady - V_rest)
   //            = -70 + 0.632 * 0.06 = -70 + 0.0379 = -69.9621.
   let expected = param.el + 0.632F * p.i[0] * param.r

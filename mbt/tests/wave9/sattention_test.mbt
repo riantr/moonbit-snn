@@ -56,7 +56,6 @@ test "spiking_cross_attention_forward: output shape = (seq_len_q, d_model)" {
 
 ///|
 test "spiking_cross_attention_forward: degenerates to multi-head self when x_q == x_kv" {
-  let seq_len = 3
   let d_model = 4
   let num_heads = 2
   let sa_mh = @snn_mbt.SpikingMultiHeadAttention::new(d_model, num_heads, 1.0F, 1UL)
@@ -123,8 +122,6 @@ test "spiking_cross_attention_backward: shapes + zero d_output → zero" {
 
 ///|
 test "spiking_cross_attention_backward: gradient check vs numerical" {
-  let seq_len_q = 2
-  let seq_len_kv = 3
   let d_model = 2
   let sa = @snn_mbt.SpikingCrossAttention::new(d_model, 1, 1.0F, 3UL)
   let x_q : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]

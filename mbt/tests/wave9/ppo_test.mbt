@@ -88,7 +88,6 @@ test "ppo_update_step: with clipping, no extreme weight jumps" {
 test "ppo_clip_active: ratio outside [1-eps, 1+eps] is clipped" {
   // Hand-craft a setup: old_probs[0] = 0.5 (chosen), but after one
   // big update cur_p[0] = 0.9 (ratio = 1.8, clipped to 1.2).
-  let env = @snn_mbt.GridWorld::new(2, 2, 1)
   let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 2, 37UL)
   // Force policy: action 0 has huge logit. p.w has n_actions=2
   // rows and n_states=4 columns.

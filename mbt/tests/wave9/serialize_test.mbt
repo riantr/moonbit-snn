@@ -184,7 +184,6 @@ test "serialize_adam_state_after_one_step" {
   // Float32 = 0.009999999776482582).
   // Second step: m = 0.9 * (that) + 0.1 * (-0.1) = -0.001.
   // Exact bit pattern preserved through encode -> decode.
-  let m0_bits = Float::reinterpret_as_int(m0)
   let m_after_first = Float::from_double(0.1 * 0.1)
   let expected = Float::from_double(
     (0.9 * (Float::reinterpret_as_int(m_after_first).to_double() /

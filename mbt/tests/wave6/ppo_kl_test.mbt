@@ -92,7 +92,6 @@ test "ppo_kl_update_step: positive KL beta pulls policy back" {
   // Construct a batch with old_dist favoring action 0 and current
   // policy favoring action 1 (so KL > 0). Then with high β, the
   // update should pull the policy back toward old.
-  let env = @snn_mbt.GridWorld::new(2, 2, 1)
   let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 2, 29UL)
   // Current policy strongly prefers action 1.
   for i in 0..<2 {

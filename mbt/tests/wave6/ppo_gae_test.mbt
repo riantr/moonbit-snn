@@ -100,7 +100,6 @@ test "gae_advantages_returns: returns are monotonically backward-decreasing" {
 ///|
 test "ppo_gae_update: zero return episode -> critic moves toward zero" {
   // If every reward is 0 and target is 0, V(s) should drop to 0.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
   let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 53UL)
   let v = @snn_mbt.LinearValueNet::new(4, 59UL)
   // Set V(s) = 2 initially (far from the target 1.0).

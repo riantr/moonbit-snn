@@ -50,7 +50,6 @@ test "adafactor_update_1d: bias update matches RMSProp-like form" {
   let bias : Array[Float] = [0.0F, 0.0F, 0.0F]
   let d_bias : Array[Float] = [0.5F, -0.3F, 0.1F]
   let state = @snn_mbt.Adafactor1DState::new(3)
-  let lr = 0.1F
   // First step: v = (1-β)·g^2 = 0.001·g^2
   // update = lr·g/sqrt(v+eps) ≈ lr·g/sqrt(v) for small v.
   // bias[0] ≈ 0 - 0.1·0.5/sqrt(0.001·0.25) = -0.05/sqrt(0.00025) = -0.05/0.0158 ≈ -3.16

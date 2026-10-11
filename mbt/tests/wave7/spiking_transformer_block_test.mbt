@@ -100,7 +100,6 @@ test "spiking_transformer_block_backward: shapes + zero d_output → zero" {
 
 ///|
 test "spiking_transformer_block_backward: gradient check vs numerical" {
-  let seq_len = 2
   let d_model = 2
   let block = @snn_mbt.SpikingTransformerBlock::new(d_model, 1, 1.0F, 3UL, d_ff=4)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
@@ -132,7 +131,6 @@ test "spiking_transformer_block_backward: gradient check vs numerical" {
 ///|
 test "spiking_transformer_block_backward: gradient check on sa.w_q[0]" {
   // Same setup; perturb spiking-attention w_q[0].
-  let seq_len = 2
   let d_model = 2
   let block = @snn_mbt.SpikingTransformerBlock::new(d_model, 1, 1.0F, 3UL, d_ff=4)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
