@@ -61,10 +61,10 @@ test "relu_backward / gradient check vs numerical (strictly-positive/negative in
     }
     s
   }
-  let num = @snn_mbt.numerical_gradient(input, eps, fwd)
+  let num = @gnn.numerical_gradient(input, eps, fwd)
   let d_output : Array[Float] = Array::make(input.length(), 1.0F)
   let analytic = @activ.relu_backward(input, d_output)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, analytic)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num, analytic)
   if max_diff > 1.0e-3 {
     fail("relu backward gradient mismatch: max diff \{max_diff} at \{max_idx} (num=\{num[max_idx]} vs analytic=\{analytic[max_idx]})")
   }

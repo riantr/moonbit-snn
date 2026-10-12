@@ -78,11 +78,11 @@ test "maxpool2d_backward / gradient check vs numerical (2x2 stride=2)" {
     for i in 0..<out.length() { s = s + out[i] }
     s
   }
-  let num = @snn_mbt.numerical_gradient(input, eps, fwd)
+  let num = @gnn.numerical_gradient(input, eps, fwd)
   let (out, argmax) = @nn.maxpool2d_forward_with_idx(input, 1, 1, 3, 3, param)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
   let analytic = @nn.maxpool2d_backward(d_output, argmax, 1, 1, 3, 3, param)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, analytic)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num, analytic)
   if max_diff > 1.0e-3 {
     fail("maxpool backward gradient mismatch: max diff \{max_diff} at \{max_idx}")
   }

@@ -104,12 +104,12 @@ test "conv2d_backward / gradient check d_input vs numerical" {
     for i in 0..<out.length() { s = s + out[i] }
     s
   }
-  let num = @snn_mbt.numerical_gradient(input, eps, fwd)
+  let num = @gnn.numerical_gradient(input, eps, fwd)
   let ho = (4 + 2 - 3) / 1 + 1  // 4
   let wo = (4 + 2 - 3) / 1 + 1  // 4
   let d_output : Array[Float] = Array::make(ho * wo, 1.0F)
   let (analytic, _, _) = @nn.conv2d_backward(input, d_output, 1, 1, 4, 4, param)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, analytic)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num, analytic)
   // Float32 central-difference has O(eps^2 * curvature) error; for a
   // 9-sum conv with all-1 kernel the tolerance is ~1e-2 at eps=1e-3.
   if max_diff > 1.0e-2 {
@@ -152,7 +152,7 @@ test "conv2d_backward / gradient check d_weight vs numerical" {
     num_d_weight[k] = (loss_p - loss_m) / (2.0F * eps)
   }
   let (_, analytic_d_weight, _) = @nn.conv2d_backward(input, d_output, n, c_in, h, w, param)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num_d_weight, analytic_d_weight)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num_d_weight, analytic_d_weight)
   if max_diff > 1.0e-2 {
     fail("conv2d d_weight gradient mismatch: max diff \{max_diff} at \{max_idx}")
   }

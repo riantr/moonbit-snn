@@ -1,0 +1,27 @@
+// gnn/ — graph neural networks: message passing, pooling and read-out.
+//
+// `message_passing.mbt` is the centre of this package rather than an
+// afterthought. Gilmer et al. (2017) showed every GNN is three steps at every
+// node -- aggregate, update, read out -- and eleven files here are written
+// against that interface rather than against a specific architecture. Putting
+// it anywhere else would leave those eleven depending on it through the root.
+//
+// `gradient_check.mbt` comes along for a plainer reason: it has no dependencies
+// outside this package and the only two files that use it are the two GNN
+// gradient gates.
+//
+// The circular pair noted during the dependency survey -- gat_stack_backward
+// reaching gnn_paramcheck, which reaches back -- is internal to this package,
+// so it costs nothing. Splitting on a prefix would have split the pair in half.
+//
+// rl/ is imported by three files, and it is a real dependency rather than a
+// convenience: Set2Set and graph attention both read out node sets with an
+// LSTM, iterating the attention to convergence rather than pooling in one
+// pass. That is an RNN doing attention, so graph attention lives downstream of
+// the recurrent package.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/neuron",
+  "riantr/snn_mbt/rl",
+}

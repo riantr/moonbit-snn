@@ -90,10 +90,10 @@ test "linear_backward / gradient check vs numerical (single-batch)" {
     }
     s
   }
-  let num = @snn_mbt.numerical_gradient(input, eps, fwd)
+  let num = @gnn.numerical_gradient(input, eps, fwd)
   let d_output : Array[Float] = Array::make(out_f, 1.0F)
   let (analytic, _, _) = @nn.linear_backward(input, d_output, 1, param)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, analytic)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num, analytic)
   if max_diff > 1.0e-3 {
     fail("linear backward d_input mismatch: max diff \{max_diff} at \{max_idx}")
   }
@@ -127,7 +127,7 @@ test "linear_backward / gradient check vs numerical (d_weight)" {
   }
   let d_output : Array[Float] = Array::make(out_f, 1.0F)
   let (_, analytic_d_weight, _) = @nn.linear_backward(input, d_output, 1, param)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num_d_weight, analytic_d_weight)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num_d_weight, analytic_d_weight)
   if max_diff > 1.0e-3 {
     fail("linear backward d_weight mismatch: max diff \{max_diff} at \{max_idx}")
   }

@@ -83,8 +83,8 @@ test "cnn_backward_chain / gradient check d_input end-to-end" {
     for i in 0..<l_out.length() { s = s + l_out[i] }
     s
   }
-  let num = @snn_mbt.numerical_gradient(input, eps, fwd)
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, d_input)
+  let num = @gnn.numerical_gradient(input, eps, fwd)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num, d_input)
   if max_diff > 1.0e-2 {
     fail("cnn chain d_input mismatch: max diff \{max_diff} at \{max_idx} (num=\{num[max_idx]} vs analytic=\{d_input[max_idx]})")
   }
@@ -207,7 +207,7 @@ test "cnn_backward_chain / gradient check d_weight (conv weights) end-to-end" {
   let (_, analytic_d_weight, _) = @nn.conv2d_backward(
     input, d_conv, n, c_in, h, w, conv_param,
   )
-  let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num_d_weight, analytic_d_weight)
+  let (max_diff, max_idx) = @gnn.max_abs_diff(num_d_weight, analytic_d_weight)
   if max_diff > 1.0e-2 {
     fail("cnn chain d_weight mismatch: max diff \{max_diff} at \{max_idx}")
   }
