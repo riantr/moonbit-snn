@@ -41,8 +41,8 @@ fn main {
     10.0F, 0.0F, 0.05F, rng)
 
   // Poisson afferents at 20 Hz × 100 = 2000Hz (MoonBit internal 2.0F).
-  let aff_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 2.0F, rng)
-  let aff_i = @snn_mbt.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
+  let aff_e = @stimulus.PoissonStimulusIF::new(e_pop, "ge", 2.0F, rng)
+  let aff_i = @stimulus.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
 
   // Build model.
   let fm_e = @snn_mbt.Monitor::new_fire(e_pop, 0)

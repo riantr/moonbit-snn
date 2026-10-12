@@ -6,8 +6,8 @@ test "PoissonLayerStimulusBallAndStick::new: shapes and target fields" {
   let rng = @core.Xoshiro::default()
   let soma_param = @neuron.AdExParameter::new()
   let post = @neuron.BallAndStick::new(3, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(5.0F * @core.hz, 4)
-  let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl = @stimulus.PoissonLayer::with_n(5.0F * @core.hz, 4)
+  let s = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   if s.weights.length() != 3 * 4 {
@@ -26,8 +26,8 @@ test "PoissonLayerStimulusBallAndStick: p=1.0 → Fixed weights = μ" {
   let rng = @core.Xoshiro::default()
   let soma_param = @neuron.AdExParameter::new()
   let post = @neuron.BallAndStick::new(2, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(100.0F * @core.hz, 2)
-  let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl = @stimulus.PoissonLayer::with_n(100.0F * @core.hz, 2)
+  let s = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 3.0F, 0.0F, 1.0F, rng,
   )
   for i in 0..<4 {
@@ -45,14 +45,14 @@ test "stimulate_layer_ball: high rate → glu_d accumulates" {
   let rng = @core.Xoshiro::default()
   let soma_param = @neuron.AdExParameter::new()
   let post = @neuron.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
-  let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl = @stimulus.PoissonLayer::with_n(10000.0F * @core.hz, 1)
+  let s = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 2.0F, 0.0F, 1.0F, rng,
   )
   let mut total_added = 0.0F
   for _ in 0..<1000 {
     let before = post.glu_d[0]
-    @snn_mbt.stimulate_layer_ball(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_ball(s, 0.0F, 0.125F)
     let diff = post.glu_d[0] - before
     if diff > 0.0F {
       if (diff - 2.0F).abs() > 1.0e-5F {
@@ -79,12 +79,12 @@ test "stimulate_layer_ball: soma target → glu_s only" {
   let rng = @core.Xoshiro::default()
   let soma_param = @neuron.AdExParameter::new()
   let post = @neuron.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
-  let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl = @stimulus.PoissonLayer::with_n(10000.0F * @core.hz, 1)
+  let s = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl, post, "soma", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<200 {
-    @snn_mbt.stimulate_layer_ball(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_ball(s, 0.0F, 0.125F)
   }
   if post.glu_s[0] == 0.0F {
     fail("glu_s[0] should receive soma-targeted input")
@@ -99,12 +99,12 @@ test "stimulate_layer_ball: :gaba target → gaba_d" {
   let rng = @core.Xoshiro::default()
   let soma_param = @neuron.AdExParameter::new()
   let post = @neuron.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
-  let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl = @stimulus.PoissonLayer::with_n(10000.0F * @core.hz, 1)
+  let s = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "gaba", 1.5F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<200 {
-    @snn_mbt.stimulate_layer_ball(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_ball(s, 0.0F, 0.125F)
   }
   if post.gaba_d[0] == 0.0F {
     fail("gaba_d[0] should receive gaba-targeted input")
@@ -119,12 +119,12 @@ test "stimulate_layer_ball: zero rate → no conductance change" {
   let rng = @core.Xoshiro::default()
   let soma_param = @neuron.AdExParameter::new()
   let post = @neuron.BallAndStick::new(1, soma_param, rng)
-  let pl = @snn_mbt.PoissonLayer::new(0.0F)
-  let s = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl = @stimulus.PoissonLayer::new(0.0F)
+  let s = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl, post, "d", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<100 {
-    @snn_mbt.stimulate_layer_ball(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_ball(s, 0.0F, 0.125F)
   }
   if post.glu_d[0] != 0.0F {
     fail("glu_d[0] = \{post.glu_d[0]}, expected 0 (zero rate)")

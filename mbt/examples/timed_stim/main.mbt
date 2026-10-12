@@ -22,7 +22,7 @@ fn main {
   let spiketimes : Array[Float] = [100.0F, 200.0F, 300.0F]
   let neurons : Array[Int] = [0, 1, 2]
   // Build the spike-time stimulus.
-  let stim = @snn_mbt.SpikeTimeStimulus::new(e_pop, "ge", spiketimes, neurons)
+  let stim = @stimulus.SpikeTimeStimulus::new(e_pop, "ge", spiketimes, neurons)
 
   // Fire monitors.
   let fm_v = @snn_mbt.Monitor::new_v(e_pop, 0)

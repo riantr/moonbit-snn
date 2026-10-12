@@ -54,8 +54,8 @@ fn main {
   let stdp_w22 = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(3, ne2, ne2))
 
   // Constant Poisson drive (Julia uses OU process; we use fixed rate).
-  let stim_e1 = @snn_mbt.PoissonStimulusIF::new(e1, "ge", 0.5F, rng)
-  let stim_e2 = @snn_mbt.PoissonStimulusIF::new(e2, "ge", 0.5F, rng)
+  let stim_e1 = @stimulus.PoissonStimulusIF::new(e1, "ge", 0.5F, rng)
+  let stim_e2 = @stimulus.PoissonStimulusIF::new(e2, "ge", 0.5F, rng)
 
   // Build model.
   let fm_e1 = @snn_mbt.Monitor::new_fire(e1, 0)

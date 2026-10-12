@@ -56,7 +56,7 @@ fn main {
   // for each excitatory population. We scale down by 100x for
   // tractability: rate=0.5 (≈ 500Hz in MoonBit units where Hz=0.001)
   // with μ=10 nS.
-  let stim_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 0.5F, rng)
+  let stim_e = @stimulus.PoissonStimulusIF::new(e_pop, "ge", 0.5F, rng)
   let _ = stim_e
 
   // Build model with fire monitors.

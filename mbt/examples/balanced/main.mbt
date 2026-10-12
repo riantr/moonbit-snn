@@ -36,7 +36,7 @@ fn main {
 
   // BalancedParameter matching Julia test (kIE=2.0, β=0.1, τ=100ms,
   // r0=2kHz, wIE=2.0, same_input=true).
-  let param = @snn_mbt.BalancedParameter::new(
+  let param = @stimulus.BalancedParameter::new(
     kIE=2.0F,
     beta=0.1F,
     tau=100.0F,
@@ -45,7 +45,7 @@ fn main {
     wIE=2.0F,
     same_input=true,
   )
-  let stim = @snn_mbt.BalancedStimulus::new(
+  let stim = @stimulus.BalancedStimulus::new(
     post, sym_e="ge", sym_i="gi", param=param, seed=12345UL,
   )
 
@@ -62,7 +62,7 @@ fn main {
   let mut total_spikes = 0
   for step in 0..<steps {
     let _ = step
-    @snn_mbt.stimulate_balanced(stim, 0.0F, dt)
+    @stimulus.stimulate_balanced(stim, 0.0F, dt)
     @neuron.step_synapses(post, dt)
     @neuron.synaptic_current(post)
     @neuron.step_neuron(post, dt)

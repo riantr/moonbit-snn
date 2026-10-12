@@ -46,8 +46,8 @@ fn main {
   let ii_w = @snn_mbt.make_random_weights(ni, ni, 16.2F, 0.2F, rng)
 
   // Poisson inputs (scaled down 100× from 4.5Hz/2.5Hz).
-  let e_stim = @snn_mbt.PoissonStimulusIF::new(e_pre, "ge", 0.0045F, rng)
-  let i_stim = @snn_mbt.PoissonStimulusIF::new(i_pre, "ge", 0.0025F, rng)
+  let e_stim = @stimulus.PoissonStimulusIF::new(e_pre, "ge", 0.0045F, rng)
+  let i_stim = @stimulus.PoissonStimulusIF::new(i_pre, "ge", 0.0025F, rng)
 
   // Monitors for spike counting.
   let fm_e = @neuron.MonitorAdExSinExp::new_fire(e_pop, 0)
@@ -59,8 +59,8 @@ fn main {
   for step in 0..<steps {
     let t_now = Float::from_int(step) * dt
     // 1. Drive pre-neurons (IF) with Poisson + decay their synapses.
-    @snn_mbt.stimulate_if(e_stim, t_now, dt)
-    @snn_mbt.stimulate_if(i_stim, t_now, dt)
+    @stimulus.stimulate_if(e_stim, t_now, dt)
+    @stimulus.stimulate_if(i_stim, t_now, dt)
     @snn_mbt.simulate_step_if(e_pre, dt)
     @snn_mbt.simulate_step_if(i_pre, dt)
     // 2. Route pre-spikes to post-synaptic glu/gaba buffers.

@@ -60,7 +60,7 @@ test "compose with Poisson stimulus drives the network" {
   // Poisson input at 5 kHz onto :ge. 5 kHz × 0.125 ms = 0.625 expected events/step.
   // Over 8000 steps we expect ~5000 events. With μ=2.0 nS each, that's enough
   // excitatory drive to push v over -50 within a few hundred ms.
-  let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 5.0F, rng)
+  let stim = @stimulus.PoissonStimulusIF::new(p, "ge", 5.0F, rng)
   let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)])
   @snn_mbt.heterogeneous_sim_for(model, 1000.0F)
   // After 1 s of Poisson input at 5 kHz, v should have moved (not still -55).
@@ -73,16 +73,16 @@ test "CurrentStimulus injects i_base into I[i]" {
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(3, param, rng)
   // 5 pA constant current to all 3 neurons.
-  let stim = @snn_mbt.CurrentStimulusIF::new(p, 5.0F, rng)
+  let stim = @stimulus.CurrentStimulusIF::new(p, 5.0F, rng)
   // After one stimulate! call, every I[i] should be 5.0F.
-  @snn_mbt.stimulate_current_if(stim)
+  @stimulus.stimulate_current_if(stim)
   assert_eq(p.i[0], 5.0F)
   assert_eq(p.i[1], 5.0F)
   assert_eq(p.i[2], 5.0F)
   // set_active(false) disables the stimulus.
   stim.set_active(false)
   p.i[0] = 99.0F
-  @snn_mbt.stimulate_current_if(stim)
+  @stimulus.stimulate_current_if(stim)
   // Stimulus disabled, so the user's 99.0F should NOT be overwritten.
   assert_eq(p.i[0], 99.0F)
 }
@@ -95,7 +95,7 @@ test "compose with CurrentStimulus drives spiking" {
   // Start at v just below threshold.
   p.v[0] = -55.0F
   // 200 pA constant current — should fire within a few steps.
-  let stim = @snn_mbt.CurrentStimulusIF::new(p, 200.0F, rng)
+  let stim = @stimulus.CurrentStimulusIF::new(p, 200.0F, rng)
   let model = @snn_mbt.compose([IF_(p)], [], stims=[CurrentIF_(stim)])
   @snn_mbt.heterogeneous_sim_for(model, 5.0F)
   // 5 ms = 40 steps. With i=200, the neuron should fire within ~5

@@ -22,7 +22,7 @@ fn main {
   let pop = @neuron.IF::new(1, param, rng)
 
   // 400 pA base + N(0, 100) pA noise — drives v near threshold.
-  let stim = @snn_mbt.CurrentStimulusIF::new(pop, 400.0F, rng, noise_sigma=100.0F)
+  let stim = @stimulus.CurrentStimulusIF::new(pop, 400.0F, rng, noise_sigma=100.0F)
   // Fire monitor for spike counting.
   let fm = @snn_mbt.Monitor::new_fire(pop, 0)
   let model = @snn_mbt.compose(

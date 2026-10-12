@@ -6,7 +6,7 @@
 
 ///|
 test "PoissonLayer::new: defaults" {
-  let p = @snn_mbt.PoissonLayer::new(10.0F)
+  let p = @stimulus.PoissonLayer::new(10.0F)
   if p.rate != 10.0F {
     fail("rate = \{p.rate}, expected 10.0")
   }
@@ -29,7 +29,7 @@ test "PoissonLayer::new: defaults" {
 
 ///|
 test "PoissonLayer::with_n: N sources all active" {
-  let p = @snn_mbt.PoissonLayer::with_n(2.0F, 10)
+  let p = @stimulus.PoissonLayer::with_n(2.0F, 10)
   if p.n_sources != 10 {
     fail("n_sources = \{p.n_sources}, expected 10")
   }
@@ -46,7 +46,7 @@ test "PoissonLayer::with_n: N sources all active" {
 ///|
 test "PoissonLayer::with_active: respects inactive flags" {
   let active : Array[Bool] = [false]
-  let p = @snn_mbt.PoissonLayer::with_active(2.0F, 1, active)
+  let p = @stimulus.PoissonLayer::with_active(2.0F, 1, active)
   if p.active[0] {
     fail("active[0] should be false")
   }
@@ -55,7 +55,7 @@ test "PoissonLayer::with_active: respects inactive flags" {
 ///|
 test "PoissonLayer::with_conn: full parameter set" {
   let active : Array[Bool] = [true, true, true]
-  let p = @snn_mbt.PoissonLayer::with_conn(
+  let p = @stimulus.PoissonLayer::with_conn(
     5.0F, 3, active, 2.5F, 1.0F, 0.4F, "Normal", "Fixed",
   )
   if p.rate != 5.0F {
@@ -83,8 +83,8 @@ test "PoissonLayerStimulus::new: weight/connectivity shapes" {
   let rng = @core.Xoshiro::default()
   let if_param = @neuron.IFParameter::new()
   let post = @neuron.IF::new(4, if_param, rng)
-  let param = @snn_mbt.PoissonLayer::with_n(2.0F, 3)
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
+  let param = @stimulus.PoissonLayer::with_n(2.0F, 3)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
   if s.fire.length() != 3 {
     fail("fire.length = \{s.fire.length()}, expected 3")
   }
@@ -105,10 +105,10 @@ test "PoissonLayerStimulus::new: Fixed weights = μ" {
   let rng = @core.Xoshiro::default()
   let if_param = @neuron.IFParameter::new()
   let post = @neuron.IF::new(5, if_param, rng)
-  let param = @snn_mbt.PoissonLayer::with_conn(
+  let param = @stimulus.PoissonLayer::with_conn(
     2.0F, 4, [true, true, true, true], 3.0F, 1.0F, 1.0F, "Fixed", "Fixed",
   )
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
   // With p=1.0, all 20 connections exist, all weights = mu = 3.0
   for i in 0..<20 {
     if !s.connectivity[i] {
@@ -134,10 +134,10 @@ test "PoissonLayerStimulus::new: Normal weights have mean ≈ μ" {
   }
   // Box-Muller samples are independent N(0,1), so 200 samples should
   // give a sample mean within ≈ σ/sqrt(N) = 0.5/sqrt(200) ≈ 0.035 of μ.
-  let param = @snn_mbt.PoissonLayer::with_conn(
+  let param = @stimulus.PoissonLayer::with_conn(
     2.0F * @core.hz, 20, active, 2.0F, 0.5F, 1.0F, "Normal", "Fixed",
   )
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
   let mut sum = 0.0F
   let mut count = 0
   for i in 0..<s.weights.length() {
@@ -161,9 +161,9 @@ test "stimulate_layer: zero rate → no fire, no conductance change" {
   let rng = @core.Xoshiro::default()
   let if_param = @neuron.IFParameter::new()
   let post = @neuron.IF::new(3, if_param, rng)
-  let param = @snn_mbt.PoissonLayer::with_n(0.0F, 5)
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
-  @snn_mbt.stimulate_layer(s, 0.0F, 0.125F)
+  let param = @stimulus.PoissonLayer::with_n(0.0F, 5)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
+  @stimulus.stimulate_layer(s, 0.0F, 0.125F)
   for i in 0..<5 {
     if s.fire[i] {
       fail("fire[\{i}] should be false with rate=0")
@@ -184,11 +184,11 @@ test "stimulate_layer: inactive source → no fire" {
   let active : Array[Bool] = [false, true]
   // 10 kHz on source 1 (high enough to fire ~every step at dt=0.125ms).
   // Rate is in internal units: 10000 Hz × hz_unit = 10000 × 0.001 = 10.0
-  let param = @snn_mbt.PoissonLayer::with_active(10000.0F * @core.hz, 2, active)
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
+  let param = @stimulus.PoissonLayer::with_active(10000.0F * @core.hz, 2, active)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
   let mut total_fires = 0
   for _ in 0..<100 {
-    @snn_mbt.stimulate_layer(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer(s, 0.0F, 0.125F)
     if s.fire[0] {
       fail("inactive source 0 should not fire")
     }
@@ -208,15 +208,15 @@ test "stimulate_layer: high rate fires, weight accumulates on post" {
   let post = @neuron.IF::new(1, if_param, rng)
   // 1 kHz → rate_internal = 1.0, lambda = 1.0 × 0.125 = 0.125 spikes/step.
   // Over 1000 steps (~125 ms) expect ~125 fires × weight 2.0 = ~250.
-  let param = @snn_mbt.PoissonLayer::with_conn(
+  let param = @stimulus.PoissonLayer::with_conn(
     1000.0F * @core.hz, 1, [true], 2.0F, 0.0F, 1.0F, "Fixed", "Fixed",
   )
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
   let mut total_added = 0.0F
   let steps = 1000
   for _ in 0..<steps {
     let before = post.glu[0]
-    @snn_mbt.stimulate_layer(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer(s, 0.0F, 0.125F)
     if s.fire[0] {
       let diff = post.glu[0] - before
       if (diff - 2.0F).abs() > 1.0e-5F {
@@ -244,15 +244,15 @@ test "stimulate_layer: writes to gaba for :gi sym" {
   let if_param = @neuron.IFParameter::new()
   let post = @neuron.IF::new(2, if_param, rng)
   // 1 kHz on 2 sources → ~12.5% fire rate each.
-  let param = @snn_mbt.PoissonLayer::with_conn(
+  let param = @stimulus.PoissonLayer::with_conn(
     1000.0F * @core.hz, 2, [true, true], 1.5F, 0.0F, 1.0F, "Fixed", "Fixed",
   )
-  let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "gi", rng)
+  let s = @stimulus.PoissonLayerStimulus::new(param, post, "gi", rng)
   let mut any_gaba_change = false
   for _ in 0..<200 {
     let g0_before = post.gaba[0]
     let g1_before = post.gaba[1]
-    @snn_mbt.stimulate_layer(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer(s, 0.0F, 0.125F)
     if post.gaba[0] != g0_before || post.gaba[1] != g1_before {
       any_gaba_change = true
       break

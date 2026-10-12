@@ -35,14 +35,14 @@ fn main {
   let post : @neuron.TripodHet = @neuron.TripodHet::new(n_post, param, rng)
 
   // 20 exc Poisson sources @ 20 Hz → :glu, :d1.
-  let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @core.hz, 20)
-  let stim_exc = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let poisson_exc = @stimulus.PoissonLayer::with_n(20.0F * @core.hz, 20)
+  let stim_exc = @stimulus.PoissonLayerStimulusTripod::new(
     poisson_exc, post, "d1", "glu", 0.1F, 0.0F, 1.0F, rng,
   )
 
   // 20 inh Poisson sources @ 3 Hz → :gaba, :d1.
-  let poisson_inh = @snn_mbt.PoissonLayer::with_n(3.0F * @core.hz, 20)
-  let stim_inh = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let poisson_inh = @stimulus.PoissonLayer::with_n(3.0F * @core.hz, 20)
+  let stim_inh = @stimulus.PoissonLayerStimulusTripod::new(
     poisson_inh, post, "d1", "gaba", 0.1F, 0.0F, 1.0F, rng,
   )
 
@@ -59,8 +59,8 @@ fn main {
   for _step in 0..<steps {
     let _ = _step
     // 1. stimulate (exc + inh on :d1)
-    @snn_mbt.stimulate_layer_tripod(stim_exc, 0.0F, dt)
-    @snn_mbt.stimulate_layer_tripod(stim_inh, 0.0F, dt)
+    @stimulus.stimulate_layer_tripod(stim_exc, 0.0F, dt)
+    @stimulus.stimulate_layer_tripod(stim_inh, 0.0F, dt)
     // 2. step synapses on soma + dendrites (single-exp; consumes glu/gaba)
     @neuron.tripod_het_soma_step_synapses(post, dt)
     @neuron.tripod_het_dend_step_synapses(post, dt)

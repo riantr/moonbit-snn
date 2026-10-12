@@ -29,12 +29,12 @@ fn main {
   // Excitatory Poisson: ~1 Hz × 1000 neurons = 1000 events/s.
   // With μ=5 nS, ~5000 nS/s conductance. Approximate as a constant
   // current of +800 pA with σ=200 pA noise.
-  let stim_exc = @snn_mbt.CurrentStimulusArray::new(pop.i, pop.n, 800.0F, rng,
+  let stim_exc = @stimulus.CurrentStimulusArray::new(pop.i, pop.n, 800.0F, rng,
     noise_sigma=200.0F)
   // Inhibitory Poisson: ~10 Hz × 1000 neurons = 10000 events/s.
   // With μ=5 nS, ~50000 nS/s — much stronger. Approximate as
   // -500 pA constant (pulls current out) with σ=200 pA noise.
-  let stim_inh = @snn_mbt.CurrentStimulusArray::new(pop.i, pop.n, -500.0F, rng,
+  let stim_inh = @stimulus.CurrentStimulusArray::new(pop.i, pop.n, -500.0F, rng,
     noise_sigma=200.0F)
 
   println("adex_balanced.mbt: simulation starting (1s)")
@@ -53,7 +53,7 @@ fn main {
     // here means we apply both, with inh as the last write dominating).
     // Actually we want sum: total i = exc + inh. Apply exc first,
     // then add inh on top.
-    @snn_mbt.stimulate_current_array(stim_exc)
+    @stimulus.stimulate_current_array(stim_exc)
     // Now apply inh by ADDING to current i (not overwriting).
     // Use box_muller to sample and add.
     let (z1, _) = @core.box_muller(rng)

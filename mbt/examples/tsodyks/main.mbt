@@ -33,7 +33,7 @@ fn main {
 
   // Background drive via CurrentStimulusArray: 1000 pA baseline +
   // 200 pA noise. Drives v above threshold so cells fire.
-  let stim = @snn_mbt.CurrentStimulusArray::new(e_pop.i, e_pop.n, 1000.0F, rng,
+  let stim = @stimulus.CurrentStimulusArray::new(e_pop.i, e_pop.n, 1000.0F, rng,
     noise_sigma=200.0F)
 
   println("tsodyks.mbt: network built (scaled-down Tsodyks1997)")
@@ -48,7 +48,7 @@ fn main {
   let mut total_i_spikes = 0
   for _ in 0..<total_steps {
     // Drive E with current noise (Poisson input approximation).
-    @snn_mbt.stimulate_current_array(stim)
+    @stimulus.stimulate_current_array(stim)
     // Forward AdEx→AdEx synapses.
     @snn_mbt.forward_adex_synapse(ee)
     // Step AdEx.

@@ -47,8 +47,8 @@ fn main {
 
   // Poisson inputs (scaled down 100× from 4.5Hz/2.5Hz).
   // In MoonBit internal units: 4.5 Hz → 0.0045F.
-  let stim_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 0.0045F, rng)
-  let stim_i = @snn_mbt.PoissonStimulusIF::new(i_pop, "ge", 0.0025F, rng)
+  let stim_e = @stimulus.PoissonStimulusIF::new(e_pop, "ge", 0.0045F, rng)
+  let stim_i = @stimulus.PoissonStimulusIF::new(i_pop, "ge", 0.0025F, rng)
 
   // Build model.
   let fm_e = @snn_mbt.Monitor::new_fire(e_pop, 0)

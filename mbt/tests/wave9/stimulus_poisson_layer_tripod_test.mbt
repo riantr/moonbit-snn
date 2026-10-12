@@ -7,8 +7,8 @@ test "PoissonLayerStimulusTripod::new: shapes and target fields" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(3, base)
   let post = @neuron.TripodHet::new(3, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(5.0F * @core.hz, 4)  // 5 Hz, 4 sources
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::with_n(5.0F * @core.hz, 4)  // 5 Hz, 4 sources
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   if s.weights.length() != 3 * 4 {
@@ -31,8 +31,8 @@ test "PoissonLayerStimulusTripod: p=1.0 → all weights = μ (Fixed)" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(2, base)
   let post = @neuron.TripodHet::new(2, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(100.0F * @core.hz, 2)  // 100 Hz, 2 sources
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::with_n(100.0F * @core.hz, 2)  // 100 Hz, 2 sources
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 3.0F, 0.0F, 1.0F, rng,
   )
   for i in 0..<4 {
@@ -52,8 +52,8 @@ test "stimulate_layer_tripod: high rate → glu_d1 accumulates" {
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
   // 10 kHz, 1 source, Fixed μ=2.0 → lambda = 10 * 0.125 = 1.25 per step
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::with_n(10000.0F * @core.hz, 1)
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 2.0F, 0.0F, 1.0F, rng,
   )
   // Run 1000 steps — high rate should produce many fires.
@@ -62,7 +62,7 @@ test "stimulate_layer_tripod: high rate → glu_d1 accumulates" {
   let mut total_added = 0.0F
   for _ in 0..<1000 {
     let before = post.glu_d1[0]
-    @snn_mbt.stimulate_layer_tripod(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_tripod(s, 0.0F, 0.125F)
     let diff = post.glu_d1[0] - before
     // Per fire, weight = 2.0; so diff is either 0 or 2.0
     if diff > 0.0F {
@@ -94,12 +94,12 @@ test "stimulate_layer_tripod: :gaba target → gaba_d1 buffer" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::with_n(10000.0F * @core.hz, 1)
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "gaba", 1.5F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<200 {
-    @snn_mbt.stimulate_layer_tripod(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_tripod(s, 0.0F, 0.125F)
   }
   if post.gaba_d1[0] == 0.0F {
     fail("gaba_d1[0] = \{post.gaba_d1[0]}, expected non-zero (high rate gaba)")
@@ -115,12 +115,12 @@ test "stimulate_layer_tripod: soma target → glu_s only" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
-  let pl = @snn_mbt.PoissonLayer::with_n(10000.0F * @core.hz, 1)
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::with_n(10000.0F * @core.hz, 1)
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "soma", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<200 {
-    @snn_mbt.stimulate_layer_tripod(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_tripod(s, 0.0F, 0.125F)
   }
   if post.glu_s[0] == 0.0F {
     fail("glu_s[0] should receive soma-targeted input")
@@ -136,12 +136,12 @@ test "stimulate_layer_tripod: zero rate → no conductance change" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
-  let pl = @snn_mbt.PoissonLayer::new(0.0F)
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::new(0.0F)
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<100 {
-    @snn_mbt.stimulate_layer_tripod(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_tripod(s, 0.0F, 0.125F)
   }
   if post.glu_d1[0] != 0.0F {
     fail("glu_d1[0] = \{post.glu_d1[0]}, expected 0 (zero rate)")
@@ -155,12 +155,12 @@ test "stimulate_layer_tripod: inactive source → no fire" {
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
   let active : Array[Bool] = [false]
-  let pl = @snn_mbt.PoissonLayer::with_active(10000.0F * @core.hz, 1, active)
-  let s = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl = @stimulus.PoissonLayer::with_active(10000.0F * @core.hz, 1, active)
+  let s = @stimulus.PoissonLayerStimulusTripod::new(
     pl, post, "d1", "glu", 1.0F, 0.0F, 1.0F, rng,
   )
   for _ in 0..<200 {
-    @snn_mbt.stimulate_layer_tripod(s, 0.0F, 0.125F)
+    @stimulus.stimulate_layer_tripod(s, 0.0F, 0.125F)
   }
   if post.glu_d1[0] != 0.0F {
     fail("glu_d1[0] = \{post.glu_d1[0]}, expected 0 (inactive source)")

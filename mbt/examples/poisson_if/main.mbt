@@ -31,10 +31,10 @@ fn main {
   // External Poisson inputs onto :ge (exc) and :gi (inh).
   // 5 kHz onto :ge with μ=2.0 nS — strong enough to drive E cells to fire.
   // 200 Hz onto :gi with μ=2.0 nS — moderate inhibition.
-  let stim_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 5.0F, rng)
-  let stim_i = @snn_mbt.PoissonStimulusIF::new(i_pop, "gi", 0.2F, rng)
-  @snn_mbt.PoissonFixed::set_mu(stim_e.param, 2.0F)
-  @snn_mbt.PoissonFixed::set_mu(stim_i.param, 2.0F)
+  let stim_e = @stimulus.PoissonStimulusIF::new(e_pop, "ge", 5.0F, rng)
+  let stim_i = @stimulus.PoissonStimulusIF::new(i_pop, "gi", 0.2F, rng)
+  @stimulus.PoissonFixed::set_mu(stim_e.param, 2.0F)
+  @stimulus.PoissonFixed::set_mu(stim_i.param, 2.0F)
 
   // Fire monitors for E[0] and I[0]. Driven by step_heterogeneous so
   // we can count spikes after the sim.

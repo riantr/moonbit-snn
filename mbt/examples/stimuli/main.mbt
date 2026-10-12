@@ -33,26 +33,26 @@ fn main {
   let tripod : @neuron.TripodHet = @neuron.TripodHet::new(1, trip_param, rng)
 
   // Exc Poisson (200 Hz) on BallAndStick :d.
-  let pl_ball_e = @snn_mbt.PoissonLayer::with_n(200.0F * @core.hz, 1)
-  let stim_ball_e = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl_ball_e = @stimulus.PoissonLayer::with_n(200.0F * @core.hz, 1)
+  let stim_ball_e = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl_ball_e, ball, "d", "glu", 30.0F, 0.0F, 1.0F, rng,
   )
 
   // Inh Poisson (400 Hz) on BallAndStick :d.
-  let pl_ball_i = @snn_mbt.PoissonLayer::with_n(400.0F * @core.hz, 1)
-  let stim_ball_i = @snn_mbt.PoissonLayerStimulusBallAndStick::new(
+  let pl_ball_i = @stimulus.PoissonLayer::with_n(400.0F * @core.hz, 1)
+  let stim_ball_i = @stimulus.PoissonLayerStimulusBallAndStick::new(
     pl_ball_i, ball, "d", "gaba", 15.0F, 0.0F, 1.0F, rng,
   )
 
   // Exc Poisson (200 Hz) on Tripod :d1.
-  let pl_trip_e = @snn_mbt.PoissonLayer::with_n(200.0F * @core.hz, 1)
-  let stim_trip_e = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl_trip_e = @stimulus.PoissonLayer::with_n(200.0F * @core.hz, 1)
+  let stim_trip_e = @stimulus.PoissonLayerStimulusTripod::new(
     pl_trip_e, tripod, "d1", "glu", 30.0F, 0.0F, 1.0F, rng,
   )
 
   // Inh Poisson (400 Hz) on Tripod :d1.
-  let pl_trip_i = @snn_mbt.PoissonLayer::with_n(400.0F * @core.hz, 1)
-  let stim_trip_i = @snn_mbt.PoissonLayerStimulusTripod::new(
+  let pl_trip_i = @stimulus.PoissonLayer::with_n(400.0F * @core.hz, 1)
+  let stim_trip_i = @stimulus.PoissonLayerStimulusTripod::new(
     pl_trip_i, tripod, "d1", "gaba", 15.0F, 0.0F, 1.0F, rng,
   )
 
@@ -68,11 +68,11 @@ fn main {
   for _step in 0..<steps {
     let _ = _step
     // Stimulate BallAndStick
-    @snn_mbt.stimulate_layer_ball(stim_ball_e, 0.0F, dt)
-    @snn_mbt.stimulate_layer_ball(stim_ball_i, 0.0F, dt)
+    @stimulus.stimulate_layer_ball(stim_ball_e, 0.0F, dt)
+    @stimulus.stimulate_layer_ball(stim_ball_i, 0.0F, dt)
     // Stimulate Tripod
-    @snn_mbt.stimulate_layer_tripod(stim_trip_e, 0.0F, dt)
-    @snn_mbt.stimulate_layer_tripod(stim_trip_i, 0.0F, dt)
+    @stimulus.stimulate_layer_tripod(stim_trip_e, 0.0F, dt)
+    @stimulus.stimulate_layer_tripod(stim_trip_i, 0.0F, dt)
     // Step BallAndStick (step_ballandstick internally handles
     // soma+dend synapse steps + synaptic current).
     @neuron.ballandstick_soma_step_synapses(ball, dt)

@@ -1,0 +1,17 @@
+// stimulus/ — input current and event sources.
+//
+// Outside core, these reference nothing but neuron/ parameter bundles: a
+// stimulus is configured with a cell model (balanced drive, current injection,
+// Poisson drive for a given IF or Tripod), so naming that model's parameter
+// struct is part of the interface rather than an implementation detail.
+//
+// The three `stimulus_poisson_layer_*` variants are the same population source
+// wired to three different cell models (IF, BallAndStick, Tripod).
+//
+// A pre-split scan called this package dependency-free, which was wrong for the
+// reason it has now been wrong twice: the scan only sees references that are
+// still inside the root package, and neuron/ had already moved out.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/neuron",
+}

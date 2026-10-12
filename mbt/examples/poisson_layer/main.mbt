@@ -42,7 +42,7 @@ fn main {
     }
     a
   }
-  let param = @snn_mbt.PoissonLayer::with_conn(
+  let param = @stimulus.PoissonLayer::with_conn(
     2.0F * @core.hz, // 2 Hz (converted via hz_unit = 0.001)
     10, // n_sources
     active, // all active
@@ -52,7 +52,7 @@ fn main {
     "Normal", // weight distribution
     "Fixed", // rule
   )
-  let stim = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
+  let stim = @stimulus.PoissonLayerStimulus::new(param, post, "ge", rng)
 
   // Print initial state.
   println("poisson_layer.mbt: 10 Poisson sources @ 2 Hz → 200 IF")
@@ -76,7 +76,7 @@ fn main {
   let mut total_spikes = 0
   for step in 0..<steps {
     let _ = step
-    @snn_mbt.stimulate_layer(stim, 0.0F, dt)
+    @stimulus.stimulate_layer(stim, 0.0F, dt)
     @neuron.step_synapses(post, dt)
     @neuron.synaptic_current(post)
     @neuron.step_neuron(post, dt)

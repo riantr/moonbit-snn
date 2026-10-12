@@ -27,7 +27,7 @@ fn main {
   // uses 15 Hz Poisson × 100 presynaptic neurons → ~1500 events/s.
   // We approximate with N(μ, σ) current noise. Baseline 800 pA puts
   // v near threshold; ±400 pA noise pushes it over occasionally.
-  let stim = @snn_mbt.CurrentStimulusArray::new(pop.i, pop.n, 800.0F, rng,
+  let stim = @stimulus.CurrentStimulusArray::new(pop.i, pop.n, 800.0F, rng,
     noise_sigma=400.0F)
 
   println("adex_threshold.mbt: simulation starting (200ms)")
@@ -38,7 +38,7 @@ fn main {
   let total_steps : Int = (200.0F / dt).to_int()
   let mut spikes = 0
   for _ in 0..<total_steps {
-    @snn_mbt.stimulate_current_array(stim)
+    @stimulus.stimulate_current_array(stim)
     let prev_fire = pop.fire[0]
     @neuron.adex_step_synapses(pop, dt)
     @neuron.adex_synaptic_current(pop)

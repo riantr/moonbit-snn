@@ -25,10 +25,10 @@ fn main {
   // E[ge per step] = rate * dt = 15000 * 0.000125 = 1.875
   // E[gi per step] = rate * dt * 5.1 = 9.5625
 
-  let sE = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", rate, rng)
-  let sI = @snn_mbt.PoissonStimulusIF::new(e_pop, "gi", rate * 5.1F, rng)
+  let sE = @stimulus.PoissonStimulusIF::new(e_pop, "ge", rate, rng)
+  let sI = @stimulus.PoissonStimulusIF::new(e_pop, "gi", rate * 5.1F, rng)
   // Set the inhibitory μ to 5.1 (matches Julia)
-  @snn_mbt.PoissonFixed::set_mu(sI.param, 5.1F)
+  @stimulus.PoissonFixed::set_mu(sI.param, 5.1F)
 
   // Build the model
   let model : @snn_mbt.Model = {
@@ -48,8 +48,8 @@ fn main {
   @snn_mbt.record_zero(model)
   let mut spikes : Int = 0
   for _ in 0..<total_steps {
-    @snn_mbt.stimulate_if(sE, time.t[0], dt)
-    @snn_mbt.stimulate_if(sI, time.t[0], dt)
+    @stimulus.stimulate_if(sE, time.t[0], dt)
+    @stimulus.stimulate_if(sI, time.t[0], dt)
     // Integrate
     @neuron.step_synapses(e_pop, dt)
     @neuron.synaptic_current(e_pop)

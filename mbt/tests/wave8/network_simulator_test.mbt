@@ -79,7 +79,7 @@ test "reset_heterogeneous_full_clears_monitors" {
   let rng = @core.Xoshiro::new(1UL)
   let p = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   // Attach a Poisson stimulus that injects spikes.
-  let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
+  let stim = @stimulus.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)
   let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
   @snn_mbt.heterogeneous_sim_for(model, 100.0F)
@@ -105,7 +105,7 @@ test "heterogeneous_sim_for_with_log_advances_time" {
 test "heterogeneous_sim_for_with_log_logs_when_monitors_active" {
   let rng = @core.Xoshiro::new(7UL)
   let p = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
+  let stim = @stimulus.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)
   let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
   let logs = @snn_mbt.heterogeneous_sim_for_with_log(model, 30.0F, 5.0F)

@@ -4,7 +4,7 @@
 test "sample_poisson(0) = 0" {
   let rng = @core.Xoshiro::default()
   for _ in 0..<10 {
-    if @snn_mbt.sample_poisson(rng, 0.0F) != 0 {
+    if @stimulus.sample_poisson(rng, 0.0F) != 0 {
       fail("sample_poisson(0) should be 0")
     }
   }
@@ -13,7 +13,7 @@ test "sample_poisson(0) = 0" {
 ///|
 test "sample_poisson(negative) = 0" {
   let rng = @core.Xoshiro::default()
-  if @snn_mbt.sample_poisson(rng, -1.0F) != 0 {
+  if @stimulus.sample_poisson(rng, -1.0F) != 0 {
     fail("sample_poisson(negative) should be 0")
   }
 }
@@ -26,7 +26,7 @@ test "sample_poisson mean is approximately lambda" {
   let n = 10000
   let mut sum = 0
   for _ in 0..<n {
-    sum = sum + @snn_mbt.sample_poisson(rng, 0.5F)
+    sum = sum + @stimulus.sample_poisson(rng, 0.5F)
   }
   let mean = Float::from_int(sum) / Float::from_int(n)
   // Tolerance: 3 standard deviations. Var(Poisson) = λ, so std = sqrt(0.5/n) ≈ 0.007
@@ -49,7 +49,7 @@ test "ornstein_uhlenbeck_step: stationary mean ~ μ" {
   let mut x = mu
   let mut sum = 0.0F
   for _ in 0..<n {
-    x = @snn_mbt.ornstein_uhlenbeck_step(rng, x, theta, mu, sigma, dt)
+    x = @stimulus.ornstein_uhlenbeck_step(rng, x, theta, mu, sigma, dt)
     sum = sum + x
   }
   let mean = sum / Float::from_int(n)
@@ -65,7 +65,7 @@ test "ornstein_uhlenbeck_step: clamps negative to 0" {
   // The function should clamp to 0.
   let rng = @core.Xoshiro::from_state(0x11111111UL, 0x22222222UL, 0x33333333UL, 0x44444444UL)
   let x = 0.5F
-  let result = @snn_mbt.ornstein_uhlenbeck_step(rng, x, 1.0F, 0.0F, 10.0F, 1.0F)
+  let result = @stimulus.ornstein_uhlenbeck_step(rng, x, 1.0F, 0.0F, 10.0F, 1.0F)
   if result < 0.0F {
     fail("OU result must be >= 0, got " + result.to_string())
   }

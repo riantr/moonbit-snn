@@ -21,7 +21,7 @@ fn main {
   let pop = @neuron.HH::new(1, param, rng)
 
   // 10 µA/cm² current (default HH unit, internally normalised to 10.0F).
-  let stim = @snn_mbt.CurrentStimulusArray::new(pop.i, pop.n, 10.0F, rng)
+  let stim = @stimulus.CurrentStimulusArray::new(pop.i, pop.n, 10.0F, rng)
 
   println("hh_current.mbt: simulation starting (1s)")
   println("  tonic drive: 10 µA/cm² per cell")
@@ -31,7 +31,7 @@ fn main {
   let mut spikes = 0
   for _ in 0..<total_steps {
     // Stimulus first (sets i[i]).
-    @snn_mbt.stimulate_current_array(stim)
+    @stimulus.stimulate_current_array(stim)
     // Track rising-edge of fire flag.
     let prev_fire = pop.fire[0]
     // Step HH.

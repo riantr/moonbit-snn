@@ -28,7 +28,7 @@ fn main {
   let pv_pop = @neuron.IF::new(1, pv_param, rng)
 
   // SpikeTimeStimulus: single spike at t=1000ms onto :ge.
-  let pv_stim = @snn_mbt.SpikeTimeStimulus::new(
+  let pv_stim = @stimulus.SpikeTimeStimulus::new(
     pv_pop, "ge", [1000.0F], [0],
   )
 
@@ -39,7 +39,7 @@ fn main {
   while s < n_steps {
     let t = Float::from_int(s) * dt
     // 1. Deliver scheduled spikes at this time.
-    @snn_mbt.stimulate_spiketime(pv_stim, t, 1.0F)
+    @stimulus.stimulate_spiketime(pv_stim, t, 1.0F)
     // 2. Step IF (synapses → synaptic current → neuron).
     @neuron.step_synapses(pv_pop, dt)
     @neuron.synaptic_current(pv_pop)

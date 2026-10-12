@@ -42,8 +42,8 @@ fn main {
 
   // Poisson stimuli. Rate = 2500Hz for E (50Hz*50), 2000Hz for I1 (50Hz*40).
   // In internal units, 1 Hz = 0.001, so 2500Hz -> 2.5F, 2000Hz -> 2.0F.
-  let stim_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 2.5F, rng)
-  let stim_i = @snn_mbt.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
+  let stim_e = @stimulus.PoissonStimulusIF::new(e_pop, "ge", 2.5F, rng)
+  let stim_i = @stimulus.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
 
   // STDP on the I1->E (inhibitory) synapse - conns[2].
   let stdp_entry = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(2, ni, ne))

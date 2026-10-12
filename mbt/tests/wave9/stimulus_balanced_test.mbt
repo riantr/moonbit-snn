@@ -3,7 +3,7 @@
 
 ///|
 test "BalancedParameter: defaults match Julia" {
-  let p = @snn_mbt.BalancedParameter::new()
+  let p = @stimulus.BalancedParameter::new()
   if p.kIE != 1.0F {
     fail("kIE = \{p.kIE}, expected 1.0")
   }
@@ -30,7 +30,7 @@ test "BalancedParameter: defaults match Julia" {
 
 ///|
 test "BalancedParameter: custom values" {
-  let p = @snn_mbt.BalancedParameter::new(
+  let p = @stimulus.BalancedParameter::new(
     kIE=2.0F,
     beta=0.1F,
     tau=100.0F,
@@ -67,7 +67,7 @@ test "BalancedStimulus::new: zero-initialized state" {
   let rng = @core.Xoshiro::default()
   let if_param = @neuron.IFParameter::new()
   let pop = @neuron.IF::new(8, if_param, rng)
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", seed=0xDEADBEEFUL)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", seed=0xDEADBEEFUL)
   if s.n != 8 {
     fail("N = \{s.n}, expected 8")
   }
@@ -92,11 +92,11 @@ test "BalancedStimulus::new: drives post.receptors (alias-check via stimulate)" 
   // arrays were independent, post-synaptic receptors would stay at 0.
   let rng = @core.Xoshiro::default()
   let pop = @neuron.IF::new(4, @neuron.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(r0=2.0F * @core.khz, w=1.0F, wIE=1.0F)
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=1UL)
+  let p = @stimulus.BalancedParameter::new(r0=2.0F * @core.khz, w=1.0F, wIE=1.0F)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=1UL)
   let dt = 0.125F
   for _ in 0..<20 {
-    @snn_mbt.stimulate_balanced(s, 0.0F, dt)
+    @stimulus.stimulate_balanced(s, 0.0F, dt)
   }
   let mut ge_sum = 0.0F
   let mut gi_sum = 0.0F
@@ -117,21 +117,21 @@ test "stimulate_balanced: writes to ge/gi, fires sometimes" {
   // High rate 鈫?strong drive 鈫?most neurons should fire at least once.
   let rng = @core.Xoshiro::default()
   let pop = @neuron.IF::new(20, @neuron.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(
+  let p = @stimulus.BalancedParameter::new(
     kIE=2.0F,
     beta=0.0F,
     r0=2.0F * @core.khz, // 2 kHz 鈫?strong drive
     w=1.0F,
     wIE=1.0F,
   )
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=42UL)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=42UL)
   let dt = 0.125F
   let n_steps = 100
   let mut ge_total = 0.0F
   let mut gi_total = 0.0F
   let mut fires = 0
   for _ in 0..<n_steps {
-    @snn_mbt.stimulate_balanced(s, 0.0F, dt)
+    @stimulus.stimulate_balanced(s, 0.0F, dt)
     for i in 0..<s.n {
       ge_total = ge_total + s.ge[i]
       gi_total = gi_total + s.gi[i]
@@ -158,9 +158,9 @@ test "stimulate_balanced: writes to ge/gi, fires sometimes" {
 test "stimulate_balanced: zero rate 鈫?no change" {
   let rng = @core.Xoshiro::default()
   let pop = @neuron.IF::new(5, @neuron.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(r0=0.0F, w=1.0F, wIE=1.0F)
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=2UL)
-  @snn_mbt.stimulate_balanced(s, 0.0F, 0.125F)
+  let p = @stimulus.BalancedParameter::new(r0=0.0F, w=1.0F, wIE=1.0F)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=2UL)
+  @stimulus.stimulate_balanced(s, 0.0F, 0.125F)
   for i in 0..<s.n {
     if s.ge[i] != 0.0F {
       fail("ge[\{i}] = \{s.ge[i]} should be 0 with r0=0")
@@ -181,19 +181,19 @@ test "stimulate_balanced: rate adaptation drives r toward r0" {
   // past the adaptation time constant) and confirm r is within 5% of r0.
   let rng = @core.Xoshiro::default()
   let pop = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(
+  let p = @stimulus.BalancedParameter::new(
     beta=0.0F,
     r0=1.0F * @core.khz, // 1 kHz internal = 1.0
     w=1.0F,
     wIE=1.0F,
   )
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=7UL)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=7UL)
   // Force r[0]=0 to start adaptation from zero.
   s.r[0] = 0.0F
   let dt = 0.125F
   let n_steps = 24000 // 3 seconds → 1 - exp(-3000/400) ≈ 0.9994
   for _ in 0..<n_steps {
-    @snn_mbt.stimulate_balanced(s, 0.0F, dt)
+    @stimulus.stimulate_balanced(s, 0.0F, dt)
   }
   // After 3 s of adaptation toward r0=1.0, r should be very close.
   let r_final = s.r[0]
@@ -206,18 +206,18 @@ test "stimulate_balanced: rate adaptation drives r toward r0" {
 test "stimulate_balanced: same_input=true broadcasts ge to all neurons" {
   let rng = @core.Xoshiro::default()
   let pop = @neuron.IF::new(6, @neuron.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(
+  let p = @stimulus.BalancedParameter::new(
     beta=0.0F,
     r0=1.0F * @core.khz,
     w=2.0F,
     wIE=1.0F,
     same_input=true,
   )
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=99UL)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=99UL)
   let dt = 0.125F
   // Run for 100 steps and capture ge values at the end.
   for _ in 0..<100 {
-    @snn_mbt.stimulate_balanced(s, 0.0F, dt)
+    @stimulus.stimulate_balanced(s, 0.0F, dt)
   }
   // When same_input=true, every step that fires adds the same value to
   // every ge[i]. So all ge[i] should be equal after a sequence of steps.
@@ -233,14 +233,14 @@ test "stimulate_balanced: same_input=true broadcasts ge to all neurons" {
 test "reset_balanced: clears r, noise, fire" {
   let rng = @core.Xoshiro::default()
   let pop = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
-  let p = @snn_mbt.BalancedParameter::new(r0=3.0F * @core.khz, w=1.0F)
-  let s = @snn_mbt.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=11UL)
+  let p = @stimulus.BalancedParameter::new(r0=3.0F * @core.khz, w=1.0F)
+  let s = @stimulus.BalancedStimulus::new(pop, sym_e="ge", sym_i="gi", param=p, seed=11UL)
   let dt = 0.125F
   for _ in 0..<50 {
-    @snn_mbt.stimulate_balanced(s, 0.0F, dt)
+    @stimulus.stimulate_balanced(s, 0.0F, dt)
   }
   // After 50 steps, fire/r/noise should be non-trivial. Now reset.
-  @snn_mbt.reset_balanced(s)
+  @stimulus.reset_balanced(s)
   for i in 0..<s.n {
     if (s.r[i] - 3.0F).abs() > 1.0e-6F {
       fail("after reset, r[\{i}] = \{s.r[i]}, expected r0=3.0")

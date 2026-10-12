@@ -51,24 +51,24 @@ pub(all) struct HeterogeneousModel {
 ///   - `TimedStim_` for spike-time stimulus (exact spike times)
 /// More variants (CurrentVariable, etc.) can be added later.
 pub(all) enum AnyStim {
-  PoissonIF_(PoissonStimulusIF)
-  PoissonLayer_(PoissonLayerStimulus)
-  BalancedIF_(BalancedStimulus)
-  CurrentIF_(CurrentStimulusIF)
-  CurrentArr_(CurrentStimulusArray)
-  TimedStim_(SpikeTimeStimulus, Float)  // stimulus + weight
+  PoissonIF_(@stimulus.PoissonStimulusIF)
+  PoissonLayer_(@stimulus.PoissonLayerStimulus)
+  BalancedIF_(@stimulus.BalancedStimulus)
+  CurrentIF_(@stimulus.CurrentStimulusIF)
+  CurrentArr_(@stimulus.CurrentStimulusArray)
+  TimedStim_(@stimulus.SpikeTimeStimulus, Float)  // stimulus + weight
 }
 
 ///|
 /// Dispatch one stimulate! call based on the enum variant.
 pub fn stimulate_any(s : AnyStim, t : @core.Time, dt : Float) -> Unit {
   match s {
-    PoissonIF_(x) => stimulate_if(x, @core.get_time(t), dt)
-    PoissonLayer_(x) => stimulate_layer(x, @core.get_time(t), dt)
-    BalancedIF_(x) => stimulate_balanced(x, @core.get_time(t), dt)
-    CurrentIF_(x) => stimulate_current_if(x)
-    CurrentArr_(x) => stimulate_current_array(x)
-    TimedStim_(x, w) => stimulate_spiketime(x, @core.get_time(t), w)
+    PoissonIF_(x) => @stimulus.stimulate_if(x, @core.get_time(t), dt)
+    PoissonLayer_(x) => @stimulus.stimulate_layer(x, @core.get_time(t), dt)
+    BalancedIF_(x) => @stimulus.stimulate_balanced(x, @core.get_time(t), dt)
+    CurrentIF_(x) => @stimulus.stimulate_current_if(x)
+    CurrentArr_(x) => @stimulus.stimulate_current_array(x)
+    TimedStim_(x, w) => @stimulus.stimulate_spiketime(x, @core.get_time(t), w)
   }
 }
 

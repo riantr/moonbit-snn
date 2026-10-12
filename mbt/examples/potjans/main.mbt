@@ -33,10 +33,10 @@ fn main {
   let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gaba", 2.0F, 0.0F, 0.2F, rng)
 
   // External Poisson drive onto :ge (background input).
-  let stim_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 2.0F, rng)
-  @snn_mbt.PoissonFixed::set_mu(stim_e.param, 2.0F)
-  let stim_i = @snn_mbt.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
-  @snn_mbt.PoissonFixed::set_mu(stim_i.param, 2.0F)
+  let stim_e = @stimulus.PoissonStimulusIF::new(e_pop, "ge", 2.0F, rng)
+  @stimulus.PoissonFixed::set_mu(stim_e.param, 2.0F)
+  let stim_i = @stimulus.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
+  @stimulus.PoissonFixed::set_mu(stim_i.param, 2.0F)
 
   // Monitors for spike counting.
   let fm_e = @snn_mbt.Monitor::new_fire(e_pop, 0)
