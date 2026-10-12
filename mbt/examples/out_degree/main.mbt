@@ -11,7 +11,7 @@
 // std of the per-row out-degree, plus the min/max.
 
 ///|
-fn summarize(label : String, m : @snn_mbt.SparseMatrixCSR) -> Unit {
+fn summarize(label : String, m : @synapse.SparseMatrixCSR) -> Unit {
   let rows = m.rows
   let mut total = 0
   let mut mn = 1000000
@@ -54,20 +54,20 @@ fn main {
   println("  pre=" + n_pre.to_string() + " post=" + n_post.to_string() + " p=" + p.to_string())
 
   // FixedIn: same in-degree for every post.
-  let m_fixedin = @snn_mbt.SparseMatrixCSR::random_with_rule(
-    n_pre, n_post, mu, sigma, p, @snn_mbt.FixedIn, rng,
+  let m_fixedin = @synapse.SparseMatrixCSR::random_with_rule(
+    n_pre, n_post, mu, sigma, p, @synapse.FixedIn, rng,
   )
   summarize("FixedIn ", m_fixedin)
 
   // Bernoulli: per-edge independent.
-  let m_bernoulli = @snn_mbt.SparseMatrixCSR::random_with_rule(
-    n_pre, n_post, mu, sigma, p, @snn_mbt.Bernoulli, rng,
+  let m_bernoulli = @synapse.SparseMatrixCSR::random_with_rule(
+    n_pre, n_post, mu, sigma, p, @synapse.Bernoulli, rng,
   )
   summarize("Bernoulli", m_bernoulli)
 
   // FixedOut: same out-degree for every pre.
-  let m_fixedout = @snn_mbt.SparseMatrixCSR::random_with_rule(
-    n_pre, n_post, mu, sigma, p, @snn_mbt.FixedOut, rng,
+  let m_fixedout = @synapse.SparseMatrixCSR::random_with_rule(
+    n_pre, n_post, mu, sigma, p, @synapse.FixedOut, rng,
   )
   summarize("FixedOut", m_fixedout)
 

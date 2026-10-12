@@ -6,7 +6,7 @@ test "PINningSparseSynapse::new 鈥?fields populated" {
   let rng = @core.Xoshiro::from_state(42UL, 1UL, 2UL, 3UL)
   let pre = @neuron.WilsonCowan::new(4, rng)
   let post = @neuron.WilsonCowan::new(2, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.5F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.5F, 1.0F, 1.0F, rng)
   assert_eq(c.pre.n, 4)
   assert_eq(c.post.n, 2)
   assert_eq(c.matrix.rows, 4)
@@ -26,7 +26,7 @@ test "PINningSparseSynapse::new 鈥?P diagonal = 伪, off-diagonal = 0" {
   let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let pre = @neuron.WilsonCowan::new(3, rng)
   let post = @neuron.WilsonCowan::new(3, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 2.5F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 2.5F, rng)
   // For each row j, walk and verify colptr[s]==j 鈫?p_vals[s]=2.5; otherwise 0.
   let mut j = 0
   while j < 3 {
@@ -47,7 +47,7 @@ test "PINningSparseSynapse::set_target 鈥?sets f[i]" {
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let pre = @neuron.WilsonCowan::new(2, rng)
   let post = @neuron.WilsonCowan::new(2, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
   c.set_target(0, 5.0F)
   c.set_target(1, 10.0F)
   assert_eq(c.f[0], 5.0F)
@@ -62,7 +62,7 @@ test "forward_pinning_synapse 鈥?q and g updated from P*W*rJ" {
   let rng = @core.Xoshiro::from_state(100UL, 200UL, 300UL, 400UL)
   let pre = @neuron.WilsonCowan::new(1, rng)
   let post = @neuron.WilsonCowan::new(1, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
   // Force single connection: set rJ[0] = 3.
   c.rJ[0] = 3.0F
   // Override W and P for predictable test.
@@ -70,7 +70,7 @@ test "forward_pinning_synapse 鈥?q and g updated from P*W*rJ" {
   // (CSR random with p=1.0 should fill all 1x1 = 1 connection.)
   c.matrix.vals[0] = 2.0F
   c.p_vals[0] = 1.0F
-  @snn_mbt.forward_pinning_synapse(c)
+  @synapse.forward_pinning_synapse(c)
   assert_eq(c.q[0], 3.0F)
   assert_eq(c.g[0], 6.0F)
 }
@@ -80,14 +80,14 @@ test "forward_pinning_synapse 鈥?resets q and g before update" {
   let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let pre = @neuron.WilsonCowan::new(1, rng)
   let post = @neuron.WilsonCowan::new(1, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
   // Pre-load q and g with garbage.
   c.q[0] = 999.0F
   c.g[0] = 888.0F
   // Setup single connection with W=1, P=0, rJ[0]=0 鈫?q and g both reset to 0.
   c.rJ[0] = 0.0F
   if c.matrix.vals.length() > 0 { c.matrix.vals[0] = 1.0F }
-  @snn_mbt.forward_pinning_synapse(c)
+  @synapse.forward_pinning_synapse(c)
   assert_eq(c.q[0], 0.0F)
   assert_eq(c.g[0], 0.0F)
 }
@@ -99,7 +99,7 @@ test "pinning_plasticity 鈥?C = 1/(1+dot(q,rI)) scaling" {
   let rng = @core.Xoshiro::from_state(11UL, 22UL, 33UL, 44UL)
   let pre = @neuron.WilsonCowan::new(1, rng)
   let post = @neuron.WilsonCowan::new(1, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
   c.q[0] = 1.0F
   c.rI[0] = 1.0F
   // Set up deterministic W, P, g, f.
@@ -107,7 +107,7 @@ test "pinning_plasticity 鈥?C = 1/(1+dot(q,rI)) scaling" {
   c.p_vals[0] = 5.0F
   c.g[0] = 2.0F
   c.f[0] = 4.0F
-  @snn_mbt.pinning_plasticity(c, 0.125F, 0.0F)
+  @synapse.pinning_plasticity(c, 0.125F, 0.0F)
   // C = 0.5
   // P_new = P + -C * q[i] * q[j] = 5 + (-0.5) * 1 * 1 = 4.5
   assert_eq(c.p_vals[0], 4.5F)
@@ -120,14 +120,14 @@ test "pinning_plasticity 鈥?C = 1/(1+0) = 1 when q路rI = 0" {
   let rng = @core.Xoshiro::from_state(2UL, 4UL, 6UL, 8UL)
   let pre = @neuron.WilsonCowan::new(1, rng)
   let post = @neuron.WilsonCowan::new(1, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
   c.q[0] = 0.0F
   c.rI[0] = 5.0F  // dot(q,rI) = 0*5 = 0 鈫?C = 1
   if c.matrix.vals.length() > 0 { c.matrix.vals[0] = 10.0F }
   c.p_vals[0] = 5.0F
   c.g[0] = 2.0F
   c.f[0] = 4.0F
-  @snn_mbt.pinning_plasticity(c, 0.125F, 0.0F)
+  @synapse.pinning_plasticity(c, 0.125F, 0.0F)
   // C = 1.0
   // P_new = 5 + -1 * 0 * 1 = 5.0 (no change since q[i]=0)
   assert_eq(c.p_vals[0], 5.0F)
@@ -142,7 +142,7 @@ test "pinning_plasticity 鈥?multi-neuron dot(q, rI)" {
   let rng = @core.Xoshiro::from_state(50UL, 60UL, 70UL, 80UL)
   let pre = @neuron.WilsonCowan::new(2, rng)
   let post = @neuron.WilsonCowan::new(2, rng)
-  let c = @snn_mbt.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
+  let c = @synapse.PINningSparseSynapse::new(pre, post, 1.0F, 1.0F, 1.0F, rng)
   c.q[0] = 2.0F
   c.q[1] = 3.0F
   c.rI[0] = 4.0F

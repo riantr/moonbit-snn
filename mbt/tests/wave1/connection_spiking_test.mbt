@@ -5,7 +5,7 @@ test "SpikingSynapse::new: delays empty by default" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
   assert_eq(s.delays.length(), 0)
   assert_eq(s.pending_times.length(), 0)
 }
@@ -15,10 +15,10 @@ test "SpikingSynapse::set_constant_delay: populates delays" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
-  @snn_mbt.spiking_connect(s, 2, 2, 2.5F)
-  @snn_mbt.SpikingSynapse::set_constant_delay(s, 0.8F)
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(s, 1, 1, 1.5F)
+  @synapse.spiking_connect(s, 2, 2, 2.5F)
+  @synapse.SpikingSynapse::set_constant_delay(s, 0.8F)
   assert_eq(s.delays.length(), 2)
   assert_eq(s.delays[0], 0.8F)
   assert_eq(s.delays[1], 0.8F)
@@ -29,7 +29,7 @@ test "SpikingSynapse::random_with_delays: Normal distribution sampling" {
   let rng = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x12345678UL, 0x9ABCDEF0UL)
   let pre = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::random_with_delays(
+  let s = @synapse.SpikingSynapse::random_with_delays(
     pre, post, "ge", 1.0F, 0.0F, 1.0F, rng, 0.8F, 0.0F,
   )
   // 3x3 all-to-all = 9 connections, all with delay = 0.8F (since std=0).
@@ -44,11 +44,11 @@ test "SpikingSynapse::forward_synapse: no-delay fast path applies immediately" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(s, 1, 1, 1.5F)
   // No delays configured; forward should apply immediately to post.glu.
   pre.fire[0] = true
-  @snn_mbt.forward_synapse(s, 0.0F)
+  @synapse.forward_synapse(s, 0.0F)
   assert_eq(post.glu[0], 1.5F)
   assert_eq(s.pending_times.length(), 0)
 }
@@ -58,11 +58,11 @@ test "SpikingSynapse::forward_synapse with delay: schedules events" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
-  @snn_mbt.SpikingSynapse::set_constant_delay(s, 0.8F)
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(s, 1, 1, 1.5F)
+  @synapse.SpikingSynapse::set_constant_delay(s, 0.8F)
   pre.fire[0] = true
-  @snn_mbt.forward_synapse(s, 0.0F)
+  @synapse.forward_synapse(s, 0.0F)
   // Spike scheduled for delivery at t = 0.0 + 0.8 = 0.8 ms.
   // post.glu should NOT yet be incremented.
   assert_eq(post.glu[0], 0.0F)
@@ -77,17 +77,17 @@ test "SpikingSynapse::deliver_pending_synapse: delivers only past-due events" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
-  @snn_mbt.SpikingSynapse::set_constant_delay(s, 0.8F)
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(s, 1, 1, 1.5F)
+  @synapse.SpikingSynapse::set_constant_delay(s, 0.8F)
   pre.fire[0] = true
-  @snn_mbt.forward_synapse(s, 0.0F)
+  @synapse.forward_synapse(s, 0.0F)
   // t = 0.5 ms: event NOT yet delivered (delivery time 0.8 > 0.5).
-  @snn_mbt.deliver_pending_synapse(s, 0.5F)
+  @synapse.deliver_pending_synapse(s, 0.5F)
   assert_eq(post.glu[0], 0.0F)
   assert_eq(s.pending_times.length(), 1)
   // t = 0.8 ms: event delivered (delivery time 0.8 <= 0.8).
-  @snn_mbt.deliver_pending_synapse(s, 0.8F)
+  @synapse.deliver_pending_synapse(s, 0.8F)
   assert_eq(post.glu[0], 1.5F)
   assert_eq(s.pending_times.length(), 0)
 }
@@ -99,24 +99,24 @@ test "SpikingSynapse: delay_dist composition across steps" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(s, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(s, 2, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::set_constant_delay(s, 1.0F)
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(s, 1, 1, 1.0F)
+  @synapse.spiking_connect(s, 2, 1, 1.0F)
+  @synapse.SpikingSynapse::set_constant_delay(s, 1.0F)
   // Step 1 (t=0): force-fire pre[0], propagate.
   pre.fire[0] = true
-  @snn_mbt.forward_synapse(s, 0.0F)
+  @synapse.forward_synapse(s, 0.0F)
   // post.glu[0] still 0 (event scheduled for t=1.0).
   assert_eq(post.glu[0], 0.0F)
   // Step 2 (t=0.125): nothing happens yet.
   pre.fire[0] = false
   pre.fire[1] = true
-  @snn_mbt.deliver_pending_synapse(s, 0.125F)
-  @snn_mbt.forward_synapse(s, 0.125F)
+  @synapse.deliver_pending_synapse(s, 0.125F)
+  @synapse.forward_synapse(s, 0.125F)
   assert_eq(post.glu[0], 0.0F)
   // Step 9 (t=1.0): pre[0]'s scheduled spike from t=0 is delivered.
   pre.fire[1] = false
-  @snn_mbt.deliver_pending_synapse(s, 1.0F)
-  @snn_mbt.forward_synapse(s, 1.0F)
+  @synapse.deliver_pending_synapse(s, 1.0F)
+  @synapse.forward_synapse(s, 1.0F)
   assert_eq(post.glu[0], 1.0F)
 }

@@ -78,7 +78,7 @@ pub fn record_one(m : Monitor, t : Float) -> Unit {
 /// A simple model container: one population + a list of connections.
 pub(all) struct Model {
   pops : Array[@neuron.IF]
-  conns : Array[SpikingSynapse]
+  conns : Array[@synapse.SpikingSynapse]
   monitors : Array[Monitor]
 }
 
@@ -96,12 +96,12 @@ pub fn step_model(model : Model, time : @core.Time) -> Unit {
   // 1a. deliver pending spikes (delays scheduled in prior steps)
   let t_now = @core.get_time(time)
   for c in model.conns {
-    deliver_pending_synapse(c, t_now)
+    @synapse.deliver_pending_synapse(c, t_now)
   }
   // 1b. forward!  : propagate spikes (no-delay: immediate; with delays:
   // schedule for future delivery)
   for c in model.conns {
-    forward_synapse(c, t_now)
+    @synapse.forward_synapse(c, t_now)
   }
   // 2. integrate! : step each population
   let dt = time.dt
@@ -179,12 +179,12 @@ pub struct SpikingSynapseAdEx {
   pre : @neuron.AdEx
   post : @neuron.AdEx
   sym : String
-  matrix : SparseMatrixCSR
+  matrix : @synapse.SparseMatrixCSR
 }
 
 ///|
 pub fn SpikingSynapseAdEx::new(pre : @neuron.AdEx, post : @neuron.AdEx, sym : String) -> SpikingSynapseAdEx {
-  let matrix = SparseMatrixCSR::empty(pre.n, post.n)
+  let matrix = @synapse.SparseMatrixCSR::empty(pre.n, post.n)
   { pre, post, sym, matrix }
 }
 
@@ -201,7 +201,7 @@ pub fn SpikingSynapseAdEx::random(
   p : Float,
   rng : @core.Xoshiro,
 ) -> SpikingSynapseAdEx {
-  let matrix = SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
+  let matrix = @synapse.SparseMatrixCSR::random(pre.n, post.n, mu, sigma, p, rng)
   { pre, post, sym, matrix }
 }
 
@@ -214,10 +214,10 @@ pub fn SpikingSynapseAdEx::random_with_rule(
   mu : Float,
   sigma : Float,
   p : Float,
-  rule : ConnectRule,
+  rule : @synapse.ConnectRule,
   rng : @core.Xoshiro,
 ) -> SpikingSynapseAdEx {
-  let matrix = SparseMatrixCSR::random_with_rule(
+  let matrix = @synapse.SparseMatrixCSR::random_with_rule(
     pre.n, post.n, mu, sigma, p, rule, rng,
   )
   { pre, post, sym, matrix }

@@ -20,7 +20,7 @@
 
 ///|
 test "MarkramSTPParameter::new: defaults match SNN.jl (200ms, 1500ms, 0.2)" {
-  let p = @snn_mbt.MarkramSTPParameter::new()
+  let p = @synapse.MarkramSTPParameter::new()
   assert_eq(p.tau_d, 200.0F)
   assert_eq(p.tau_f, 1500.0F)
   assert_eq(p.u, 0.2F)
@@ -34,8 +34,8 @@ test "MarkramSTPParameter::new: defaults match SNN.jl (200ms, 1500ms, 0.2)" {
 
 ///|
 test "MarkramSTPVariables::new: arrays sized n_pre, initial state" {
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let v = @snn_mbt.MarkramSTPVariables::new(10, 5, p)
+  let p = @synapse.MarkramSTPParameter::new()
+  let v = @synapse.MarkramSTPVariables::new(10, 5, p)
   assert_eq(v.n_pre, 10)
   assert_eq(v.n_post, 5)
   assert_eq(v.u.length(), 10)
@@ -57,9 +57,9 @@ test "MarkramSTPVariables::new: arrays sized n_pre, initial state" {
 
 ///|
 test "MarkramSTPVariables::new: custom parameter reflected in init" {
-  let p : @snn_mbt.MarkramSTPParameter = { tau_d: 100.0F, tau_f: 500.0F, u: 0.5F,
+  let p : @synapse.MarkramSTPParameter = { tau_d: 100.0F, tau_f: 500.0F, u: 0.5F,
                                    w_max: 1.0F, w_min: 0.0F }
-  let v = @snn_mbt.MarkramSTPVariables::new(3, 3, p)
+  let v = @synapse.MarkramSTPVariables::new(3, 3, p)
   for k in 0..<3 {
     assert_eq(v.u[k], 0.5F)
     assert_eq(v.rho_pre[k], 0.5F)
@@ -80,14 +80,14 @@ test "markram_stp_step: first spike primes state — first ρ broadcast = U" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
   // Force pre fire at t = 1.0F.
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 1.0F)
+  @synapse.markram_stp_step(syn, vars, p, 1.0F)
   // ρ broadcast to outgoing connections (only 1 connection).
   assert_eq(syn.rho[0], 0.2F)
   // After the spike: u and x have been updated for the next spike.
@@ -106,14 +106,14 @@ test "markram_stp_step: forward_synapse applies ρ scaling on first spike" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 1.0F)
-  @snn_mbt.forward_synapse(syn, 1.0F)
+  @synapse.markram_stp_step(syn, vars, p, 1.0F)
+  @synapse.forward_synapse(syn, 1.0F)
   // post.glu should have received W*ρ = 1.0 * 0.2 = 0.2.
   assert_eq(post.glu[0], 0.2F)
 }
@@ -139,18 +139,18 @@ test "markram_stp_step: long ΔT restores u → U and x → 1 (full recovery)" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
   // First spike at t=1.0F.
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 1.0F)
+  @synapse.markram_stp_step(syn, vars, p, 1.0F)
   pre.fire[0] = false
   // Second spike at t=100001.0F (ΔT = 100000 ms).
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 100001.0F)
+  @synapse.markram_stp_step(syn, vars, p, 100001.0F)
   // After recovery (then bump): u = 0.36, x = 0.64, ρ broadcast = U = 0.2.
   assert_eq(syn.rho[0], 0.2F)
   assert_eq(vars.u[0], 0.36F)
@@ -172,18 +172,18 @@ test "markram_stp_step: short ΔT — depression visible (x drops further)" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
   // First spike at t=0.0F.
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 0.0F)
+  @synapse.markram_stp_step(syn, vars, p, 0.0F)
   pre.fire[0] = false
   // Second spike at t=10.0F (ΔT = 10 ms).
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 10.0F)
+  @synapse.markram_stp_step(syn, vars, p, 10.0F)
   // After 2nd spike (post-bump state): verify u and x qualitatively.
   // ρ broadcast should be larger than 0.2 (facilitation effect, since u
   // started at 0.36 and recovered a little toward U=0.2 but bumped up
@@ -215,15 +215,15 @@ test "markram_stp_step: ρ broadcasts to all outgoing connections" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 3, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 3, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 1, 2, 1.0F)
+  @synapse.spiking_connect(syn, 1, 3, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 3, p)
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 0.0F)
+  @synapse.markram_stp_step(syn, vars, p, 0.0F)
   // All 3 edges get the same ρ = U = 0.2.
   assert_eq(syn.rho[0], 0.2F)
   assert_eq(syn.rho[1], 0.2F)
@@ -240,16 +240,16 @@ test "markram_stp_step: pre[0] fires, pre[1] silent — only pre[0] state update
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(2, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 2, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(2, 1, p)
   // Fire only pre[0].
   pre.fire[0] = true
   pre.fire[1] = false
-  @snn_mbt.markram_stp_step(syn, vars, p, 1.0F)
+  @synapse.markram_stp_step(syn, vars, p, 1.0F)
   // pre[0] state: u=0.36, x=0.64, last_spike=1.0F.
   assert_eq(vars.u[0], 0.36F)
   assert_eq(vars.x[0], 0.64F)
@@ -280,11 +280,11 @@ test "compose with STPEntryKind: scales post.he by ρ automatically" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let entry = @snn_mbt.MarkramSTPEntry::new(0, 1, 1, param=p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let entry = @synapse.MarkramSTPEntry::new(0, 1, 1, param=p)
   // Manually fire pre; clear post synaptic accumulators.
   pre.fire[0] = true
   post.glu[0] = 0.0F
@@ -292,7 +292,7 @@ test "compose with STPEntryKind: scales post.he by ρ automatically" {
   post.he[0] = 0.0F
   // Build heterogeneous model.
   let pops : Array[@snn_mbt.AnyPop] = [IF_(pre), IF_(post)]
-  let conns : Array[@snn_mbt.SpikingSynapse] = [syn]
+  let conns : Array[@synapse.SpikingSynapse] = [syn]
   let model = @snn_mbt.compose(pops, conns, stdp=[], stp=[MarkramSTP_(entry)])
   // Step the model once.
   @snn_mbt.step_heterogeneous(model, 0.125F)
@@ -313,14 +313,14 @@ test "markram_stp_step: active=[false] is a no-op" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
   vars.active[0] = false
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 0.0F)
+  @synapse.markram_stp_step(syn, vars, p, 0.0F)
   // u, x, rho unchanged from init values.
   assert_eq(vars.u[0], 0.2F)
   assert_eq(vars.x[0], 1.0F)
@@ -338,12 +338,12 @@ test "forward_synapse: rho empty — applies full weight (existing behavior)" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.5F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.5F)
   // No init_rho — rho stays empty.
   assert_eq(syn.rho.length(), 0)
   pre.fire[0] = true
-  @snn_mbt.forward_synapse(syn, 0.0F)
+  @synapse.forward_synapse(syn, 0.0F)
   assert_eq(post.glu[0], 1.5F)
 }
 
@@ -353,7 +353,7 @@ test "forward_synapse: rho empty — applies full weight (existing behavior)" {
 
 ///|
 test "MarkramSTPParameterHet::homogeneous: matches MarkramSTPParameter defaults per-pre" {
-  let p = @snn_mbt.MarkramSTPParameterHet::homogeneous(3)
+  let p = @synapse.MarkramSTPParameterHet::homogeneous(3)
   assert_eq(p.tau_d.length(), 3)
   assert_eq(p.tau_f.length(), 3)
   assert_eq(p.u.length(), 3)
@@ -366,14 +366,14 @@ test "MarkramSTPParameterHet::homogeneous: matches MarkramSTPParameter defaults 
 
 ///|
 test "MarkramSTPEntryHet::new: initial state uses per-pre U[j]" {
-  let p : @snn_mbt.MarkramSTPParameterHet = {
+  let p : @synapse.MarkramSTPParameterHet = {
     tau_d: [200.0F, 100.0F, 200.0F],
     tau_f: [1500.0F, 500.0F, 1500.0F],
     u: [0.2F, 0.4F, 0.3F],
     w_max: 1.0F,
     w_min: 0.0F,
   }
-  let entry = @snn_mbt.MarkramSTPEntryHet::new(0, 3, 1, p)
+  let entry = @synapse.MarkramSTPEntryHet::new(0, 3, 1, p)
   assert_eq(entry.vars.n_pre, 3)
   assert_eq(entry.vars.n_post, 1)
   // u[j] initialised to U[j] (per-pre), x[j]=1, rho_pre[j]=U[j].
@@ -399,21 +399,21 @@ test "markram_stp_step_het: first spike primes state with per-pre U[j] and τF[j
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p : @snn_mbt.MarkramSTPParameterHet = {
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 2, 2, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p : @synapse.MarkramSTPParameterHet = {
     tau_d: [200.0F, 100.0F],
     tau_f: [1500.0F, 500.0F],
     u: [0.2F, 0.4F],
     w_max: 1.0F,
     w_min: 0.0F,
   }
-  let entry = @snn_mbt.MarkramSTPEntryHet::new(0, 2, 2, p)
+  let entry = @synapse.MarkramSTPEntryHet::new(0, 2, 2, p)
   pre.fire[0] = true
   pre.fire[1] = true
-  @snn_mbt.markram_stp_step_het(syn, entry.vars, p, 1.0F)
+  @synapse.markram_stp_step_het(syn, entry.vars, p, 1.0F)
   // pre[0] (U=0.2): u = 0.2*(2-0.2) = 0.36, x = (1-0.2)^2 = 0.64
   assert_eq(entry.vars.u[0], 0.36F)
   assert_eq(entry.vars.x[0], 0.64F)
@@ -436,28 +436,28 @@ test "markram_stp_step_het: per-pre params produce different recoveries at same 
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p : @snn_mbt.MarkramSTPParameterHet = {
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 2, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p : @synapse.MarkramSTPParameterHet = {
     tau_d: [200.0F, 200.0F],
     tau_f: [1500.0F, 500.0F],
     u: [0.2F, 0.2F],
     w_max: 1.0F,
     w_min: 0.0F,
   }
-  let entry = @snn_mbt.MarkramSTPEntryHet::new(0, 2, 1, p)
+  let entry = @synapse.MarkramSTPEntryHet::new(0, 2, 1, p)
   pre.fire[0] = true
   pre.fire[1] = true
-  @snn_mbt.markram_stp_step_het(syn, entry.vars, p, 0.0F)
+  @synapse.markram_stp_step_het(syn, entry.vars, p, 0.0F)
   // After first spike both primed identically: u=0.36, x=0.64.
   assert_eq(entry.vars.u[0], 0.36F)
   assert_eq(entry.vars.u[1], 0.36F)
   // Now both fire again at t=10ms (ΔT=10).
   pre.fire[0] = true
   pre.fire[1] = true
-  @snn_mbt.markram_stp_step_het(syn, entry.vars, p, 10.0F)
+  @synapse.markram_stp_step_het(syn, entry.vars, p, 10.0F)
   // pre[0] (τF=1500): u_recover = 0.2 + 0.16 * expf(-10/1500)
   //   ≈ 0.3589, x_recover = 1 - 0.36 * expf(-10/200) ≈ 0.6576
   // pre[1] (τF=500):  u_recover = 0.2 + 0.16 * expf(-10/500)
@@ -487,25 +487,25 @@ test "compose with STPEntryKind::MarkramSTPHet_: dispatches per-pre params" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p : @snn_mbt.MarkramSTPParameterHet = {
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 2, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p : @synapse.MarkramSTPParameterHet = {
     tau_d: [200.0F, 200.0F],
     tau_f: [1500.0F, 1500.0F],
     u: [0.2F, 0.5F],
     w_max: 1.0F,
     w_min: 0.0F,
   }
-  let entry = @snn_mbt.MarkramSTPEntryHet::new(0, 2, 1, p)
+  let entry = @synapse.MarkramSTPEntryHet::new(0, 2, 1, p)
   pre.fire[0] = true
   pre.fire[1] = true
   post.he[0] = 0.0F
   post.glu[0] = 0.0F
   post.gaba[0] = 0.0F
   let pops : Array[@snn_mbt.AnyPop] = [IF_(pre), IF_(post)]
-  let conns : Array[@snn_mbt.SpikingSynapse] = [syn]
+  let conns : Array[@synapse.SpikingSynapse] = [syn]
   let model = @snn_mbt.compose(pops, conns, stdp=[], stp=[MarkramSTPHet_(entry)])
   @snn_mbt.step_heterogeneous(model, 0.125F)
   // post.he should have accumulated glu (=W*ρ[0] + W*ρ[1])
@@ -520,20 +520,20 @@ test "markram_stp_step_het: rho empty — silent no-op (backward-compat guard)" 
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
   // No init_rho — rho stays empty.
-  let p : @snn_mbt.MarkramSTPParameterHet = {
+  let p : @synapse.MarkramSTPParameterHet = {
     tau_d: [200.0F],
     tau_f: [1500.0F],
     u: [0.2F],
     w_max: 1.0F,
     w_min: 0.0F,
   }
-  let entry = @snn_mbt.MarkramSTPEntryHet::new(0, 1, 1, p)
+  let entry = @synapse.MarkramSTPEntryHet::new(0, 1, 1, p)
   pre.fire[0] = true
   // Should silently return without mutating anything.
-  @snn_mbt.markram_stp_step_het(syn, entry.vars, p, 0.0F)
+  @synapse.markram_stp_step_het(syn, entry.vars, p, 0.0F)
   assert_eq(entry.vars.u[0], 0.2F)  // still initial value
   assert_eq(entry.vars.x[0], 1.0F)  // still initial value
 }
@@ -555,15 +555,15 @@ test "bit-exactness: 3-spike trajectory @ ISI=10ms matches analytical formula" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
 
   // === Spike 1 @ t=0 (ΔT = +Inf since last_spike=-Inf) ===
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 0.0F)
+  @synapse.markram_stp_step(syn, vars, p, 0.0F)
   // After spike: u = 0.2 + 0.2*(1-0.2) = 0.36, x = 1 - 0.36*1 = 0.64.
   // ρ broadcast = 0.2 (pre-bump value).
   assert_eq(syn.rho[0], 0.2F)
@@ -578,7 +578,7 @@ test "bit-exactness: 3-spike trajectory @ ISI=10ms matches analytical formula" {
   // Float32 libm expf + Float32 arithmetic. Values verified against
   // simulation output (bit-exact match).
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 10.0F)
+  @synapse.markram_stp_step(syn, vars, p, 10.0F)
   assert_eq(syn.rho[0], 0.23602160811424255F)
   assert_eq(vars.u[0], 0.48714953660964966F)
   assert_eq(vars.x[0], 0.33722859621047974F)
@@ -593,7 +593,7 @@ test "bit-exactness: 3-spike trajectory @ ISI=10ms matches analytical formula" {
   // ρ broadcast = 0.48524 * 0.36960 ≈ 0.17933
   // Then u, x bumped as usual.
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 20.0F)
+  @synapse.markram_stp_step(syn, vars, p, 20.0F)
   assert_eq(syn.rho[0], 0.17932215332984924F)
   // u_post-bump and x_post-bump values follow from the same
   // formulas applied to the new (u_recover, x_recover) — values
@@ -610,15 +610,15 @@ test "bit-exactness: long ΔT (100000ms) — expf underflows to 0 for Float32" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
 
   // First spike at t=0 — primes state.
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 0.0F)
+  @synapse.markram_stp_step(syn, vars, p, 0.0F)
   assert_eq(vars.u[0], 0.36F)
   assert_eq(vars.x[0], 0.64F)
   pre.fire[0] = false
@@ -630,7 +630,7 @@ test "bit-exactness: long ΔT (100000ms) — expf underflows to 0 for Float32" {
   // x_bump = 1 - 0.36 * 1 = 0.64
   // ρ broadcast = 0.2 * 1 = 0.2
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 100000.0F)
+  @synapse.markram_stp_step(syn, vars, p, 100000.0F)
   assert_eq(syn.rho[0], 0.2F)
   assert_eq(vars.u[0], 0.36F)
   assert_eq(vars.x[0], 0.64F)

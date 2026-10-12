@@ -23,10 +23,10 @@ fn main {
   let i_pop = @neuron.HH::new(ni, @neuron.HHParameter::new(), rng)
 
   // Random connectivity.
-  let ee = @snn_mbt.SpikingSynapseHH::random(e_pop, e_pop, "ge", 6.0F, 0.0F, 0.5F, rng)
-  let ei = @snn_mbt.SpikingSynapseHH::random(e_pop, i_pop, "ge", 6.0F, 0.0F, 0.5F, rng)
-  let ie = @snn_mbt.SpikingSynapseHH::random(i_pop, e_pop, "gi", 67.0F, 0.0F, 0.5F, rng)
-  let ii = @snn_mbt.SpikingSynapseHH::random(i_pop, i_pop, "gi", 67.0F, 0.0F, 0.5F, rng)
+  let ee = @synapse.SpikingSynapseHH::random(e_pop, e_pop, "ge", 6.0F, 0.0F, 0.5F, rng)
+  let ei = @synapse.SpikingSynapseHH::random(e_pop, i_pop, "ge", 6.0F, 0.0F, 0.5F, rng)
+  let ie = @synapse.SpikingSynapseHH::random(i_pop, e_pop, "gi", 67.0F, 0.0F, 0.5F, rng)
+  let ii = @synapse.SpikingSynapseHH::random(i_pop, i_pop, "gi", 67.0F, 0.0F, 0.5F, rng)
 
   println("hh_net.mbt: network built (simplified HH balanced network)")
   println("  E: " + ne.to_string() + " HH neurons")
@@ -46,10 +46,10 @@ fn main {
   let mut total_i_spikes = 0
   for _ in 0..<total_steps {
     // Synapses first (propagate pre spikes).
-    @snn_mbt.forward_hh_synapse(ee)
-    @snn_mbt.forward_hh_synapse(ei)
-    @snn_mbt.forward_hh_synapse(ie)
-    @snn_mbt.forward_hh_synapse(ii)
+    @synapse.forward_hh_synapse(ee)
+    @synapse.forward_hh_synapse(ei)
+    @synapse.forward_hh_synapse(ie)
+    @synapse.forward_hh_synapse(ii)
     // Step HH (decay ge/gi, update gates, integrate v).
     @neuron.step_hh(e_pop, dt)
     @neuron.step_hh(i_pop, dt)

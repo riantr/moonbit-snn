@@ -23,7 +23,7 @@ fn main {
   let pop = @neuron.IF::new(n, if_param, rng)
 
   // Sparse self-recurrent excitatory connectivity (p=0.2, μ=0.5 nS).
-  let ee = @snn_mbt.SpikingSynapse::random(pop, pop, "ge", 0.5F, 0.0F, 0.2F, rng)
+  let ee = @synapse.SpikingSynapse::random(pop, pop, "ge", 0.5F, 0.0F, 0.2F, rng)
 
   // Fire monitors for all neurons + v monitor for neuron 0
   let fire_monitors : Array[@snn_mbt.Monitor] = []

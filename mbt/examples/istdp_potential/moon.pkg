@@ -4,6 +4,7 @@
 import {
   "riantr/snn_mbt",
   "riantr/snn_mbt/core",
+  "riantr/snn_mbt/synapse",
 }
 
 options(

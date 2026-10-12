@@ -2,11 +2,11 @@
 
 ///|
 test "eyal_nmda / soma_nmda — Eyal/Soma NMDA defaults" {
-  let e = @snn_mbt.eyal_nmda()
+  let e = @synapse.eyal_nmda()
   if e.b != 3.36F { fail("Eyal b mismatch: \{e.b}") }
   if e.k != -0.077F { fail("Eyal k mismatch: \{e.k}") }
   if e.mg != 1.0F { fail("Eyal mg mismatch: \{e.mg}") }
-  let s = @snn_mbt.soma_nmda()
+  let s = @synapse.soma_nmda()
   if s.b != 3.57F { fail("Soma b mismatch: \{s.b}") }
   if s.k != -0.062F { fail("Soma k mismatch: \{s.k}") }
   if s.mg != 1.0F { fail("Soma mg mismatch: \{s.mg}") }
@@ -14,13 +14,13 @@ test "eyal_nmda / soma_nmda — Eyal/Soma NMDA defaults" {
 
 ///|
 test "miles_gaba_soma / duarte_glu_soma — single Receptor fields" {
-  let miles = @snn_mbt.miles_gaba_soma()
+  let miles = @synapse.miles_gaba_soma()
   if miles.e_rev != -70.0F { fail("Miles E_rev mismatch") }
   if miles.tau_r != 0.1F { fail("Miles τr mismatch: \{miles.tau_r}") }
   if miles.tau_d != 15.0F { fail("Miles τd mismatch") }
   if miles.g0 != 0.38F { fail("Miles g0 mismatch") }
   if miles.target != "gaba" { fail("Miles target mismatch: \{miles.target}") }
-  let duarte = @snn_mbt.duarte_glu_soma()
+  let duarte = @synapse.duarte_glu_soma()
   if duarte.e_rev != 0.0F { fail("Duarte E_rev mismatch") }
   if duarte.tau_r != 0.26F { fail("Duarte τr mismatch") }
   if duarte.tau_d != 2.0F { fail("Duarte τd mismatch") }
@@ -30,14 +30,14 @@ test "miles_gaba_soma / duarte_glu_soma — single Receptor fields" {
 
 ///|
 test "eyal_glu_dend / miles_gaba_dend — Glutamatergic/GABAergic bundles" {
-  let glu = @snn_mbt.eyal_glu_dend()
+  let glu = @synapse.eyal_glu_dend()
   if glu.ampa.e_rev != 0.0F { fail("EyalGluDend AMPA E_rev mismatch") }
   if glu.ampa.tau_d != 2.0F { fail("EyalGluDend AMPA τd mismatch") }
   if glu.nmda.is_nmda != true { fail("EyalGluDend NMDA is_nmda mismatch") }
   if glu.nmda.tau_d != 35.0F { fail("EyalGluDend NMDA τd mismatch") }
   if glu.nmda.tau_r != 8.0F { fail("EyalGluDend NMDA τr mismatch") }
   if glu.nmda.g0 != 1.31F { fail("EyalGluDend NMDA g0 mismatch") }
-  let gaba = @snn_mbt.miles_gaba_dend()
+  let gaba = @synapse.miles_gaba_dend()
   if gaba.gabaa.e_rev != -70.0F { fail("MilesGabaDend GABAa E_rev mismatch") }
   if gaba.gabaa.tau_d != 29.0F { fail("MilesGabaDend GABAa τd mismatch") }
   if gaba.gabab.e_rev != -90.0F { fail("MilesGabaDend GABAb E_rev mismatch") }
@@ -47,13 +47,13 @@ test "eyal_glu_dend / miles_gaba_dend — Glutamatergic/GABAergic bundles" {
 
 ///|
 test "soma_glu / soma_gaba — soma-targeted bundles" {
-  let g = @snn_mbt.soma_glu()
+  let g = @synapse.soma_glu()
   if g.ampa.tau_d != 6.0F { fail("SomaGlu AMPA τd mismatch") }
   if g.ampa.tau_r != 1.0F { fail("SomaGlu AMPA τr mismatch") }
   if g.ampa.g0 != 0.7F { fail("SomaGlu AMPA g0 mismatch") }
   if g.nmda.is_nmda != true { fail("SomaGlu NMDA is_nmda mismatch") }
   if g.nmda.tau_d != 100.0F { fail("SomaGlu NMDA τd mismatch") }
-  let gaba = @snn_mbt.soma_gaba()
+  let gaba = @synapse.soma_gaba()
   if gaba.gabaa.tau_d != 10.0F { fail("SomaGABA GABAa τd mismatch") }
   if gaba.gabaa.g0 != 2.0F { fail("SomaGABA GABAa g0 mismatch") }
   if gaba.gabab.tau_d != 400.0F { fail("SomaGABA GABAb τd mismatch") }
@@ -61,7 +61,7 @@ test "soma_glu / soma_gaba — soma-targeted bundles" {
 
 ///|
 test "tripod_soma_receptors — 4-receptor collection shape" {
-  let rs = @snn_mbt.tripod_soma_receptors()
+  let rs = @synapse.tripod_soma_receptors()
   if rs.rec.length() != 4 { fail("Receptors must have 4 entries") }
   // AMPA slot = DuarteGluSoma
   let ampa = rs.rec[0]
@@ -79,7 +79,7 @@ test "tripod_soma_receptors — 4-receptor collection shape" {
 
 ///|
 test "tripod_dend_receptors — EyalGluDend + MilesGabaDend" {
-  let rs = @snn_mbt.tripod_dend_receptors()
+  let rs = @synapse.tripod_dend_receptors()
   if rs.rec.length() != 4 { fail("Receptors must have 4 entries") }
   let ampa = rs.rec[0]
   if ampa.g0 != 0.73F { fail("TripodDend AMPA g0 mismatch") }
@@ -94,7 +94,7 @@ test "tripod_dend_receptors — EyalGluDend + MilesGabaDend" {
 
 ///|
 test "soma_receptors — SomaGlu + SomaGABA" {
-  let rs = @snn_mbt.soma_receptors()
+  let rs = @synapse.soma_receptors()
   if rs.rec.length() != 4 { fail("Receptors must have 4 entries") }
   let ampa = rs.rec[0]
   if ampa.g0 != 0.7F { fail("SomaReceptors AMPA g0 mismatch") }
@@ -108,8 +108,8 @@ test "soma_receptors — SomaGlu + SomaGABA" {
 
 ///|
 test "Receptors::rec array is fresh each call (no shared state)" {
-  let r1 = @snn_mbt.soma_receptors()
-  let r2 = @snn_mbt.soma_receptors()
+  let r1 = @synapse.soma_receptors()
+  let r2 = @synapse.soma_receptors()
   // Two calls return separate Receptors instances with same values
   // (no aliasing of the rec array — both should have length 4).
   if r1.rec.length() != 4 { fail("r1.rec length mismatch") }

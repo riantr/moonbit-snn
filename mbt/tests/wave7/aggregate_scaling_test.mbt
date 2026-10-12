@@ -52,8 +52,8 @@ test "AggregateScaling::new initial state" {
   // (WT[0] = 2.0 for post 0).
   let vals : Array[Float] = [0.5F, 1.5F, 0.5F, 1.5F, 0.5F, 1.5F, 0.5F, 1.5F]
   let rowptr : Array[Int] = [0, 2, 4, 6, 8]
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
-  let targets : Array[@snn_mbt.SynapseTarget] = [target]
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
+  let targets : Array[@synapse.SynapseTarget] = [target]
   let param = @snn_mbt.AggregateScalingParameter::uniform(n, 10.0F)
   let c = @snn_mbt.AggregateScaling::new(n, targets, param)
   // WT[i] = 2.0 for every post (1 pre per post × 2 weights per edge)
@@ -72,7 +72,7 @@ test "aggregate_scaling_forward: y decays without spike" {
   let n = 2
   let vals : Array[Float] = [1.0F, 1.0F]
   let rowptr : Array[Int] = [0, 1, 2]
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
   let param = @snn_mbt.AggregateScalingParameter::uniform(n, 10.0F, tau_a=100.0F)
   let c = @snn_mbt.AggregateScaling::new(n, [target], param)
   let fire : Array[Float] = [0.0F, 0.0F]
@@ -99,7 +99,7 @@ test "aggregate_scaling_forward: y bumps on spike" {
   let n = 1
   let vals : Array[Float] = [1.0F]
   let rowptr : Array[Int] = [0, 1]
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
   let param = @snn_mbt.AggregateScalingParameter::uniform(n, 10.0F, tau_a=100.0F)
   let c = @snn_mbt.AggregateScaling::new(n, [target], param)
   let fire : Array[Float] = [1.0F]
@@ -125,7 +125,7 @@ test "aggregate_scaling_plasticity: periodic weight rescaling" {
   let n = 2
   let vals : Array[Float] = [10.0F, 10.0F, 10.0F, 10.0F]
   let rowptr : Array[Int] = [0, 2, 4]
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
   let param = @snn_mbt.AggregateScalingParameter::uniform(n, 10.0F, w_min=0.5F)
   let c = @snn_mbt.AggregateScaling::with_plasticity_interval(
     @snn_mbt.AggregateScaling::new(n, [target], param),
@@ -154,7 +154,7 @@ test "aggregate_scaling_plasticity: skip on non-periodic step" {
   let n = 1
   let vals : Array[Float] = [5.0F]
   let rowptr : Array[Int] = [0, 1]
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
   let param = @snn_mbt.AggregateScalingParameter::uniform(n, 10.0F)
   let c = @snn_mbt.AggregateScaling::new(n, [target], param)
   let _ = @snn_mbt.AggregateScaling::with_plasticity_interval(c, 10)
@@ -169,7 +169,7 @@ test "aggregate_scaling_plasticity: zero wt guarded" {
   let n = 1
   let vals : Array[Float] = [0.0F]
   let rowptr : Array[Int] = [0, 1]
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
   let param = @snn_mbt.AggregateScalingParameter::uniform(n, 10.0F)
   let c0 = @snn_mbt.AggregateScaling::new(n, [target], param)
   let c = @snn_mbt.AggregateScaling::with_plasticity_interval(c0, 1)

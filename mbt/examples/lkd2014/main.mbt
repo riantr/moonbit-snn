@@ -36,13 +36,13 @@ fn main {
   for k in 0..<ni { i_pop.i[k] = 250.0F }
 
   // Random connectivity.
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge",
     2.76F, 0.0F, 0.2F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge",
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge",
     1.27F, 0.0F, 0.2F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gi",
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gi",
     48.7F, 0.0F, 0.2F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gi",
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gi",
     16.2F, 0.0F, 0.2F, rng)
 
   // Poisson inputs (scaled down 100× from 4.5Hz/2.5Hz).

@@ -23,10 +23,10 @@ fn main {
   let i_pop = @neuron.IF::new(8, param, rng)
 
   // Build sparse internal connectivity. Same parameters as if_net.jl.
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge", 0.27F, 0.0F, 0.05F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge", 0.27F, 0.0F, 0.05F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gaba", 4.5F, 0.0F, 0.05F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gaba", 4.5F, 0.0F, 0.05F, rng)
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge", 0.27F, 0.0F, 0.05F, rng)
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge", 0.27F, 0.0F, 0.05F, rng)
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gaba", 4.5F, 0.0F, 0.05F, rng)
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gaba", 4.5F, 0.0F, 0.05F, rng)
 
   // External Poisson inputs onto :ge (exc) and :gi (inh).
   // 5 kHz onto :ge with μ=2.0 nS — strong enough to drive E cells to fire.

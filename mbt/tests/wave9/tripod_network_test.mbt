@@ -5,7 +5,7 @@
 // compartment synapses.
 
 ///|
-fn build_tripod_network_test() -> (@neuron.Tripod, @neuron.IF, @neuron.IF, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.IstdpRateEntry, @snn_mbt.IstdpPotentialEntry) {
+fn build_tripod_network_test() -> (@neuron.Tripod, @neuron.IF, @neuron.IF, @synapse.CompartmentSynapseTripod, @synapse.CompartmentSynapseTripod, @synapse.IstdpRateEntry, @synapse.IstdpPotentialEntry) {
   let rng = @core.Xoshiro::new(123UL)
   let ne = 20
   let ni1 = 5
@@ -22,14 +22,14 @@ fn build_tripod_network_test() -> (@neuron.Tripod, @neuron.IF, @neuron.IF, @snn_
   for k in 0..<ni1 { i1_pop.i[k] = 250.0F }
   for k in 0..<ni2 { i2_pop.i[k] = 250.0F }
   // Compartment synapses.
-  let i1_to_e = @snn_mbt.CompartmentSynapseTripod::random(
+  let i1_to_e = @synapse.CompartmentSynapseTripod::random(
     i1_pop, e_pop, "ge", "soma", 5.0F, 0.0F, 0.2F, rng,
   )
-  let i2_to_e = @snn_mbt.CompartmentSynapseTripod::random(
+  let i2_to_e = @synapse.CompartmentSynapseTripod::random(
     i2_pop, e_pop, "ge", "d1", 5.0F, 0.0F, 0.2F, rng,
   )
-  let i1_entry = @snn_mbt.IstdpRateEntry::new(0, ni1, ne)
-  let i2_entry = @snn_mbt.IstdpPotentialEntry::new(0, ni2, ne)
+  let i1_entry = @synapse.IstdpRateEntry::new(0, ni1, ne)
+  let i2_entry = @synapse.IstdpPotentialEntry::new(0, ni2, ne)
   (e_pop, i1_pop, i2_pop, i1_to_e, i2_to_e, i1_entry, i2_entry)
 }
 
@@ -43,8 +43,8 @@ test "tripod_network_smoke_runs_without_crash" {
   let total_steps = 400 // 50 ms
   for step in 0..<total_steps {
     let _ = step
-    @snn_mbt.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
-    @snn_mbt.forward_compartment_tripod(i2_to_e, Float::from_int(step) * dt)
+    @synapse.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
+    @synapse.forward_compartment_tripod(i2_to_e, Float::from_int(step) * dt)
     @neuron.step_synapses(i1_pop, dt)
     @neuron.synaptic_current(i1_pop)
     @neuron.step_neuron(i1_pop, dt)
@@ -52,12 +52,12 @@ test "tripod_network_smoke_runs_without_crash" {
     @neuron.synaptic_current(i2_pop)
     @neuron.step_neuron(i2_pop, dt)
     @neuron.step_tripod(e_pop, dt)
-    @snn_mbt.istdp_rate_step(
+    @synapse.istdp_rate_step(
       i1_to_e.matrix.vals, i1_pop.fire, e_pop.fire,
       i1_to_e.matrix.colptr, i1_to_e.matrix.rowptr,
       i1_entry.vars, i1_entry.param, Float::from_int(step) * dt, dt,
     )
-    @snn_mbt.istdp_potential_step(
+    @synapse.istdp_potential_step(
       i2_to_e.matrix.vals, i2_pop.fire, e_pop.fire,
       i2_to_e.matrix.colptr, i2_to_e.matrix.rowptr,
       e_pop.v_d1,
@@ -111,12 +111,12 @@ test "tripod_network_istdp_rate_step_modifies_weights" {
   let n_weights_before = weights_before.length()
   let mut total_abs_delta = 0.0F
   for step in 0..<400 {
-    @snn_mbt.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
+    @synapse.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
     @neuron.step_synapses(i1_pop, dt)
     @neuron.synaptic_current(i1_pop)
     @neuron.step_neuron(i1_pop, dt)
     @neuron.step_tripod(e_pop, dt)
-    @snn_mbt.istdp_rate_step(
+    @synapse.istdp_rate_step(
       i1_to_e.matrix.vals, i1_pop.fire, e_pop.fire,
       i1_to_e.matrix.colptr, i1_to_e.matrix.rowptr,
       i1_entry.vars, i1_entry.param, Float::from_int(step) * dt, dt,

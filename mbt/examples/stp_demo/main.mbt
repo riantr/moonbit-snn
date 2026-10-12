@@ -34,11 +34,11 @@ fn main {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
-  let p = @snn_mbt.MarkramSTPParameter::new()
-  let vars = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
+  let p = @synapse.MarkramSTPParameter::new()
+  let vars = @synapse.MarkramSTPVariables::new(1, 1, p)
 
   println("stp_demo.mbt: Markram STP dynamics on a single forced-fire pre neuron")
   println("  params: τD=200ms τF=1500ms U=0.2 W=1.0")
@@ -47,8 +47,8 @@ fn main {
   // ===== 1) Single isolated spike at t=10ms =====
   // (baseline: u=0.2, x=1, ρ=0.2)
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 10.0F)
-  @snn_mbt.forward_synapse(syn, 10.0F)
+  @synapse.markram_stp_step(syn, vars, p, 10.0F)
+  @synapse.forward_synapse(syn, 10.0F)
   print_state("[isolated]", 10.0F, vars.u[0], vars.x[0], vars.rho_pre[0], post.glu[0])
   pre.fire[0] = false
   // Reset post for next event.
@@ -59,8 +59,8 @@ fn main {
   // Expected: ρ > 0.2 (facilitation > depression at short ISI).
   // ρ broadcast during 2nd spike ≈ 0.236
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 20.0F)
-  @snn_mbt.forward_synapse(syn, 20.0F)
+  @synapse.markram_stp_step(syn, vars, p, 20.0F)
+  @synapse.forward_synapse(syn, 20.0F)
   print_state("[paired 10ms]", 20.0F, vars.u[0], vars.x[0], vars.rho_pre[0], post.glu[0])
   pre.fire[0] = false
   post.glu[0] = 0.0F
@@ -74,8 +74,8 @@ fn main {
   while k < 5 {
     pre.fire[0] = true
     let t_now = burst_start + Float::from_int(k) * burst_isi
-    @snn_mbt.markram_stp_step(syn, vars, p, t_now)
-    @snn_mbt.forward_synapse(syn, t_now)
+    @synapse.markram_stp_step(syn, vars, p, t_now)
+    @synapse.forward_synapse(syn, t_now)
     print_state("[burst]", t_now, vars.u[0], vars.x[0], vars.rho_pre[0], post.glu[0])
     pre.fire[0] = false
     post.glu[0] = 0.0F
@@ -86,8 +86,8 @@ fn main {
   // ===== 4) Recovery: spike at t=10000ms (long after burst) =====
   // Should restore u -> U = 0.2, x -> 1, ρ -> 0.2.
   pre.fire[0] = true
-  @snn_mbt.markram_stp_step(syn, vars, p, 10000.0F)
-  @snn_mbt.forward_synapse(syn, 10000.0F)
+  @synapse.markram_stp_step(syn, vars, p, 10000.0F)
+  @synapse.forward_synapse(syn, 10000.0F)
   print_state("[recovery]", 10000.0F, vars.u[0], vars.x[0], vars.rho_pre[0], post.glu[0])
   println("")
 
@@ -101,7 +101,7 @@ fn main {
   // 0.7-0.8, and ρ around 0.05-0.08 in steady state.
   println("--- long spike train @ 50ms ISI (200 spikes) ---")
   // Reset state.
-  let vars2 = @snn_mbt.MarkramSTPVariables::new(1, 1, p)
+  let vars2 = @synapse.MarkramSTPVariables::new(1, 1, p)
   // Reset ρ to 1.0F (init_rho already did this).
   let train_start = 200.0F
   let train_isi = 50.0F
@@ -112,8 +112,8 @@ fn main {
   while kk < n_spikes {
     pre.fire[0] = true
     let t_now = train_start + Float::from_int(kk) * train_isi
-    @snn_mbt.markram_stp_step(syn, vars2, p, t_now)
-    @snn_mbt.forward_synapse(syn, t_now)
+    @synapse.markram_stp_step(syn, vars2, p, t_now)
+    @synapse.forward_synapse(syn, t_now)
     pre.fire[0] = false
     post.glu[0] = 0.0F
     if sample_idx < sample_steps.length() && kk == sample_steps[sample_idx] {

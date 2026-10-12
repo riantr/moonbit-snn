@@ -5,7 +5,7 @@
 
 ///|
 test "DeltaSynapse::new: empty struct (no parameters)" {
-  let s = @snn_mbt.DeltaSynapse::new()
+  let s = @synapse.DeltaSynapse::new()
   // DeltaSynapse has no fields; just verify it constructs.
   let _ = s
   // isa check via pattern match is implicit; if construction works,
@@ -14,7 +14,7 @@ test "DeltaSynapse::new: empty struct (no parameters)" {
 
 ///|
 test "DeltaSynapseVars::new: zero-initialised" {
-  let v = @snn_mbt.DeltaSynapseVars::new(5)
+  let v = @synapse.DeltaSynapseVars::new(5)
   if v.n != 5 {
     fail("n = \{v.n}, expected 5")
   }
@@ -31,10 +31,10 @@ test "DeltaSynapseVars::new: zero-initialised" {
 ///|
 test "delta_synapse_step: ge/gi accumulate from glu/gaba, then reset" {
   // DeltaSynapse is instantaneous — step writes glu → ge, gaba → gi.
-  let vars = @snn_mbt.DeltaSynapseVars::new(2)
+  let vars = @synapse.DeltaSynapseVars::new(2)
   let glu : Array[Float] = [1.0F, 2.0F]
   let gaba : Array[Float] = [0.5F, 1.5F]
-  @snn_mbt.delta_synapse_step(vars, glu, gaba)
+  @synapse.delta_synapse_step(vars, glu, gaba)
   if (vars.ge[0] - 1.0F).abs() > 1.0e-6F {
     fail("ge[0] = \{vars.ge[0]}, expected 1.0")
   }
@@ -46,7 +46,7 @@ test "delta_synapse_step: ge/gi accumulate from glu/gaba, then reset" {
   }
   // synaptic_current: syn_curr = -(ge - gi), then reset.
   let syn_curr : Array[Float] = Array::make(2, 0.0F)
-  @snn_mbt.delta_synapse_current(vars, syn_curr)
+  @synapse.delta_synapse_current(vars, syn_curr)
   if (syn_curr[0] - -(1.0F - 0.5F)).abs() > 1.0e-6F {
     fail("syn_curr[0] = \{syn_curr[0]}, expected -0.5")
   }
@@ -57,7 +57,7 @@ test "delta_synapse_step: ge/gi accumulate from glu/gaba, then reset" {
 
 ///|
 test "SingleExpSynapse::new: defaults match Julia" {
-  let p = @snn_mbt.SingleExpSynapse::new()
+  let p = @synapse.SingleExpSynapse::new()
   if p.tau_e != 6.0F {
     fail("tau_e = \{p.tau_e}, expected 6.0")
   }
@@ -80,15 +80,15 @@ test "SingleExpSynapse::new: defaults match Julia" {
 
 ///|
 test "SingleExpSynapseVars::new: zero-init + step decay" {
-  let vars = @snn_mbt.SingleExpSynapseVars::new(1)
-  let p = @snn_mbt.SingleExpSynapse::new()
+  let vars = @synapse.SingleExpSynapseVars::new(1)
+  let p = @synapse.SingleExpSynapse::new()
   // Force ge[0]=1, gi[0]=1, then call step with no spike input.
   vars.ge[0] = 1.0F
   vars.gi[0] = 1.0F
   let glu : Array[Float] = [0.0F]
   let gaba : Array[Float] = [0.0F]
   let dt = 0.125F
-  @snn_mbt.single_exp_synapse_step(vars, p, glu, gaba, dt)
+  @synapse.single_exp_synapse_step(vars, p, glu, gaba, dt)
   // After step with no input: ge *= (1 - dt/tau_e) = 1 * (1 - 0.125/6)
   // = 1 - 0.0208 ≈ 0.9792.
   let decay_e : Float = 1.0F - dt / p.tau_e
@@ -103,15 +103,15 @@ test "SingleExpSynapseVars::new: zero-init + step decay" {
 
 ///|
 test "conductance_synapse_current: syn_curr = ge*(v-E_e)*gsyn_e + gi*(v-E_i)*gsyn_i" {
-  let vars = @snn_mbt.SingleExpSynapseVars::new(2)
-  let p = @snn_mbt.SingleExpSynapse::new()
+  let vars = @synapse.SingleExpSynapseVars::new(2)
+  let p = @synapse.SingleExpSynapse::new()
   vars.ge[0] = 1.0F
   vars.gi[0] = 0.5F
   vars.ge[1] = 2.0F
   vars.gi[1] = 1.0F
   let v : Array[Float] = [-50.0F, 10.0F]
   let syn_curr : Array[Float] = Array::make(2, 0.0F)
-  @snn_mbt.conductance_synapse_current(vars, p, v, syn_curr)
+  @synapse.conductance_synapse_current(vars, p, v, syn_curr)
   // syn_curr[0] = 1 * (-50 - 0) * 1 + 0.5 * (-50 - (-75)) * 1
   //             = -50 + 12.5 = -37.5
   if (syn_curr[0] - -37.5F).abs() > 1.0e-4F {
@@ -126,7 +126,7 @@ test "conductance_synapse_current: syn_curr = ge*(v-E_e)*gsyn_e + gi*(v-E_i)*gsy
 
 ///|
 test "DoubleExpSynapse::new: defaults match Julia" {
-  let p = @snn_mbt.DoubleExpSynapse::new()
+  let p = @synapse.DoubleExpSynapse::new()
   if p.tau_re != 1.0F {
     fail("tau_re = \{p.tau_re}, expected 1.0")
   }
@@ -155,7 +155,7 @@ test "DoubleExpSynapse::new: defaults match Julia" {
 
 ///|
 test "DoubleExpSynapseVars::new: zero-init, all four arrays" {
-  let v = @snn_mbt.DoubleExpSynapseVars::new(3)
+  let v = @synapse.DoubleExpSynapseVars::new(3)
   if v.n != 3 {
     fail("n = \{v.n}, expected 3")
   }
@@ -177,12 +177,12 @@ test "double_exp_synapse_step: 2-state ODE integrates spike input" {
   // Spike input glu[0]=1.0F, dt=0.125, all-zero initial state:
   //   ge[0] = 0 + 0.125 * (0 - 0) / 6 = 0
   //   he[0] = 0 + 0.125 * 0 / 1 + 1 = 1.0
-  let vars = @snn_mbt.DoubleExpSynapseVars::new(1)
-  let p = @snn_mbt.DoubleExpSynapse::new()
+  let vars = @synapse.DoubleExpSynapseVars::new(1)
+  let p = @synapse.DoubleExpSynapse::new()
   let glu : Array[Float] = [1.0F]
   let gaba : Array[Float] = [0.0F]
   let dt = 0.125F
-  @snn_mbt.double_exp_synapse_step(vars, p, glu, gaba, dt)
+  @synapse.double_exp_synapse_step(vars, p, glu, gaba, dt)
   let he_expected = 1.0F
   let ge_expected = 0.0F
   if (vars.he[0] - he_expected).abs() > 1.0e-5F {
@@ -195,7 +195,7 @@ test "double_exp_synapse_step: 2-state ODE integrates spike input" {
 
 ///|
 test "CurrentSynapse::new: defaults match Julia" {
-  let p = @snn_mbt.CurrentSynapse::new()
+  let p = @synapse.CurrentSynapse::new()
   if p.tau_e != 6.0F {
     fail("tau_e = \{p.tau_e}, expected 6.0")
   }
@@ -206,14 +206,14 @@ test "CurrentSynapse::new: defaults match Julia" {
 
 ///|
 test "CurrentSynapseVars::new: zero-init + step decay" {
-  let vars = @snn_mbt.CurrentSynapseVars::new(1)
-  let p = @snn_mbt.CurrentSynapse::new()
+  let vars = @synapse.CurrentSynapseVars::new(1)
+  let p = @synapse.CurrentSynapse::new()
   vars.ge[0] = 1.0F
   vars.gi[0] = 1.0F
   let glu : Array[Float] = [0.0F]
   let gaba : Array[Float] = [0.0F]
   let dt = 0.125F
-  @snn_mbt.current_synapse_step(vars, p, glu, gaba, dt)
+  @synapse.current_synapse_step(vars, p, glu, gaba, dt)
   let decay_e : Float = 1.0F - dt / p.tau_e
   let decay_i : Float = 1.0F - dt / p.tau_i
   if (vars.ge[0] - decay_e).abs() > 1.0e-5F {
@@ -226,13 +226,13 @@ test "CurrentSynapseVars::new: zero-init + step decay" {
 
 ///|
 test "current_synapse_current: syn_curr = -(ge - gi)" {
-  let vars = @snn_mbt.CurrentSynapseVars::new(2)
+  let vars = @synapse.CurrentSynapseVars::new(2)
   vars.ge[0] = 1.0F
   vars.gi[0] = 0.5F
   vars.ge[1] = 2.0F
   vars.gi[1] = 1.0F
   let syn_curr : Array[Float] = Array::make(2, 0.0F)
-  @snn_mbt.current_synapse_current(vars, syn_curr)
+  @synapse.current_synapse_current(vars, syn_curr)
   // syn_curr[0] = -(1.0 - 0.5) = -0.5
   // syn_curr[1] = -(2.0 - 1.0) = -1.0
   if (syn_curr[0] - -0.5F).abs() > 1.0e-6F {

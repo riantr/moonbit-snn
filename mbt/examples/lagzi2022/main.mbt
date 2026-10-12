@@ -40,13 +40,13 @@ fn main {
   }
 
   // 4 SpikingSynapses: W11 (E1->E1), W12 (E1->E2), W21 (E2->E1), W22 (E2->E2).
-  let w11 = @snn_mbt.SpikingSynapse::random(e1, e1, "ge",
+  let w11 = @synapse.SpikingSynapse::random(e1, e1, "ge",
     10.0F, 0.0F, 0.2F, rng)
-  let w12 = @snn_mbt.SpikingSynapse::random(e1, e2, "ge",
+  let w12 = @synapse.SpikingSynapse::random(e1, e2, "ge",
     10.0F, 0.0F, 0.2F, rng)
-  let w21 = @snn_mbt.SpikingSynapse::random(e2, e1, "ge",
+  let w21 = @synapse.SpikingSynapse::random(e2, e1, "ge",
     10.0F, 0.0F, 0.2F, rng)
-  let w22 = @snn_mbt.SpikingSynapse::random(e2, e2, "ge",
+  let w22 = @synapse.SpikingSynapse::random(e2, e2, "ge",
     10.0F, 0.0F, 0.2F, rng)
 
   // Gerstner STDP for each connection.

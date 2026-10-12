@@ -1,0 +1,19 @@
+// synapse/ — synaptic connections, receptor kinetics and plasticity rules.
+//
+// Sits above neuron: a connection carries spikes from a pre-synaptic cell to a
+// post-synaptic one, so these files name neuron types freely, and neuron/
+// never names anything here.
+//
+// `sparse_matrix.mbt` lives here rather than in core because its CSR layout is
+// shaped by pre-synaptic iteration -- for each pre-synaptic neuron, walk its
+// outgoing edges -- which is a synaptic-traversal decision, not a generic one.
+//
+// `stdp.mbt` is NOT here yet. Alongside the learning rule it carries the code
+// that renders a weight-matrix heatmap, and `row_int_set_char` lives in
+// vecplot.mbt; moving it would make the plasticity package depend on the
+// plotting one. Splitting the visualisation out first is the follow-up.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/neuron",
+}

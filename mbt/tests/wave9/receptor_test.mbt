@@ -6,8 +6,8 @@
 test "nmda_gating: B(v) ≈ 1 at very hyperpolarized v" {
   // At v = -100 mV, exp(k*v) = exp(7.7) ≈ 2200; mg/b = 0.298;
   // B ≈ 1 / (1 + 0.298 * 2200) ≈ 1.5e-3 (very small = full block).
-  let nmda = @snn_mbt.NMDAVoltageDependency::eyal()
-  let b = @snn_mbt.nmda_gating(-100.0F, nmda)
+  let nmda = @synapse.NMDAVoltageDependency::eyal()
+  let b = @synapse.nmda_gating(-100.0F, nmda)
   if b > 0.01F {
     fail("B(-100) = \{b}, expected very small (full Mg block)")
   }
@@ -15,9 +15,9 @@ test "nmda_gating: B(v) ≈ 1 at very hyperpolarized v" {
 
 ///|
 test "nmda_gating: B(v) increases as v depolarizes" {
-  let nmda = @snn_mbt.NMDAVoltageDependency::eyal()
-  let b_low = @snn_mbt.nmda_gating(-80.0F, nmda)
-  let b_high = @snn_mbt.nmda_gating(-40.0F, nmda)
+  let nmda = @synapse.NMDAVoltageDependency::eyal()
+  let b_low = @synapse.nmda_gating(-80.0F, nmda)
+  let b_high = @synapse.nmda_gating(-40.0F, nmda)
   if b_high <= b_low {
     fail("B(-40) = \{b_high} should exceed B(-80) = \{b_low}")
   }
@@ -26,8 +26,8 @@ test "nmda_gating: B(v) increases as v depolarizes" {
 ///|
 test "nmda_gating: B(v) saturates to 1 at very depolarized v" {
   // At v = 50 mV, exp(-3.85) ≈ 0.021; B ≈ 1 / (1 + 0.298 * 0.021) ≈ 0.994.
-  let nmda = @snn_mbt.NMDAVoltageDependency::eyal()
-  let b = @snn_mbt.nmda_gating(50.0F, nmda)
+  let nmda = @synapse.NMDAVoltageDependency::eyal()
+  let b = @synapse.nmda_gating(50.0F, nmda)
   if b < 0.9F {
     fail("B(50) = \{b}, expected ~0.99 (released block)")
   }
@@ -35,7 +35,7 @@ test "nmda_gating: B(v) saturates to 1 at very depolarized v" {
 
 ///|
 test "Receptor::simple: alpha + inv fields computed correctly" {
-  let r = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  let r = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
   // alpha = (τd - τr) / (τd * τr) = (6-1)/(6*1) = 5/6 ≈ 0.833
   if (r.alpha - 5.0F / 6.0F).abs() > 1.0e-4F {
     fail("alpha = \{r.alpha}, expected 0.833")
@@ -53,7 +53,7 @@ test "Receptor::simple: alpha + inv fields computed correctly" {
 
 ///|
 test "Receptor::nmda: is_nmda flag set" {
-  let r = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let r = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   if !r.is_nmda {
     fail("NMDA receptor should have is_nmda = true")
   }
@@ -64,8 +64,8 @@ test "step_receptor: 2-state ODE decays g after pulse" {
   let g : Array[Float] = [0.0F]
   let h : Array[Float] = [0.0F]
   let target : Array[Float] = [10.0F]
-  let r = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
-  @snn_mbt.step_receptor(g, h, target, r, 0.125F)
+  let r = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  @synapse.step_receptor(g, h, target, r, 0.125F)
   // After one step:
   //   h = 10 * α = 10 * 5/6 = 8.333
   //   g = exp(-dt/τd) * (0 + dt * h) = exp(-0.125/6) * (0.125 * 8.333)
@@ -88,13 +88,13 @@ test "step_receptor: multiple steps decay to zero" {
   let g : Array[Float] = [0.0F]
   let h : Array[Float] = [0.0F]
   let target : Array[Float] = [10.0F]
-  let r = @snn_mbt.Receptor::simple(0.0F, 0.5F, 3.0F, 1.0F, "glu")
+  let r = @synapse.Receptor::simple(0.0F, 0.5F, 3.0F, 1.0F, "glu")
   // Inject once, then run 1000 steps with no further input.
-  @snn_mbt.step_receptor(g, h, target, r, 0.125F)
+  @synapse.step_receptor(g, h, target, r, 0.125F)
   let g_peak = g[0]
   for _ in 0..<1000 {
     let empty : Array[Float] = [0.0F]
-    @snn_mbt.step_receptor(g, h, empty, r, 0.125F)
+    @synapse.step_receptor(g, h, empty, r, 0.125F)
   }
   if g_peak <= 0.0F {
     fail("g_peak should be positive, got \{g_peak}")
@@ -109,9 +109,9 @@ test "receptor_current: simple (non-NMDA) drives I = gsyn*g*(v-e_rev)" {
   let g : Array[Float] = [1.0F]
   let v : Array[Float] = [-50.0F]
   let out : Array[Float] = [0.0F]
-  let r = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
-  let nmda = @snn_mbt.NMDAVoltageDependency::eyal()
-  @snn_mbt.receptor_current(g, v, r, nmda, out)
+  let r = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  let nmda = @synapse.NMDAVoltageDependency::eyal()
+  @synapse.receptor_current(g, v, r, nmda, out)
   // I = gsyn * g * (v - e_rev) = gsyn * 1.0 * (-50 - 0)
   let expected = r.gsyn * -50.0F
   if (out[0] - expected).abs() > 1.0e-3F {
@@ -126,10 +126,10 @@ test "receptor_current: NMDA gate reduces current at hyperpolarized v" {
   let v_dep : Array[Float] = [-20.0F]
   let out_hyp : Array[Float] = [0.0F]
   let out_dep : Array[Float] = [0.0F]
-  let r = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let nmda = @snn_mbt.NMDAVoltageDependency::eyal()
-  @snn_mbt.receptor_current(g, v_hyp, r, nmda, out_hyp)
-  @snn_mbt.receptor_current(g, v_dep, r, nmda, out_dep)
+  let r = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let nmda = @synapse.NMDAVoltageDependency::eyal()
+  @synapse.receptor_current(g, v_hyp, r, nmda, out_hyp)
+  @synapse.receptor_current(g, v_dep, r, nmda, out_dep)
   // NMDA gate should reduce the current at -80 mV (still some drive
   // because v-e_rev = -80, but B(v=-80) is small).
   // At -20 mV, B is much larger.
@@ -143,11 +143,11 @@ test "receptor_current: NMDA gate reduces current at hyperpolarized v" {
 
 ///|
 test "Receptors::new: 4 elements with correct ordering" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let rs = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let rs = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
   if rs.rec.length() != 4 {
     fail("rec.length = \{rs.rec.length()}, expected 4")
   }

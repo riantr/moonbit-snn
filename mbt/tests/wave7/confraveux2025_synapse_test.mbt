@@ -2,7 +2,7 @@
 
 ///|
 test "Confavreux2025Parameter::new defaults match Julia" {
-  let p = @snn_mbt.Confavreux2025Parameter::new()
+  let p = @synapse.Confavreux2025Parameter::new()
   assert_eq(p.tau_ampa, 5.0F)
   assert_eq(p.tau_nmda, 100.0F)
   assert_eq(p.tau_gaba, 10.0F)
@@ -13,7 +13,7 @@ test "Confavreux2025Parameter::new defaults match Julia" {
 
 ///|
 test "Confavreux2025SynapseVars::new zero-init" {
-  let v = @snn_mbt.Confavreux2025SynapseVars::new(4)
+  let v = @synapse.Confavreux2025SynapseVars::new(4)
   assert_eq(v.n, 4)
   assert_eq(v.g_ampa.length(), 4)
   assert_eq(v.g_nmda.length(), 4)
@@ -25,14 +25,14 @@ test "Confavreux2025SynapseVars::new zero-init" {
 
 ///|
 test "update_synapses_confraveux2025 — AMPA + GABA spike input" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(2)
+  let vars = @synapse.Confavreux2025SynapseVars::new(2)
   let glu : Array[Float] = Array::make(2, 0.0F)
   let gaba : Array[Float] = Array::make(2, 0.0F)
   // glu[0] = 1, gaba[1] = 2
   ignore(glu.set(0, 1.0F))
   ignore(gaba.set(1, 2.0F))
-  @snn_mbt.update_synapses_confraveux2025(
-    vars, @snn_mbt.Confavreux2025Parameter::new(), glu, gaba, 0.1F,
+  @synapse.update_synapses_confraveux2025(
+    vars, @synapse.Confavreux2025Parameter::new(), glu, gaba, 0.1F,
   )
   // AMPA: 0 + 0.1 * (0 + 1) = 0.1 (post-update)
   assert_eq(vars.g_ampa[0] > 0.09F && vars.g_ampa[0] < 0.11F, true)
@@ -50,15 +50,15 @@ test "update_synapses_confraveux2025 — AMPA + GABA spike input" {
 
 ///|
 test "update_synapses_confraveux2025 — NMDA coupled to AMPA" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(1)
+  let vars = @synapse.Confavreux2025SynapseVars::new(1)
   let glu : Array[Float] = Array::make(1, 0.0F)
   let gaba : Array[Float] = Array::make(1, 0.0F)
   // Constant glu[0] = 5 over 10 steps; expect gNMDA → 5 (coupling target)
-  let p = @snn_mbt.Confavreux2025Parameter::new()
+  let p = @synapse.Confavreux2025Parameter::new()
   let mut step : Int = 0
   while step < 100 {
     ignore(glu.set(0, 5.0F))
-    @snn_mbt.update_synapses_confraveux2025(vars, p, glu, gaba, 0.1F)
+    @synapse.update_synapses_confraveux2025(vars, p, glu, gaba, 0.1F)
     step = step + 1
   }
   // After 100 steps (10ms) with τAMPA=5ms, gAMPA converges to glu*τAMPA = 5*5 = 25
@@ -72,15 +72,15 @@ test "update_synapses_confraveux2025 — NMDA coupled to AMPA" {
 
 ///|
 test "update_synapses_confraveux2025 — no spike input decays to zero" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(1)
+  let vars = @synapse.Confavreux2025SynapseVars::new(1)
   // Set initial state
   ignore(vars.g_ampa.set(0, 5.0F))
   ignore(vars.g_nmda.set(0, 5.0F))
   ignore(vars.g_gaba.set(0, 5.0F))
   let glu : Array[Float] = Array::make(1, 0.0F)
   let gaba : Array[Float] = Array::make(1, 0.0F)
-  @snn_mbt.update_synapses_confraveux2025(
-    vars, @snn_mbt.Confavreux2025Parameter::new(), glu, gaba, 0.1F,
+  @synapse.update_synapses_confraveux2025(
+    vars, @synapse.Confavreux2025Parameter::new(), glu, gaba, 0.1F,
   )
   // AMPA: 5 + 0.1 * (-5/5 + 0) = 5 - 0.1 = 4.9
   assert_eq(vars.g_ampa[0] > 4.89F && vars.g_ampa[0] < 4.91F, true)
@@ -92,15 +92,15 @@ test "update_synapses_confraveux2025 — no spike input decays to zero" {
 
 ///|
 test "synaptic_current_confraveux2025 — weighted AMPA + NMDA" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(1)
+  let vars = @synapse.Confavreux2025SynapseVars::new(1)
   // Set all conductances to 1
   ignore(vars.g_ampa.set(0, 1.0F))
   ignore(vars.g_nmda.set(0, 1.0F))
   ignore(vars.g_gaba.set(0, 0.0F))
   let v : Array[Float] = Array::make(1, -50.0F)
   let syn_curr : Array[Float] = Array::make(1, 0.0F)
-  @snn_mbt.synaptic_current_confraveux2025(
-    vars, @snn_mbt.Confavreux2025Parameter::new(), v, syn_curr,
+  @synapse.synaptic_current_confraveux2025(
+    vars, @synapse.Confavreux2025Parameter::new(), v, syn_curr,
   )
   // weighted = α*1 + (1-α)*1 = 1
   // exc = 1 * (-50 - 0) = -50
@@ -111,15 +111,15 @@ test "synaptic_current_confraveux2025 — weighted AMPA + NMDA" {
 
 ///|
 test "synaptic_current_confraveux2025 — GABA inhibitory drive" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(1)
+  let vars = @synapse.Confavreux2025SynapseVars::new(1)
   // gGABA = 1, no AMPA/NMDA
   ignore(vars.g_ampa.set(0, 0.0F))
   ignore(vars.g_nmda.set(0, 0.0F))
   ignore(vars.g_gaba.set(0, 1.0F))
   let v : Array[Float] = Array::make(1, -70.0F)
   let syn_curr : Array[Float] = Array::make(1, 0.0F)
-  @snn_mbt.synaptic_current_confraveux2025(
-    vars, @snn_mbt.Confavreux2025Parameter::new(), v, syn_curr,
+  @synapse.synaptic_current_confraveux2025(
+    vars, @synapse.Confavreux2025Parameter::new(), v, syn_curr,
   )
   // weighted = 0, exc = 0
   // inh = 1 * (-70 - -80) = 10 (pushes v up — out of equilibrium for GABA)
@@ -129,15 +129,15 @@ test "synaptic_current_confraveux2025 — GABA inhibitory drive" {
 
 ///|
 test "synaptic_current_confraveux2025 — α-blend dominance" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(1)
+  let vars = @synapse.Confavreux2025SynapseVars::new(1)
   // gAMPA = 2, gNMDA = 0 — pure AMPA contribution
   ignore(vars.g_ampa.set(0, 2.0F))
   ignore(vars.g_nmda.set(0, 0.0F))
   ignore(vars.g_gaba.set(0, 0.0F))
   let v : Array[Float] = Array::make(1, -50.0F)
   let syn_curr : Array[Float] = Array::make(1, 0.0F)
-  @snn_mbt.synaptic_current_confraveux2025(
-    vars, @snn_mbt.Confavreux2025Parameter::new(), v, syn_curr,
+  @synapse.synaptic_current_confraveux2025(
+    vars, @synapse.Confavreux2025Parameter::new(), v, syn_curr,
   )
   // weighted = α*2 + (1-α)*0 = 0.46
   // exc = 0.46 * (-50 - 0) = -23
@@ -146,15 +146,15 @@ test "synaptic_current_confraveux2025 — α-blend dominance" {
 
 ///|
 test "update_synapses_confraveux2025 — 1000 steps stays finite" {
-  let vars = @snn_mbt.Confavreux2025SynapseVars::new(4)
+  let vars = @synapse.Confavreux2025SynapseVars::new(4)
   let glu : Array[Float] = Array::make(4, 0.0F)
   let gaba : Array[Float] = Array::make(4, 0.0F)
-  let p = @snn_mbt.Confavreux2025Parameter::new()
+  let p = @synapse.Confavreux2025Parameter::new()
   let mut step : Int = 0
   while step < 1000 {
     // inject spikes on different neurons each step
     ignore(glu.set(step % 4, 1.0F))
-    @snn_mbt.update_synapses_confraveux2025(vars, p, glu, gaba, 0.125F)
+    @synapse.update_synapses_confraveux2025(vars, p, glu, gaba, 0.125F)
     step = step + 1
   }
   let mut k : Int = 0

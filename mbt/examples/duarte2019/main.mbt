@@ -46,16 +46,16 @@ fn main {
   for k in 0..<nsst { sst_pop.i[k] = 300.0F }
 
   // ----- Connectivity (simplified) -----
-  let e_to_pv = @snn_mbt.SpikingSynapse::random(
+  let e_to_pv = @synapse.SpikingSynapse::random(
     e_pop, pv_pop, "ge", 1.0F, 0.0F, 0.3F, rng,
   )
-  let e_to_sst = @snn_mbt.SpikingSynapse::random(
+  let e_to_sst = @synapse.SpikingSynapse::random(
     e_pop, sst_pop, "ge", 1.0F, 0.0F, 0.3F, rng,
   )
-  let pv_to_e = @snn_mbt.SpikingSynapse::random(
+  let pv_to_e = @synapse.SpikingSynapse::random(
     pv_pop, e_pop, "gi", 2.0F, 0.0F, 0.3F, rng,
   )
-  let sst_to_e = @snn_mbt.SpikingSynapse::random(
+  let sst_to_e = @synapse.SpikingSynapse::random(
     sst_pop, e_pop, "gi", 2.0F, 0.0F, 0.3F, rng,
   )
 
@@ -71,10 +71,10 @@ fn main {
     let t_now = Float::from_int(step) * dt
 
     // Forward pre-spikes through synapses.
-    @snn_mbt.forward_synapse(e_to_pv, t_now)
-    @snn_mbt.forward_synapse(e_to_sst, t_now)
-    @snn_mbt.forward_synapse(pv_to_e, t_now)
-    @snn_mbt.forward_synapse(sst_to_e, t_now)
+    @synapse.forward_synapse(e_to_pv, t_now)
+    @synapse.forward_synapse(e_to_sst, t_now)
+    @synapse.forward_synapse(pv_to_e, t_now)
+    @synapse.forward_synapse(sst_to_e, t_now)
 
     // Integrate.
     @neuron.step_synapses(e_pop, dt)

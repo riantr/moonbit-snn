@@ -236,7 +236,7 @@ test "stdp_symmetric_step: weights stay finite over many steps" {
 
 ///|
 test "IstdpTime::new: defaults match Julia" {
-  let p = @snn_mbt.IstdpTime::new()
+  let p = @synapse.IstdpTime::new()
   if p.eta != 0.01F {
     fail("eta = \{p.eta}, expected 0.01")
   }
@@ -253,7 +253,7 @@ test "IstdpTime::new: defaults match Julia" {
 
 ///|
 test "IstdpTime: custom fields preserved" {
-  let p : @snn_mbt.IstdpTime = { eta: 0.02F, tau_y: 80.0F, w_max: 500.0F, w_min: 0.05F }
+  let p : @synapse.IstdpTime = { eta: 0.02F, tau_y: 80.0F, w_max: 500.0F, w_min: 0.05F }
   if p.eta != 0.02F {
     fail("eta = \{p.eta}, expected 0.02")
   }

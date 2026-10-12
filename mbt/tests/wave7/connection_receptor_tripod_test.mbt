@@ -9,13 +9,13 @@ test "ReceptorSynapseTripod::new: shapes and initial state" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(2, base)
   let post = @neuron.TripodHet::new(2, param, rng)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
-  let c = @snn_mbt.ReceptorSynapseTripod::new(
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
+  let c = @synapse.ReceptorSynapseTripod::new(
     pre, post, "d1", receptors, nmda_dep, 1.0F, 0.0F, 1.0F, rng,
   )
   if c.target_compartment != "d1" {
@@ -43,18 +43,18 @@ test "ReceptorSynapseTripod: AMPA target receptor → glu_d1 buffer" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(2, base)
   let post = @neuron.TripodHet::new(2, param, rng)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
-  let c = @snn_mbt.ReceptorSynapseTripod::new(
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
+  let c = @synapse.ReceptorSynapseTripod::new(
     pre, post, "d1", receptors, nmda_dep, 2.0F, 0.0F, 1.0F, rng,
   )
   pre.fire[0] = true
   // AMPA = target_receptor 0
-  @snn_mbt.forward_receptor_tripod_synapse(c, 0, 0.0F)
+  @synapse.forward_receptor_tripod_synapse(c, 0, 0.0F)
   if (post.glu_d1[0] - 2.0F).abs() > 1.0e-6F {
     fail("glu_d1[0] = \{post.glu_d1[0]}, expected 2.0")
   }
@@ -78,18 +78,18 @@ test "ReceptorSynapseTripod: GABAa target → gaba_d1 buffer" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(2, base)
   let post = @neuron.TripodHet::new(2, param, rng)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
-  let c = @snn_mbt.ReceptorSynapseTripod::new(
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
+  let c = @synapse.ReceptorSynapseTripod::new(
     pre, post, "d1", receptors, nmda_dep, 1.5F, 0.0F, 1.0F, rng,
   )
   pre.fire[0] = true
   // GABAa = target_receptor 2
-  @snn_mbt.forward_receptor_tripod_synapse(c, 2, 0.0F)
+  @synapse.forward_receptor_tripod_synapse(c, 2, 0.0F)
   if (post.gaba_d1[0] - 1.5F).abs() > 1.0e-6F {
     fail("gaba_d1[0] = \{post.gaba_d1[0]}, expected 1.5")
   }
@@ -109,18 +109,18 @@ test "ReceptorSynapseTripod: soma compartment routing" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
-  let c = @snn_mbt.ReceptorSynapseTripod::new(
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
+  let c = @synapse.ReceptorSynapseTripod::new(
     pre, post, "soma", receptors, nmda_dep, 3.0F, 0.0F, 1.0F, rng,
   )
   pre.fire[0] = true
   // AMPA → soma
-  @snn_mbt.forward_receptor_tripod_synapse(c, 0, 0.0F)
+  @synapse.forward_receptor_tripod_synapse(c, 0, 0.0F)
   if (post.glu_s[0] - 3.0F).abs() > 1.0e-6F {
     fail("glu_s[0] = \{post.glu_s[0]}, expected 3.0 (soma)")
   }
@@ -139,22 +139,22 @@ test "step_receptors_tripod_synapse: 2-state ODE consumes buffer, populates ge_o
   let post = @neuron.TripodHet::new(1, param, rng)
   // Set v_s near threshold so AMPA current is meaningful.
   post.v_s[0] = -30.0F
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
-  let c = @snn_mbt.ReceptorSynapseTripod::new(
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
+  let c = @synapse.ReceptorSynapseTripod::new(
     pre, post, "d1", receptors, nmda_dep, 2.0F, 0.0F, 1.0F, rng,
   )
   pre.fire[0] = true
-  @snn_mbt.forward_receptor_tripod_synapse(c, 0, 0.0F)
+  @synapse.forward_receptor_tripod_synapse(c, 0, 0.0F)
   // After forward, glu_d1[0] = 2.0
   if post.glu_d1[0] != 2.0F {
     fail("setup: glu_d1[0] = \{post.glu_d1[0]}, expected 2.0")
   }
-  @snn_mbt.step_receptors_tripod_synapse(c, 0.125F)
+  @synapse.step_receptors_tripod_synapse(c, 0.125F)
   // After step, glu_d1 consumed (= 0), g_state should be non-zero, ge_out should be non-zero
   if post.glu_d1[0] != 0.0F {
     fail("glu_d1[0] = \{post.glu_d1[0]}, expected 0 (consumed)")
@@ -182,16 +182,16 @@ test "ReceptorSynapseTripod: non-firing pre → no conductance change" {
   let base = @neuron.AdExParameter::new()
   let param = @neuron.AdExParameterHet::homogeneous(1, base)
   let post = @neuron.TripodHet::new(1, param, rng)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
-  let c = @snn_mbt.ReceptorSynapseTripod::new(
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
+  let c = @synapse.ReceptorSynapseTripod::new(
     pre, post, "d1", receptors, nmda_dep, 2.0F, 0.0F, 1.0F, rng,
   )
-  @snn_mbt.forward_receptor_tripod_synapse(c, 0, 0.0F)
+  @synapse.forward_receptor_tripod_synapse(c, 0, 0.0F)
   if post.glu_d1[0] != 0.0F {
     fail("glu_d1[0] = \{post.glu_d1[0]}, expected 0 (no pre-fire)")
   }

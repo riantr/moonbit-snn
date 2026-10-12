@@ -16,7 +16,7 @@
 ///|
 /// Flat copy of all non-zero weights (parallel to matrix.vals).
 /// Length == nnz. Useful for checksum-style parity vs Julia.
-pub fn dump_weights(synapse : SpikingSynapse) -> Array[Float] {
+pub fn dump_weights(synapse : @synapse.SpikingSynapse) -> Array[Float] {
   let src = synapse.matrix.vals
   let out : Array[Float] = Array::make(src.length(), 0.0F)
   for i in 0..<src.length() {
@@ -27,13 +27,13 @@ pub fn dump_weights(synapse : SpikingSynapse) -> Array[Float] {
 
 ///|
 /// Number of stored non-zero weights (= matrix.nnz).
-pub fn dump_weights_count(synapse : SpikingSynapse) -> Int {
+pub fn dump_weights_count(synapse : @synapse.SpikingSynapse) -> Int {
   synapse.matrix.vals.length()
 }
 
 ///|
 /// Sum of all weights. Returns 0.0F for an empty matrix.
-pub fn dump_weights_sum(synapse : SpikingSynapse) -> Float {
+pub fn dump_weights_sum(synapse : @synapse.SpikingSynapse) -> Float {
   let mut s : Float = 0.0F
   let vals = synapse.matrix.vals
   for i in 0..<vals.length() {
@@ -45,7 +45,7 @@ pub fn dump_weights_sum(synapse : SpikingSynapse) -> Float {
 ///|
 /// Min and max weight over all non-zero edges. Returns (0.0F, 0.0F)
 /// for an empty matrix (caller must check nnz first).
-pub fn dump_weights_min_max(synapse : SpikingSynapse) -> (Float, Float) {
+pub fn dump_weights_min_max(synapse : @synapse.SpikingSynapse) -> (Float, Float) {
   let vals = synapse.matrix.vals
   if vals.length() == 0 {
     return (0.0F, 0.0F)
@@ -68,7 +68,7 @@ pub fn dump_weights_min_max(synapse : SpikingSynapse) -> (Float, Float) {
 /// Pre_idx is found by binary-searching matrix.rowptr for the largest
 /// k such that rowptr[k] <= s. Iteration order matches matrix.vals.
 pub fn dump_weights_with_indices(
-  synapse : SpikingSynapse,
+  synapse : @synapse.SpikingSynapse,
 ) -> Array[(Int, Int, Float)] {
   let mat = synapse.matrix
   let n = mat.vals.length()
@@ -87,7 +87,7 @@ pub fn dump_weights_with_indices(
 /// edges). Returns an `Array[Array[Float]]` of length n_pre where
 /// each row has length n_post. Useful for cross-validation against
 /// Julia's dense connection representation.
-pub fn dump_weights_dense(synapse : SpikingSynapse) -> Array[Array[Float]] {
+pub fn dump_weights_dense(synapse : @synapse.SpikingSynapse) -> Array[Array[Float]] {
   let mat = synapse.matrix
   let out : Array[Array[Float]] = Array::make(mat.rows, [])
   // Pre-fill each row with zeros.
@@ -110,7 +110,7 @@ pub fn dump_weights_dense(synapse : SpikingSynapse) -> Array[Array[Float]] {
 /// CSV string of all non-zero weights in `(pre, post, weight)` form.
 /// Lines are: `pre,post,weight`. No header. Empty matrix → empty
 /// string. Useful for offline inspection / Python interop.
-pub fn dump_weights_to_csv(synapse : SpikingSynapse) -> String {
+pub fn dump_weights_to_csv(synapse : @synapse.SpikingSynapse) -> String {
   let triples = dump_weights_with_indices(synapse)
   let buf = StringBuilder()
   for i in 0..<triples.length() {

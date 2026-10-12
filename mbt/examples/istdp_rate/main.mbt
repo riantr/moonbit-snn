@@ -37,7 +37,7 @@ fn main {
   let post_fire : Array[Bool] = Array::make(n_post, false)
 
   // Build the entry with default IstdpRate params.
-  let entry = @snn_mbt.IstdpRateEntry::new(0, n_pre, n_post)
+  let entry = @synapse.IstdpRateEntry::new(0, n_pre, n_post)
   println("istdp_rate.mbt: IstdpRate (Vogels 2011 inhibitory STDP) demo")
   println("")
   println("=== IstdpRate defaults ===")
@@ -59,7 +59,7 @@ fn main {
       post_fire[k] = @core.next_f32(rng) < 0.3F
     }
     let t_now = Float::from_int(step) * dt
-    @snn_mbt.istdp_rate_step(
+    @synapse.istdp_rate_step(
       w, pre_fire, post_fire, colptr, rowptr, entry.vars, entry.param, t_now, dt,
     )
   }

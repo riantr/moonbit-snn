@@ -26,7 +26,7 @@ fn main {
   // All-to-all self-connection with μ=1.2, p=1.0. The
   // RateSynapse constructor applies Julia's sqrt(N) normalisation
   // so the network stays bounded.
-  let gg = @snn_mbt.RateSynapse::new(g, g, 1.2F, 0.0F, 1.0F, rng)
+  let gg = @synapse.RateSynapse::new(g, g, 1.2F, 0.0F, 1.0F, rng)
   println("rate_net.mbt: network built")
   println("  G: " + n.to_string() + " WilsonCowan rate neurons")
   println("  GG connections: " + gg.matrix.nnz().to_string())
@@ -44,7 +44,7 @@ fn main {
   let total_steps = 800
   for step in 0..<total_steps {
     // 1. forward (rate → synaptic g)
-    @snn_mbt.forward_rate_synapse(gg)
+    @synapse.forward_rate_synapse(gg)
     // 2. integrate
     @neuron.step_wc(g, dt)
     // Sample r every 10 steps.

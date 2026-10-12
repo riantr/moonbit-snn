@@ -38,9 +38,9 @@ fn make_multi_target(
   n_post : Int,
   // Per-target weights (rows of n_post each).
   target_weights : Array[Array[Float]],
-) -> (Array[@snn_mbt.SynapseTarget], Array[Float], Array[Float]) {
+) -> (Array[@synapse.SynapseTarget], Array[Float], Array[Float]) {
   // Build the targets. Each target's rowptr is identical (n_post + 1).
-  let targets : Array[@snn_mbt.SynapseTarget] = []
+  let targets : Array[@synapse.SynapseTarget] = []
   let rowptr : Array[Int] = Array::make(n_post + 1, 0)
   for i in 0..<n_post {
     rowptr[i + 1] = rowptr[i] + 1
@@ -66,12 +66,12 @@ test "metaplasticity_multiplicative_converges_w1_to_w0" {
   //   μ[0] = (1 - 0.5) / 0.5 = 1.0 → weights *= 2 → [1.0, ...]
   // Run 50 steps; W1 should converge to W0=[1, 1, 1, 1].
   let (vals, rowptr) = make_post_csr(4, [0.5F, 2.0F, 0.5F, 3.0F])
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
-  let targets : Array[@snn_mbt.SynapseTarget] = [target]
-  let norm = @snn_mbt.SynapseNormalization::new(targets, @snn_mbt.NormParam::Multiplicative_(@snn_mbt.MultiplicativeNorm::new(1.0F)))
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
+  let targets : Array[@synapse.SynapseTarget] = [target]
+  let norm = @synapse.SynapseNormalization::new(targets, @synapse.NormParam::Multiplicative_(@synapse.MultiplicativeNorm::new(1.0F)))
   // W0 captured = [1, 1, 1, 1].
   for _ in 0..<200 {
-    @snn_mbt.metaplasticity_step(norm)
+    @synapse.metaplasticity_step(norm)
   }
   // After many steps, weights must be very close to W0.
   for i in 0..<4 {
@@ -87,12 +87,12 @@ test "metaplasticity_additive_converges_w1_to_w0" {
   // weight. After one step with weights mutated: additive shifts by
   // (W0 - W1). After many steps, weights approach W0.
   let (vals, rowptr) = make_post_csr(4, [0.5F, 2.0F, 0.5F, 3.0F])
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
-  let targets : Array[@snn_mbt.SynapseTarget] = [target]
-  let norm = @snn_mbt.SynapseNormalization::new(targets, @snn_mbt.NormParam::Additive_(@snn_mbt.AdditiveNorm::new(1.0F)))
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
+  let targets : Array[@synapse.SynapseTarget] = [target]
+  let norm = @synapse.SynapseNormalization::new(targets, @synapse.NormParam::Additive_(@synapse.AdditiveNorm::new(1.0F)))
   // W0 = [1, 1, 1, 1] (initial weight before mutation).
   for _ in 0..<200 {
-    @snn_mbt.metaplasticity_step(norm)
+    @synapse.metaplasticity_step(norm)
   }
   for i in 0..<4 {
     if (vals[i] - norm.w0[i]).abs() > 0.1F {
@@ -107,17 +107,17 @@ test "metaplasticity_per_post_heterogeneity" {
   // initial sums; after one step each post is normalised independently.
   // Build 1 target with rowptr=[1,1] (2 posts, 1 incoming per post).
   let (vals, _) = make_post_csr(2, [2.0F, 4.0F])
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr: Array::make(3, 0) }
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr: Array::make(3, 0) }
   // Fix rowptr to [0, 1, 2] (1 element per row).
   target.rowptr[0] = 0
   target.rowptr[1] = 1
   target.rowptr[2] = 2
-  let norm = @snn_mbt.SynapseNormalization::new([target], @snn_mbt.NormParam::Multiplicative_(@snn_mbt.MultiplicativeNorm::new(1.0F)))
+  let norm = @synapse.SynapseNormalization::new([target], @synapse.NormParam::Multiplicative_(@synapse.MultiplicativeNorm::new(1.0F)))
   // W0 captured = [2.0, 4.0] (initial weights before mutation).
   // Now mutate weights: post-0 → 1.0, post-1 → 8.0.
   vals[0] = 1.0F
   vals[1] = 8.0F
-  @snn_mbt.metaplasticity_step(norm)
+  @synapse.metaplasticity_step(norm)
   // post-0: μ = (2-1)/1 = 1.0 → vals[0] *= 2 = 2.0
   // post-1: μ = (4-8)/8 = -0.5 → vals[1] *= 0.5 = 4.0
   if (vals[0] - 2.0F).abs() > 1.0e-5F {
@@ -136,9 +136,9 @@ test "metaplasticity_multi_target_aggregation" {
   let rowptr : Array[Int] = [0, 1, 2]
   let a_vals : Array[Float] = [1.0F, 1.0F]
   let b_vals : Array[Float] = [2.0F, 2.0F]
-  let ta : @snn_mbt.SynapseTarget = { post_id: 0, vals: a_vals, rowptr }
-  let tb : @snn_mbt.SynapseTarget = { post_id: 0, vals: b_vals, rowptr }
-  let norm = @snn_mbt.SynapseNormalization::new([ta, tb], @snn_mbt.NormParam::Multiplicative_(@snn_mbt.MultiplicativeNorm::new(1.0F)))
+  let ta : @synapse.SynapseTarget = { post_id: 0, vals: a_vals, rowptr }
+  let tb : @synapse.SynapseTarget = { post_id: 0, vals: b_vals, rowptr }
+  let norm = @synapse.SynapseNormalization::new([ta, tb], @synapse.NormParam::Multiplicative_(@synapse.MultiplicativeNorm::new(1.0F)))
   if norm.w0[0] != 3.0F || norm.w0[1] != 3.0F {
     fail("W0 = [\{norm.w0[0]}, \{norm.w0[1]}], expected [3, 3] (sum across targets)")
   }
@@ -149,11 +149,11 @@ test "metaplasticity_gated_step_drives_convergence" {
   // Start with perturbed weights. Run gated steps; after many periods
   // weights must converge to W0.
   let (vals, rowptr) = make_post_csr(4, [0.5F, 2.0F, 0.5F, 3.0F])
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
-  let norm = @snn_mbt.SynapseNormalization::new([target], @snn_mbt.NormParam::Additive_(@snn_mbt.AdditiveNorm::new(0.5F)))
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
+  let norm = @synapse.SynapseNormalization::new([target], @synapse.NormParam::Additive_(@synapse.AdditiveNorm::new(0.5F)))
   // τ=0.5, dt=0.1 → period_steps = 5. Run 200 steps (= 40 periods).
   for s in 1..<201 {
-    @snn_mbt.metaplasticity_step_gated(norm, s, 0.1F)
+    @synapse.metaplasticity_step_gated(norm, s, 0.1F)
   }
   for i in 0..<4 {
     if (vals[i] - norm.w0[i]).abs() > 0.5F {
@@ -167,11 +167,11 @@ test "metaplasticity_w0_zero_no_op" {
   // W0[i] = 0 (no incoming) → μ = 0 - 0 = 0 → no weight change.
   // 2 posts, both with initial weight 0.
   let (vals, rowptr) = make_post_csr(2, [0.0F, 0.0F])
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
-  let norm = @snn_mbt.SynapseNormalization::new([target], @snn_mbt.NormParam::Multiplicative_(@snn_mbt.MultiplicativeNorm::new(1.0F)))
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
+  let norm = @synapse.SynapseNormalization::new([target], @synapse.NormParam::Multiplicative_(@synapse.MultiplicativeNorm::new(1.0F)))
   vals[0] = 5.0F  // perturbed
   vals[1] = 5.0F
-  @snn_mbt.metaplasticity_step(norm)
+  @synapse.metaplasticity_step(norm)
   // W0=0, W1=5 → multiplicative μ = (0-5)/5 = -1.0 → vals *= 0 = 0.
   if vals[0] != 0.0F {
     fail("vals[0] = \{vals[0]}, expected 0 (W0=0 collapses to zero)")
@@ -187,17 +187,17 @@ test "metaplasticity_gated_period_steps_match_tau_over_dt" {
   // should not. Use an additive rule with non-zero delta so we can
   // detect whether the step ran.
   let (vals, rowptr) = make_post_csr(1, [0.0F])
-  let target : @snn_mbt.SynapseTarget = { post_id: 0, vals, rowptr }
-  let norm = @snn_mbt.SynapseNormalization::new([target], @snn_mbt.NormParam::Additive_(@snn_mbt.AdditiveNorm::new(1.0F)))
+  let target : @synapse.SynapseTarget = { post_id: 0, vals, rowptr }
+  let norm = @synapse.SynapseNormalization::new([target], @synapse.NormParam::Additive_(@synapse.AdditiveNorm::new(1.0F)))
   // W0 = 0. Perturb: vals[0] = 1.0.
   vals[0] = 1.0F
   // s=5: should not fire (5 % 10 != 0). Weight stays at 1.0.
-  @snn_mbt.metaplasticity_step_gated(norm, 5, 0.1F)
+  @synapse.metaplasticity_step_gated(norm, 5, 0.1F)
   if vals[0] != 1.0F {
     fail("s=5 fired unexpectedly: vals[0] = \{vals[0]}")
   }
   // s=10: should fire (10 % 10 == 0). Weight becomes 1.0 + (0-1) = 0.0.
-  @snn_mbt.metaplasticity_step_gated(norm, 10, 0.1F)
+  @synapse.metaplasticity_step_gated(norm, 10, 0.1F)
   if vals[0] != 0.0F {
     fail("s=10 should fire: vals[0] = \{vals[0]}, expected 0.0")
   }

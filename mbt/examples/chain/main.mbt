@@ -35,9 +35,9 @@ fn main {
   e_pop.i[0] = 30.0F
 
   // Build the chain synapse (empty, then connect 1→2 and 2→3 with w=50)
-  let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
-  @snn_mbt.spiking_connect(ee, 1, 2, 50.0F)
-  @snn_mbt.spiking_connect(ee, 2, 3, 50.0F)
+  let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
+  @synapse.spiking_connect(ee, 1, 2, 50.0F)
+  @synapse.spiking_connect(ee, 2, 3, 50.0F)
 
   // Build the model
   let model : @snn_mbt.Model = {

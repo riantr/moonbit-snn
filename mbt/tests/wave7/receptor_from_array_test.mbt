@@ -2,11 +2,11 @@
 
 ///|
 test "Receptors::from_array — length 4 array" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let rs = @snn_mbt.Receptors::from_array([ampa, nmda, gabaa, gabab])
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let rs = @synapse.Receptors::from_array([ampa, nmda, gabaa, gabab])
   if rs.rec.length() != 4 { fail("expected 4 entries") }
   if rs.rec[0].g0 != 0.73F { fail("AMPA g0 mismatch") }
   if rs.rec[1].tau_d != 35.0F { fail("NMDA τd mismatch") }
@@ -16,12 +16,12 @@ test "Receptors::from_array — length 4 array" {
 
 ///|
 test "Receptors::from_array — same as Receptors::new with same args" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let rs_a = @snn_mbt.Receptors::from_array([ampa, nmda, gabaa, gabab])
-  let rs_b = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let rs_a = @synapse.Receptors::from_array([ampa, nmda, gabaa, gabab])
+  let rs_b = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
   // Same field shape.
   let mut k = 0
   while k < 4 {
@@ -38,11 +38,11 @@ test "Receptors::from_array — same as Receptors::new with same args" {
 ///|
 test "Receptors::from_array — index ordering preserved" {
   // Verify index 0=AMPA, 1=NMDA, 2=GABAa, 3=GABAb.
-  let r0 = @snn_mbt.Receptor::simple(0.0F, 0.1F, 1.0F, 1.0F, "glu")
-  let r1 = @snn_mbt.Receptor::nmda(0.0F, 0.2F, 2.0F, 2.0F)
-  let r2 = @snn_mbt.Receptor::simple(-70.0F, 0.3F, 3.0F, 3.0F, "gaba")
-  let r3 = @snn_mbt.Receptor::simple(-90.0F, 0.4F, 4.0F, 4.0F, "gaba")
-  let rs = @snn_mbt.Receptors::from_array([r0, r1, r2, r3])
+  let r0 = @synapse.Receptor::simple(0.0F, 0.1F, 1.0F, 1.0F, "glu")
+  let r1 = @synapse.Receptor::nmda(0.0F, 0.2F, 2.0F, 2.0F)
+  let r2 = @synapse.Receptor::simple(-70.0F, 0.3F, 3.0F, 3.0F, "gaba")
+  let r3 = @synapse.Receptor::simple(-90.0F, 0.4F, 4.0F, 4.0F, "gaba")
+  let rs = @synapse.Receptors::from_array([r0, r1, r2, r3])
   if rs.rec[0].g0 != 1.0F { fail("rec[0] expected g0=1.0") }
   if rs.rec[1].g0 != 2.0F { fail("rec[1] expected g0=2.0") }
   if rs.rec[2].g0 != 3.0F { fail("rec[2] expected g0=3.0") }

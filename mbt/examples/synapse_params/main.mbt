@@ -25,10 +25,10 @@ fn main {
   let n = 4
 
   // Construct the four synapse parameter types.
-  let delta = @snn_mbt.DeltaSynapse::new()
-  let single = @snn_mbt.SingleExpSynapse::new()
-  let double = @snn_mbt.DoubleExpSynapse::new()
-  let current = @snn_mbt.CurrentSynapse::new()
+  let delta = @synapse.DeltaSynapse::new()
+  let single = @synapse.SingleExpSynapse::new()
+  let double = @synapse.DoubleExpSynapse::new()
+  let current = @synapse.CurrentSynapse::new()
 
   println("synapse_params.mbt: four synapse parameter types (v0.10.39)")
   println("")
@@ -63,20 +63,20 @@ fn main {
   println("")
 
   // Build vars for each.
-  let delta_vars = @snn_mbt.DeltaSynapseVars::new(n)
-  let single_vars = @snn_mbt.SingleExpSynapseVars::new(n)
-  let double_vars = @snn_mbt.DoubleExpSynapseVars::new(n)
-  let current_vars = @snn_mbt.CurrentSynapseVars::new(n)
+  let delta_vars = @synapse.DeltaSynapseVars::new(n)
+  let single_vars = @synapse.SingleExpSynapseVars::new(n)
+  let double_vars = @synapse.DoubleExpSynapseVars::new(n)
+  let current_vars = @synapse.CurrentSynapseVars::new(n)
 
   // Synthetic input: glu = [1, 0, 0, 0]; gaba = [0, 0, 0, 0].
   let glu : Array[Float] = [1.0F, 0.0F, 0.0F, 0.0F]
   let gaba : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
 
   // Run a single step for each.
-  @snn_mbt.delta_synapse_step(delta_vars, glu, gaba)
-  @snn_mbt.single_exp_synapse_step(single_vars, single, glu, gaba, dt)
-  @snn_mbt.double_exp_synapse_step(double_vars, double, glu, gaba, dt)
-  @snn_mbt.current_synapse_step(current_vars, current, glu, gaba, dt)
+  @synapse.delta_synapse_step(delta_vars, glu, gaba)
+  @synapse.single_exp_synapse_step(single_vars, single, glu, gaba, dt)
+  @synapse.double_exp_synapse_step(double_vars, double, glu, gaba, dt)
+  @synapse.current_synapse_step(current_vars, current, glu, gaba, dt)
 
   println("=== After 1 step with glu=[1,0,0,0], gaba=[0,0,0,0] ===")
   println("  DeltaSynapse     ge[0] = " + delta_vars.ge[0].to_string() + " (instantaneous)")
@@ -90,12 +90,12 @@ fn main {
   let v : Array[Float] = [-50.0F, -50.0F, -50.0F, -50.0F]
   let syn_curr_single : Array[Float] = Array::make(n, 0.0F)
   let syn_curr_double : Array[Float] = Array::make(n, 0.0F)
-  @snn_mbt.conductance_synapse_current(single_vars, single, v, syn_curr_single)
-  @snn_mbt.double_exp_conductance_current(
+  @synapse.conductance_synapse_current(single_vars, single, v, syn_curr_single)
+  @synapse.double_exp_conductance_current(
     double_vars, double, v, syn_curr_double,
   )
   let syn_curr_current : Array[Float] = Array::make(n, 0.0F)
-  @snn_mbt.current_synapse_current(current_vars, syn_curr_current)
+  @synapse.current_synapse_current(current_vars, syn_curr_current)
 
   println("=== Synaptic current at v=-50mV (syn_curr = ge*(v-E_e) for conductance-based) ===")
   println(

@@ -17,7 +17,7 @@ fn main {
   let g_pop = @neuron.WilsonCowan::new(n, rng)
 
   // Random rate synapses (μ=1.2, p=1.0 → all-to-all).
-  let gg = @snn_mbt.RateSynapse::new(g_pop, g_pop, 1.2F, 0.0F, 1.0F, rng)
+  let gg = @synapse.RateSynapse::new(g_pop, g_pop, 1.2F, 0.0F, 1.0F, rng)
 
   println("oja_rule.mbt: simplified Oja rate rule port")
   println("  G: " + n.to_string() + " Wilson-Cowan rate neurons")

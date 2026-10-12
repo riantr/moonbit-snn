@@ -19,14 +19,14 @@ fn make_if_for_receptor(n : Int) -> @neuron.IF {
 test "ReceptorSynapse::new — defaults: glu=[0,1], gaba=[2,3]" {
   let pre : @neuron.IF = make_if_for_receptor(10)
   let post : @neuron.IF = make_if_for_receptor(10)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let syn = @snn_mbt.Receptors::new(ampa, nmda_rec, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda_rec = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let syn = @synapse.Receptors::new(ampa, nmda_rec, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
   let rng = @core.Xoshiro::new(42UL)
-  let s = @snn_mbt.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.5F, rng)
+  let s = @synapse.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.5F, rng)
   // Default glu_receptors = [0, 1] (AMPA, NMDA).
   assert_eq(s.glu_receptors.length(), 2)
   assert_eq(s.glu_receptors[0], 0)
@@ -58,14 +58,14 @@ test "ReceptorSynapse — custom glu_receptors / gaba_receptors" {
   // 0 in 0-based MoonBit) and `gaba_receptors = [2]` (receptor 1).
   let pre : @neuron.IF = make_if_for_receptor(5)
   let post : @neuron.IF = make_if_for_receptor(5)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let syn = @snn_mbt.Receptors::new(ampa, nmda_rec, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda_rec = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let syn = @synapse.Receptors::new(ampa, nmda_rec, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
   let rng = @core.Xoshiro::new(42UL)
-  let s = @snn_mbt.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.5F, rng)
+  let s = @synapse.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.5F, rng)
   // Custom: glu_receptors = [0] (AMPA only), gaba_receptors = [1] (NMDA!).
   s.glu_receptors[0] = 0
   s.glu_receptors[1] = 0  // truncate to single entry by setting last to same
@@ -73,7 +73,7 @@ test "ReceptorSynapse — custom glu_receptors / gaba_receptors" {
   let new_glu : Array[Int] = [0]
   let new_gaba : Array[Int] = [1]
   // Manually overwrite the field via struct literal rebuild.
-  let s2 : @snn_mbt.ReceptorSynapse = {
+  let s2 : @synapse.ReceptorSynapse = {
     pre: s.pre,
     post: s.post,
     matrix: s.matrix,
@@ -96,14 +96,14 @@ test "ReceptorSynapse — custom glu_receptors / gaba_receptors" {
 test "ReceptorSynapse::set_target_receptor — change edge target" {
   let pre : @neuron.IF = make_if_for_receptor(10)
   let post : @neuron.IF = make_if_for_receptor(10)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let syn = @snn_mbt.Receptors::new(ampa, nmda_rec, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda_rec = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let syn = @synapse.Receptors::new(ampa, nmda_rec, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
   let rng = @core.Xoshiro::new(42UL)
-  let s = @snn_mbt.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.5F, rng)
+  let s = @synapse.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.5F, rng)
   // Default target_receptor = 0 (AMPA) for all edges.
   if s.matrix.vals.length() > 0 {
     assert_eq(s.target_receptor[0], 0)
@@ -128,17 +128,17 @@ test "forward_receptor_synapse — routes to glu buffer for AMPA" {
     [2.5F],  // pre[0] → post[0] weight 2.5
     [0.0F],  // pre[1] → post[0] weight 0
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let syn = @snn_mbt.Receptors::new(ampa, nmda_rec, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda_rec = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let syn = @synapse.Receptors::new(ampa, nmda_rec, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
   let rng = @core.Xoshiro::new(42UL)
-  let s = @snn_mbt.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.0F, rng)
+  let s = @synapse.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.0F, rng)
   // Manually replace matrix with our dense 2×1 (1 nnz).
-  let s2 : @snn_mbt.ReceptorSynapse = {
+  let s2 : @synapse.ReceptorSynapse = {
     pre: s.pre,
     post: s.post,
     matrix: m,
@@ -151,7 +151,7 @@ test "forward_receptor_synapse — routes to glu buffer for AMPA" {
     glu: [0.0F],
     gaba: [0.0F],
   }
-  @snn_mbt.forward_receptor_synapse(s2)
+  @synapse.forward_receptor_synapse(s2)
   // Edge is AMPA → routed to glu[0].
   let diff = (s2.glu[0] - 2.5F).abs()
   if diff > 1.0e-6F {
@@ -171,16 +171,16 @@ test "forward_receptor_synapse — routes to gaba buffer for GABAa" {
     [1.5F],
     [0.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let syn = @snn_mbt.Receptors::new(ampa, nmda_rec, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda_rec = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let syn = @synapse.Receptors::new(ampa, nmda_rec, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
   let rng = @core.Xoshiro::new(42UL)
-  let s = @snn_mbt.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.0F, rng)
-  let s2 : @snn_mbt.ReceptorSynapse = {
+  let s = @synapse.ReceptorSynapse::new(pre, post, syn, nmda_dep, 1.0F, 0.0F, 0.0F, rng)
+  let s2 : @synapse.ReceptorSynapse = {
     pre: s.pre,
     post: s.post,
     matrix: m,
@@ -193,7 +193,7 @@ test "forward_receptor_synapse — routes to gaba buffer for GABAa" {
     glu: [0.0F],
     gaba: [0.0F],
   }
-  @snn_mbt.forward_receptor_synapse(s2)
+  @synapse.forward_receptor_synapse(s2)
   // Edge is GABAa → routed to gaba[0].
   let diff = (s2.gaba[0] - 1.5F).abs()
   if diff > 1.0e-6F {

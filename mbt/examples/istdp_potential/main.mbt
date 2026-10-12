@@ -40,7 +40,7 @@ fn main {
   let post_fire : Array[Bool] = Array::make(n_post, false)
   let v_post : Array[Float] = Array::make(n_post, 0.0F)
 
-  let entry = @snn_mbt.IstdpPotentialEntry::new(0, n_pre, n_post)
+  let entry = @synapse.IstdpPotentialEntry::new(0, n_pre, n_post)
   println("istdp_potential.mbt: IstdpPotential (potential-based iSTDP) demo")
   println("")
   println("=== IstdpPotential defaults ===")
@@ -64,7 +64,7 @@ fn main {
       v_post[k] = -70.0F + 120.0F * @core.next_f32(rng)
     }
     let t_now = Float::from_int(step) * dt
-    @snn_mbt.istdp_potential_step(
+    @synapse.istdp_potential_step(
       w, pre_fire, post_fire, colptr, rowptr, v_post, entry.vars, entry.param, t_now, dt,
     )
   }

@@ -26,7 +26,7 @@ test "spiking_synapse::new — (p, μ) random connections" {
   let rng = @core.Xoshiro::new(42UL)
   let pre : @neuron.IF = make_if(30)
   let post : @neuron.IF = make_if(15)
-  let s = @snn_mbt.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.0F, 0.3F, rng)
+  let s = @synapse.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.0F, 0.3F, rng)
   assert_eq(s.matrix.vals.length() > 0, true)
   assert_eq(s.sym, "ge")
 }
@@ -36,7 +36,7 @@ test "spiking_synapse::new — (p, μ, σ) random connections" {
   let rng = @core.Xoshiro::new(42UL)
   let pre : @neuron.IF = make_if(20)
   let post : @neuron.IF = make_if(10)
-  let s = @snn_mbt.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.2F, 0.5F, rng)
+  let s = @synapse.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.2F, 0.5F, rng)
   assert_eq(s.matrix.vals.length() > 0, true)
 }
 
@@ -50,7 +50,7 @@ test "spiking_synapse::new — identity (1-to-1) matrix has N nnz" {
     ignore(row.set(i, 1.0F))
     ignore(dense.set(i, row))
   }
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.5F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.5F)
   assert_eq(m.vals.length(), n)
 }
 
@@ -59,7 +59,7 @@ test "spiking_synapse::new — inhibitory :gi" {
   let rng = @core.Xoshiro::new(42UL)
   let pre : @neuron.IF = make_if(10)
   let post : @neuron.IF = make_if(20)
-  let s = @snn_mbt.SpikingSynapse::random(pre, post, "gi", 2.0F, 0.0F, 0.4F, rng)
+  let s = @synapse.SpikingSynapse::random(pre, post, "gi", 2.0F, 0.0F, 0.4F, rng)
   assert_eq(s.sym, "gi")
 }
 
@@ -67,7 +67,7 @@ test "spiking_synapse::new — inhibitory :gi" {
 test "spiking_synapse::with_name — defaults to empty" {
   let pre : @neuron.IF = make_if(10)
   let post : @neuron.IF = make_if(10)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
   // Default name is empty string.
   assert_eq(s.name, "")
 }
@@ -76,7 +76,7 @@ test "spiking_synapse::with_name — defaults to empty" {
 test "spiking_synapse::with_name — sets custom label" {
   let pre : @neuron.IF = make_if(5)
   let post : @neuron.IF = make_if(5)
-  let s0 = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let s0 = @synapse.SpikingSynapse::new(pre, post, "ge")
   let s = s0.with_name("my_syn")
   assert_eq(s.name, "my_syn")
   // Original unchanged (MoonBit semantics: with_X returns new struct).
@@ -91,7 +91,7 @@ test "spiking_synapse — NoLTP / NoSTP defaults" {
   // is empty AND pending_* are all empty.
   let pre : @neuron.IF = make_if(10)
   let post : @neuron.IF = make_if(10)
-  let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let s = @synapse.SpikingSynapse::new(pre, post, "ge")
   assert_eq(s.rho.length(), 0)
   assert_eq(s.delays.length(), 0)
   assert_eq(s.pending_times.length(), 0)
@@ -132,7 +132,7 @@ test "spiking_synapse — explicit dense matrix via from_dense" {
     }
     ignore(dense.set(i, row))
   }
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.0F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.0F)
   // nnz should equal the number of non-zero entries.
   let mut nnz = 0
   for i in 0..<m.rows {

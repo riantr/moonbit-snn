@@ -43,8 +43,8 @@ test "stdp_step respects vars.active=false" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
   // Snapshot weight.
   let w_before = syn.matrix.vals[0]
   // Force fires (both pre and post on the same step).
@@ -82,15 +82,15 @@ test "stdp_step respects vars.active=false" {
 
 ///|
 test "MarkramSTPEntry::set_stp_active: toggles vars.active[0]" {
-  let entry = @snn_mbt.MarkramSTPEntry::new(0, 2, 2)
+  let entry = @synapse.MarkramSTPEntry::new(0, 2, 2)
   if !entry.vars.active[0] {
     fail("default active[0] should be true")
   }
-  @snn_mbt.MarkramSTPEntry::set_stp_active(entry, false)
+  @synapse.MarkramSTPEntry::set_stp_active(entry, false)
   if entry.vars.active[0] {
     fail("after set_stp_active(false), active[0] should be false")
   }
-  @snn_mbt.MarkramSTPEntry::set_stp_active(entry, true)
+  @synapse.MarkramSTPEntry::set_stp_active(entry, true)
   if !entry.vars.active[0] {
     fail("after set_stp_active(true), active[0] should be true")
   }
@@ -104,16 +104,16 @@ test "MarkramSTPEntry::set_stp_active: toggles vars.active[0]" {
 test "MarkramSTPEntryHet::set_stp_active: toggles vars.active[0]" {
   let n_pre = 3
   let n_post = 2
-  let param = @snn_mbt.MarkramSTPParameterHet::homogeneous(n_pre)
-  let entry = @snn_mbt.MarkramSTPEntryHet::new(0, n_pre, n_post, param)
+  let param = @synapse.MarkramSTPParameterHet::homogeneous(n_pre)
+  let entry = @synapse.MarkramSTPEntryHet::new(0, n_pre, n_post, param)
   if !entry.vars.active[0] {
     fail("default active[0] should be true")
   }
-  @snn_mbt.MarkramSTPEntryHet::set_stp_active(entry, false)
+  @synapse.MarkramSTPEntryHet::set_stp_active(entry, false)
   if entry.vars.active[0] {
     fail("after set_stp_active(false), active[0] should be false")
   }
-  @snn_mbt.MarkramSTPEntryHet::set_stp_active(entry, true)
+  @synapse.MarkramSTPEntryHet::set_stp_active(entry, true)
   if !entry.vars.active[0] {
     fail("after set_stp_active(true), active[0] should be true")
   }
@@ -125,16 +125,16 @@ test "MarkramSTPEntryHet::set_stp_active: toggles vars.active[0]" {
 
 ///|
 test "MarkramSTPEntryTimestep::set_stp_active: toggles vars.active[0]" {
-  let param = @snn_mbt.MarkramSTPParameterTimestep::new()
-  let entry = @snn_mbt.MarkramSTPEntryTimestep::new(0, 2, 2, param=param)
+  let param = @synapse.MarkramSTPParameterTimestep::new()
+  let entry = @synapse.MarkramSTPEntryTimestep::new(0, 2, 2, param=param)
   if !entry.vars.active[0] {
     fail("default active[0] should be true")
   }
-  @snn_mbt.MarkramSTPEntryTimestep::set_stp_active(entry, false)
+  @synapse.MarkramSTPEntryTimestep::set_stp_active(entry, false)
   if entry.vars.active[0] {
     fail("after set_stp_active(false), active[0] should be false")
   }
-  @snn_mbt.MarkramSTPEntryTimestep::set_stp_active(entry, true)
+  @synapse.MarkramSTPEntryTimestep::set_stp_active(entry, true)
   if !entry.vars.active[0] {
     fail("after set_stp_active(true), active[0] should be true")
   }
@@ -165,11 +165,11 @@ test "STDPEntry::set_ltp_active: round-trip preserves the vars state" {
 
 ///|
 test "MarkramSTPEntry::set_stp_active: round-trip preserves the vars state" {
-  let entry = @snn_mbt.MarkramSTPEntry::new(0, 2, 2)
+  let entry = @synapse.MarkramSTPEntry::new(0, 2, 2)
   entry.vars.u[0] = 0.123F
   entry.vars.x[1] = 0.456F
-  @snn_mbt.MarkramSTPEntry::set_stp_active(entry, false)
-  @snn_mbt.MarkramSTPEntry::set_stp_active(entry, true)
+  @synapse.MarkramSTPEntry::set_stp_active(entry, false)
+  @synapse.MarkramSTPEntry::set_stp_active(entry, true)
   if entry.vars.u[0] != 0.123F {
     fail("u[0] should survive the round-trip toggle")
   }
@@ -193,8 +193,8 @@ test "set_LTP_active / set_STP_active: alias names match Julia convention (sans 
   if stdp.vars.active[0] {
     fail("alias path: STDP should be inactive")
   }
-  let stp_entry = @snn_mbt.MarkramSTPEntry::new(0, 2, 2)
-  @snn_mbt.MarkramSTPEntry::set_stp_active(stp_entry, false)
+  let stp_entry = @synapse.MarkramSTPEntry::new(0, 2, 2)
+  @synapse.MarkramSTPEntry::set_stp_active(stp_entry, false)
   if stp_entry.vars.active[0] {
     fail("alias path: STP should be inactive")
   }

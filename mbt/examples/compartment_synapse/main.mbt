@@ -31,13 +31,13 @@ fn main {
   //   - IF → BallAndStick :soma (μ=2.0)
   //   - IF → BallAndStick :d    (μ=1.0)
   //   - IF → Tripod     :d1   (μ=1.5)
-  let cs_ball_s = @snn_mbt.CompartmentSynapseBall::random(
+  let cs_ball_s = @synapse.CompartmentSynapseBall::random(
     pre, ball, "ge", "soma", 2.0F, 0.0F, 1.0F, rng,
   )
-  let cs_ball_d = @snn_mbt.CompartmentSynapseBall::random(
+  let cs_ball_d = @synapse.CompartmentSynapseBall::random(
     pre, ball, "ge", "d", 1.0F, 0.0F, 1.0F, rng,
   )
-  let cs_trip_d1 = @snn_mbt.CompartmentSynapseTripod::random(
+  let cs_trip_d1 = @synapse.CompartmentSynapseTripod::random(
     pre, tripod, "ge", "d1", 1.5F, 0.0F, 1.0F, rng,
   )
 
@@ -49,9 +49,9 @@ fn main {
 
   // Force pre to fire and forward through each synapse.
   pre.fire[0] = true
-  @snn_mbt.forward_compartment_ball(cs_ball_s, 0.0F)
-  @snn_mbt.forward_compartment_ball(cs_ball_d, 0.0F)
-  @snn_mbt.forward_compartment_tripod(cs_trip_d1, 0.0F)
+  @synapse.forward_compartment_ball(cs_ball_s, 0.0F)
+  @synapse.forward_compartment_ball(cs_ball_d, 0.0F)
+  @synapse.forward_compartment_tripod(cs_trip_d1, 0.0F)
 
   println("")
   println("After one pre-synaptic spike (forward at t=0):")

@@ -192,8 +192,8 @@ pub(all) enum STDPEntryKind {
   MexicanHat_(STDPEntryMexicanHat)
   AntiSymmetric_(STDPEntryAntiSymmetric)
   Confavreux2025_(STDPEntryConfavreux2025)
-  IstdpRate_(IstdpRateEntry)
-  IstdpPotential_(IstdpPotentialEntry)
+  IstdpRate_(@synapse.IstdpRateEntry)
+  IstdpPotential_(@synapse.IstdpPotentialEntry)
   Symmetric_(STDPEntrySymmetric)
   CaPlasticity_(CaPlasticityEntry)
 }

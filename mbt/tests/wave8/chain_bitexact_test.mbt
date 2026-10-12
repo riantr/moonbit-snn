@@ -27,9 +27,9 @@ test "chain — final voltages stay in expected range" {
   let rng = @core.Xoshiro::default()
   let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
-  let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
-  ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
-  ignore(@snn_mbt.spiking_connect(ee, 2, 3, 50.0F))
+  let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
+  ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
+  ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
   let model : @snn_mbt.Model = {
     pops: [e_pop],
     conns: [ee],
@@ -63,9 +63,9 @@ test "chain — recorded step count matches sim duration" {
   let rng = @core.Xoshiro::default()
   let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
-  let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
-  ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
-  ignore(@snn_mbt.spiking_connect(ee, 2, 3, 50.0F))
+  let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
+  ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
+  ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
   let model : @snn_mbt.Model = {
     pops: [e_pop],
     conns: [ee],
@@ -94,9 +94,9 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
   let rng = @core.Xoshiro::default()
   let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
-  let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
-  ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
-  ignore(@snn_mbt.spiking_connect(ee, 2, 3, 50.0F))
+  let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
+  ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
+  ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
   let model : @snn_mbt.Model = {
     pops: [e_pop],
     conns: [ee],
@@ -130,9 +130,9 @@ test "chain — no NaN values in final state" {
   let rng = @core.Xoshiro::default()
   let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
-  let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
-  ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
-  ignore(@snn_mbt.spiking_connect(ee, 2, 3, 50.0F))
+  let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
+  ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
+  ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
   let model : @snn_mbt.Model = {
     pops: [e_pop],
     conns: [ee],

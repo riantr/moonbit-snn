@@ -38,7 +38,7 @@ fn main {
   // SpikingSynapse E1 → E2 with μ=1.62 nS, p=1.0, Normal(3ms, 2ms) delay
   // (mean delay 3 ms approximates Uniform(1, 5) ms; std=2 gives some
   // jitter). Our MoonBit random_with_delays uses Normal, not Uniform.
-  let ee = @snn_mbt.SpikingSynapse::random_with_delays(
+  let ee = @synapse.SpikingSynapse::random_with_delays(
     e1, e2, "ge", 1.62F, 0.0F, 1.0F, rng, 3.0F, 2.0F,
   )
 
@@ -54,8 +54,8 @@ fn main {
 
     // Track sim time for pending delivery.
     let t_now = Float::from_int(step) * dt
-    @snn_mbt.deliver_pending_synapse(ee, t_now)
-    @snn_mbt.forward_synapse(ee, t_now)
+    @synapse.deliver_pending_synapse(ee, t_now)
+    @synapse.forward_synapse(ee, t_now)
     // Update E2's synapses (ge rises from glu) and synaptic current.
     @neuron.step_synapses(e2, dt)
     @neuron.synaptic_current(e2)

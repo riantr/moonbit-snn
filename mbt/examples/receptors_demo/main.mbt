@@ -14,14 +14,14 @@
 ///|
 fn main {
   // ---- 1. Build Glutamatergic + GABAergic receptors ----
-  let ampa : @snn_mbt.Receptor = @snn_mbt.Receptor::simple(
+  let ampa : @synapse.Receptor = @synapse.Receptor::simple(
     0.0F, 1.0F, 6.0F, 1.0F, "glu",
   )
-  let nmda : @snn_mbt.Receptor = @snn_mbt.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
-  let gabaa : @snn_mbt.Receptor = @snn_mbt.Receptor::simple(
+  let nmda : @synapse.Receptor = @synapse.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
+  let gabaa : @synapse.Receptor = @synapse.Receptor::simple(
     -75.0F, 0.5F, 2.0F, 1.0F, "gaba",
   )
-  let gabab : @snn_mbt.Receptor = @snn_mbt.Receptor::simple(
+  let gabab : @synapse.Receptor = @synapse.Receptor::simple(
     -75.0F, 0.5F, 20.0F, 1.0F, "gaba",
   )
   println("receptors_demo.mbt: 4-receptor collection built")
@@ -42,12 +42,12 @@ fn main {
     gabab.gsyn.to_string(),
   )
   // ---- 2. Build Glutamatergic + GABAergic containers + Receptors ----
-  let glu = @snn_mbt.Glutamatergic::custom(ampa=ampa, nmda=nmda)
-  let gaba = @snn_mbt.GABAergic::custom(gabaa=gabaa, gabab=gabab)
-  let rs = @snn_mbt.Receptors::from_pair(glu, gaba)
+  let glu = @synapse.Glutamatergic::custom(ampa=ampa, nmda=nmda)
+  let gaba = @synapse.GABAergic::custom(gabaa=gabaa, gabab=gabab)
+  let rs = @synapse.Receptors::from_pair(glu, gaba)
   // ---- 3. infer_receptors classifies correctly ----
-  let recs_arr : Array[@snn_mbt.Receptor] = [ampa, nmda, gabaa, gabab]
-  let r = @snn_mbt.infer_receptors(recs_arr)
+  let recs_arr : Array[@synapse.Receptor] = [ampa, nmda, gabaa, gabab]
+  let r = @synapse.infer_receptors(recs_arr)
   println(
     "receptors_demo.mbt: infer_receptors → glu=[" +
     r.glu.length().to_string() + "] gaba=[" +
@@ -58,8 +58,8 @@ fn main {
     " gaba=[0]=" + r.gaba[0].to_string() + " gaba=[1]=" + r.gaba[1].to_string(),
   )
   // ---- 4. alpha_synapse + norm_synapse helpers ----
-  let alpha_ampa = @snn_mbt.alpha_synapse(1.0F, 6.0F)
-  let norm_ampa = @snn_mbt.norm_synapse(1.0F, 6.0F)
+  let alpha_ampa = @synapse.alpha_synapse(1.0F, 6.0F)
+  let norm_ampa = @synapse.norm_synapse(1.0F, 6.0F)
   println(
     "receptors_demo.mbt: AMPA α=" +
     alpha_ampa.to_string() + " norm=" + norm_ampa.to_string(),
@@ -82,8 +82,8 @@ fn main {
   ignore(v.set(2, -75.0F))
   ignore(v.set(3, -65.0F))
   let out : Array[Float] = Array::make(n, 0.0F)
-  @snn_mbt.receptors_current(
-    g_mat, v, rs, @snn_mbt.NMDAVoltageDependency::eyal(), out,
+  @synapse.receptors_current(
+    g_mat, v, rs, @synapse.NMDAVoltageDependency::eyal(), out,
   )
   let mut j : Int = 0
   while j < n {

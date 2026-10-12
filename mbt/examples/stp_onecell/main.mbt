@@ -34,13 +34,13 @@ fn main {
   let post_pop = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
 
   // Synapse with weight 1.0; STP needs rho[] for per-edge weighting.
-  let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.SpikingSynapse::init_rho(syn)
+  let syn = @synapse.SpikingSynapse::new(pre_pop, post_pop, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.SpikingSynapse::init_rho(syn)
 
   // Default MarkramSTP.
-  let stp_param = @snn_mbt.MarkramSTPParameter::new()
-  let stp_vars = @snn_mbt.MarkramSTPVariables::new(1, 1, stp_param)
+  let stp_param = @synapse.MarkramSTPParameter::new()
+  let stp_vars = @synapse.MarkramSTPVariables::new(1, 1, stp_param)
 
   println("stp_onecell.mbt: STP_onecell.jl simplified (manual STP loop)")
   println("  params: τD=200ms τF=1500ms U=0.2 W=1.0")
@@ -56,7 +56,7 @@ fn main {
     let mut k = 0
     while k < n_steps {
       pre_pop.fire[0] = true
-      @snn_mbt.markram_stp_step(
+      @synapse.markram_stp_step(
         syn, stp_vars, stp_param, Float::from_int(k) * dt,
       )
       pre_pop.fire[0] = false

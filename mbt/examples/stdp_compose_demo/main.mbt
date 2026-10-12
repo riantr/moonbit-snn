@@ -25,9 +25,9 @@ fn main {
   let e1 = @neuron.IF::new(n, @neuron.IFParameter::new(), rng)
   let e2 = @neuron.IF::new(n, @neuron.IFParameter::new(), rng)
   // Identity synapse: E1[i] -> E2[i].
-  let ee = @snn_mbt.SpikingSynapse::new(e1, e2, "ge")
+  let ee = @synapse.SpikingSynapse::new(e1, e2, "ge")
   for k in 0..<n {
-    @snn_mbt.spiking_connect(ee, k + 1, k + 1, 1.0F)
+    @synapse.spiking_connect(ee, k + 1, k + 1, 1.0F)
   }
 
   // STDP entry for the EE connection at conns[0].

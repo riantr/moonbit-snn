@@ -28,9 +28,9 @@ fn main {
   let pop = @neuron.IF::new(n, param, rng)
 
   // Two SpikingSynapses (E → E).
-  let s1 = @snn_mbt.SpikingSynapse::random(pop, pop, "ge",
+  let s1 = @synapse.SpikingSynapse::random(pop, pop, "ge",
     1.0F, 0.0F, 0.5F, rng)
-  let s2 = @snn_mbt.SpikingSynapse::random(pop, pop, "ge",
+  let s2 = @synapse.SpikingSynapse::random(pop, pop, "ge",
     0.5F, 0.0F, 0.3F, rng)
 
   // Extract CSR vals + rowptr from each synapse.
@@ -40,9 +40,9 @@ fn main {
   let r2 = s2.matrix.rowptr
 
   // Construct SynapseNormalization.
-  let norm = @snn_mbt.SynapseNormalization::new(
+  let norm = @synapse.SynapseNormalization::new(
     [{ post_id: 0, vals: v1, rowptr: r1 }, { post_id: 0, vals: v2, rowptr: r2 }],
-    @snn_mbt.Multiplicative_(@snn_mbt.MultiplicativeNorm::new(100.0F)),
+    @synapse.Multiplicative_(@synapse.MultiplicativeNorm::new(100.0F)),
   )
 
   // Capture initial per-post-synaptic-neuron weight sums.
@@ -85,7 +85,7 @@ fn main {
   for k in 0..<nnz2 { perturbed_w_sum = perturbed_w_sum + v2[k] }
 
   // Apply normalization step.
-  @snn_mbt.metaplasticity_step(norm)
+  @synapse.metaplasticity_step(norm)
 
   let mut normalized_w_sum : Float = 0.0F
   for k in 0..<nnz1 { normalized_w_sum = normalized_w_sum + v1[k] }

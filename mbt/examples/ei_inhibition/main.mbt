@@ -35,8 +35,8 @@ fn run_e_only(e : @neuron.IF, duration_ms : Float) -> Int {
 fn run_ei(
   e : @neuron.IF,
   i : @neuron.IF,
-  ei : @snn_mbt.SpikingSynapse,
-  ie : @snn_mbt.SpikingSynapse,
+  ei : @synapse.SpikingSynapse,
+  ie : @synapse.SpikingSynapse,
   duration_ms : Float,
 ) -> Int {
   let fm = @snn_mbt.Monitor::new_fire(e, 0)
@@ -63,8 +63,8 @@ fn main {
   let i_param = @neuron.IFParameter::with_el(-49.0F)
   let e2 = @neuron.IF::new(30, e_param, rng)
   let i_pop = @neuron.IF::new(10, i_param, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e2, i_pop, "ge", 1.5F, 0.0F, 0.8F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e2, "gaba", 3.0F, 0.0F, 0.8F, rng)
+  let ei = @synapse.SpikingSynapse::random(e2, i_pop, "ge", 1.5F, 0.0F, 0.8F, rng)
+  let ie = @synapse.SpikingSynapse::random(i_pop, e2, "gaba", 3.0F, 0.0F, 0.8F, rng)
   let n_inhib = run_ei(e2, i_pop, ei, ie, 500.0F)
 
   println("ei_inhibition.mbt: simulation done (500ms each)")

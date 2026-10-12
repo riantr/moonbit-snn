@@ -35,7 +35,7 @@ fn contains_int_local(arr : Array[Int], v : Int) -> Bool {
 pub fn average_weight(
   pre_pop_neurons : Array[Int],
   post_pop_neurons : Array[Int],
-  synapse : SpikingSynapse,
+  synapse : @synapse.SpikingSynapse,
 ) -> Float {
   let mut sum : Float = 0.0F
   let mut count : Int = 0
@@ -78,7 +78,7 @@ pub fn average_weight(
 pub fn average_weight_dynamics(
   pre_pop_neurons : Array[Int],
   post_pop_neurons : Array[Int],
-  synapse : SpikingSynapse,
+  synapse : @synapse.SpikingSynapse,
   record : Array[Float],
   n_steps : Int,
 ) -> Array[Float] {
@@ -126,7 +126,7 @@ pub fn average_weight_dynamics(
 pub fn weights_indices(
   pre_pop_neurons : Array[Int],
   post_pop_neurons : Array[Int],
-  synapse : SpikingSynapse,
+  synapse : @synapse.SpikingSynapse,
 ) -> Array[Int] {
   let pre_n = synapse.pre.n
   let post_n = synapse.post.n
@@ -159,7 +159,7 @@ pub fn update_weight(
   pre_pop_neurons : Array[Int],
   post_pop_neurons : Array[Int],
   factor : Float,
-  synapse : SpikingSynapse,
+  synapse : @synapse.SpikingSynapse,
 ) -> Unit {
   let matched = weights_indices(pre_pop_neurons, post_pop_neurons, synapse)
   let mut k = 0

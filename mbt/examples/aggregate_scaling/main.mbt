@@ -26,7 +26,7 @@ fn main {
   let e_pop = @neuron.IF::new(n, param, rng)
 
   // Random Bernoulli connectivity at p=0.2 (~2000 connections).
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge",
     10.0F, 0.0F, 0.2F, rng)
 
   // Tonic current drive: bring El close to Vt for spontaneous firing.
@@ -43,7 +43,7 @@ fn main {
   )
 
   // Build a SynapseTarget for our single SpikingSynapse.
-  let st_targets : Array[@snn_mbt.SynapseTarget] = [
+  let st_targets : Array[@synapse.SynapseTarget] = [
     { post_id: 0, vals: ee.matrix.vals, rowptr: ee.matrix.rowptr },
   ]
   let agg_scaling = @snn_mbt.AggregateScaling::with_plasticity_interval(
@@ -72,7 +72,7 @@ fn main {
   let fire : Array[Float] = Array::make(n, 0.0F)
   for s in 0..<total_steps {
     // 1. Forward synapse (SpikingSynapse).
-    @snn_mbt.spiking_connect(ee, 0, 0, 0.0F) // no-op: actual forward via compose not used here
+    @synapse.spiking_connect(ee, 0, 0, 0.0F) // no-op: actual forward via compose not used here
     // Use the existing forward + step machinery.
     @neuron.step_synapses(e_pop, dt)
     @neuron.synaptic_current(e_pop)

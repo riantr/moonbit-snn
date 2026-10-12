@@ -24,7 +24,7 @@ test "matrix_size — Npre=4, Npost=2 synapse" {
     [0.0F, 1.0F],
     [0.0F, 1.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   assert_eq(m.rows, 4)
   assert_eq(m.cols, 2)
   assert_eq(m.vals.length(), 4)
@@ -38,7 +38,7 @@ test "matrix_get — returns the weight for an existing connection" {
     [0.0F, 3.5F],
     [0.0F, 4.5F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   // Total weight = 1.5 + 2.5 + 3.5 + 4.5 = 12.0.
   let mut total = 0.0F
   let mut i = 0
@@ -63,7 +63,7 @@ test "matrix_set — updates the weight of an existing connection" {
     [0.0F, 0.0F],
     [0.0F, 0.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   assert_eq(m.vals[0], 1.5F)
   // Set the first connection's weight to 9.0F.
   ignore(m.vals.set(0, 9.0F))
@@ -78,7 +78,7 @@ test "matrix_set — vector update (set multiple to 0.0F)" {
     [0.0F, 1.0F],
     [0.0F, 1.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   // Set all weights to 0.
   let mut i = 0
   while i < m.vals.length() {
@@ -98,7 +98,7 @@ test "matrix_set — connection modify (set then read back)" {
     [1.0F],
     [2.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   // Modify the first connection's weight to 42.0F.
   ignore(m.vals.set(0, 42.0F))
   assert_eq(m.vals[0], 42.0F)
@@ -111,7 +111,7 @@ test "matrix_nnz — count non-zero entries" {
     [1.0F],
     [2.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   // nnz via rowptr[rows] = rowptr[2] = 2.
   assert_eq(m.rowptr[m.rows], 2)
   // Total weights.
@@ -128,7 +128,7 @@ test "matrix_set — zero-out diagonal (set everything to 0.0F)" {
     [0.0F, 0.0F, 1.0F, 0.0F],
     [0.0F, 0.0F, 0.0F, 1.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   // Set all weights to 42.0F.
   let mut i = 0
   while i < m.vals.length() {
@@ -151,7 +151,7 @@ test "matrix_set — full bulk-set preserves nnz + rowptr structure" {
     [2.0F, 3.0F, 0.0F],
     [0.0F, 0.0F, 4.0F],
   ]
-  let m = @snn_mbt.SparseMatrixCSR::from_dense(dense, 0.1F)
+  let m = @synapse.SparseMatrixCSR::from_dense(dense, 0.1F)
   let original_nnz = m.vals.length()
   assert_eq(original_nnz, 4)
   // Bulk-set all 4 weights to 0.0F.

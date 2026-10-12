@@ -7,7 +7,7 @@
 
 ///|
 test "IstdpRate::new: defaults match Julia" {
-  let p = @snn_mbt.IstdpRate::new()
+  let p = @synapse.IstdpRate::new()
   if p.eta != 0.01F {
     fail("eta = \{p.eta}, expected 0.01")
   }
@@ -28,7 +28,7 @@ test "IstdpRate::new: defaults match Julia" {
 
 ///|
 test "IstdpRateVariables::new: zero-initialised" {
-  let v = @snn_mbt.IstdpRateVariables::new(5, 4)
+  let v = @synapse.IstdpRateVariables::new(5, 4)
   if v.tpre.length() != 5 {
     fail("tpre length = \{v.tpre.length()}, expected 5")
   }
@@ -49,7 +49,7 @@ test "IstdpRateVariables::new: zero-initialised" {
 
 ///|
 test "IstdpRateEntry::new: fields populated" {
-  let e = @snn_mbt.IstdpRateEntry::new(0, 3, 2)
+  let e = @synapse.IstdpRateEntry::new(0, 3, 2)
   if e.conn_index != 0 {
     fail("conn_index = \{e.conn_index}, expected 0")
   }
@@ -67,10 +67,10 @@ test "IstdpRateEntry::new: fields populated" {
 
 ///|
 test "IstdpRateEntry::change_plasticity: swaps param, preserves vars" {
-  let e = @snn_mbt.IstdpRateEntry::new(0, 3, 3)
+  let e = @synapse.IstdpRateEntry::new(0, 3, 3)
   e.vars.tpre[0] = 0.7F
   e.vars.tpost[1] = 0.5F
-  let new_param : @snn_mbt.IstdpRate = {
+  let new_param : @synapse.IstdpRate = {
     eta: 0.05F,
     r: 0.1F * @core.hz,
     tau_y: 100.0F,
@@ -98,12 +98,12 @@ test "istdp_rate_step: trace decay + spike bump" {
   let post_fire : Array[Bool] = [false]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.IstdpRateVariables::new(1, 1)
+  let vars = @synapse.IstdpRateVariables::new(1, 1)
   vars.tpre[0] = 1.0F
   vars.tpost[0] = 1.0F
-  let p = @snn_mbt.IstdpRate::new()
+  let p = @synapse.IstdpRate::new()
   let dt = 0.125F
-  @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   let decay : Float = 1.0F - dt / p.tau_y
   // tpre after decay (no fire) = 1 * decay = 0.9975
   if (vars.tpre[0] - decay).abs() > 1.0e-5F {
@@ -125,11 +125,11 @@ test "istdp_rate_step: pre spike adds eta * (tpost - 2 * r * tau_y)" {
   let post_fire : Array[Bool] = [false]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.IstdpRateVariables::new(1, 1)
+  let vars = @synapse.IstdpRateVariables::new(1, 1)
   vars.tpost[0] = 0.5F
-  let p = @snn_mbt.IstdpRate::new()
+  let p = @synapse.IstdpRate::new()
   let dt = 0.125F
-  @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   let decay : Float = 1.0F - dt / p.tau_y
   let tpost_after = 0.5F * decay
   let dw = p.eta * (tpost_after - 2.0F * p.r * p.tau_y)
@@ -148,11 +148,11 @@ test "istdp_rate_step: post spike adds eta * tpre[j]" {
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.IstdpRateVariables::new(1, 1)
+  let vars = @synapse.IstdpRateVariables::new(1, 1)
   vars.tpre[0] = 0.7F
-  let p = @snn_mbt.IstdpRate::new()
+  let p = @synapse.IstdpRate::new()
   let dt = 0.125F
-  @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   let decay : Float = 1.0F - dt / p.tau_y
   let dw = p.eta * (0.7F * decay)
   let expected = 10.0F + dw
@@ -169,14 +169,14 @@ test "istdp_rate_step: weight clamps at w_max (LTP side)" {
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.IstdpRateVariables::new(1, 1)
+  let vars = @synapse.IstdpRateVariables::new(1, 1)
   vars.tpre[0] = 1.0F
-  let p = @snn_mbt.IstdpRate::new()
+  let p = @synapse.IstdpRate::new()
   let dt = 0.125F
   // Run many iterations with post firing each step; reset tpre
   // each step so the bump is constant.
   for _ in 0..<50000 {
-    @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+    @synapse.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
     vars.tpre[0] = 1.0F
   }
   if (w[0] - 243.0F).abs() > 1.0e-3F {
@@ -197,12 +197,12 @@ test "istdp_rate_step: weights stay finite over many steps" {
   let colptr : Array[Int] = [
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
-  let vars = @snn_mbt.IstdpRateVariables::new(n_pre, n_post)
-  let p = @snn_mbt.IstdpRate::new()
+  let vars = @synapse.IstdpRateVariables::new(n_pre, n_post)
+  let p = @synapse.IstdpRate::new()
   let dt = 0.125F
   for step in 0..<200 {
     let _ = step
-    @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {
@@ -230,8 +230,8 @@ test "istdp_rate_step: integration — random pre/post spikes" {
   let colptr : Array[Int] = [
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
-  let vars = @snn_mbt.IstdpRateVariables::new(n_pre, n_post)
-  let p = @snn_mbt.IstdpRate::new()
+  let vars = @synapse.IstdpRateVariables::new(n_pre, n_post)
+  let p = @synapse.IstdpRate::new()
   let dt = 0.125F
   let rng = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
@@ -244,7 +244,7 @@ test "istdp_rate_step: integration — random pre/post spikes" {
     for k in 0..<n_post {
       post_fire[k] = @core.next_f32(rng) < 0.3F
     }
-    @snn_mbt.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.istdp_rate_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {

@@ -31,13 +31,13 @@ fn main {
   for k in 0..<ni { i_pop.i[k] = 250.0F }
 
   // Recurrent connectivity (Fixed-rule with p=0.05).
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge",
     2.0F, 0.0F, 0.05F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge",
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge",
     2.0F, 0.0F, 0.05F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gi",
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gi",
     10.0F, 0.0F, 0.05F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gi",
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gi",
     10.0F, 0.0F, 0.05F, rng)
 
   // Poisson afferents at 20 Hz × 100 = 2000Hz (MoonBit internal 2.0F).

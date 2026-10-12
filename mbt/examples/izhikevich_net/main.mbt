@@ -35,10 +35,10 @@ fn main {
   let i = @neuron.IZ::new(n_i, param_i, rng)
 
   // Build the 4 synapses with random connectivity (Julia's conn = (μ, p)).
-  let ee = @snn_mbt.SpikingSynapseIZ::random(e, e, "ge", 0.5F, 0.0F, 0.8F, rng)
-  let ei = @snn_mbt.SpikingSynapseIZ::random(e, i, "ge", 0.5F, 0.0F, 0.8F, rng)
-  let ie = @snn_mbt.SpikingSynapseIZ::random(i, e, "gi", 1.0F, 0.0F, 0.8F, rng)
-  let ii = @snn_mbt.SpikingSynapseIZ::random(i, i, "gi", 1.0F, 0.0F, 0.8F, rng)
+  let ee = @synapse.SpikingSynapseIZ::random(e, e, "ge", 0.5F, 0.0F, 0.8F, rng)
+  let ei = @synapse.SpikingSynapseIZ::random(e, i, "ge", 0.5F, 0.0F, 0.8F, rng)
+  let ie = @synapse.SpikingSynapseIZ::random(i, e, "gi", 1.0F, 0.0F, 0.8F, rng)
+  let ii = @synapse.SpikingSynapseIZ::random(i, i, "gi", 1.0F, 0.0F, 0.8F, rng)
 
   println("izhikevich_net.mbt: IZ Brunel-style network")
   println("  Ne = " + n_e.to_string() + ", Ni = " + n_i.to_string())
@@ -62,10 +62,10 @@ fn main {
       i.i[j] = 2.0F * Float::from_double(z1)
     }
     // Propagate spikes + integrate.
-    @snn_mbt.forward_iz_synapse(ee)
-    @snn_mbt.forward_iz_synapse(ei)
-    @snn_mbt.forward_iz_synapse(ie)
-    @snn_mbt.forward_iz_synapse(ii)
+    @synapse.forward_iz_synapse(ee)
+    @synapse.forward_iz_synapse(ei)
+    @synapse.forward_iz_synapse(ie)
+    @synapse.forward_iz_synapse(ii)
     @neuron.step_iz(e, dt)
     @neuron.step_iz(i, dt)
     for j in 0..<n_e {

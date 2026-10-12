@@ -101,7 +101,7 @@ test "HeterogeneousModel: compose with multiple pops + conns" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(5, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(5, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::random(
+  let syn = @synapse.SpikingSynapse::random(
     pre, post, "ge", 1.0F, 0.0F, 0.5F, rng,
   )
   let any_pre : @snn_mbt.AnyPop = @snn_mbt.IF_(pre)

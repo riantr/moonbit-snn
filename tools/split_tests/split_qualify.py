@@ -390,9 +390,14 @@ def _split_decl(text):
     m = _DECL_SPLIT.match(line)
     if not m:
         # A bare member line: an enum variant or a struct field, indented with
-        # no declaration keyword. The whole line is being declared, so none of
-        # it may be rewritten -- including any type it annotates, since that
-        # type is written at the same site.
+        # no declaration keyword. The member's own NAME is being declared, so it
+        # must stay bare — but its type annotation is ordinary code and does
+        # need the prefix. `conns : Array[SpikingSynapse]` inside
+        # `pub(all) struct HeterogeneousModel` is exactly this: qualifying the
+        # type is required, and qualifying `conns` would be a syntax error.
+        vm = re.match(r'^(\s*)([A-Za-z_][\w]*)\s*(:|\()', line)
+        if vm and not line.lstrip().startswith(('pub', 'fn', 'let', 'type')):
+            return line[:vm.end(2)], line[vm.end(2):]
         return line, rest
     tail = line[m.end():]
     nm = re.match(r'\s*(?:"C"\s+)?[A-Za-z_][\w]*(?:::)?', tail)

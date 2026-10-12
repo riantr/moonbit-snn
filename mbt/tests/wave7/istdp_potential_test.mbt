@@ -8,7 +8,7 @@
 
 ///|
 test "IstdpPotential::new: defaults match Julia" {
-  let p = @snn_mbt.IstdpPotential::new()
+  let p = @synapse.IstdpPotential::new()
   if p.eta != 0.001F {
     fail("eta = \{p.eta}, expected 0.001")
   }
@@ -28,7 +28,7 @@ test "IstdpPotential::new: defaults match Julia" {
 
 ///|
 test "IstdpPotentialVariables::new: zero-initialised" {
-  let v = @snn_mbt.IstdpPotentialVariables::new(5, 4)
+  let v = @synapse.IstdpPotentialVariables::new(5, 4)
   if v.tpre.length() != 5 {
     fail("tpre length = \{v.tpre.length()}, expected 5")
   }
@@ -49,7 +49,7 @@ test "IstdpPotentialVariables::new: zero-initialised" {
 
 ///|
 test "IstdpPotentialEntry::new: fields populated" {
-  let e = @snn_mbt.IstdpPotentialEntry::new(0, 3, 2)
+  let e = @synapse.IstdpPotentialEntry::new(0, 3, 2)
   if e.conn_index != 0 {
     fail("conn_index = \{e.conn_index}, expected 0")
   }
@@ -66,10 +66,10 @@ test "IstdpPotentialEntry::new: fields populated" {
 
 ///|
 test "IstdpPotentialEntry::change_plasticity: swaps param, preserves vars" {
-  let e = @snn_mbt.IstdpPotentialEntry::new(0, 3, 3)
+  let e = @synapse.IstdpPotentialEntry::new(0, 3, 3)
   e.vars.tpre[0] = 0.7F
   e.vars.tpost[1] = 0.5F
-  let new_param : @snn_mbt.IstdpPotential = {
+  let new_param : @synapse.IstdpPotential = {
     eta: 0.05F,
     v0: -40.0F,
     tau_y: 100.0F,
@@ -102,12 +102,12 @@ test "istdp_potential_step: tpre decays to 0; tpost low-pass filters v_post" {
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
   let v_post : Array[Float] = [60.0F]
-  let vars = @snn_mbt.IstdpPotentialVariables::new(1, 1)
+  let vars = @synapse.IstdpPotentialVariables::new(1, 1)
   vars.tpre[0] = 1.0F
   vars.tpost[0] = 0.0F
-  let p = @snn_mbt.IstdpPotential::new()
+  let p = @synapse.IstdpPotential::new()
   let dt = 0.125F
-  @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
+  @synapse.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
   // tpre: 1.0 * (1 - dt/tau_y) = 1 * 0.999375 = 0.999375.
   let tpre_expected : Float = 1.0F * (1.0F - dt / p.tau_y)
   if (vars.tpre[0] - tpre_expected).abs() > 1.0e-5F {
@@ -131,11 +131,11 @@ test "istdp_potential_step: pre spike adds eta * (tpost - v0)" {
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
   let v_post : Array[Float] = [60.0F]
-  let vars = @snn_mbt.IstdpPotentialVariables::new(1, 1)
+  let vars = @synapse.IstdpPotentialVariables::new(1, 1)
   vars.tpost[0] = 0.0F
-  let p = @snn_mbt.IstdpPotential::new()
+  let p = @synapse.IstdpPotential::new()
   let dt = 0.125F
-  @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
+  @synapse.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
   let tpost_after = dt * 60.0F / p.tau_y
   let dw = p.eta * (tpost_after - p.v0)
   let expected = 10.0F + dw
@@ -153,11 +153,11 @@ test "istdp_potential_step: post spike adds eta * tpre[j]" {
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
   let v_post : Array[Float] = [60.0F]
-  let vars = @snn_mbt.IstdpPotentialVariables::new(1, 1)
+  let vars = @synapse.IstdpPotentialVariables::new(1, 1)
   vars.tpre[0] = 0.7F
-  let p = @snn_mbt.IstdpPotential::new()
+  let p = @synapse.IstdpPotential::new()
   let dt = 0.125F
-  @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
+  @synapse.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
   let tpre_after : Float = 0.7F * (1.0F - dt / p.tau_y)
   let dw = p.eta * tpre_after
   let expected = 10.0F + dw
@@ -175,13 +175,13 @@ test "istdp_potential_step: weight clamps at w_max (LTP side)" {
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
   let v_post : Array[Float] = [60.0F]
-  let vars = @snn_mbt.IstdpPotentialVariables::new(1, 1)
+  let vars = @synapse.IstdpPotentialVariables::new(1, 1)
   vars.tpre[0] = 1.0F
-  let p = @snn_mbt.IstdpPotential::new()
+  let p = @synapse.IstdpPotential::new()
   let dt = 0.125F
   // Need many iterations because eta is much smaller (0.001 vs 0.01).
   for _ in 0..<200000 {
-    @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
+    @synapse.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, 0.0F, dt)
     vars.tpre[0] = 1.0F
   }
   if (w[0] - 243.0F).abs() > 1.0e-3F {
@@ -202,12 +202,12 @@ test "istdp_potential_step: weights stay finite over many steps" {
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
   let v_post : Array[Float] = Array::make(n_post, 60.0F)
-  let vars = @snn_mbt.IstdpPotentialVariables::new(n_pre, n_post)
-  let p = @snn_mbt.IstdpPotential::new()
+  let vars = @synapse.IstdpPotentialVariables::new(n_pre, n_post)
+  let p = @synapse.IstdpPotential::new()
   let dt = 0.125F
   for step in 0..<200 {
     let _ = step
-    @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {
@@ -237,8 +237,8 @@ test "istdp_potential_step: integration — random drive + varying v_post" {
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
   let v_post : Array[Float] = Array::make(n_post, 0.0F)
-  let vars = @snn_mbt.IstdpPotentialVariables::new(n_pre, n_post)
-  let p = @snn_mbt.IstdpPotential::new()
+  let vars = @synapse.IstdpPotentialVariables::new(n_pre, n_post)
+  let p = @synapse.IstdpPotential::new()
   let dt = 0.125F
   let rng = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
@@ -253,7 +253,7 @@ test "istdp_potential_step: integration — random drive + varying v_post" {
       // Vary v_post in [-70, 50] mV.
       v_post[k] = -70.0F + 120.0F * @core.next_f32(rng)
     }
-    @snn_mbt.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.istdp_potential_step(w, pre_fire, post_fire, colptr, rowptr, v_post, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {

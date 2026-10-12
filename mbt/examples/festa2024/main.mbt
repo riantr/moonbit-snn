@@ -31,13 +31,13 @@ fn main {
   let i_pop = @neuron.IF::new(ni, @neuron.IFParameter::new(), rng)
 
   // Random connectivity (Bernoulli).
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge",
     1.0F, 0.0F, 0.2F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge",
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge",
     1.0F, 0.0F, 0.1F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gi",
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gi",
     1.8F, 0.0F, 0.3F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gi",
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gi",
     0.3F, 0.0F, 0.2F, rng)
 
   // Poisson stimuli. Rate = 2500Hz for E (50Hz*50), 2000Hz for I1 (50Hz*40).

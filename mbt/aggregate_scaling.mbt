@@ -121,7 +121,7 @@ pub struct AggregateScaling {
   param : AggregateScalingParameter
   n : Int
   // SynapseTarget list (same as SynapseNormalization).
-  targets : Array[SynapseTarget]
+  targets : Array[@synapse.SynapseTarget]
   // Per-post-neuron current weight sum (recomputed in plasticity).
   // Note: Array fields don't need `mut` in MoonBit — element
   // assignment `arr[i] = x` works regardless.
@@ -145,7 +145,7 @@ pub struct AggregateScaling {
 /// incoming weights (matches Julia's constructor).
 pub fn AggregateScaling::new(
   n : Int,
-  targets : Array[SynapseTarget],
+  targets : Array[@synapse.SynapseTarget],
   param : AggregateScalingParameter,
 ) -> AggregateScaling {
   // Compute WT[i] = sum of incoming weights at construction.

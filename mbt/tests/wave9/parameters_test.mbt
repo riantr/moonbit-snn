@@ -194,7 +194,7 @@ test "IF has DoubleExpSynapse-style scalar time constants" {
 ///|
 test "Receptor / NMDAVoltageDependency constructors work" {
   // Receptor — minimal AMPA-like synapse kinetics.
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   if ampa.e_rev != 0.0F {
     fail("AMPA E_rev = \{ampa.e_rev}, expected 0.0")
   }
@@ -202,12 +202,12 @@ test "Receptor / NMDAVoltageDependency constructors work" {
     fail("AMPA τr = \{ampa.tau_r}, expected 0.26")
   }
   // NMDAVoltageDependency — defaults (Eyal-style).
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
   if (nmda_dep.mg - 1.0F).abs() > 1.0e-6F {
     fail("NMDA mg = \{nmda_dep.mg}, expected 1.0")
   }
   // Soma NMDA variant.
-  let nmda_soma = @snn_mbt.NMDAVoltageDependency::soma()
+  let nmda_soma = @synapse.NMDAVoltageDependency::soma()
   if (nmda_soma.b - 3.57F).abs() > 1.0e-6F {
     fail("Soma NMDA b = \{nmda_soma.b}, expected 3.57")
   }

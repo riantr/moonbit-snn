@@ -3,16 +3,16 @@
 ///|
 test "alpha_synapse — (τd - τr) / (τd * τr) matches Julia" {
   // AMPA: τr=1, τd=6 → α = 5/6 ≈ 0.8333
-  assert_eq(@snn_mbt.alpha_synapse(1.0F, 6.0F) > 0.83F && @snn_mbt.alpha_synapse(1.0F, 6.0F) < 0.84F, true)
+  assert_eq(@synapse.alpha_synapse(1.0F, 6.0F) > 0.83F && @synapse.alpha_synapse(1.0F, 6.0F) < 0.84F, true)
   // NMDA: τr=1, τd=100 → α = 99/100 = 0.99
-  assert_eq(@snn_mbt.alpha_synapse(1.0F, 100.0F) > 0.98F && @snn_mbt.alpha_synapse(1.0F, 100.0F) < 1.0F, true)
+  assert_eq(@synapse.alpha_synapse(1.0F, 100.0F) > 0.98F && @synapse.alpha_synapse(1.0F, 100.0F) < 1.0F, true)
   // GABAa: τr=0.5, τd=2 → α = 1.5/1.0 = 1.5
-  assert_eq(@snn_mbt.alpha_synapse(0.5F, 2.0F) > 1.49F && @snn_mbt.alpha_synapse(0.5F, 2.0F) < 1.51F, true)
+  assert_eq(@synapse.alpha_synapse(0.5F, 2.0F) > 1.49F && @synapse.alpha_synapse(0.5F, 2.0F) < 1.51F, true)
 }
 
 ///|
 test "Glutamatergic::new defaults — AMPA + NMDA" {
-  let g = @snn_mbt.Glutamatergic::new()
+  let g = @synapse.Glutamatergic::new()
   // AMPA default: e_rev=0, τr=6, τd=0, g0=1.0, target="glu"
   assert_eq(g.ampa.e_rev, 0.0F)
   assert_eq(g.ampa.tau_r, 6.0F)
@@ -26,9 +26,9 @@ test "Glutamatergic::new defaults — AMPA + NMDA" {
 
 ///|
 test "Glutamatergic::custom — custom AMPA + NMDA" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 2.0F, 10.0F, 2.5F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 5.0F, 50.0F, 1.5F)
-  let g = @snn_mbt.Glutamatergic::custom(ampa=ampa, nmda=nmda)
+  let ampa = @synapse.Receptor::simple(0.0F, 2.0F, 10.0F, 2.5F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 5.0F, 50.0F, 1.5F)
+  let g = @synapse.Glutamatergic::custom(ampa=ampa, nmda=nmda)
   assert_eq(g.ampa.tau_r, 2.0F)
   assert_eq(g.ampa.tau_d, 10.0F)
   assert_eq(g.ampa.g0, 2.5F)
@@ -39,7 +39,7 @@ test "Glutamatergic::custom — custom AMPA + NMDA" {
 
 ///|
 test "GABAergic::new defaults — GABAa + GABAb" {
-  let g = @snn_mbt.GABAergic::new()
+  let g = @synapse.GABAergic::new()
   // GABAa default: e_rev=-75, τr=0.5, τd=2
   assert_eq(g.gabaa.e_rev, -75.0F)
   assert_eq(g.gabaa.tau_r, 0.5F)
@@ -54,9 +54,9 @@ test "GABAergic::new defaults — GABAa + GABAb" {
 
 ///|
 test "GABAergic::custom — custom GABAa + GABAb" {
-  let gabaa = @snn_mbt.Receptor::simple(-80.0F, 1.0F, 5.0F, 0.5F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-80.0F, 1.0F, 30.0F, 0.3F, "gaba")
-  let g = @snn_mbt.GABAergic::custom(gabaa=gabaa, gabab=gabab)
+  let gabaa = @synapse.Receptor::simple(-80.0F, 1.0F, 5.0F, 0.5F, "gaba")
+  let gabab = @synapse.Receptor::simple(-80.0F, 1.0F, 30.0F, 0.3F, "gaba")
+  let g = @synapse.GABAergic::custom(gabaa=gabaa, gabab=gabab)
   assert_eq(g.gabaa.e_rev, -80.0F)
   assert_eq(g.gabaa.tau_d, 5.0F)
   assert_eq(g.gabab.tau_d, 30.0F)
@@ -65,8 +65,8 @@ test "GABAergic::custom — custom GABAa + GABAb" {
 
 ///|
 test "Glutamatergic + GABAergic — fields preserved through struct" {
-  let glu = @snn_mbt.Glutamatergic::new()
-  let gaba = @snn_mbt.GABAergic::new()
+  let glu = @synapse.Glutamatergic::new()
+  let gaba = @synapse.GABAergic::new()
   // Verify the fields are independent (no shared refs)
   assert_eq(glu.ampa.is_nmda, false)
   assert_eq(glu.nmda.is_nmda, true)
@@ -76,10 +76,10 @@ test "Glutamatergic + GABAergic — fields preserved through struct" {
 
 ///|
 test "alpha_synapse = same value as Receptor::simple.alpha field" {
-  let r = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  let r = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
   // Receptor::simple computes α = (τd - τr) / (τd * τr)
   // which equals alpha_synapse(τr, τd)
-  let a = @snn_mbt.alpha_synapse(1.0F, 6.0F)
+  let a = @synapse.alpha_synapse(1.0F, 6.0F)
   let _ = r.alpha
   // alpha_synapse = (6-1)/(6*1) = 5/6 ≈ 0.833
   assert_eq(a > 0.83F && a < 0.84F, true)
@@ -87,9 +87,9 @@ test "alpha_synapse = same value as Receptor::simple.alpha field" {
 
 ///|
 test "Receptors::from_pair — Glu + GABA → 4-element collection" {
-  let glu = @snn_mbt.Glutamatergic::new()
-  let gaba = @snn_mbt.GABAergic::new()
-  let r = @snn_mbt.Receptors::from_pair(glu, gaba)
+  let glu = @synapse.Glutamatergic::new()
+  let gaba = @synapse.GABAergic::new()
+  let r = @synapse.Receptors::from_pair(glu, gaba)
   // Index 0 = AMPA, 1 = NMDA, 2 = GABAa, 3 = GABAb
   assert_eq(r.rec.length(), 4)
   assert_eq(r.rec[0].target, "glu")
@@ -101,13 +101,13 @@ test "Receptors::from_pair — Glu + GABA → 4-element collection" {
 
 ///|
 test "Receptors::from_pair — custom glu + gaba preserved" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 2.0F, 10.0F, 2.5F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 5.0F, 50.0F, 1.5F)
-  let gabaa = @snn_mbt.Receptor::simple(-80.0F, 1.0F, 5.0F, 0.5F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-80.0F, 1.0F, 30.0F, 0.3F, "gaba")
-  let r = @snn_mbt.Receptors::from_pair(
-    @snn_mbt.Glutamatergic::custom(ampa=ampa, nmda=nmda),
-    @snn_mbt.GABAergic::custom(gabaa=gabaa, gabab=gabab),
+  let ampa = @synapse.Receptor::simple(0.0F, 2.0F, 10.0F, 2.5F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 5.0F, 50.0F, 1.5F)
+  let gabaa = @synapse.Receptor::simple(-80.0F, 1.0F, 5.0F, 0.5F, "gaba")
+  let gabab = @synapse.Receptor::simple(-80.0F, 1.0F, 30.0F, 0.3F, "gaba")
+  let r = @synapse.Receptors::from_pair(
+    @synapse.Glutamatergic::custom(ampa=ampa, nmda=nmda),
+    @synapse.GABAergic::custom(gabaa=gabaa, gabab=gabab),
   )
   assert_eq(r.rec[0].tau_r, 2.0F)
   assert_eq(r.rec[1].tau_r, 5.0F)
@@ -118,16 +118,16 @@ test "Receptors::from_pair — custom glu + gaba preserved" {
 ///|
 test "receptors_current — sums AMPA + NMDA + GABAa + GABAb" {
   // 4-receptor collection with known conductances; verify sum.
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
-  let gabaa = @snn_mbt.Receptor::simple(-75.0F, 0.5F, 2.0F, 1.0F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-75.0F, 0.5F, 20.0F, 1.0F, "gaba")
-  let rs = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
+  let ampa = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
+  let gabaa = @synapse.Receptor::simple(-75.0F, 0.5F, 2.0F, 1.0F, "gaba")
+  let gabab = @synapse.Receptor::simple(-75.0F, 0.5F, 20.0F, 1.0F, "gaba")
+  let rs = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
   // g_matrix: N=2 × 4 columns, all set to 1
   let g_mat : Array[Float] = Array::make(8, 1.0F)
   let v : Array[Float] = [-70.0F, -60.0F]
   let out : Array[Float] = Array::make(2, 0.0F)
-  @snn_mbt.receptors_current(g_mat, v, rs, @snn_mbt.NMDAVoltageDependency::eyal(), out)
+  @synapse.receptors_current(g_mat, v, rs, @synapse.NMDAVoltageDependency::eyal(), out)
   // AMPA contribution: gsyn=1 * 1 * (v - 0) = v
   // NMDA contribution: gsyn=1 * 1 * (v - 0) * B(v)
   //   B(-70) ≈ 0.024 (full Mg block), B(-60) ≈ 0.045
@@ -150,26 +150,26 @@ test "receptors_current — sums AMPA + NMDA + GABAa + GABAb" {
 
 ///|
 test "receptors_current — zero g_matrix stays zero" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
-  let gabaa = @snn_mbt.Receptor::simple(-75.0F, 0.5F, 2.0F, 1.0F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-75.0F, 0.5F, 20.0F, 1.0F, "gaba")
-  let rs = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
+  let ampa = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
+  let gabaa = @synapse.Receptor::simple(-75.0F, 0.5F, 2.0F, 1.0F, "gaba")
+  let gabab = @synapse.Receptor::simple(-75.0F, 0.5F, 20.0F, 1.0F, "gaba")
+  let rs = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
   let g_mat : Array[Float] = Array::make(8, 0.0F)
   let v : Array[Float] = [-50.0F, -70.0F]
   let out : Array[Float] = Array::make(2, 0.0F)
-  @snn_mbt.receptors_current(g_mat, v, rs, @snn_mbt.NMDAVoltageDependency::eyal(), out)
+  @synapse.receptors_current(g_mat, v, rs, @synapse.NMDAVoltageDependency::eyal(), out)
   assert_eq(out[0], 0.0F)
   assert_eq(out[1], 0.0F)
 }
 
 ///|
 test "receptors_current — pure AMPA contribution matches receptor_current" {
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
-  let nmda = @snn_mbt.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
-  let gabaa = @snn_mbt.Receptor::simple(-75.0F, 0.5F, 2.0F, 0.0F, "gaba") // g0=0 → gsyn=0
-  let gabab = @snn_mbt.Receptor::simple(-75.0F, 0.5F, 20.0F, 0.0F, "gaba") // g0=0 → gsyn=0
-  let rs = @snn_mbt.Receptors::new(ampa, nmda, gabaa, gabab)
+  let ampa = @synapse.Receptor::simple(0.0F, 1.0F, 6.0F, 1.0F, "glu")
+  let nmda = @synapse.Receptor::nmda(0.0F, 1.0F, 100.0F, 1.0F)
+  let gabaa = @synapse.Receptor::simple(-75.0F, 0.5F, 2.0F, 0.0F, "gaba") // g0=0 → gsyn=0
+  let gabab = @synapse.Receptor::simple(-75.0F, 0.5F, 20.0F, 0.0F, "gaba") // g0=0 → gsyn=0
+  let rs = @synapse.Receptors::new(ampa, nmda, gabaa, gabab)
   // Set gAMPA=2, gNMDA=0, gGABAa=0, gGABAb=0
   let g_mat : Array[Float] = Array::make(8, 0.0F)
   ignore(g_mat.set(0, 2.0F))  // neuron 0, AMPA
@@ -178,7 +178,7 @@ test "receptors_current — pure AMPA contribution matches receptor_current" {
   ignore(v.set(0, -50.0F))
   ignore(v.set(1, -70.0F))
   let out : Array[Float] = Array::make(2, 0.0F)
-  @snn_mbt.receptors_current(g_mat, v, rs, @snn_mbt.NMDAVoltageDependency::eyal(), out)
+  @synapse.receptors_current(g_mat, v, rs, @synapse.NMDAVoltageDependency::eyal(), out)
   // AMPA-only (with norm_synapse scaling):
   // gsyn = 1 * norm_synapse(1, 6) ≈ 1.717
   // out[i] = gsyn * g[i] * (v[i] - e_rev) = 1.717 * 2 * v

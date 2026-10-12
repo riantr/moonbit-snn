@@ -28,15 +28,15 @@ fn main {
 
   // 4-receptor collection (AMPA, NMDA, GABAa, GABAb).
   // Use EyalGluDend-style params from Julia.
-  let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
-  let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
-  let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
-  let gabab = @snn_mbt.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
-  let receptors = @snn_mbt.Receptors::new(ampa, nmda_rec, gabaa, gabab)
-  let nmda_dep = @snn_mbt.NMDAVoltageDependency::eyal()
+  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
+  let nmda_rec = @synapse.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
+  let gabaa = @synapse.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
+  let gabab = @synapse.Receptor::simple(-90.0F, 30.0F, 400.0F, 0.006F, "gaba")
+  let receptors = @synapse.Receptors::new(ampa, nmda_rec, gabaa, gabab)
+  let nmda_dep = @synapse.NMDAVoltageDependency::eyal()
 
   // ReceptorSynapseTripod targeting :d1, μ=2.0, σ=0, p=1.0.
-  let cs = @snn_mbt.ReceptorSynapseTripod::new(
+  let cs = @synapse.ReceptorSynapseTripod::new(
     pre, post, "d1", receptors, nmda_dep, 2.0F, 0.0F, 1.0F, rng,
   )
 
@@ -53,9 +53,9 @@ fn main {
     let _ = _step
     pre.fire[0] = true
     // AMPA = receptor 0 → forward to glu_d1.
-    @snn_mbt.forward_receptor_tripod_synapse(cs, 0, 0.0F)
+    @synapse.forward_receptor_tripod_synapse(cs, 0, 0.0F)
     // Run 2-state ODE for all 4 receptors on :d1.
-    @snn_mbt.step_receptors_tripod_synapse(cs, dt)
+    @synapse.step_receptors_tripod_synapse(cs, dt)
     // Integrate TripodHet.
     @neuron.step_tripod_het(post, dt)
     for k in 0..<n_post {

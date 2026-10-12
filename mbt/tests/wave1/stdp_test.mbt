@@ -106,9 +106,9 @@ test "compose with stdp applies plasticity automatically" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
+  let ee = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(ee, 1, 1, 1.0F)
+  @synapse.spiking_connect(ee, 2, 2, 1.0F)
   // STDP entry for the connection at conns[0].
   let entry = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(0, 2, 2))
   let model = @snn_mbt.compose(
@@ -496,9 +496,9 @@ test "compose dispatches STDPMexicanHat entry automatically" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
+  let ee = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(ee, 1, 1, 1.0F)
+  @synapse.spiking_connect(ee, 2, 2, 1.0F)
   // Use both pre and post firing to drive MexicanHat (tpre=tpost=1 → log(1)=0 → mex=1).
   let entry = @snn_mbt.MexicanHat_(
     @snn_mbt.STDPEntryMexicanHat::new(0, 2, 2, param=@snn_mbt.STDPMexicanHat::new()),
@@ -531,9 +531,9 @@ test "compose dispatches STDPAntiSymmetric entry automatically" {
   let rng = @core.Xoshiro::default()
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
+  let ee = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(ee, 1, 1, 1.0F)
+  @synapse.spiking_connect(ee, 2, 2, 1.0F)
   let entry = @snn_mbt.AntiSymmetric_(
     @snn_mbt.STDPEntryAntiSymmetric::new(0, 2, 2, param=@snn_mbt.STDPAntiSymmetric::new()),
   )

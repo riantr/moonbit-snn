@@ -7,7 +7,7 @@ test "average_weight — empty intersection returns 0.0" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   if m != 0.0F { fail("empty intersection should return 0.0F, got \{m}") }
 }
@@ -19,14 +19,14 @@ test "average_weight — full connectivity uniform weight" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   // spiking_connect uses 1-based pre, 1-based post.
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.5F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 1.5F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 1.5F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 1.5F)
-  @snn_mbt.spiking_connect(syn, 3, 1, 1.5F)
-  @snn_mbt.spiking_connect(syn, 3, 2, 1.5F)
+  @synapse.spiking_connect(syn, 1, 1, 1.5F)
+  @synapse.spiking_connect(syn, 1, 2, 1.5F)
+  @synapse.spiking_connect(syn, 2, 1, 1.5F)
+  @synapse.spiking_connect(syn, 2, 2, 1.5F)
+  @synapse.spiking_connect(syn, 3, 1, 1.5F)
+  @synapse.spiking_connect(syn, 3, 2, 1.5F)
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   if (m - 1.5F).abs() > 1.0e-6 { fail("expected 1.5F, got \{m}") }
 }
@@ -38,8 +38,8 @@ test "average_weight — partial connectivity (1 of 4 edges)" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 0.8F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 0.8F)
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   if (m - 0.8F).abs() > 1.0e-6 { fail("expected 0.8F, got \{m}") }
 }
@@ -51,15 +51,15 @@ test "average_weight — mixed pre-pop excludes non-listed pre" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   // pre=0 → 1.0, 2.0; pre=1 → 5.0, 6.0; pre=2 → 10.0, 11.0
   // (mean over pre=0 only = (1+2)/2 = 1.5)
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 5.0F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 6.0F)
-  @snn_mbt.spiking_connect(syn, 3, 1, 10.0F)
-  @snn_mbt.spiking_connect(syn, 3, 2, 11.0F)
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 1, 2, 2.0F)
+  @synapse.spiking_connect(syn, 2, 1, 5.0F)
+  @synapse.spiking_connect(syn, 2, 2, 6.0F)
+  @synapse.spiking_connect(syn, 3, 1, 10.0F)
+  @synapse.spiking_connect(syn, 3, 2, 11.0F)
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   if (m - 1.5F).abs() > 1.0e-6 { fail("expected 1.5F (pre=0 only), got \{m}") }
 }
@@ -71,11 +71,11 @@ test "average_weight — pre=full, post=subset (filters post)" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 4.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 3.0F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 2.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 1, 2, 4.0F)
+  @synapse.spiking_connect(syn, 2, 1, 3.0F)
+  @synapse.spiking_connect(syn, 2, 2, 2.0F)
   // Mean of edges to post=1: (4.0 + 2.0) / 2 = 3.0
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   if (m - 3.0F).abs() > 1.0e-6 { fail("expected 3.0F, got \{m}") }
@@ -88,9 +88,9 @@ test "average_weight — out-of-bounds post filter returns 0.0" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 1, 2, 2.0F)
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   // No edges match → 0.0F (count=0 returns 0.0F)
   if m != 0.0F { fail("expected 0.0F for out-of-bounds post filter, got \{m}") }
@@ -103,11 +103,11 @@ test "average_weight_dynamics — uniform weights, 3 timesteps" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)  // edge 0 (pre=0, post=0)
-  @snn_mbt.spiking_connect(syn, 1, 2, 0.0F)  // edge 1 (pre=0, post=1)
-  @snn_mbt.spiking_connect(syn, 2, 1, 0.5F)  // edge 2 (pre=1, post=0)
-  @snn_mbt.spiking_connect(syn, 2, 2, 0.0F)  // edge 3 (pre=1, post=1)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)  // edge 0 (pre=0, post=0)
+  @synapse.spiking_connect(syn, 1, 2, 0.0F)  // edge 1 (pre=0, post=1)
+  @synapse.spiking_connect(syn, 2, 1, 0.5F)  // edge 2 (pre=1, post=0)
+  @synapse.spiking_connect(syn, 2, 2, 0.0F)  // edge 3 (pre=1, post=1)
   // record is 4×3 = 12 floats (row-major: edge × timestep)
   let record : Array[Float] = [
     1.0F, 1.1F, 1.2F,    // edge 0
@@ -132,7 +132,7 @@ test "average_weight_dynamics — no matched edges returns zeros" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   let record : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let dyn = @snn_mbt.average_weight_dynamics(pre_pop, post_pop, syn, record, 2)
   if dyn.length() != 2 { fail("expected 2 elements, got \{dyn.length()}") }
@@ -147,11 +147,11 @@ test "weights_indices — full connectivity" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 3.0F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 4.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 1, 2, 2.0F)
+  @synapse.spiking_connect(syn, 2, 1, 3.0F)
+  @synapse.spiking_connect(syn, 2, 2, 4.0F)
   let indices = @snn_mbt.weights_indices(pre_pop, post_pop, syn)
   if indices.length() != 4 { fail("expected 4 indices, got \{indices.length()}") }
 }
@@ -163,11 +163,11 @@ test "weights_indices — partial filter (pre=0 only)" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
-  @snn_mbt.spiking_connect(syn, 2, 1, 3.0F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 4.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 1, 2, 2.0F)
+  @synapse.spiking_connect(syn, 2, 1, 3.0F)
+  @synapse.spiking_connect(syn, 2, 2, 4.0F)
   let indices = @snn_mbt.weights_indices(pre_pop, post_pop, syn)
   // Only edges from pre=0 (post=0,1): 2 edges.
   if indices.length() != 2 { fail("expected 2 indices, got \{indices.length()}") }
@@ -180,11 +180,11 @@ test "update_weight — multiplies matched edges by factor" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)  // edge 0
-  @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)  // edge 1
-  @snn_mbt.spiking_connect(syn, 2, 1, 3.0F)  // edge 2
-  @snn_mbt.spiking_connect(syn, 2, 2, 4.0F)  // edge 3
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)  // edge 0
+  @synapse.spiking_connect(syn, 1, 2, 2.0F)  // edge 1
+  @synapse.spiking_connect(syn, 2, 1, 3.0F)  // edge 2
+  @synapse.spiking_connect(syn, 2, 2, 4.0F)  // edge 3
   @snn_mbt.update_weight(pre_pop, post_pop, 2.0F, syn)
   // Edges 0, 1 (from pre=0) are multiplied by 2; edges 2, 3 unchanged.
   if syn.matrix.vals[0] != 2.0F { fail("edge 0 expected 2.0, got \{syn.matrix.vals[0]}") }
@@ -200,9 +200,9 @@ test "update_weight — no matched edges is no-op" {
   let rng = @core.Xoshiro::new(42UL)
   let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
-  @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
-  @snn_mbt.spiking_connect(syn, 2, 2, 4.0F)
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
+  @synapse.spiking_connect(syn, 1, 1, 1.0F)
+  @synapse.spiking_connect(syn, 2, 2, 4.0F)
   @snn_mbt.update_weight(pre_pop, post_pop, 10.0F, syn)
   // Both edges unchanged.
   if syn.matrix.vals[0] != 1.0F { fail("edge 0 should be unchanged") }

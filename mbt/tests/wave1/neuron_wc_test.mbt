@@ -66,7 +66,7 @@ test "RateSynapse::new and forward_rate" {
   let pre = @neuron.WilsonCowan::new(3, rng)
   let post = @neuron.WilsonCowan::new(2, rng)
   // All-to-all: 3 pres × 2 posts = 6 connections.
-  let s = @snn_mbt.RateSynapse::new(pre, post, 1.0F, 0.0F, 1.0F, rng)
+  let s = @synapse.RateSynapse::new(pre, post, 1.0F, 0.0F, 1.0F, rng)
   assert_eq(s.matrix.nnz(), 6)
   // Set pre.r to a known pattern.
   pre.r[0] = 0.5F
@@ -77,7 +77,7 @@ test "RateSynapse::new and forward_rate" {
     post.g[k] = 0.0F
   }
   // forward: g[post[i]] += W[i] * rJ[pre[j]]
-  @snn_mbt.forward_rate_synapse(s)
+  @synapse.forward_rate_synapse(s)
   // Each post receives 2 incoming weights (one per pre). The exact
   // values depend on the weights; just check they're > 0 since
   // pre.r > 0 for two of three pres.

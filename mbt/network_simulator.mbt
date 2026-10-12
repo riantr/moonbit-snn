@@ -127,13 +127,13 @@ pub fn reset_heterogeneous_full(m : HeterogeneousModel) -> Unit {
   // STP entries → per-type reset (Markram vars reset to {u=0, x=1}).
   for entry in m.stp_entries {
     match entry {
-      MarkramSTP_(e) => {
+      @synapse.MarkramSTP_(e) => {
         let _ = e
       }
-      MarkramSTPHet_(e) => {
+      @synapse.MarkramSTPHet_(e) => {
         let _ = e
       }
-      MarkramSTPTimestep_(e) => {
+      @synapse.MarkramSTPTimestep_(e) => {
         let _ = e
       }
     }
@@ -160,7 +160,7 @@ pub fn merge_heterogeneous(
   for p in b.pops {
     pops.push(p)
   }
-  let conns : Array[SpikingSynapse] = []
+  let conns : Array[@synapse.SpikingSynapse] = []
   for c in a.conns {
     conns.push(c)
   }
@@ -188,7 +188,7 @@ pub fn merge_heterogeneous(
   for e in b.stdp_entries {
     stdp.push(e)
   }
-  let stp : Array[STPEntryKind] = []
+  let stp : Array[@synapse.STPEntryKind] = []
   for e in a.stp_entries {
     stp.push(e)
   }

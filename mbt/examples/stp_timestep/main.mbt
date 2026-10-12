@@ -27,15 +27,15 @@ fn main {
   let n_conn = n_pre * n_post
   let pre = @neuron.IF::new(n_pre, @neuron.IFParameter::new(), rng)
   let post = @neuron.IF::new(n_post, @neuron.IFParameter::new(), rng)
-  let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
+  let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   for j in 1..<=n_pre {
     for i in 1..<=n_post {
-      @snn_mbt.spiking_connect(syn, j, i, 1.0F)
+      @synapse.spiking_connect(syn, j, i, 1.0F)
     }
   }
-  @snn_mbt.SpikingSynapse::init_rho(syn)
+  @synapse.SpikingSynapse::init_rho(syn)
 
-  let entry = @snn_mbt.MarkramSTPEntryTimestep::new(0, n_pre, n_post)
+  let entry = @synapse.MarkramSTPEntryTimestep::new(0, n_pre, n_post)
   println("stp_timestep.mbt: MarkramSTPParameterTimestep (continuous-time Euler) demo")
   println("")
   println("=== MarkramSTPParameterTimestep defaults ===")
@@ -52,7 +52,7 @@ fn main {
       pre.fire[k] = @core.next_f32(rng) < 0.3F
     }
     let t_now = Float::from_int(step) * dt
-    @snn_mbt.markram_stp_step_timestep(syn, entry.vars, entry.param, t_now, dt)
+    @synapse.markram_stp_step_timestep(syn, entry.vars, entry.param, t_now, dt)
   }
 
   // Sanity checks.

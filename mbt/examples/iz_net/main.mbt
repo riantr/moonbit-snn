@@ -28,10 +28,10 @@ fn main {
   let i_pop = @neuron.IZ::new(ni, i_param, rng)
 
   // Build E-E and I-E SpikingSynapses with :ge and :gi routes.
-  let ee = @snn_mbt.SpikingSynapseIZ::random(e_pop, e_pop, "ge", 0.05F, 0.0F, 0.8F, rng)
-  let ei = @snn_mbt.SpikingSynapseIZ::random(e_pop, i_pop, "ge", 0.5F, 0.0F, 0.8F, rng)
-  let ie = @snn_mbt.SpikingSynapseIZ::random(i_pop, e_pop, "gi", 1.0F, 0.0F, 0.8F, rng)
-  let ii = @snn_mbt.SpikingSynapseIZ::random(i_pop, i_pop, "gi", 1.0F, 0.0F, 0.8F, rng)
+  let ee = @synapse.SpikingSynapseIZ::random(e_pop, e_pop, "ge", 0.05F, 0.0F, 0.8F, rng)
+  let ei = @synapse.SpikingSynapseIZ::random(e_pop, i_pop, "ge", 0.5F, 0.0F, 0.8F, rng)
+  let ie = @synapse.SpikingSynapseIZ::random(i_pop, e_pop, "gi", 1.0F, 0.0F, 0.8F, rng)
+  let ii = @synapse.SpikingSynapseIZ::random(i_pop, i_pop, "gi", 1.0F, 0.0F, 0.8F, rng)
 
   println("iz_net.mbt: network built (v0.7.1: with IZ SpikingSynapses)")
   println("  E: " + ne.to_string() + " IZ neurons, I: " + ni.to_string() + " IZ neurons")
@@ -56,10 +56,10 @@ fn main {
     }
     // 1ms = 8 steps at dt=0.125F
     for _ in 0..<8 {
-      @snn_mbt.forward_iz_synapse(ee)
-      @snn_mbt.forward_iz_synapse(ei)
-      @snn_mbt.forward_iz_synapse(ie)
-      @snn_mbt.forward_iz_synapse(ii)
+      @synapse.forward_iz_synapse(ee)
+      @synapse.forward_iz_synapse(ei)
+      @synapse.forward_iz_synapse(ie)
+      @synapse.forward_iz_synapse(ii)
       @neuron.step_iz(e_pop, dt)
       @neuron.step_iz(i_pop, dt)
     }

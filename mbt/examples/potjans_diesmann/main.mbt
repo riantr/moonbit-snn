@@ -43,13 +43,13 @@ fn main {
   //   EI: p=0.05, μ=2.5 nS
   //   II: p=0.05, μ=6.0 nS
   //   IE: p=0.05, μ=6.0 nS
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge",
     2.5F, 0.0F, 0.05F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge",
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge",
     2.5F, 0.0F, 0.05F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gi",
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gi",
     6.0F, 0.0F, 0.05F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gi",
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gi",
     6.0F, 0.0F, 0.05F, rng)
 
   // Poisson background drive. Julia uses 2.5kHz × μ=1 nS onto :glu

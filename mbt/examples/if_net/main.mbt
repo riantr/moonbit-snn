@@ -28,10 +28,10 @@ fn main {
   let inh_pop = @neuron.IF::new(n_inh, inh_param, rng)
 
   // Four random SpikingSynapses
-  let ee = @snn_mbt.SpikingSynapse::random(exc_pop, exc_pop, "ge", 0.2F, 0.0F, 0.2F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(exc_pop, inh_pop, "ge", 0.5F, 0.0F, 0.2F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(inh_pop, exc_pop, "gi", 2.0F, 0.0F, 0.2F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(inh_pop, inh_pop, "gi", 2.0F, 0.0F, 0.2F, rng)
+  let ee = @synapse.SpikingSynapse::random(exc_pop, exc_pop, "ge", 0.2F, 0.0F, 0.2F, rng)
+  let ei = @synapse.SpikingSynapse::random(exc_pop, inh_pop, "ge", 0.5F, 0.0F, 0.2F, rng)
+  let ie = @synapse.SpikingSynapse::random(inh_pop, exc_pop, "gi", 2.0F, 0.0F, 0.2F, rng)
+  let ii = @synapse.SpikingSynapse::random(inh_pop, inh_pop, "gi", 2.0F, 0.0F, 0.2F, rng)
   println("if_net.mbt: network built")
   println("  EE connections: " + ee.matrix.nnz().to_string())
   println("  EI connections: " + ei.matrix.nnz().to_string())

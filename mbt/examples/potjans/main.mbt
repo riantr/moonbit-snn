@@ -27,10 +27,10 @@ fn main {
 
   // Layer-specific connection probabilities and weights (scaled).
   // Format: (μ, p) — μ is mean synaptic weight, p is connection probability.
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge", 0.5F, 0.0F, 0.2F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge", 0.5F, 0.0F, 0.2F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gaba", 2.0F, 0.0F, 0.2F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gaba", 2.0F, 0.0F, 0.2F, rng)
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge", 0.5F, 0.0F, 0.2F, rng)
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge", 0.5F, 0.0F, 0.2F, rng)
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gaba", 2.0F, 0.0F, 0.2F, rng)
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gaba", 2.0F, 0.0F, 0.2F, rng)
 
   // External Poisson drive onto :ge (background input).
   let stim_e = @snn_mbt.PoissonStimulusIF::new(e_pop, "ge", 2.0F, rng)

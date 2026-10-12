@@ -78,7 +78,7 @@ pub fn ActivityDependentTurnover::new(
 /// `p_values` is the working buffer of scores per existing connection.
 pub struct Turnover {
   param : TurnoverParam
-  synapse : SpikingSynapse
+  synapse : @synapse.SpikingSynapse
   pre : Array[Float]
   post : Array[Float]
   // p is dense N_pre × N_post candidate-score matrix (Float32).
@@ -93,7 +93,7 @@ pub struct Turnover {
 /// zero-initialised; the candidate matrix `p` defaults to all-ones.
 pub fn Turnover::new(
   param : TurnoverParam,
-  synapse : SpikingSynapse,
+  synapse : @synapse.SpikingSynapse,
 ) -> Turnover {
   let n_pre = synapse.pre.n
   let n_post = synapse.post.n
@@ -199,7 +199,7 @@ pub fn turnover_plasticity(c : Turnover, step_count : Int, dt : Float) -> Unit {
 /// the `p_new` callback is currently ignored — new targets are
 /// sampled uniformly from the plausible_post set.
 pub fn synaptic_turnover(
-  syn : SpikingSynapse,
+  syn : @synapse.SpikingSynapse,
   p_rewire? : Float = 0.05,
   mu? : Float = 3.0,
   p_values? : Array[Float] = [],

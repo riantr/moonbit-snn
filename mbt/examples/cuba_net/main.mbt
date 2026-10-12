@@ -50,13 +50,13 @@ fn main {
   }
 
   // Random connectivity within and between populations.
-  let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
+  let ee = @synapse.SpikingSynapse::random(e_pop, e_pop, "ge",
     1.6F, 0.0F, 0.02F, rng)
-  let ei = @snn_mbt.SpikingSynapse::random(e_pop, i_pop, "ge",
+  let ei = @synapse.SpikingSynapse::random(e_pop, i_pop, "ge",
     1.6F, 0.0F, 0.02F, rng)
-  let ii = @snn_mbt.SpikingSynapse::random(i_pop, i_pop, "gi",
+  let ii = @synapse.SpikingSynapse::random(i_pop, i_pop, "gi",
     9.0F, 0.0F, 0.02F, rng)
-  let ie = @snn_mbt.SpikingSynapse::random(i_pop, e_pop, "gi",
+  let ie = @synapse.SpikingSynapse::random(i_pop, e_pop, "gi",
     9.0F, 0.0F, 0.02F, rng)
   println("cuba_net.mbt: network built")
   println("  E: " + ne.to_string() + " IF neurons")

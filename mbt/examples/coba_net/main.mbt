@@ -63,16 +63,16 @@ fn main {
   // weight values (in MoonBit normalised units, nS=1).
   // v0.10.3: use random_with_delays to attach the Julia
   // `delay_dist=Normal(0.8ms, 0)` (constant 0.8ms per-connection).
-  let ee = @snn_mbt.SpikingSynapse::random_with_delays(
+  let ee = @synapse.SpikingSynapse::random_with_delays(
     e_pop, e_pop, "ge", 1.62F, 0.0F, 0.02F, rng, 0.8F, 0.0F,
   )
-  let ei = @snn_mbt.SpikingSynapse::random_with_delays(
+  let ei = @synapse.SpikingSynapse::random_with_delays(
     e_pop, i_pop, "ge", 1.62F, 0.0F, 0.02F, rng, 0.8F, 0.0F,
   )
-  let ii = @snn_mbt.SpikingSynapse::random_with_delays(
+  let ii = @synapse.SpikingSynapse::random_with_delays(
     i_pop, i_pop, "gi", 9.0F, 0.0F, 0.02F, rng, 0.8F, 0.0F,
   )
-  let ie = @snn_mbt.SpikingSynapse::random_with_delays(
+  let ie = @synapse.SpikingSynapse::random_with_delays(
     i_pop, e_pop, "gi", 9.0F, 0.0F, 0.02F, rng, 0.8F, 0.0F,
   )
   println("coba_net.mbt: network built")

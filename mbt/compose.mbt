@@ -18,7 +18,7 @@
 /// Mirrors SNN's `Model{pop, conn, stim}`.
 pub(all) struct HeterogeneousModel {
   pops : Array[AnyPop]
-  conns : Array[SpikingSynapse]
+  conns : Array[@synapse.SpikingSynapse]
   stims : Array[AnyStim]
   // Shared time tracker so the sim loop can advance it.
   time : @core.Time
@@ -33,7 +33,7 @@ pub(all) struct HeterogeneousModel {
   // STP entries — one per synapse that should be updated with a
   // short-term plasticity rule (Markram) each step. Run BEFORE
   // forward so that the ρ scaling is fresh when spikes propagate.
-  stp_entries : Array[STPEntryKind]
+  stp_entries : Array[@synapse.STPEntryKind]
 }
 
 ///|
@@ -78,11 +78,11 @@ pub fn stimulate_any(s : AnyStim, t : @core.Time, dt : Float) -> Unit {
 /// dt=0.125F.
 pub fn compose(
   pops : Array[AnyPop],
-  conns : Array[SpikingSynapse],
+  conns : Array[@synapse.SpikingSynapse],
   stims? : Array[AnyStim] = [],
   monitors? : Array[Monitor] = [],
   stdp? : Array[STDPEntryKind] = [],
-  stp? : Array[STPEntryKind] = [],
+  stp? : Array[@synapse.STPEntryKind] = [],
 ) -> HeterogeneousModel {
   { pops, conns, stims, time: @core.Time::new(), monitors, stdp_entries: stdp,
     stp_entries: stp }
@@ -104,30 +104,30 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
   }
   // 2a. deliver pending spikes (delays scheduled in prior steps)
   for c in m.conns {
-    deliver_pending_synapse(c, @core.get_time(m.time))
+    @synapse.deliver_pending_synapse(c, @core.get_time(m.time))
   }
   // 2b. update STP traces — refresh per-connection ρ before forward
   // so that Markram scaling reflects current u/x state.
   for entry in m.stp_entries {
     match entry {
-      MarkramSTP_(e) => {
+      @synapse.MarkramSTP_(e) => {
         let syn = m.conns[e.conn_index]
-        markram_stp_step(syn, e.vars, e.param, @core.get_time(m.time))
+        @synapse.markram_stp_step(syn, e.vars, e.param, @core.get_time(m.time))
       }
-      MarkramSTPHet_(e) => {
+      @synapse.MarkramSTPHet_(e) => {
         let syn = m.conns[e.conn_index]
-        markram_stp_step_het(syn, e.vars, e.param, @core.get_time(m.time))
+        @synapse.markram_stp_step_het(syn, e.vars, e.param, @core.get_time(m.time))
       }
-      MarkramSTPTimestep_(e) => {
+      @synapse.MarkramSTPTimestep_(e) => {
         let syn = m.conns[e.conn_index]
-        markram_stp_step_timestep(syn, e.vars, e.param, @core.get_time(m.time), dt)
+        @synapse.markram_stp_step_timestep(syn, e.vars, e.param, @core.get_time(m.time), dt)
       }
     }
   }
   // 2c. forward! propagate spikes (no-delay: immediate; with delays:
   // schedule for future delivery)
   for c in m.conns {
-    forward_synapse(c, @core.get_time(m.time))
+    @synapse.forward_synapse(c, @core.get_time(m.time))
   }
   // 3. apply STDP! (plasticity mutates weights in-place)
   for entry in m.stdp_entries {
@@ -193,7 +193,7 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
       }
       IstdpRate_(e) => {
         let syn = m.conns[e.conn_index]
-        istdp_rate_step(
+        @synapse.istdp_rate_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
@@ -208,7 +208,7 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
       }
       IstdpPotential_(e) => {
         let syn = m.conns[e.conn_index]
-        istdp_potential_step(
+        @synapse.istdp_potential_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,

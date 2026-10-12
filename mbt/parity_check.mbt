@@ -113,7 +113,7 @@ pub fn parity_hash_sparse_matrix(
   seed : UInt64,
 ) -> Int {
   let rng = @core.Xoshiro::new(seed)
-  let m = SparseMatrixCSR::random(n_pre, n_post, mu, sigma, p, rng)
+  let m = @synapse.SparseMatrixCSR::random(n_pre, n_post, mu, sigma, p, rng)
   // Hash vals + colptr (rowptr is structural, not state).
   let combined : Array[Float] = []
   for i in 0..<m.vals.length() {

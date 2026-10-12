@@ -30,7 +30,7 @@ fn main {
   // All-to-all self-connectivity (p=1.0) with μ=0.5. Julia's
   // RateSynapse normalises weight std by sqrt(p*N) so the network
   // stays bounded.
-  let gg = @snn_mbt.RateSynapse::new(g, g, 0.5F, 0.0F, 1.0F, rng)
+  let gg = @synapse.RateSynapse::new(g, g, 0.5F, 0.0F, 1.0F, rng)
   // External tonic input I=0.2 on every neuron.
   for k in 0..<n {
     g.i[k] = 0.2F
@@ -52,7 +52,7 @@ fn main {
   let mut sum_abs_r : Float = 0.0F
   for step in 0..<total_steps {
     // 1. forward (rate → synaptic g)
-    @snn_mbt.forward_rate_synapse(gg)
+    @synapse.forward_rate_synapse(gg)
     // 2. integrate
     @neuron.step_wc(g, dt)
     // Track envelope

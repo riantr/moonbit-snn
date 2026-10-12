@@ -74,20 +74,20 @@ fn main {
   for k in 0..<ni2 { i2_pop.i[k] = 250.0F }
 
   // I1 → E on :soma with iSTDPRate.
-  let i1_to_e = @snn_mbt.CompartmentSynapseTripod::random(
+  let i1_to_e = @synapse.CompartmentSynapseTripod::random(
     i1_pop, e_pop, "ge", "soma", 5.0F, 0.0F, 0.2F, rng,
   )
 
   // I2 → E on :d1 with iSTDPPotential (here :d1, :hi in Julia).
-  let i2_to_e = @snn_mbt.CompartmentSynapseTripod::random(
+  let i2_to_e = @synapse.CompartmentSynapseTripod::random(
     i2_pop, e_pop, "ge", "d1", 5.0F, 0.0F, 0.2F, rng,
   )
 
   // ----- STDP entries -----
   // Note: CompartmentSynapseTripod uses IF as pre, so STDP can be
   // applied per-connection just like in `istdp_rate_step`.
-  let i1_to_e_entry = @snn_mbt.IstdpRateEntry::new(0, ni1, ne)
-  let i2_to_e_entry = @snn_mbt.IstdpPotentialEntry::new(0, ni2, ne)
+  let i1_to_e_entry = @synapse.IstdpRateEntry::new(0, ni1, ne)
+  let i2_to_e_entry = @synapse.IstdpPotentialEntry::new(0, ni2, ne)
 
   println("tripod_network.mbt: E-I Tripod network (manual stepping)")
   println("")
@@ -113,8 +113,8 @@ fn main {
   for step in 0..<total_steps {
     let _ = step
     // 1. Forward compartment synapses (IF → Tripod).
-    @snn_mbt.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
-    @snn_mbt.forward_compartment_tripod(i2_to_e, Float::from_int(step) * dt)
+    @synapse.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
+    @synapse.forward_compartment_tripod(i2_to_e, Float::from_int(step) * dt)
     // 2. Step IF populations.
     @neuron.step_synapses(i1_pop, dt)
     @neuron.synaptic_current(i1_pop)
@@ -127,7 +127,7 @@ fn main {
     // 4. Apply STDP! updates. Note: these go to compartment synapse
     //    weight matrices via rowptr/colptr indexing, which matches the
     //    IF→Tripod connection layout.
-    @snn_mbt.istdp_rate_step(
+    @synapse.istdp_rate_step(
       i1_to_e.matrix.vals,
       i1_pop.fire,
       e_pop.fire,
@@ -138,7 +138,7 @@ fn main {
       Float::from_int(step) * dt,
       dt,
     )
-    @snn_mbt.istdp_potential_step(
+    @synapse.istdp_potential_step(
       i2_to_e.matrix.vals,
       i2_pop.fire,
       e_pop.fire,

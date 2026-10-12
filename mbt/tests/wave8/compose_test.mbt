@@ -6,8 +6,8 @@ test "compose builds HeterogeneousModel" {
   let rng = @core.Xoshiro::default()
   let p1 = @neuron.IF::new(2, param, rng)
   let p2 = @neuron.IF::new(2, param, rng)
-  let conn = @snn_mbt.SpikingSynapse::new(p1, p2, "ge")
-  @snn_mbt.spiking_connect(conn, 1, 1, 5.0F)
+  let conn = @synapse.SpikingSynapse::new(p1, p2, "ge")
+  @synapse.spiking_connect(conn, 1, 1, 5.0F)
   let model = @snn_mbt.compose([IF_(p1), IF_(p2)], [conn])
   assert_eq(model.pops.length(), 2)
   assert_eq(model.conns.length(), 1)
@@ -19,8 +19,8 @@ test "step_heterogeneous integrates" {
   let rng = @core.Xoshiro::default()
   let p1 = @neuron.IF::new(1, param, rng)
   let p2 = @neuron.IF::new(1, param, rng)
-  let conn = @snn_mbt.SpikingSynapse::new(p1, p2, "ge")
-  @snn_mbt.spiking_connect(conn, 1, 1, 50.0F)
+  let conn = @synapse.SpikingSynapse::new(p1, p2, "ge")
+  @synapse.spiking_connect(conn, 1, 1, 50.0F)
   // Inject current into p1 so it fires
   p1.i[0] = 100.0F
   let model = @snn_mbt.compose([IF_(p1), IF_(p2)], [conn])
@@ -109,7 +109,7 @@ test "get_time_heterogeneous starts at 0 and advances" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let s = @snn_mbt.SpikingSynapse::new(p, p, "ge")
+  let s = @synapse.SpikingSynapse::new(p, p, "ge")
   let model = @snn_mbt.compose([IF_(p)], [s])
   assert_eq(@snn_mbt.get_time_heterogeneous(model), 0.0F)
   for _ in 0..<8 {
@@ -127,7 +127,7 @@ test "reset_time_heterogeneous resets clock to 0" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let s = @snn_mbt.SpikingSynapse::new(p, p, "ge")
+  let s = @synapse.SpikingSynapse::new(p, p, "ge")
   let model = @snn_mbt.compose([IF_(p)], [s])
   for _ in 0..<40 {
     @snn_mbt.step_heterogeneous(model, 0.125F)
