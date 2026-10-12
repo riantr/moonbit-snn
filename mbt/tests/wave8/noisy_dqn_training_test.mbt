@@ -11,7 +11,7 @@
 /// that NoisyDQN must beat after training.
 fn noisy_random_baseline(env : @rl.GridWorld, n_states : Int, n_actions : Int,
   n_episodes : Int, max_steps : Int, seed : UInt64) -> Float {
-  let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, seed)
+  let online = @rl.NoisyQNet::new(n_states, 8, n_actions, seed)
   // Argmax-eval over μ weights at random init.
   let mut total = 0.0F
   for _ in 0..<n_episodes {
@@ -20,7 +20,7 @@ fn noisy_random_baseline(env : @rl.GridWorld, n_states : Int, n_actions : Int,
     let mut t = 0
     let mut ep_return = 0.0F
     while !done && t < max_steps {
-      let a = @snn_mbt.noisy_dqn_select_action_eval(online, state)
+      let a = @rl.noisy_dqn_select_action_eval(online, state)
       let (next_state, r, d) = env.step(state, a)
       ep_return = ep_return + r
       state = next_state
@@ -40,11 +40,11 @@ test "noisy_dqn_training_smoke_test" {
   let env = @rl.GridWorld::new(2, 2, 20)
   let n_states = env.n_states()
   let n_actions = 4  // 4 cardinal actions, see GridWorld
-  let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 11UL)
-  let target = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 22UL)
+  let online = @rl.NoisyQNet::new(n_states, 8, n_actions, 11UL)
+  let target = @rl.NoisyQNet::new(n_states, 8, n_actions, 22UL)
   let baseline = noisy_random_baseline(env, n_states, n_actions, 20, 20, 11UL)
   // Train.
-  let trained_mean = @snn_mbt.train_noisy_dqn(
+  let trained_mean = @rl.train_noisy_dqn(
     env, online, target,
     30,    // n_episodes
     0.9F,  // gamma
@@ -57,7 +57,7 @@ test "noisy_dqn_training_smoke_test" {
     42UL,  // seed
   )
   // Eval.
-  let eval_mean = @snn_mbt.eval_noisy_dqn(env, online, 20, 20)
+  let eval_mean = @rl.eval_noisy_dqn(env, online, 20, 20)
   // Assert finite.
   if trained_mean != trained_mean {
     fail("trained_mean is NaN")
@@ -81,12 +81,12 @@ test "noisy_dqn_training_eval_runs_greedy_after_training" {
   let env = @rl.GridWorld::new(2, 2, 10)
   let n_states = env.n_states()
   let n_actions = 4
-  let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 33UL)
-  let target = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 44UL)
-  let _ = @snn_mbt.train_noisy_dqn(
+  let online = @rl.NoisyQNet::new(n_states, 8, n_actions, 33UL)
+  let target = @rl.NoisyQNet::new(n_states, 8, n_actions, 44UL)
+  let _ = @rl.train_noisy_dqn(
     env, online, target, 5, 0.9F, 0.01F, 10, 50, 1, 1, 4, 99UL,
   )
-  let ret = @snn_mbt.eval_noisy_dqn(env, online, 5, 10)
+  let ret = @rl.eval_noisy_dqn(env, online, 5, 10)
   if ret != ret {
     fail("eval returned NaN")
   }
@@ -104,22 +104,22 @@ test "noisy_dqn_two_seeds_train_different_policies" {
   let n_states = env.n_states()
   let n_actions = 4
   // Net A — seed 1.
-  let a_online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 1UL)
-  let a_target = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 2UL)
-  let _ = @snn_mbt.train_noisy_dqn(
+  let a_online = @rl.NoisyQNet::new(n_states, 8, n_actions, 1UL)
+  let a_target = @rl.NoisyQNet::new(n_states, 8, n_actions, 2UL)
+  let _ = @rl.train_noisy_dqn(
     env, a_online, a_target, 8, 0.9F, 0.05F, 10, 50, 1, 2, 4, 100UL,
   )
   // Net B — seed 999.
-  let b_online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 3UL)
-  let b_target = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 4UL)
-  let _ = @snn_mbt.train_noisy_dqn(
+  let b_online = @rl.NoisyQNet::new(n_states, 8, n_actions, 3UL)
+  let b_target = @rl.NoisyQNet::new(n_states, 8, n_actions, 4UL)
+  let _ = @rl.train_noisy_dqn(
     env, b_online, b_target, 8, 0.9F, 0.05F, 10, 50, 1, 2, 4, 200UL,
   )
   // Sample a few states and compare argmax policies.
   let mut any_diff = false
   for s in 0..<n_states {
-    let a_act = @snn_mbt.noisy_dqn_select_action_eval(a_online, s)
-    let b_act = @snn_mbt.noisy_dqn_select_action_eval(b_online, s)
+    let a_act = @rl.noisy_dqn_select_action_eval(a_online, s)
+    let b_act = @rl.noisy_dqn_select_action_eval(b_online, s)
     if a_act != b_act {
       any_diff = true
     }
@@ -136,12 +136,12 @@ test "noisy_dqn_eval_finite_after_long_train" {
   let env = @rl.GridWorld::new(3, 3, 25)
   let n_states = env.n_states()
   let n_actions = 4
-  let online = @snn_mbt.NoisyQNet::new(n_states, 16, n_actions, 7UL)
-  let target = @snn_mbt.NoisyQNet::new(n_states, 16, n_actions, 8UL)
-  let _ = @snn_mbt.train_noisy_dqn(
+  let online = @rl.NoisyQNet::new(n_states, 16, n_actions, 7UL)
+  let target = @rl.NoisyQNet::new(n_states, 16, n_actions, 8UL)
+  let _ = @rl.train_noisy_dqn(
     env, online, target, 50, 0.9F, 0.02F, 25, 500, 3, 4, 16, 17UL,
   )
-  let ret = @snn_mbt.eval_noisy_dqn(env, online, 10, 25)
+  let ret = @rl.eval_noisy_dqn(env, online, 10, 25)
   if ret != ret {
     fail("eval returned NaN after long training")
   }
@@ -154,9 +154,9 @@ test "noisy_dqn_trained_weights_change_from_init" {
   let env = @rl.GridWorld::new(2, 2, 12)
   let n_states = env.n_states()
   let n_actions = 4
-  let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 50UL)
-  let target = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 51UL)
-  let _ = @snn_mbt.train_noisy_dqn(
+  let online = @rl.NoisyQNet::new(n_states, 8, n_actions, 50UL)
+  let target = @rl.NoisyQNet::new(n_states, 8, n_actions, 51UL)
+  let _ = @rl.train_noisy_dqn(
     env, online, target, 15, 0.9F, 0.05F, 12, 100, 2, 3, 8, 77UL,
   )
   // After training, layer2.bias_mu should differ from initial.

@@ -2,7 +2,7 @@
 
 ///|
 test "gaussian_qnet_new_has_zero_bias_initially" {
-  let q = @snn_mbt.LinearGaussianQNet::new(3, 2, 1UL)
+  let q = @rl.LinearGaussianQNet::new(3, 2, 1UL)
   assert_eq(q.n_states, 3)
   assert_eq(q.n_actions, 2)
   // μ bias is small but not necessarily zero (jittered); log-σ bias is 0.
@@ -13,9 +13,9 @@ test "gaussian_qnet_new_has_zero_bias_initially" {
 
 ///|
 test "gaussian_q_forward_returns_correct_shapes" {
-  let q = @snn_mbt.LinearGaussianQNet::new(4, 3, 2UL)
+  let q = @rl.LinearGaussianQNet::new(4, 3, 2UL)
   let x : Array[Float] = [1.0F, 0.0F, 0.0F, 0.0F]
-  let (mus, sigs) = @snn_mbt.gaussian_q_forward(q, x)
+  let (mus, sigs) = @rl.gaussian_q_forward(q, x)
   assert_eq(mus.length(), 3)
   assert_eq(sigs.length(), 3)
   // σ must be in (0, 10] (clamp range).
@@ -28,7 +28,7 @@ test "gaussian_q_forward_returns_correct_shapes" {
 
 ///|
 test "gaussian_q_forward_zero_input_gives_bias_only" {
-  let q = @snn_mbt.LinearGaussianQNet::new(3, 2, 3UL)
+  let q = @rl.LinearGaussianQNet::new(3, 2, 3UL)
   // Set all weights to zero so output = bias only.
   for a in 0..<q.n_actions {
     for s in 0..<q.n_states {
@@ -41,7 +41,7 @@ test "gaussian_q_forward_zero_input_gives_bias_only" {
   q.b_sigma[0] = 0.0F // σ = exp(0) = 1
   q.b_sigma[1] = 1.6094F // ≈ ln(5) → σ ≈ 5
   let x : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (mus, sigs) = @snn_mbt.gaussian_q_forward(q, x)
+  let (mus, sigs) = @rl.gaussian_q_forward(q, x)
   let mu0_diff = if mus[0] > 1.5F { mus[0] - 1.5F } else { 1.5F - mus[0] }
   let mu1_diff = if mus[1] > -2.0F { mus[1] - -2.0F } else { -2.0F - mus[1] }
   assert_true(mu0_diff < 1.0e-4F)
@@ -56,7 +56,7 @@ test "gaussian_q_forward_zero_input_gives_bias_only" {
 ///|
 test "gaussian_nll_zero_diff_zero_sigma_baseline" {
   // NLL at y=μ, σ=1 is 0.5·log(2π) ≈ 0.9189.
-  let nll = @snn_mbt.gaussian_nll(1.0F, 1.0F, 1.0F)
+  let nll = @rl.gaussian_nll(1.0F, 1.0F, 1.0F)
   let expected = 0.9189F
   let diff = if nll > expected { nll - expected } else { expected - nll }
   assert_true(diff < 0.01F)
@@ -64,26 +64,26 @@ test "gaussian_nll_zero_diff_zero_sigma_baseline" {
 
 ///|
 test "gaussian_nll_increases_with_residual" {
-  let nll_close = @snn_mbt.gaussian_nll(1.05F, 1.0F, 1.0F)
-  let nll_far = @snn_mbt.gaussian_nll(3.0F, 1.0F, 1.0F)
+  let nll_close = @rl.gaussian_nll(1.05F, 1.0F, 1.0F)
+  let nll_far = @rl.gaussian_nll(3.0F, 1.0F, 1.0F)
   assert_true(nll_far > nll_close)
 }
 
 ///|
 test "gaussian_qnet_copy_copies_all_arrays" {
-  let src = @snn_mbt.LinearGaussianQNet::new(3, 2, 4UL)
-  let dst = @snn_mbt.LinearGaussianQNet::new(3, 2, 5UL)
+  let src = @rl.LinearGaussianQNet::new(3, 2, 4UL)
+  let dst = @rl.LinearGaussianQNet::new(3, 2, 5UL)
   // Mutate src.
   src.w_mu[0][1] = 7.5F
   src.b_sigma[1] = 0.5F
-  @snn_mbt.gaussian_qnet_copy(dst, src)
+  @rl.gaussian_qnet_copy(dst, src)
   assert_eq(dst.w_mu[0][1], 7.5F)
   assert_eq(dst.b_sigma[1], 0.5F)
 }
 
 ///|
 test "dsac_new_targets_match_online_initially" {
-  let agent = @snn_mbt.DSac::new(4, 3, 0.5F, 7UL)
+  let agent = @rl.DSac::new(4, 3, 0.5F, 7UL)
   // After construction, target weights match online weights.
   for a in 0..<agent.q1.n_actions {
     for s in 0..<agent.q1.n_states {
@@ -95,13 +95,13 @@ test "dsac_new_targets_match_online_initially" {
 
 ///|
 test "dsac_critic_update_changes_mu_and_sigma" {
-  let agent = @snn_mbt.DSac::new(3, 2, 0.5F, 11UL)
+  let agent = @rl.DSac::new(3, 2, 0.5F, 11UL)
   let states : Array[Int] = [0, 1, 2]
   let actions : Array[Int] = [0, 1, 0]
   let targets : Array[Float] = [2.0F, -1.0F, 0.5F]
   let mu_before_0 = agent.q1.w_mu[0][0]
   let sigma_before_0 = agent.q1.b_sigma[0]
-  let nll = @snn_mbt.dsac_critic_update(agent, states, actions, targets, 0.05F)
+  let nll = @rl.dsac_critic_update(agent, states, actions, targets, 0.05F)
   let _ = nll
   // Verify weights changed (gradient flow check).
   let mu_after_0 = agent.q1.w_mu[0][0]
@@ -112,11 +112,11 @@ test "dsac_critic_update_changes_mu_and_sigma" {
 
 ///|
 test "dsac_soft_update_convex_combination" {
-  let agent = @snn_mbt.DSac::new(2, 2, 0.5F, 13UL)
+  let agent = @rl.DSac::new(2, 2, 0.5F, 13UL)
   // Force online weights to specific values.
   agent.q1.w_mu[0][0] = 10.0F
   agent.q1_target.w_mu[0][0] = 0.0F
-  @snn_mbt.dsac_soft_update(agent, 0.5F)
+  @rl.dsac_soft_update(agent, 0.5F)
   // τ=0.5: target ← 0.5·0 + 0.5·10 = 5.
   let new_target = agent.q1_target.w_mu[0][0]
   let diff = if new_target > 5.0F { new_target - 5.0F } else { 5.0F - new_target }
@@ -125,10 +125,10 @@ test "dsac_soft_update_convex_combination" {
 
 ///|
 test "dsac_soft_target_zero_when_done" {
-  let agent = @snn_mbt.DSac::new(3, 2, 0.1F, 17UL)
+  let agent = @rl.DSac::new(3, 2, 0.1F, 17UL)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   // When done=true, target is exactly reward (no bootstrap).
-  let target_val = @snn_mbt.dsac_soft_target(
+  let target_val = @rl.dsac_soft_target(
     agent.q1_target, agent.q2_target, agent.policy, agent.alpha,
     0, 7.0F, true, 0.9F, rng,
   )
@@ -138,9 +138,9 @@ test "dsac_soft_target_zero_when_done" {
 
 ///|
 test "dsac_soft_target_finite_when_not_done" {
-  let agent = @snn_mbt.DSac::new(3, 2, 0.1F, 19UL)
+  let agent = @rl.DSac::new(3, 2, 0.1F, 19UL)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let target_val = @snn_mbt.dsac_soft_target(
+  let target_val = @rl.dsac_soft_target(
     agent.q1_target, agent.q2_target, agent.policy, agent.alpha,
     0, 1.0F, false, 0.9F, rng,
   )
@@ -150,10 +150,10 @@ test "dsac_soft_target_finite_when_not_done" {
 
 ///|
 test "dsac_sample_action_returns_valid_action" {
-  let agent = @snn_mbt.DSac::new(3, 2, 0.1F, 23UL)
+  let agent = @rl.DSac::new(3, 2, 0.1F, 23UL)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   for _k in 0..<10 {
-    let a = @snn_mbt.dsac_sample_action(agent, 0, rng)
+    let a = @rl.dsac_sample_action(agent, 0, rng)
     assert_true(a >= 0 && a < 2)
   }
 }

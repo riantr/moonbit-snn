@@ -13,10 +13,10 @@ fn grid_n_actions() -> Int {
 
 ///|
 test "noisy_dqn_select_action_in_range" {
-  let online = @snn_mbt.NoisyQNet::new(4, 8, 3, 1UL)
-  let target = @snn_mbt.NoisyQNet::new(4, 8, 3, 2UL)
+  let online = @rl.NoisyQNet::new(4, 8, 3, 1UL)
+  let target = @rl.NoisyQNet::new(4, 8, 3, 2UL)
   let rng = @core.Xoshiro::new(7UL)
-  let a = @snn_mbt.noisy_dqn_select_action(online, 0, rng)
+  let a = @rl.noisy_dqn_select_action(online, 0, rng)
   if a < 0 || a >= 3 {
     fail("action \{a} out of [0, 3)")
   }
@@ -25,8 +25,8 @@ test "noisy_dqn_select_action_in_range" {
 
 ///|
 test "noisy_dqn_select_action_eval_in_range" {
-  let online = @snn_mbt.NoisyQNet::new(4, 8, 3, 1UL)
-  let a = @snn_mbt.noisy_dqn_select_action_eval(online, 1)
+  let online = @rl.NoisyQNet::new(4, 8, 3, 1UL)
+  let a = @rl.noisy_dqn_select_action_eval(online, 1)
   if a < 0 || a >= 3 {
     fail("action \{a} out of [0, 3)")
   }
@@ -34,8 +34,8 @@ test "noisy_dqn_select_action_eval_in_range" {
 
 ///|
 test "noisy_qnet_copy_copies_all_params" {
-  let src = @snn_mbt.NoisyQNet::new(3, 4, 2, 11UL)
-  let dst = @snn_mbt.NoisyQNet::new(3, 4, 2, 22UL)
+  let src = @rl.NoisyQNet::new(3, 4, 2, 11UL)
+  let dst = @rl.NoisyQNet::new(3, 4, 2, 22UL)
   // Mutate src weights so we can detect copy.
   src.layer1.weight_mu[0] = 99.0F
   src.layer1.bias_mu[0] = 88.0F
@@ -45,7 +45,7 @@ test "noisy_qnet_copy_copies_all_params" {
   src.layer2.bias_mu[1] = 66.0F
   src.layer2.weight_sigma[5] = 0.3F
   src.layer2.bias_sigma[1] = 0.2F
-  @snn_mbt.noisy_qnet_copy(dst, src)
+  @rl.noisy_qnet_copy(dst, src)
   if dst.layer1.weight_mu[0] != 99.0F {
     fail("dst.layer1.weight_mu[0] = \{dst.layer1.weight_mu[0]}, expected 99.0")
   }
@@ -76,14 +76,14 @@ test "noisy_qnet_copy_copies_all_params" {
 test "noisy_dqn_update_step_returns_mean_td" {
   // Run a single update step with a small batch; verify the
   // returned mean |δ| is finite and non-negative.
-  let online = @snn_mbt.NoisyQNet::new(4, 4, 2, 5UL)
-  let target = @snn_mbt.NoisyQNet::new(4, 4, 2, 6UL)
+  let online = @rl.NoisyQNet::new(4, 4, 2, 5UL)
+  let target = @rl.NoisyQNet::new(4, 4, 2, 6UL)
   let states : Array[Int] = [0, 1, 2, 3]
   let actions : Array[Int] = [0, 1, 1, 0]
   let rewards : Array[Float] = [1.0F, 0.0F, 1.0F, 0.5F]
   let next_states : Array[Int] = [1, 2, 3, 0]
   let dones : Array[Bool] = [false, false, false, true]
-  let mean_td = @snn_mbt.noisy_dqn_update_step(
+  let mean_td = @rl.noisy_dqn_update_step(
     online, target, states, actions, rewards, next_states, dones, 0.9F, 0.01F,
     @core.Xoshiro::new(99UL),
   )
@@ -98,8 +98,8 @@ test "noisy_dqn_update_step_returns_mean_td" {
 ///|
 test "noisy_dqn_update_step_changes_weights" {
   // Capture weights before, run one update, verify weights changed.
-  let online = @snn_mbt.NoisyQNet::new(4, 4, 2, 5UL)
-  let target = @snn_mbt.NoisyQNet::new(4, 4, 2, 6UL)
+  let online = @rl.NoisyQNet::new(4, 4, 2, 5UL)
+  let target = @rl.NoisyQNet::new(4, 4, 2, 6UL)
   let w0_before = online.layer1.weight_mu[0]
   let b0_before = online.layer2.bias_mu[0]
   let s_before = online.layer1.weight_sigma[0]
@@ -109,7 +109,7 @@ test "noisy_dqn_update_step_changes_weights" {
   let rewards : Array[Float] = [1.0F, 0.0F, 1.0F, 0.5F]
   let next_states : Array[Int] = [1, 2, 3, 0]
   let dones : Array[Bool] = [false, false, false, true]
-  let _ = @snn_mbt.noisy_dqn_update_step(
+  let _ = @rl.noisy_dqn_update_step(
     online, target, states, actions, rewards, next_states, dones, 0.9F, 0.1F,
     @core.Xoshiro::new(99UL),
   )
@@ -135,9 +135,9 @@ test "train_noisy_dqn_runs_and_returns_mean_return" {
   // the gradient approximations mean training isn't yet reliable
   // for arbitrary envs.
   let env = make_grid(5)
-  let target = @snn_mbt.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 7UL)
-  let online = @snn_mbt.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 13UL)
-  let mean_ret = @snn_mbt.train_noisy_dqn(
+  let target = @rl.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 7UL)
+  let online = @rl.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 13UL)
+  let mean_ret = @rl.train_noisy_dqn(
     env, online, target, 5, 0.9F, 0.01F, 20, 100, 1, 2, 4, 42UL,
   )
   if mean_ret != mean_ret {
@@ -153,13 +153,13 @@ test "train_noisy_dqn_runs_and_returns_mean_return" {
 test "eval_noisy_dqn_runs_no_noise" {
   // Eval mode uses μ weights — same seed → deterministic.
   let env = make_grid(5)
-  let online = @snn_mbt.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 13UL)
+  let online = @rl.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 13UL)
   // Pre-train briefly so the policy isn't totally random.
-  let target = @snn_mbt.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 7UL)
-  let _ = @snn_mbt.train_noisy_dqn(
+  let target = @rl.NoisyQNet::new(env.n_states(), 8, grid_n_actions(), 7UL)
+  let _ = @rl.train_noisy_dqn(
     env, online, target, 3, 0.9F, 0.01F, 10, 50, 1, 1, 2, 42UL,
   )
-  let ret = @snn_mbt.eval_noisy_dqn(env, online, 3, 10)
+  let ret = @rl.eval_noisy_dqn(env, online, 3, 10)
   if ret != ret {
     fail("eval return is NaN")
   }

@@ -111,7 +111,7 @@ pub fn gaussian_nll(y : Float, mu : Float, sigma : Float) -> Float {
 pub fn dsac_soft_target(
   q1_target : LinearGaussianQNet,
   q2_target : LinearGaussianQNet,
-  policy : @rl.LinearSoftmaxPolicy,
+  policy : LinearSoftmaxPolicy,
   alpha : Float,
   next_state : Int,
   reward : Float,
@@ -122,8 +122,8 @@ pub fn dsac_soft_target(
   if done {
     return reward
   }
-  let x_next = @rl.rl_one_hot(next_state, policy.n_states)
-  let (_l, pi) = @rl.policy_forward(policy, x_next)
+  let x_next = rl_one_hot(next_state, policy.n_states)
+  let (_l, pi) = policy_forward(policy, x_next)
   let (mu1, sig1) = gaussian_q_forward(q1_target, x_next)
   let (mu2, sig2) = gaussian_q_forward(q2_target, x_next)
   let n_a = policy.n_actions
@@ -142,7 +142,7 @@ pub fn dsac_soft_target(
 ///|
 /// Distributional SAC agent: policy + twin Gaussian critics + twin targets.
 pub struct DSac {
-  policy : @rl.LinearSoftmaxPolicy
+  policy : LinearSoftmaxPolicy
   q1 : LinearGaussianQNet
   q2 : LinearGaussianQNet
   q1_target : LinearGaussianQNet
@@ -159,7 +159,7 @@ pub fn DSac::new(
   alpha : Float,
   seed : UInt64,
 ) -> DSac {
-  let policy = @rl.LinearSoftmaxPolicy::new(n_states, n_actions, seed)
+  let policy = LinearSoftmaxPolicy::new(n_states, n_actions, seed)
   let q1 = LinearGaussianQNet::new(n_states, n_actions, seed + 1UL)
   let q2 = LinearGaussianQNet::new(n_states, n_actions, seed + 2UL)
   let q1_target = LinearGaussianQNet::new(n_states, n_actions, seed + 3UL)
@@ -205,7 +205,7 @@ pub fn dsac_critic_update(
     let s = states[k]
     let a = actions[k]
     let t = targets[k]
-    let x = @rl.rl_one_hot(s, agent.q1.n_states)
+    let x = rl_one_hot(s, agent.q1.n_states)
     let (mus1, sigs1) = gaussian_q_forward(agent.q1, x)
     let (mus2, sigs2) = gaussian_q_forward(agent.q2, x)
     let nll1 = gaussian_nll(t, mus1[a], sigs1[a])
@@ -275,5 +275,5 @@ pub fn dsac_sample_action(
   state : Int,
   rng : @core.Xoshiro,
 ) -> Int {
-  @rl.sac_sample_action(agent.policy, state, rng)
+  sac_sample_action(agent.policy, state, rng)
 }

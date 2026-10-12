@@ -2,7 +2,7 @@
 
 ///|
 test "noisy_qnet_new_shapes" {
-  let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 42UL)
+  let n = @rl.NoisyQNet::new(4, 8, 3, 42UL)
   if n.n_states != 4 {
     fail("n_states = \{n.n_states}, expected 4")
   }
@@ -28,11 +28,11 @@ test "noisy_qnet_new_shapes" {
 
 ///|
 test "noisy_qnet_param_count" {
-  let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 1UL)
+  let n = @rl.NoisyQNet::new(4, 8, 3, 1UL)
   // layer1: 32 weight + 8 bias × 2 = 80
   // layer2: 24 weight + 3 bias × 2 = 54
   // total: 134
-  let count = @snn_mbt.noisy_qnet_param_count(n)
+  let count = @rl.noisy_qnet_param_count(n)
   if count != 134 {
     fail("param count = \{count}, expected 134")
   }
@@ -40,9 +40,9 @@ test "noisy_qnet_param_count" {
 
 ///|
 test "noisy_q_forward_shape" {
-  let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 7UL)
+  let n = @rl.NoisyQNet::new(4, 8, 3, 7UL)
   let x : Array[Float] = [1.0F, 0.5F, -0.5F, 0.2F]
-  let q = @snn_mbt.noisy_q_forward(n, x, @core.Xoshiro::new(123UL))
+  let q = @rl.noisy_q_forward(n, x, @core.Xoshiro::new(123UL))
   if q.length() != 3 {
     fail("q.length() = \{q.length()}, expected 3")
   }
@@ -50,9 +50,9 @@ test "noisy_q_forward_shape" {
 
 ///|
 test "noisy_q_forward_eval_shape" {
-  let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 7UL)
+  let n = @rl.NoisyQNet::new(4, 8, 3, 7UL)
   let x : Array[Float] = [1.0F, 0.5F, -0.5F, 0.2F]
-  let q = @snn_mbt.noisy_q_forward_eval(n, x)
+  let q = @rl.noisy_q_forward_eval(n, x)
   if q.length() != 3 {
     fail("q.length() = \{q.length()}, expected 3")
   }
@@ -62,9 +62,9 @@ test "noisy_q_forward_eval_shape" {
 test "noisy_q_forward_eval_with_zero_sigma" {
   // When σ = 0, the noisy eval forward must match a no-noise pass
   // exactly (Float equality).
-  let n = @snn_mbt.NoisyQNet::new(3, 4, 2, 5UL)
+  let n = @rl.NoisyQNet::new(3, 4, 2, 5UL)
   let x : Array[Float] = [0.7F, -0.3F, 0.1F]
-  let q_eval = @snn_mbt.noisy_q_forward_eval(n, x)
+  let q_eval = @rl.noisy_q_forward_eval(n, x)
   // Compare to a hand-rolled linear path with μ weights only.
   let layer1_h1 : Array[Float] = Array::make(4, 0.0F)
   for o in 0..<4 {
@@ -89,9 +89,9 @@ test "noisy_q_forward_eval_with_zero_sigma" {
 
 ///|
 test "noisy_q_argmax_eval_action_in_range" {
-  let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 11UL)
+  let n = @rl.NoisyQNet::new(4, 8, 3, 11UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let a = @snn_mbt.noisy_q_argmax_eval(n, x)
+  let a = @rl.noisy_q_argmax_eval(n, x)
   if a < 0 || a >= 3 {
     fail("argmax_eval returned \{a}, expected in [0, 3)")
   }
@@ -99,9 +99,9 @@ test "noisy_q_argmax_eval_action_in_range" {
 
 ///|
 test "noisy_q_argmax_action_in_range" {
-  let n = @snn_mbt.NoisyQNet::new(4, 8, 3, 11UL)
+  let n = @rl.NoisyQNet::new(4, 8, 3, 11UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let a = @snn_mbt.noisy_q_argmax(n, x, @core.Xoshiro::new(7UL))
+  let a = @rl.noisy_q_argmax(n, x, @core.Xoshiro::new(7UL))
   if a < 0 || a >= 3 {
     fail("argmax returned \{a}, expected in [0, 3)")
   }
@@ -110,13 +110,13 @@ test "noisy_q_argmax_action_in_range" {
 ///|
 test "noisy_q_forward_two_seeds_differ" {
   // Different RNGs should produce different forward outputs.
-  let n_a = @snn_mbt.NoisyQNet::new(4, 8, 3, 1UL)
-  let n_b = @snn_mbt.NoisyQNet::new(4, 8, 3, 1UL)
+  let n_a = @rl.NoisyQNet::new(4, 8, 3, 1UL)
+  let n_b = @rl.NoisyQNet::new(4, 8, 3, 1UL)
   // Both nets have the same initial weights (same seed in `new`),
   // so any output difference must come from the forward-time RNG.
   let x : Array[Float] = [1.0F, 0.5F, -0.5F, 0.2F]
-  let q_a = @snn_mbt.noisy_q_forward(n_a, x, @core.Xoshiro::new(100UL))
-  let q_b = @snn_mbt.noisy_q_forward(n_b, x, @core.Xoshiro::new(200UL))
+  let q_a = @rl.noisy_q_forward(n_a, x, @core.Xoshiro::new(100UL))
+  let q_b = @rl.noisy_q_forward(n_b, x, @core.Xoshiro::new(200UL))
   let mut any_diff = false
   for i in 0..<q_a.length() {
     if (q_a[i] - q_b[i]).abs() > 1.0e-6F {
@@ -130,11 +130,11 @@ test "noisy_q_forward_two_seeds_differ" {
 
 ///|
 test "noisy_q_forward_same_seed_deterministic" {
-  let n_a = @snn_mbt.NoisyQNet::new(4, 8, 3, 5UL)
-  let n_b = @snn_mbt.NoisyQNet::new(4, 8, 3, 5UL)
+  let n_a = @rl.NoisyQNet::new(4, 8, 3, 5UL)
+  let n_b = @rl.NoisyQNet::new(4, 8, 3, 5UL)
   let x : Array[Float] = [0.3F, -0.7F, 0.6F, -0.1F]
-  let q_a = @snn_mbt.noisy_q_forward(n_a, x, @core.Xoshiro::new(99UL))
-  let q_b = @snn_mbt.noisy_q_forward(n_b, x, @core.Xoshiro::new(99UL))
+  let q_a = @rl.noisy_q_forward(n_a, x, @core.Xoshiro::new(99UL))
+  let q_b = @rl.noisy_q_forward(n_b, x, @core.Xoshiro::new(99UL))
   for i in 0..<q_a.length() {
     if q_a[i] != q_b[i] {
       fail("forward differs at \{i}: \{q_a[i]} vs \{q_b[i]}")
