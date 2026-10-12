@@ -105,11 +105,11 @@ pub fn neural_ode_train_step(
   )
   // 4. SGD step on ODEFunc weights via the shared flatten_2d /
   //    sgd_update_arrays helpers.
-  let (new_w1, new_b1) = sgd_update_arrays(
+  let (new_w1, new_b1) = @optim.sgd_update_arrays(
     flatten_2d(agent.func.w1), agent.func.b1,
     flatten_2d(d_w1), d_b1, lr,
   )
-  let (new_w2, new_b2) = sgd_update_arrays(
+  let (new_w2, new_b2) = @optim.sgd_update_arrays(
     flatten_2d(agent.func.w2), agent.func.b2,
     flatten_2d(d_w2), d_b2, lr,
   )

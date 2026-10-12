@@ -480,7 +480,7 @@ pub fn deserialize_deterministic_policy(s : String) -> DeterministicPolicy {
 /// Serialize an `AdamState` (first/second moments + step counter)
 /// keyed by `kind=AdamState`. Bias moments are length 1 for scalar
 /// critics (QNetworkContinuous.b2) so the array is preserved as-is.
-pub fn serialize_adam_state(opt : AdamState) -> String {
+pub fn serialize_adam_state(opt : @optim.AdamState) -> String {
   let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=AdamState\n")
@@ -501,7 +501,7 @@ pub fn serialize_adam_state(opt : AdamState) -> String {
 ///|
 /// Inverse of `serialize_adam_state`. Deep-copies the four moment
 /// arrays so subsequent updates to either side don't alias.
-pub fn deserialize_adam_state(s : String) -> AdamState {
+pub fn deserialize_adam_state(s : String) -> @optim.AdamState {
   let lines = split_header_lines(s)
   let kind = header_lookup(lines, "kind")
   if kind != "AdamState" {
@@ -528,7 +528,8 @@ pub fn deserialize_adam_state(s : String) -> AdamState {
   for i in 0..<vb_src.length() {
     vb[i] = vb_src[i]
   }
-  { m_w: mw, v_w: vw, m_b: mb, v_b: vb, step }
+  // Through the constructor because `AdamState`'s fields are private to optim/.
+  @optim.AdamState::new(mw, vw, mb, vb, step)
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -544,7 +545,7 @@ pub fn deserialize_adam_state(s : String) -> AdamState {
 /// are escaped as the literal two-char sequence "\n".
 pub fn serialize_qnet_checkpoint(
   q : LinearQNet,
-  opt : AdamState,
+  opt : @optim.AdamState,
   step : Int,
 ) -> String {
   let buf = StringBuilder()
@@ -563,7 +564,7 @@ pub fn serialize_qnet_checkpoint(
 ///|
 /// Inverse of `serialize_qnet_checkpoint`. Reconstructs the model,
 /// optimizer state, and the global training step counter.
-pub fn deserialize_qnet_checkpoint(s : String) -> (LinearQNet, AdamState, Int) {
+pub fn deserialize_qnet_checkpoint(s : String) -> (LinearQNet, @optim.AdamState, Int) {
   let lines = split_header_lines(s)
   let kind = header_lookup(lines, "kind")
   if kind != "QNetCheckpoint" {

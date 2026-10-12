@@ -696,8 +696,8 @@ pub fn dragonnet_l2_penalty(net : DragonNet, l2_lambda : Float) -> Float {
 /// carried as a one-element `AdamState` so it goes through exactly the same
 /// update rule as the kernels rather than a second, subtly different one.
 pub(all) struct DragonNetAdam {
-  layers : Array[AdamState]
-  epsilon : AdamState
+  layers : Array[@optim.AdamState]
+  epsilon : @optim.AdamState
 }
 
 ///|
@@ -705,18 +705,18 @@ pub(all) struct DragonNetAdam {
 pub fn DragonNetAdam::new(net : DragonNet) -> DragonNetAdam {
   {
     layers: [
-      adam_init(net.enc1.weight.length(), net.enc1.bias.length()),
-      adam_init(net.enc2.weight.length(), net.enc2.bias.length()),
-      adam_init(net.enc3.weight.length(), net.enc3.bias.length()),
-      adam_init(net.y0_h1.weight.length(), net.y0_h1.bias.length()),
-      adam_init(net.y0_h2.weight.length(), net.y0_h2.bias.length()),
-      adam_init(net.y0_out.weight.length(), net.y0_out.bias.length()),
-      adam_init(net.y1_h1.weight.length(), net.y1_h1.bias.length()),
-      adam_init(net.y1_h2.weight.length(), net.y1_h2.bias.length()),
-      adam_init(net.y1_out.weight.length(), net.y1_out.bias.length()),
-      adam_init(net.t_head.weight.length(), net.t_head.bias.length()),
+      @optim.adam_init(net.enc1.weight.length(), net.enc1.bias.length()),
+      @optim.adam_init(net.enc2.weight.length(), net.enc2.bias.length()),
+      @optim.adam_init(net.enc3.weight.length(), net.enc3.bias.length()),
+      @optim.adam_init(net.y0_h1.weight.length(), net.y0_h1.bias.length()),
+      @optim.adam_init(net.y0_h2.weight.length(), net.y0_h2.bias.length()),
+      @optim.adam_init(net.y0_out.weight.length(), net.y0_out.bias.length()),
+      @optim.adam_init(net.y1_h1.weight.length(), net.y1_h1.bias.length()),
+      @optim.adam_init(net.y1_h2.weight.length(), net.y1_h2.bias.length()),
+      @optim.adam_init(net.y1_out.weight.length(), net.y1_out.bias.length()),
+      @optim.adam_init(net.t_head.weight.length(), net.t_head.bias.length()),
     ],
-    epsilon: adam_init(1, 0),
+    epsilon: @optim.adam_init(1, 0),
   }
 }
 
@@ -734,31 +734,31 @@ pub fn dragonnet_adam_step(
   eps : Float,
 ) -> (DragonNet, DragonNetAdam) {
   let states = opt.layers
-  let (n1, s1) = adam_update_linear(net.enc1, g.enc1.0, g.enc1.1, states[0], lr, beta1, beta2, eps)
+  let (n1, s1) = @optim.adam_update_linear(net.enc1, g.enc1.0, g.enc1.1, states[0], lr, beta1, beta2, eps)
   states[0] = s1
-  let (n2, s2) = adam_update_linear(net.enc2, g.enc2.0, g.enc2.1, states[1], lr, beta1, beta2, eps)
+  let (n2, s2) = @optim.adam_update_linear(net.enc2, g.enc2.0, g.enc2.1, states[1], lr, beta1, beta2, eps)
   states[1] = s2
-  let (n3, s3) = adam_update_linear(net.enc3, g.enc3.0, g.enc3.1, states[2], lr, beta1, beta2, eps)
+  let (n3, s3) = @optim.adam_update_linear(net.enc3, g.enc3.0, g.enc3.1, states[2], lr, beta1, beta2, eps)
   states[2] = s3
-  let (h1, s4) = adam_update_linear(net.y0_h1, g.y0_h1.0, g.y0_h1.1, states[3], lr, beta1, beta2, eps)
+  let (h1, s4) = @optim.adam_update_linear(net.y0_h1, g.y0_h1.0, g.y0_h1.1, states[3], lr, beta1, beta2, eps)
   states[3] = s4
-  let (h2, s5) = adam_update_linear(net.y0_h2, g.y0_h2.0, g.y0_h2.1, states[4], lr, beta1, beta2, eps)
+  let (h2, s5) = @optim.adam_update_linear(net.y0_h2, g.y0_h2.0, g.y0_h2.1, states[4], lr, beta1, beta2, eps)
   states[4] = s5
-  let (o0, s6) = adam_update_linear(net.y0_out, g.y0_out.0, g.y0_out.1, states[5], lr, beta1, beta2, eps)
+  let (o0, s6) = @optim.adam_update_linear(net.y0_out, g.y0_out.0, g.y0_out.1, states[5], lr, beta1, beta2, eps)
   states[5] = s6
-  let (i1, s7) = adam_update_linear(net.y1_h1, g.y1_h1.0, g.y1_h1.1, states[6], lr, beta1, beta2, eps)
+  let (i1, s7) = @optim.adam_update_linear(net.y1_h1, g.y1_h1.0, g.y1_h1.1, states[6], lr, beta1, beta2, eps)
   states[6] = s7
-  let (i2, s8) = adam_update_linear(net.y1_h2, g.y1_h2.0, g.y1_h2.1, states[7], lr, beta1, beta2, eps)
+  let (i2, s8) = @optim.adam_update_linear(net.y1_h2, g.y1_h2.0, g.y1_h2.1, states[7], lr, beta1, beta2, eps)
   states[7] = s8
-  let (o1, s9) = adam_update_linear(net.y1_out, g.y1_out.0, g.y1_out.1, states[8], lr, beta1, beta2, eps)
+  let (o1, s9) = @optim.adam_update_linear(net.y1_out, g.y1_out.0, g.y1_out.1, states[8], lr, beta1, beta2, eps)
   states[8] = s9
-  let (th, s10) = adam_update_linear(net.t_head, g.t_head.0, g.t_head.1, states[9], lr, beta1, beta2, eps)
+  let (th, s10) = @optim.adam_update_linear(net.t_head, g.t_head.0, g.t_head.1, states[9], lr, beta1, beta2, eps)
   states[9] = s10
   // epsilon: same rule, carried as weight=[eps], bias=[] (no bias gradient).
   // `adam_update_arrays` returns a 3-tuple; the middle element is that empty
   // bias array, which has no gradient because DragonNet's epsilon is a bare
   // scalar with no bias of its own.
-  let (new_eps_arr, _, s11) = adam_update_arrays(
+  let (new_eps_arr, _, s11) = @optim.adam_update_arrays(
     [net.epsilon], [], [g.epsilon], [], opt.epsilon, lr, beta1, beta2, eps,
   )
   let next : DragonNet = {

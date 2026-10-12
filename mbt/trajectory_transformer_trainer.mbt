@@ -189,22 +189,22 @@ pub fn tt_train_step(
     hidden_seq, seq_len, state_dim, tt.d_model,
   )
   // SGD on state head (matrix + vector bias).
-  let (new_state_w, new_state_b) = sgd_update_arrays(
+  let (new_state_w, new_state_b) = @optim.sgd_update_arrays(
     flatten_2d(tt.state_w), tt.state_b, flatten_2d(d_state_w), d_state_b, lr,
   )
   // SGD on the 3 scalar heads — wrap each scalar bias as a 1-elem array.
   let tt_reward_b_arr : Array[Float] = [tt.reward_b]
-  let (new_reward_w, new_reward_b_arr) = sgd_update_arrays(
+  let (new_reward_w, new_reward_b_arr) = @optim.sgd_update_arrays(
     flatten_2d(tt.reward_w), tt_reward_b_arr, flatten_2d(d_reward_w), [d_reward_b],
     lr,
   )
   let tt_done_b_arr : Array[Float] = [tt.done_b]
-  let (new_done_w, new_done_b_arr) = sgd_update_arrays(
+  let (new_done_w, new_done_b_arr) = @optim.sgd_update_arrays(
     flatten_2d(tt.done_w), tt_done_b_arr, flatten_2d(d_done_w), [d_done_b],
     lr,
   )
   let tt_value_b_arr : Array[Float] = [tt.value_b]
-  let (new_value_w, new_value_b_arr) = sgd_update_arrays(
+  let (new_value_w, new_value_b_arr) = @optim.sgd_update_arrays(
     flatten_2d(tt.value_w), tt_value_b_arr, flatten_2d(d_value_w), [d_value_b],
     lr,
   )

@@ -1,0 +1,21 @@
+// optim/ — optimizers and learning-rate schedules.
+//
+// Sits on core. The schedules compare a loss against the previous best and
+// decide the next learning rate; the optimizers step parameter arrays in
+// place, carrying their own state (m, v, step count). None of that needs to
+// know what kind of thing is being trained, which is why this package was the
+// one place in the tree that could be split without first untangling anything
+// else.
+//
+// It imports nn/ for `LinearParam` and `Conv2dParam` -- not to run them, only
+// because the *layout-specialised* update wrappers (`adam_update_linear`,
+// `adam_update_conv2d`) hand back a fresh parameter block of that exact type.
+//
+// That import used to point the other way. layer_norm.mbt and batch_norm2d.mbt
+// reached `@optim.sqrtf` to normalise a tensor, so nn/ depended on optim/ for a
+// square root and the two could not be separated at all. Moving sqrtf, cosf and
+// sinf into core/ is what broke the cycle.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+}

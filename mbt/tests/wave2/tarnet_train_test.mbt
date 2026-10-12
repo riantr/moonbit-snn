@@ -61,8 +61,8 @@ test "Adam: the first step is exactly lr*g/(|g|+eps)" {
   let w : Array[Float] = [1.0F, -2.0F, 0.0F]
   let g : Array[Float] = [3.0F, -0.5F, 4.0F]
   let none : Array[Float] = Array::make(0, 0.0F)
-  let state = @snn_mbt.adam_init(3, 0)
-  let (w2, _none_out, _st) = @snn_mbt.adam_update_arrays(
+  let state = @optim.adam_init(3, 0)
+  let (w2, _none_out, _st) = @optim.adam_update_arrays(
     w, none, g, none, state, lr, 0.9F, 0.999F, eps,
   )
   let mut i = 0

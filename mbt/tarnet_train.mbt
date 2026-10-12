@@ -20,9 +20,9 @@ pub fn tarnet_train_step(
   x : Array[Float],
   n : Int,
   targets : Array[Int],
-  state : AdamState,
+  state : @optim.AdamState,
   lr : Float,
-) -> (Tarnet, AdamState, Float) {
+) -> (Tarnet, @optim.AdamState, Float) {
   let (out, cache) = tarnet_forward_full(net, x, n)
   let (d_logits, loss) = tarnet_softmax_dlogits(
     out.logits, n, net.n_classes, targets,
@@ -30,7 +30,7 @@ pub fn tarnet_train_step(
   let (g, _d_x) = tarnet_backward(net, n, cache, d_logits, 0.0F)
   let cur = tarnet_flatten(net)
   let none : Array[Float] = Array::make(0, 0.0F)
-  let (next, _none_out, st) = adam_update_arrays(
+  let (next, _none_out, st) = @optim.adam_update_arrays(
     cur, none, g, none, state, lr, 0.9F, 0.999F, 1.0e-8F,
   )
   (tarnet_unflatten(net, next), st, loss)
@@ -38,8 +38,8 @@ pub fn tarnet_train_step(
 
 ///|
 /// Allocate optimizer state for a model's flat parameter vector.
-pub fn tarnet_adam_init(net : Tarnet) -> AdamState {
-  adam_init(tarnet_param_count(net), 0)
+pub fn tarnet_adam_init(net : Tarnet) -> @optim.AdamState {
+  @optim.adam_init(tarnet_param_count(net), 0)
 }
 
 ///|

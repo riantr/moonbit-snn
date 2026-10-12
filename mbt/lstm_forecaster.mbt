@@ -306,34 +306,34 @@ pub fn lstm_forecaster_train_step(
   }
   // 7. SGD step on all parameter groups.
   // Linear_out
-  let (new_out_w, new_out_b) = sgd_update_arrays(
+  let (new_out_w, new_out_b) = @optim.sgd_update_arrays(
     flatten_2d(model.out_w), model.out_b,
     flatten_2d(d_out_w), d_out_b,
     lr,
   )
   // Linear_in
-  let (new_in_w, new_in_b) = sgd_update_arrays(
+  let (new_in_w, new_in_b) = @optim.sgd_update_arrays(
     flatten_2d(model.in_w), model.in_b,
     flatten_2d(d_in_w), d_in_b,
     lr,
   )
   // LSTM cell — flatten the 4 gate matrices and biases.
-  let (new_w_f, new_b_f) = sgd_update_arrays(
+  let (new_w_f, new_b_f) = @optim.sgd_update_arrays(
     flatten_2d(model.lstm.w_f), model.lstm.b_f,
     flatten_2d(lstm_grad.d_w_f), lstm_grad.d_b_f,
     lr,
   )
-  let (new_w_i, new_b_i) = sgd_update_arrays(
+  let (new_w_i, new_b_i) = @optim.sgd_update_arrays(
     flatten_2d(model.lstm.w_i), model.lstm.b_i,
     flatten_2d(lstm_grad.d_w_i), lstm_grad.d_b_i,
     lr,
   )
-  let (new_w_c, new_b_c) = sgd_update_arrays(
+  let (new_w_c, new_b_c) = @optim.sgd_update_arrays(
     flatten_2d(model.lstm.w_c), model.lstm.b_c,
     flatten_2d(lstm_grad.d_w_c), lstm_grad.d_b_c,
     lr,
   )
-  let (new_w_o, new_b_o) = sgd_update_arrays(
+  let (new_w_o, new_b_o) = @optim.sgd_update_arrays(
     flatten_2d(model.lstm.w_o), model.lstm.b_o,
     flatten_2d(lstm_grad.d_w_o), lstm_grad.d_b_o,
     lr,

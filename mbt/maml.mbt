@@ -166,11 +166,11 @@ pub fn mlp_model_sgd_step(
   grad : MLPGrad,
   lr : Float,
 ) -> MLPModel {
-  let (new_w1, new_b1) = sgd_update_arrays(
+  let (new_w1, new_b1) = @optim.sgd_update_arrays(
     flatten_2d(model.w1), model.b1, flatten_2d(grad.d_w1), grad.d_b1,
     lr,
   )
-  let (new_w2, new_b2) = sgd_update_arrays(
+  let (new_w2, new_b2) = @optim.sgd_update_arrays(
     flatten_2d(model.w2), model.b2, flatten_2d(grad.d_w2), grad.d_b2,
     lr,
   )

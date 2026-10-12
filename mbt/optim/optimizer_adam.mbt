@@ -37,6 +37,22 @@ pub struct AdamState {
 }
 
 ///|
+/// Build an `AdamState` from its moment estimates and step counter.
+///
+/// The fields are private, so once this type moved into its own package
+/// `serialize.mbt` could no longer write the record literal it uses to restore
+/// a checkpoint.
+pub fn AdamState::new(
+  m_w : Array[Float],
+  v_w : Array[Float],
+  m_b : Array[Float],
+  v_b : Array[Float],
+  step : Int,
+) -> AdamState {
+  { m_w, v_w, m_b, v_b, step }
+}
+
+///|
 /// Allocate zero-initialised Adam state for a parameter of given
 /// `weight_len` / `bias_len`. Initial `step = 0` (no bias correction yet).
 pub fn adam_init(weight_len : Int, bias_len : Int) -> AdamState {

@@ -111,7 +111,7 @@ pub fn dt_train_step(
     grad_action, hidden_seq, seq_len, dt.action_dim, dt.d_model,
   )
   // 4. SGD step on action_w, action_b.
-  let (new_action_w, new_action_b) = sgd_update_arrays(
+  let (new_action_w, new_action_b) = @optim.sgd_update_arrays(
     flatten_2d(dt.action_w), dt.action_b, flatten_2d(d_w), d_b, lr,
   )
   let new_action_w_2d = unflatten_2d(new_action_w, dt.action_dim, dt.d_model)

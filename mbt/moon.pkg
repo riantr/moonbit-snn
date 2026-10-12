@@ -11,4 +11,5 @@ import {
   "riantr/snn_mbt/neuron",
   "riantr/snn_mbt/synapse",
   "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/optim",
 }

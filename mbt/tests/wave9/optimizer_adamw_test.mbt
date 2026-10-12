@@ -2,7 +2,7 @@
 
 ///|
 test "adamw_init / zero state, step=0" {
-  let s = @snn_mbt.adamw_init(3, 2)
+  let s = @optim.adamw_init(3, 2)
   for i in 0..<3 {
     if s.m_w[i] != 0.0F { fail("m_w[\{i}] should be 0") }
     if s.v_w[i] != 0.0F { fail("v_w[\{i}] should be 0") }
@@ -29,8 +29,8 @@ test "adamw_update_arrays / weight_decay=0 matches Adam direction" {
   }
   dw = dw / 4.0F
   db_acc = db_acc / 4.0F
-  let state0 = @snn_mbt.adamw_init(1, 1)
-  let (w_arr, b_arr, _) = @snn_mbt.adamw_update_arrays(
+  let state0 = @optim.adamw_init(1, 1)
+  let (w_arr, b_arr, _) = @optim.adamw_update_arrays(
     [0.0F], [0.0F], [dw], [db_acc], state0,
     0.1F, 0.9F, 0.999F, 0.00000001F, 0.0F,
   )
@@ -45,8 +45,8 @@ test "adamw_update_arrays / weight_decay shrinks large weights more than small o
   // After one step the *larger* weight should shrink by more in absolute
   // terms (the decoupled decay term `lr * weight_decay * w` is linear
   // in `w`). Use zero gradient so the only effect is weight decay.
-  let state0 = @snn_mbt.adamw_init(2, 1)
-  let (w, _b, _) = @snn_mbt.adamw_update_arrays(
+  let state0 = @optim.adamw_init(2, 1)
+  let (w, _b, _) = @optim.adamw_update_arrays(
     [10.0F, 0.1F], [0.5F], [0.0F, 0.0F], [0.0F],
     state0, 0.1F, 0.9F, 0.999F, 0.00000001F, 0.1F,
   )
@@ -70,16 +70,16 @@ test "adamw_update_arrays / weight_decay shrinks large weights more than small o
 
 ///|
 test "adamw_update_arrays / step counter increments via returned state" {
-  let s0 = @snn_mbt.adamw_init(1, 1)
-  let (_, _, s1) = @snn_mbt.adamw_update_arrays(
+  let s0 = @optim.adamw_init(1, 1)
+  let (_, _, s1) = @optim.adamw_update_arrays(
     [0.0F], [0.0F], [1.0F], [0.5F], s0,
     0.01F, 0.9F, 0.999F, 0.00000001F, 0.0F,
   )
-  let (_, _, s2) = @snn_mbt.adamw_update_arrays(
+  let (_, _, s2) = @optim.adamw_update_arrays(
     [0.0F], [0.0F], [1.0F], [0.5F], s1,
     0.01F, 0.9F, 0.999F, 0.00000001F, 0.0F,
   )
-  let (_, _, s3) = @snn_mbt.adamw_update_arrays(
+  let (_, _, s3) = @optim.adamw_update_arrays(
     [0.0F], [0.0F], [1.0F], [0.5F], s2,
     0.01F, 0.9F, 0.999F, 0.00000001F, 0.0F,
   )
@@ -99,7 +99,7 @@ test "adamw_update_arrays / loss converges on y=2x+1 with weight_decay" {
   let mut b = 0.0F
   let lr = 0.1F
   let wd = 0.001F
-  let mut state = @snn_mbt.adamw_init(1, 1)
+  let mut state = @optim.adamw_init(1, 1)
   let n_pts = 4
   for _step in 0..<600 {
     let mut loss = 0.0F
@@ -114,7 +114,7 @@ test "adamw_update_arrays / loss converges on y=2x+1 with weight_decay" {
     loss = loss / Float::from_int(n_pts)
     dw = dw / Float::from_int(n_pts)
     db_acc = db_acc / Float::from_int(n_pts)
-    let (w_arr, b_arr, state2) = @snn_mbt.adamw_update_arrays(
+    let (w_arr, b_arr, state2) = @optim.adamw_update_arrays(
       [w], [b], [dw], [db_acc], state,
       lr, 0.9F, 0.999F, 0.00000001F, wd,
     )
@@ -131,8 +131,8 @@ test "adamw_update_linear / preserves LinearParam shape" {
   let p = @nn.LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
   let dw : Array[Float] = [0.1F, 0.1F, 0.1F, 0.1F]
   let db : Array[Float] = [0.05F, 0.05F]
-  let state0 = @snn_mbt.adamw_init(4, 2)
-  let (p2, _s2) = @snn_mbt.adamw_update_linear(
+  let state0 = @optim.adamw_init(4, 2)
+  let (p2, _s2) = @optim.adamw_update_linear(
     p, dw, db, state0, 0.01F, 0.9F, 0.999F, 0.00000001F, 0.01F,
   )
   if p2.in_features != 2 || p2.out_features != 2 {
@@ -152,8 +152,8 @@ test "adamw_update_conv / preserves Conv2dParam shape" {
   )
   let dw : Array[Float] = [0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F]
   let db : Array[Float] = [0.02F, 0.02F]
-  let state0 = @snn_mbt.adamw_init(8, 2)
-  let (p2, _s2) = @snn_mbt.adamw_update_conv(
+  let state0 = @optim.adamw_init(8, 2)
+  let (p2, _s2) = @optim.adamw_update_conv(
     p, dw, db, state0, 0.01F, 0.9F, 0.999F, 0.00000001F, 0.01F,
   )
   if p2.c_out != 2 || p2.c_in != 2 || p2.kh != 2 || p2.kw != 2 {

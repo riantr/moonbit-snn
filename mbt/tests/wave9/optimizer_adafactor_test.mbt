@@ -10,9 +10,9 @@ fn af_eps(a : Float, b : Float, eps : Float) -> Bool {
 test "adafactor_update_2d: basic step shrinks weight toward 0 with non-zero gradient" {
   let weight : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let d_weight : Array[Float] = [0.1F, 0.1F, 0.1F, 0.1F]
-  let state = @snn_mbt.Adafactor2DState::new(2, 2)
+  let state = @optim.Adafactor2DState::new(2, 2)
   let lr = 0.01F
-  @snn_mbt.adafactor_update_2d(weight, d_weight, state, lr)
+  @optim.adafactor_update_2d(weight, d_weight, state, lr)
   // After one step, weight should have decreased (dW > 0 → w -= lr/sqrt(v)*dW).
   for i in 0..<4 {
     if weight[i] >= [0.1F, 0.2F, 0.3F, 0.4F][i] {
@@ -35,9 +35,9 @@ test "adafactor_update_2d: basic step shrinks weight toward 0 with non-zero grad
 test "adafactor_update_2d: zero gradient leaves weight unchanged" {
   let weight : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let d_weight : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let state = @snn_mbt.Adafactor2DState::new(2, 2)
+  let state = @optim.Adafactor2DState::new(2, 2)
   let lr = 0.01F
-  @snn_mbt.adafactor_update_2d(weight, d_weight, state, lr)
+  @optim.adafactor_update_2d(weight, d_weight, state, lr)
   for i in 0..<4 {
     if weight[i] != [0.1F, 0.2F, 0.3F, 0.4F][i] {
       fail("weight[\{i}] = \{weight[i]}, expected unchanged")
@@ -49,7 +49,7 @@ test "adafactor_update_2d: zero gradient leaves weight unchanged" {
 test "adafactor_update_1d: bias update matches RMSProp-like form" {
   let bias : Array[Float] = [0.0F, 0.0F, 0.0F]
   let d_bias : Array[Float] = [0.5F, -0.3F, 0.1F]
-  let state = @snn_mbt.Adafactor1DState::new(3)
+  let state = @optim.Adafactor1DState::new(3)
   // First step: v = (1-β)·g^2 = 0.001·g^2
   // update = lr·g/sqrt(v+eps) ≈ lr·g/sqrt(v) for small v.
   // bias[0] ≈ 0 - 0.1·0.5/sqrt(0.001·0.25) = -0.05/sqrt(0.00025) = -0.05/0.0158 ≈ -3.16
@@ -60,7 +60,7 @@ test "adafactor_update_1d: bias update matches RMSProp-like form" {
     saved_bias[i] = bias[i]
   }
   ignore(saved_bias)
-  @snn_mbt.adafactor_update_1d(bias, d_bias, state, lr_small)
+  @optim.adafactor_update_1d(bias, d_bias, state, lr_small)
   // Just check that v populated and bias changed.
   for i in 0..<3 {
     if state.v[i] == 0.0F {
@@ -84,9 +84,9 @@ test "adafactor_update_linear: full weight + bias update" {
   let bias : Array[Float] = [0.1F, 0.2F]
   let d_weight : Array[Float] = [0.05F, 0.05F, 0.05F, 0.05F]
   let d_bias : Array[Float] = [0.1F, 0.1F]
-  let w_state = @snn_mbt.Adafactor2DState::new(2, 2)
-  let b_state = @snn_mbt.Adafactor1DState::new(2)
-  @snn_mbt.adafactor_update_linear(weight, bias, d_weight, d_bias, w_state, b_state, 0.01F)
+  let w_state = @optim.Adafactor2DState::new(2, 2)
+  let b_state = @optim.Adafactor1DState::new(2)
+  @optim.adafactor_update_linear(weight, bias, d_weight, d_bias, w_state, b_state, 0.01F)
   // Weight decreased.
   for i in 0..<4 {
     let original = [0.5F, 0.6F, 0.7F, 0.8F][i]
@@ -107,7 +107,7 @@ test "adafactor: converges on a toy quadratic (W*W^T loss)" {
   // Synthetic: just verify the weight moves toward a target.
   let target : Array[Float] = [1.0F, 0.0F, 0.0F, 1.0F]
   let weight : Array[Float] = [0.5F, 0.5F, 0.5F, 0.5F]
-  let state = @snn_mbt.Adafactor2DState::new(2, 2)
+  let state = @optim.Adafactor2DState::new(2, 2)
   let lr = 0.01F
   let n_steps = 50
   for _step in 0..<n_steps {
@@ -116,7 +116,7 @@ test "adafactor: converges on a toy quadratic (W*W^T loss)" {
     for i in 0..<4 {
       d_w[i] = weight[i] - target[i]
     }
-    @snn_mbt.adafactor_update_2d(weight, d_w, state, lr)
+    @optim.adafactor_update_2d(weight, d_w, state, lr)
   }
   // Final weight should be closer to target than initial.
   let mut initial_diff = 0.0F

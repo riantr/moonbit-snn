@@ -269,27 +269,27 @@ pub fn gru_forecaster_train_step(
     d_h = d_h_prev
   }
   // 7. SGD step on all parameter groups.
-  let (new_out_w, new_out_b) = sgd_update_arrays(
+  let (new_out_w, new_out_b) = @optim.sgd_update_arrays(
     flatten_2d(model.out_w), model.out_b,
     flatten_2d(d_out_w), d_out_b,
     lr,
   )
-  let (new_in_w, new_in_b) = sgd_update_arrays(
+  let (new_in_w, new_in_b) = @optim.sgd_update_arrays(
     flatten_2d(model.in_w), model.in_b,
     flatten_2d(d_in_w), d_in_b,
     lr,
   )
-  let (new_w_z, new_b_z) = sgd_update_arrays(
+  let (new_w_z, new_b_z) = @optim.sgd_update_arrays(
     flatten_2d(model.gru.w_z), model.gru.b_z,
     flatten_2d(gru_grad.d_w_z), gru_grad.d_b_z,
     lr,
   )
-  let (new_w_r, new_b_r) = sgd_update_arrays(
+  let (new_w_r, new_b_r) = @optim.sgd_update_arrays(
     flatten_2d(model.gru.w_r), model.gru.b_r,
     flatten_2d(gru_grad.d_w_r), gru_grad.d_b_r,
     lr,
   )
-  let (new_w_n, new_b_n) = sgd_update_arrays(
+  let (new_w_n, new_b_n) = @optim.sgd_update_arrays(
     flatten_2d(model.gru.w_n), model.gru.b_n,
     flatten_2d(gru_grad.d_w_n), gru_grad.d_b_n,
     lr,

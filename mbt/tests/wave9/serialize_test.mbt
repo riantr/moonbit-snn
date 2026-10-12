@@ -146,7 +146,7 @@ test "serialize_deterministic_policy_roundtrip" {
 ///|
 test "serialize_adam_state_after_one_step" {
   // Build an AdamState with step > 0 by running one adam_update_arrays.
-  let opt0 = @snn_mbt.adam_init(6, 2)
+  let opt0 = @optim.adam_init(6, 2)
   // Pre-set non-zero moments on opt0 by running a no-op update first.
   // (AdamState fields are not pub, but adam_update_arrays accepts the
   // state read-only and returns a new state — we feed the new state
@@ -155,14 +155,14 @@ test "serialize_adam_state_after_one_step" {
   let bias : Array[Float] = [0.1F, -0.1F]
   let d_weight : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F]
   let d_bias : Array[Float] = [0.01F, -0.01F]
-  let (_w2a, _b2a, opt_a) = @snn_mbt.adam_update_arrays(
+  let (_w2a, _b2a, opt_a) = @optim.adam_update_arrays(
     weight, bias, d_weight, d_bias, opt0,
     0.001F, 0.9F, 0.999F, 1.0e-7F,
   )
   // Second call with different gradients — opt_a has step=1.
   let d_weight2 : Array[Float] = [-0.1F, 0.2F, -0.3F, 0.4F, -0.5F, 0.6F]
   let d_bias2 : Array[Float] = [-0.02F, 0.03F]
-  let (_w2b, _b2b, opt_b) = @snn_mbt.adam_update_arrays(
+  let (_w2b, _b2b, opt_b) = @optim.adam_update_arrays(
     weight, bias, d_weight2, d_bias2, opt_a,
     0.001F, 0.9F, 0.999F, 1.0e-7F,
   )
@@ -177,7 +177,7 @@ test "serialize_adam_state_after_one_step" {
   // Step is incremented by each adam_update_arrays call (0 -> 1 -> 2).
   // AdamState fields are not pub, so use adam_next_step to read step
   // (returns step + 1, so we expect 3 for the post-deserialize state).
-  assert_eq(@snn_mbt.adam_next_step(opt1), 3)
+  assert_eq(@optim.adam_next_step(opt1), 3)
   // m_w[0] after two updates — round-trip preserves bit-exact value.
   let m0 = opt1.m_w[0]
   // First step: m = 0.9 * 0.0 + 0.1 * 0.1 = 0.01 (then quantized to
@@ -202,12 +202,12 @@ test "serialize_adam_state_after_one_step" {
 ///|
 test "serialize_adam_state_zero_state" {
   // The zero-init state must also round-trip cleanly.
-  let opt0 = @snn_mbt.adam_init(4, 2)
+  let opt0 = @optim.adam_init(4, 2)
   let s = @snn_mbt.serialize_adam_state(opt0)
   let opt1 = @snn_mbt.deserialize_adam_state(s)
   // adam_next_step returns state.step + 1; for zero-init state.step=0,
   // so adam_next_step = 1.
-  assert_eq(@snn_mbt.adam_next_step(opt1), 1)
+  assert_eq(@optim.adam_next_step(opt1), 1)
   assert_eq(opt1.m_w.length(), 4)
   assert_eq(opt1.m_b.length(), 2)
   assert_eq(opt1.v_w.length(), 4)
@@ -227,8 +227,8 @@ test "serialize_qnet_checkpoint_roundtrip" {
   let bias : Array[Float] = [0.01F, -0.02F, 0.03F]
   let d_weight : Array[Float] = [0.05F, 0.04F, 0.03F, 0.02F, 0.01F, 0.005F]
   let d_bias : Array[Float] = [0.001F, -0.001F, 0.0005F]
-  let opt0 = @snn_mbt.adam_init(6, 3)
-  let (_w2, _b2, opt_used) = @snn_mbt.adam_update_arrays(
+  let opt0 = @optim.adam_init(6, 3)
+  let (_w2, _b2, opt_used) = @optim.adam_update_arrays(
     weight, bias, d_weight, d_bias, opt0,
     0.001F, 0.9F, 0.999F, 1.0e-7F,
   )
@@ -247,7 +247,7 @@ test "serialize_qnet_checkpoint_independent_copies" {
   // deserialized copy.
   let q0 : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(2, 2, 29UL)
   q0.w[0][0] = 0.5F
-  let opt0 = @snn_mbt.adam_init(4, 2)
+  let opt0 = @optim.adam_init(4, 2)
   let s = @snn_mbt.serialize_qnet_checkpoint(q0, opt0, 5)
   let (q1, _opt1, _) = @snn_mbt.deserialize_qnet_checkpoint(s)
   q0.w[0][0] = -99.0F

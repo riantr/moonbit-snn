@@ -2,7 +2,7 @@
 
 ///|
 test "adagrad_init / zero state" {
-  let s = @snn_mbt.adagrad_init(3, 2)
+  let s = @optim.adagrad_init(3, 2)
   for i in 0..<3 {
     if s.v_w[i] != 0.0F { fail("v_w[\{i}] should be 0") }
   }
@@ -13,8 +13,8 @@ test "adagrad_init / zero state" {
 
 ///|
 test "adagrad_update_arrays / first step moves in negative-gradient direction" {
-  let s0 = @snn_mbt.adagrad_init(1, 1)
-  let (w, b, _) = @snn_mbt.adagrad_update_arrays(
+  let s0 = @optim.adagrad_init(1, 1)
+  let (w, b, _) = @optim.adagrad_update_arrays(
     [1.0F], [0.5F], [0.1F], [0.05F], s0, 0.01F, 0.00000001F,
   )
   // positive gradient → weight decreases.
@@ -27,14 +27,14 @@ test "adagrad_update_arrays / v accumulates g^2 monotonically (no EMA decay)" {
   // Step 1: g = 0.1, v_after = 0.01.
   // Step 2: g = 0.1, v_after = 0.02 (NOT 0.01*alpha + ...).
   // This is the key AdaGrad property: v is a sum, not an EMA.
-  let s0 = @snn_mbt.adagrad_init(1, 1)
-  let (w1, _b1, s1) = @snn_mbt.adagrad_update_arrays(
+  let s0 = @optim.adagrad_init(1, 1)
+  let (w1, _b1, s1) = @optim.adagrad_update_arrays(
     [1.0F], [0.5F], [0.1F], [0.05F], s0, 0.01F, 0.00000001F,
   )
   if (s1.v_w[0] - 0.01F).abs() > 0.000001F {
     fail("v_w after step 1 should be 0.01, got \{s1.v_w[0]}")
   }
-  let (w2, _b2, s2) = @snn_mbt.adagrad_update_arrays(
+  let (w2, _b2, s2) = @optim.adagrad_update_arrays(
     w1, [0.5F], [0.1F], [0.05F], s1, 0.01F, 0.00000001F,
   )
   if (s2.v_w[0] - 0.02F).abs() > 0.000001F {
@@ -55,14 +55,14 @@ test "adagrad_update_arrays / sparse-feature style: large initial step, smaller 
   // Verify the per-parameter learning rate monotonically shrinks as v
   // accumulates. With constant gradient g=1.0 the effective per-step
   // movement at step t is lr / sqrt(t).
-  let s0 = @snn_mbt.adagrad_init(1, 1)
+  let s0 = @optim.adagrad_init(1, 1)
   let mut w = 1.0F
   let mut s = s0
   let lr = 0.1F
   let g = 1.0F
   let mut prev_drop = 1000000000.0F
   for step in 1..<10 {
-    let (w_new, _, s_new) = @snn_mbt.adagrad_update_arrays(
+    let (w_new, _, s_new) = @optim.adagrad_update_arrays(
       [w], [0.0F], [g], [0.0F], s, lr, 0.00000001F,
     )
     w = w_new[0]
@@ -89,7 +89,7 @@ test "adagrad_update_arrays / converges on y=2x+1 over many steps" {
   let mut w = 0.0F
   let mut b = 0.0F
   let lr = 0.5F
-  let mut state = @snn_mbt.adagrad_init(1, 1)
+  let mut state = @optim.adagrad_init(1, 1)
   let n_pts = 4
   for _step in 0..<1500 {
     let mut dw = 0.0F
@@ -101,7 +101,7 @@ test "adagrad_update_arrays / converges on y=2x+1 over many steps" {
     }
     dw = dw / Float::from_int(n_pts)
     db_acc = db_acc / Float::from_int(n_pts)
-    let (w_arr, b_arr, state2) = @snn_mbt.adagrad_update_arrays(
+    let (w_arr, b_arr, state2) = @optim.adagrad_update_arrays(
       [w], [b], [dw], [db_acc], state, lr, 0.00000001F,
     )
     w = w_arr[0]
@@ -117,8 +117,8 @@ test "adagrad_update_linear / preserves LinearParam shape" {
   let p = @nn.LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
   let dw : Array[Float] = [0.1F, 0.1F, 0.1F, 0.1F]
   let db : Array[Float] = [0.05F, 0.05F]
-  let state0 = @snn_mbt.adagrad_init(4, 2)
-  let (p2, _s2) = @snn_mbt.adagrad_update_linear(p, dw, db, state0, 0.01F, 0.00000001F)
+  let state0 = @optim.adagrad_init(4, 2)
+  let (p2, _s2) = @optim.adagrad_update_linear(p, dw, db, state0, 0.01F, 0.00000001F)
   if p2.in_features != 2 || p2.out_features != 2 {
     fail("LinearParam shape not preserved")
   }
@@ -136,8 +136,8 @@ test "adagrad_update_conv / preserves Conv2dParam shape" {
   )
   let dw : Array[Float] = [0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F]
   let db : Array[Float] = [0.02F, 0.02F]
-  let state0 = @snn_mbt.adagrad_init(8, 2)
-  let (p2, _s2) = @snn_mbt.adagrad_update_conv(p, dw, db, state0, 0.01F, 0.00000001F)
+  let state0 = @optim.adagrad_init(8, 2)
+  let (p2, _s2) = @optim.adagrad_update_conv(p, dw, db, state0, 0.01F, 0.00000001F)
   if p2.c_out != 2 || p2.c_in != 2 || p2.kh != 2 || p2.kw != 2 {
     fail("Conv2dParam shape not preserved")
   }

@@ -2,7 +2,7 @@
 
 ///|
 test "rmsprop_init / zero state, no step counter" {
-  let s = @snn_mbt.rmsprop_init(3, 2)
+  let s = @optim.rmsprop_init(3, 2)
   for i in 0..<3 {
     if s.v_w[i] != 0.0F { fail("v_w[\{i}] should be 0") }
   }
@@ -17,8 +17,8 @@ test "rmsprop_update_arrays / first step moves parameter in negative-gradient di
   // alpha=0.9 default and grad > 0 means v stays close to g^2, and the
   // update is -lr * g / sqrt(g^2 + eps). For tiny eps and constant g,
   // this is approximately -lr * sign(g).
-  let s0 = @snn_mbt.rmsprop_init(1, 1)
-  let (w, b, _) = @snn_mbt.rmsprop_update_arrays(
+  let s0 = @optim.rmsprop_init(1, 1)
+  let (w, b, _) = @optim.rmsprop_update_arrays(
     [1.0F], [0.5F], [0.1F], [0.05F], s0, 0.01F, 0.9F, 0.00000001F,
   )
   // gradient is positive; weight should decrease.
@@ -32,8 +32,8 @@ test "rmsprop_update_arrays / alpha=0 behaves like raw gradient sign" {
   // For eps=1e-8 and constant gradient g=0.1:
   //   v = 0.01, sqrt(v) = 0.1, so update = -lr * 0.1 / (0.1 + 1e-8) ≈ -lr.
   // So w[0] should be approximately 1.0 - lr.
-  let s0 = @snn_mbt.rmsprop_init(1, 1)
-  let (w, _, _) = @snn_mbt.rmsprop_update_arrays(
+  let s0 = @optim.rmsprop_init(1, 1)
+  let (w, _, _) = @optim.rmsprop_update_arrays(
     [1.0F], [0.5F], [0.1F], [0.1F], s0, 0.1F, 0.0F, 0.00000001F,
   )
   if (w[0] - 0.9F).abs() > 0.001F {
@@ -47,13 +47,13 @@ test "rmsprop_update_arrays / large gradient gets shrunk by adaptive scaling" {
   // effective step magnitude adapts to gradient history. A spike in
   // |g| inflates v only partially (alpha * v_old), keeping the step
   // size bounded.
-  let s0 = @snn_mbt.rmsprop_init(1, 1)
+  let s0 = @optim.rmsprop_init(1, 1)
   // Step 1: gradient = 0.1.
-  let (w1, _, s1) = @snn_mbt.rmsprop_update_arrays(
+  let (w1, _, s1) = @optim.rmsprop_update_arrays(
     [1.0F], [0.5F], [0.1F], [0.05F], s0, 0.01F, 0.9F, 0.00000001F,
   )
   // Step 2: gradient = 10 (10x spike).
-  let (w2, _, _) = @snn_mbt.rmsprop_update_arrays(
+  let (w2, _, _) = @optim.rmsprop_update_arrays(
     w1, [0.5F], [10.0F], [5.0F], s1, 0.01F, 0.9F, 0.00000001F,
   )
   // Step 2 update magnitude:
@@ -77,7 +77,7 @@ test "rmsprop_update_arrays / converges on y=2x+1 over 600 steps" {
   let mut w = 0.0F
   let mut b = 0.0F
   let lr = 0.05F
-  let mut state = @snn_mbt.rmsprop_init(1, 1)
+  let mut state = @optim.rmsprop_init(1, 1)
   let n_pts = 4
   let mut initial_loss = 0.0F
   let mut final_loss = 0.0F
@@ -94,7 +94,7 @@ test "rmsprop_update_arrays / converges on y=2x+1 over 600 steps" {
     loss = loss / Float::from_int(n_pts)
     dw = dw / Float::from_int(n_pts)
     db_acc = db_acc / Float::from_int(n_pts)
-    let (w_arr, b_arr, state2) = @snn_mbt.rmsprop_update_arrays(
+    let (w_arr, b_arr, state2) = @optim.rmsprop_update_arrays(
       [w], [b], [dw], [db_acc], state, lr, 0.9F, 0.00000001F,
     )
     w = w_arr[0]
@@ -115,8 +115,8 @@ test "rmsprop_update_linear / preserves LinearParam shape" {
   let p = @nn.LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
   let dw : Array[Float] = [0.1F, 0.1F, 0.1F, 0.1F]
   let db : Array[Float] = [0.05F, 0.05F]
-  let state0 = @snn_mbt.rmsprop_init(4, 2)
-  let (p2, _s2) = @snn_mbt.rmsprop_update_linear(p, dw, db, state0, 0.01F, 0.9F, 0.00000001F)
+  let state0 = @optim.rmsprop_init(4, 2)
+  let (p2, _s2) = @optim.rmsprop_update_linear(p, dw, db, state0, 0.01F, 0.9F, 0.00000001F)
   if p2.in_features != 2 || p2.out_features != 2 {
     fail("LinearParam shape not preserved")
   }
@@ -134,8 +134,8 @@ test "rmsprop_update_conv / preserves Conv2dParam shape" {
   )
   let dw : Array[Float] = [0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F]
   let db : Array[Float] = [0.02F, 0.02F]
-  let state0 = @snn_mbt.rmsprop_init(8, 2)
-  let (p2, _s2) = @snn_mbt.rmsprop_update_conv(p, dw, db, state0, 0.01F, 0.9F, 0.00000001F)
+  let state0 = @optim.rmsprop_init(8, 2)
+  let (p2, _s2) = @optim.rmsprop_update_conv(p, dw, db, state0, 0.01F, 0.9F, 0.00000001F)
   if p2.c_out != 2 || p2.c_in != 2 || p2.kh != 2 || p2.kw != 2 {
     fail("Conv2dParam shape not preserved")
   }
