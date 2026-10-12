@@ -42,6 +42,24 @@ pub struct DeterministicPolicy {
 }
 
 ///|
+/// Rebuild a `DeterministicPolicy` from saved weights -- the
+/// deserialisation twin of `new`, needed because the fields are private and
+/// `serialize.mbt` writes one of these when restoring a checkpoint.
+pub fn DeterministicPolicy::from_arrays(
+  state_dim : Int,
+  action_dim : Int,
+  hidden : Int,
+  w1 : Array[Array[Float]],
+  b1 : Array[Float],
+  w2 : Array[Array[Float]],
+  b2 : Array[Float],
+  action_low : Float,
+  action_high : Float,
+) -> DeterministicPolicy {
+  { state_dim, action_dim, hidden, w1, b1, w2, b2, action_low, action_high }
+}
+
+///|
 /// Construct a DeterministicPolicy. Hidden size defaults to 64.
 pub fn DeterministicPolicy::new(
   state_dim : Int,
@@ -158,6 +176,24 @@ pub struct QNetworkContinuous {
   // W2[1, hidden], b2[1]
   w2 : Array[Float]
   mut b2 : Float
+}
+
+///|
+/// Rebuild a `QNetworkContinuous` from saved weights.
+///
+/// The deserialisation twin of `new`: same shape, values supplied rather than
+/// drawn from a seed. Needed because the fields are private and
+/// `serialize.mbt` has to write one of these when restoring a checkpoint.
+pub fn QNetworkContinuous::from_arrays(
+  state_dim : Int,
+  action_dim : Int,
+  hidden : Int,
+  w1 : Array[Array[Float]],
+  b1 : Array[Float],
+  w2 : Array[Float],
+  b2 : Float,
+) -> QNetworkContinuous {
+  { state_dim, action_dim, hidden, w1, b1, w2, b2 }
 }
 
 ///|

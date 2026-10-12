@@ -48,10 +48,10 @@ pub fn AffineCouplingLayer::new(
 ) -> AffineCouplingLayer {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let std = @core.sqrtf(2.0F / Float::from_int(half_dim))
-  let scale_w = xavier_normal(half_dim, half_dim, std, rng1)
+  let scale_w = @rl.xavier_normal(half_dim, half_dim, std, rng1)
   let scale_b : Array[Float] = Array::make(half_dim, 0.0F)
   let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
-  let trans_w = xavier_normal(half_dim, half_dim, std, rng2)
+  let trans_w = @rl.xavier_normal(half_dim, half_dim, std, rng2)
   let trans_b : Array[Float] = Array::make(half_dim, 0.0F)
   { half_dim, scale_w, scale_b, trans_w, trans_b }
 }

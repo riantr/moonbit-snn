@@ -20,8 +20,8 @@
 pub struct DuelingQNet {
   n_states : Int
   n_actions : Int
-  value : LinearQNet
-  advantage : LinearQNet
+  value : @rl.LinearQNet
+  advantage : @rl.LinearQNet
 }
 
 ///|
@@ -30,8 +30,8 @@ pub fn DuelingQNet::new(
   n_actions : Int,
   seed : UInt64,
 ) -> DuelingQNet {
-  let value = LinearQNet::new(n_states, n_actions, seed)
-  let advantage = LinearQNet::new(n_states, n_actions, seed + 17UL)
+  let value = @rl.LinearQNet::new(n_states, n_actions, seed)
+  let advantage = @rl.LinearQNet::new(n_states, n_actions, seed + 17UL)
   { n_states, n_actions, value, advantage }
 }
 
@@ -39,8 +39,8 @@ pub fn DuelingQNet::new(
 /// Forward: Q(s, a) = V(s) + A(s, a) - mean_a A(s, a).
 pub fn dueling_q_forward(net : DuelingQNet, x : Array[Float]) -> Array[Float] {
   let n_a = net.n_actions
-  let v = q_forward(net.value, x)
-  let a = q_forward(net.advantage, x)
+  let v = @rl.q_forward(net.value, x)
+  let a = @rl.q_forward(net.advantage, x)
   let v_scalar = v[0]  // value stream outputs length n_actions; we use index 0 as V(s).
   // Compute mean advantage.
   let mut mean_a = 0.0F
@@ -122,13 +122,13 @@ pub fn dueling_dqn_update_step(
     let r = rewards[k]
     let s_next = next_states[k]
     let d_t = dones[k]
-    let x = rl_one_hot(s, n_s)
+    let x = @rl.rl_one_hot(s, n_s)
     let q = dueling_q_forward(online, x)
     let q_sa = q[a]
     let target_value = if d_t {
       r
     } else {
-      let x_next = rl_one_hot(s_next, n_s)
+      let x_next = @rl.rl_one_hot(s_next, n_s)
       let q_target_next = dueling_q_forward(target, x_next)
       r + gamma * array_max(q_target_next)
     }
@@ -170,8 +170,8 @@ fn array_max(a : Array[Float]) -> Float {
 ///|
 /// Copy weights from `src` into `dst`.
 pub fn dueling_qnet_copy(dst : DuelingQNet, src : DuelingQNet) -> Unit {
-  qnet_copy(dst.value, src.value)
-  qnet_copy(dst.advantage, src.advantage)
+  @rl.qnet_copy(dst.value, src.value)
+  @rl.qnet_copy(dst.advantage, src.advantage)
 }
 
 ///|
@@ -183,7 +183,7 @@ pub fn dueling_eps_greedy_action(
   rng : @core.Xoshiro,
 ) -> Int {
   if epsilon <= 0.0F {
-    let x = rl_one_hot(state, q_net.n_states)
+    let x = @rl.rl_one_hot(state, q_net.n_states)
     let q = dueling_q_forward(q_net, x)
     return dueling_q_argmax(q)
   }
@@ -202,7 +202,7 @@ pub fn dueling_eps_greedy_action(
       idx
     }
   } else {
-    let x = rl_one_hot(state, q_net.n_states)
+    let x = @rl.rl_one_hot(state, q_net.n_states)
     let q = dueling_q_forward(q_net, x)
     dueling_q_argmax(q)
   }
@@ -211,7 +211,7 @@ pub fn dueling_eps_greedy_action(
 ///|
 /// Train Dueling DQN. Returns mean episode return.
 pub fn train_dueling_dqn(
-  env : GridWorld,
+  env : @rl.GridWorld,
   q_net : DuelingQNet,
   target : DuelingQNet,
   n_episodes : Int,
@@ -227,7 +227,7 @@ pub fn train_dueling_dqn(
   seed : UInt64,
 ) -> Float {
   let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
-  let buffer = ReplayBuffer::new(buffer_capacity)
+  let buffer = @rl.ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0
   for ep in 0..<n_episodes {

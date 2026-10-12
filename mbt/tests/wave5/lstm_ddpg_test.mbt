@@ -14,7 +14,7 @@
 
 ///|
 test "lstm_ddpg_new_dimensions_and_seeds" {
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 42UL,
   )
   // Action range reflected.
@@ -43,13 +43,13 @@ test "lstm_ddpg_new_dimensions_and_seeds" {
 
 ///|
 test "lstm_ddpg_select_action_deterministic_when_no_noise" {
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     4, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL,
   )
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let hidden : Array[Float] = Array::make(4, 0.0F)
   let cell : Array[Float] = Array::make(4, 0.0F)
-  let (action, new_h, new_c) = @snn_mbt.lstm_ddpg_select_action(
+  let (action, new_h, new_c) = @rl.lstm_ddpg_select_action(
     agent, [0.1F, 0.2F, 0.3F, 0.4F], hidden, cell, 0.0F, rng,
   )
   assert_eq(action.length(), 2)
@@ -63,13 +63,13 @@ test "lstm_ddpg_select_action_deterministic_when_no_noise" {
 
 ///|
 test "lstm_ddpg_select_action_with_noise_stays_in_range" {
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     4, 2, 4, -0.5F, 0.5F, 0.99F, 0.005F, 0.1F, 7UL,
   )
   let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let hidden : Array[Float] = Array::make(4, 0.0F)
   let cell : Array[Float] = Array::make(4, 0.0F)
-  let (action, _, _) = @snn_mbt.lstm_ddpg_select_action(
+  let (action, _, _) = @rl.lstm_ddpg_select_action(
     agent, [0.1F, 0.2F, 0.3F, 0.4F], hidden, cell, 0.3F, rng,
   )
   // Clip to [action_low, action_high].
@@ -83,7 +83,7 @@ test "lstm_ddpg_select_action_with_noise_stays_in_range" {
 test "lstm_ddpg_compute_td_target_seq_matches_manual" {
   // Build an agent and feed it known next_obs_seq + reward_seq + done_seq.
   // Verify the TD target at each slot matches r_t + γ(1 - d_t) * min(q1,q2).
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     2, 1, 3, -1.0F, 1.0F, 0.5F, 0.005F, 0.0F, 11UL,
   )
   let next_obs_seq : Array[Float] = [
@@ -94,15 +94,15 @@ test "lstm_ddpg_compute_td_target_seq_matches_manual" {
   let next_act_seq : Array[Float] = [0.5F, -0.5F, 0.3F]
   let reward_seq : Array[Float] = [1.0F, 2.0F, 3.0F]
   let done_seq : Array[Float] = [0.0F, 0.0F, 1.0F]
-  let target = @snn_mbt.lstm_ddpg_compute_td_target_seq(
+  let target = @rl.lstm_ddpg_compute_td_target_seq(
     agent, next_obs_seq, next_act_seq, reward_seq, done_seq, 3,
   )
   // Manually compute expected TD targets via critic targets.
-  let (q1_next, _, _) = @snn_mbt.lstm_qnetwork_continuous_seq_forward(
+  let (q1_next, _, _) = @rl.lstm_qnetwork_continuous_seq_forward(
     agent.critic1_target, next_obs_seq, next_act_seq, 3,
     Array::make(3, 0.0F), Array::make(3, 0.0F),
   )
-  let (q2_next, _, _) = @snn_mbt.lstm_qnetwork_continuous_seq_forward(
+  let (q2_next, _, _) = @rl.lstm_qnetwork_continuous_seq_forward(
     agent.critic2_target, next_obs_seq, next_act_seq, 3,
     Array::make(3, 0.0F), Array::make(3, 0.0F),
   )
@@ -120,7 +120,7 @@ test "lstm_ddpg_compute_td_target_seq_matches_manual" {
 
 ///|
 test "lstm_ddpg_soft_update_tau_zero_is_no_op" {
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     2, 1, 3, -1.0F, 1.0F, 0.99F, 0.0F, 0.1F, 13UL,
   )
   // Snapshot actor_target state.
@@ -129,7 +129,7 @@ test "lstm_ddpg_soft_update_tau_zero_is_no_op" {
   let snap_lstm_wf_0_0 = agent.actor_target.lstm.w_f[0][0]
   let snap_lstm_bf_0 = agent.actor_target.lstm.b_f[0]
   let snap_critic_b2 = agent.critic1_target.mlp_b2
-  @snn_mbt.lstm_ddpg_soft_update(agent)
+  @rl.lstm_ddpg_soft_update(agent)
   // tau=0 → target <- 1*target + 0*source = unchanged.
   assert_eq(agent.actor_target.mlp_w1[0][0], snap_w1_0_0)
   assert_eq(agent.actor_target.mlp_b1[0], snap_b1_0)
@@ -141,10 +141,10 @@ test "lstm_ddpg_soft_update_tau_zero_is_no_op" {
 ///|
 test "lstm_ddpg_soft_update_tau_one_copies_source" {
   // tau=1 → target <- 0*target + 1*source = source.
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     2, 1, 3, -1.0F, 1.0F, 0.99F, 1.0F, 0.1F, 13UL,
   )
-  @snn_mbt.lstm_ddpg_soft_update(agent)
+  @rl.lstm_ddpg_soft_update(agent)
   // Verify actor_target == actor element-wise.
   for i in 0..<agent.actor.mlp_w1.length() {
     for k in 0..<agent.actor.mlp_w1[i].length() {
@@ -175,14 +175,14 @@ test "lstm_ddpg_soft_update_tau_one_copies_source" {
 ///|
 test "lstm_ddpg_soft_update_tau_half_interpolates" {
   // tau=0.5 → target = 0.5*target + 0.5*source.
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     2, 1, 3, -1.0F, 1.0F, 0.99F, 0.5F, 0.1F, 21UL,
   )
   let snap_w1_0_0 = agent.actor_target.mlp_w1[0][0]
   let src_w1_0_0 = agent.actor.mlp_w1[0][0]
   let snap_critic_b2 = agent.critic1_target.mlp_b2
   let src_critic_b2 = agent.critic1.mlp_b2
-  @snn_mbt.lstm_ddpg_soft_update(agent)
+  @rl.lstm_ddpg_soft_update(agent)
   let expected_w1 = 0.5F * snap_w1_0_0 + 0.5F * src_w1_0_0
   let expected_b2 = 0.5F * snap_critic_b2 + 0.5F * src_critic_b2
   // Float32 equality holds when source/target differ.
@@ -198,7 +198,7 @@ test "lstm_ddpg_soft_update_tau_half_interpolates" {
 test "lstm_ddpg_soft_update_advances_target_between_calls" {
   // After two soft updates with tau=0.1, target should have moved
   // closer to source than after just one update.
-  let agent : @snn_mbt.LSTM_DDPG = @snn_mbt.LSTM_DDPG::new(
+  let agent : @rl.LSTM_DDPG = @rl.LSTM_DDPG::new(
     2, 1, 3, -1.0F, 1.0F, 0.99F, 0.1F, 0.1F, 33UL,
   )
   let snap_w1 = agent.actor_target.mlp_w1[0][0]
@@ -206,7 +206,7 @@ test "lstm_ddpg_soft_update_advances_target_between_calls" {
   // Distance from target to source.
   let d_init = snap_w1 - src_w1
   let d_init_abs = if d_init < 0.0F { -d_init } else { d_init }
-  @snn_mbt.lstm_ddpg_soft_update(agent)
+  @rl.lstm_ddpg_soft_update(agent)
   let after_one = agent.actor_target.mlp_w1[0][0]
   let d_one = after_one - src_w1
   let d_one_abs = if d_one < 0.0F { -d_one } else { d_one }
@@ -225,7 +225,7 @@ test "lstm_ddpg_soft_update_advances_target_between_calls" {
 
 ///|
 test "lstm_qnetwork_continuous_new_dimensions" {
-  let q : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     4, 2, 6, 17UL,
   )
   assert_eq(q.state_dim, 4)
@@ -245,12 +245,12 @@ test "lstm_qnetwork_continuous_new_dimensions" {
 
 ///|
 test "lstm_qnetwork_continuous_step_returns_scalar" {
-  let q : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     3, 2, 4, 5UL,
   )
   let hidden : Array[Float] = Array::make(q.hidden, 0.0F)
   let cell : Array[Float] = Array::make(q.hidden, 0.0F)
-  let (q_val, new_h, new_c) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (q_val, new_h, new_c) = @rl.lstm_qnetwork_continuous_step(
     q, [0.1F, 0.2F, 0.3F], [0.5F, -0.5F], hidden, cell,
   )
   assert_eq(new_h.length(), q.hidden)
@@ -261,23 +261,23 @@ test "lstm_qnetwork_continuous_step_returns_scalar" {
 
 ///|
 test "lstm_qnetwork_continuous_seq_forward_step_wise_consistency" {
-  let q : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     2, 1, 3, 31UL,
   )
   let hidden_init : Array[Float] = Array::make(q.hidden, 0.0F)
   let cell_init : Array[Float] = Array::make(q.hidden, 0.0F)
   let state_seq : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F]
   let action_seq : Array[Float] = [0.5F, -0.5F, 0.3F]
-  let (q_seq, h_final, c_final) = @snn_mbt.lstm_qnetwork_continuous_seq_forward(
+  let (q_seq, h_final, c_final) = @rl.lstm_qnetwork_continuous_seq_forward(
     q, state_seq, action_seq, 3, hidden_init, cell_init,
   )
-  let (q1, h1, c1) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (q1, h1, c1) = @rl.lstm_qnetwork_continuous_step(
     q, [0.1F, 0.2F], [0.5F], hidden_init, cell_init,
   )
-  let (q2, h2, c2) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (q2, h2, c2) = @rl.lstm_qnetwork_continuous_step(
     q, [0.3F, 0.4F], [-0.5F], h1, c1,
   )
-  let (q3, h3, c3) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (q3, h3, c3) = @rl.lstm_qnetwork_continuous_step(
     q, [0.5F, 0.6F], [0.3F], h2, c2,
   )
   assert_eq(q_seq[0], q1)
@@ -291,18 +291,18 @@ test "lstm_qnetwork_continuous_seq_forward_step_wise_consistency" {
 
 ///|
 test "lstm_qnetwork_continuous_reproducible_under_seed" {
-  let q1 : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q1 : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     4, 2, 4, 77UL,
   )
-  let q2 : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q2 : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     4, 2, 4, 77UL,
   )
   let hidden : Array[Float] = Array::make(4, 0.0F)
   let cell : Array[Float] = Array::make(4, 0.0F)
-  let (v1, h1, c1) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (v1, h1, c1) = @rl.lstm_qnetwork_continuous_step(
     q1, [0.1F, 0.2F, 0.3F, 0.4F], [0.5F, -0.5F], hidden, cell,
   )
-  let (v2, h2, c2) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (v2, h2, c2) = @rl.lstm_qnetwork_continuous_step(
     q2, [0.1F, 0.2F, 0.3F, 0.4F], [0.5F, -0.5F], hidden, cell,
   )
   assert_eq(v1, v2)
@@ -314,18 +314,18 @@ test "lstm_qnetwork_continuous_reproducible_under_seed" {
 
 ///|
 test "lstm_qnetwork_continuous_different_seeds_differ" {
-  let q1 : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q1 : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     3, 2, 4, 1UL,
   )
-  let q2 : @snn_mbt.LSTMQNetworkContinuous = @snn_mbt.LSTMQNetworkContinuous::new(
+  let q2 : @rl.LSTMQNetworkContinuous = @rl.LSTMQNetworkContinuous::new(
     3, 2, 4, 2UL,
   )
   let hidden : Array[Float] = Array::make(4, 0.0F)
   let cell : Array[Float] = Array::make(4, 0.0F)
-  let (v1, _, _) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (v1, _, _) = @rl.lstm_qnetwork_continuous_step(
     q1, [0.1F, 0.5F, -0.3F], [0.7F, -0.1F], hidden, cell,
   )
-  let (v2, _, _) = @snn_mbt.lstm_qnetwork_continuous_step(
+  let (v2, _, _) = @rl.lstm_qnetwork_continuous_step(
     q2, [0.1F, 0.5F, -0.3F], [0.7F, -0.1F], hidden, cell,
   )
   assert_true(v1 != v2)

@@ -297,7 +297,7 @@ fn split_header_lines(s : String) -> Array[String] {
 /// b[n_actions]) to a String. Header `kind=LinearQNet` plus the four
 /// weight/bias fields. Optimizer state is NOT included; use
 /// `serialize_qnet_checkpoint` for a full checkpoint.
-pub fn serialize_linear_qnet(q : LinearQNet) -> String {
+pub fn serialize_linear_qnet(q : @rl.LinearQNet) -> String {
   let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=LinearQNet\n")
@@ -317,7 +317,7 @@ pub fn serialize_linear_qnet(q : LinearQNet) -> String {
 /// Inverse of `serialize_linear_qnet`. Constructs a new LinearQNet
 /// whose weight and bias arrays are deep-copied from the encoded
 /// payload, so subsequent mutation of either side is independent.
-pub fn deserialize_linear_qnet(s : String) -> LinearQNet {
+pub fn deserialize_linear_qnet(s : String) -> @rl.LinearQNet {
   let lines = split_header_lines(s)
   let kind = header_lookup(lines, "kind")
   if kind != "LinearQNet" {
@@ -340,14 +340,14 @@ pub fn deserialize_linear_qnet(s : String) -> LinearQNet {
   for i in 0..<n_actions {
     b[i] = b_src[i]
   }
-  { n_states, n_actions, w, b }
+  @rl.LinearQNet::from_arrays(n_states, n_actions, w, b)
 }
 
 ///|
 /// Serialize a `QNetworkContinuous` (DDPG/TD3 critic head: state+action
 /// -> scalar Q). Header `kind=QNetworkContinuous` plus shape metadata
 /// (state_dim, action_dim, hidden) and the four weight/bias fields.
-pub fn serialize_qnetwork_continuous(q : QNetworkContinuous) -> String {
+pub fn serialize_qnetwork_continuous(q : @rl.QNetworkContinuous) -> String {
   let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=QNetworkContinuous\n")
@@ -371,7 +371,7 @@ pub fn serialize_qnetwork_continuous(q : QNetworkContinuous) -> String {
 
 ///|
 /// Inverse of `serialize_qnetwork_continuous`.
-pub fn deserialize_qnetwork_continuous(s : String) -> QNetworkContinuous {
+pub fn deserialize_qnetwork_continuous(s : String) -> @rl.QNetworkContinuous {
   let lines = split_header_lines(s)
   let kind = header_lookup(lines, "kind")
   if kind != "QNetworkContinuous" {
@@ -400,13 +400,15 @@ pub fn deserialize_qnetwork_continuous(s : String) -> QNetworkContinuous {
   for i in 0..<hidden {
     w2[i] = w2_src[i]
   }
-  { state_dim, action_dim, hidden, w1, b1, w2, b2: b2_val }
+  @rl.QNetworkContinuous::from_arrays(
+      state_dim, action_dim, hidden, w1, b1, w2, b2_val,
+    )
 }
 
 ///|
 /// Serialize a `DeterministicPolicy` (DDPG/TD3 actor head). Header
 /// `kind=DeterministicPolicy` plus shape and squash range.
-pub fn serialize_deterministic_policy(p : DeterministicPolicy) -> String {
+pub fn serialize_deterministic_policy(p : @rl.DeterministicPolicy) -> String {
   let buf = StringBuilder()
   buf.write_string("SNNCKPT v1\n")
   buf.write_string("kind=DeterministicPolicy\n")
@@ -434,7 +436,7 @@ pub fn serialize_deterministic_policy(p : DeterministicPolicy) -> String {
 
 ///|
 /// Inverse of `serialize_deterministic_policy`.
-pub fn deserialize_deterministic_policy(s : String) -> DeterministicPolicy {
+pub fn deserialize_deterministic_policy(s : String) -> @rl.DeterministicPolicy {
   let lines = split_header_lines(s)
   let kind = header_lookup(lines, "kind")
   if kind != "DeterministicPolicy" {
@@ -473,7 +475,9 @@ pub fn deserialize_deterministic_policy(s : String) -> DeterministicPolicy {
   for i in 0..<action_dim {
     b2[i] = b2_src[i]
   }
-  { state_dim, action_dim, hidden, w1, b1, w2, b2, action_low, action_high }
+  @rl.DeterministicPolicy::from_arrays(
+      state_dim, action_dim, hidden, w1, b1, w2, b2, action_low, action_high,
+    )
 }
 
 ///|
@@ -544,7 +548,7 @@ pub fn deserialize_adam_state(s : String) -> @optim.AdamState {
 /// model + opt via inline-encoded sub-blocks whose '\n' characters
 /// are escaped as the literal two-char sequence "\n".
 pub fn serialize_qnet_checkpoint(
-  q : LinearQNet,
+  q : @rl.LinearQNet,
   opt : @optim.AdamState,
   step : Int,
 ) -> String {
@@ -564,7 +568,7 @@ pub fn serialize_qnet_checkpoint(
 ///|
 /// Inverse of `serialize_qnet_checkpoint`. Reconstructs the model,
 /// optimizer state, and the global training step counter.
-pub fn deserialize_qnet_checkpoint(s : String) -> (LinearQNet, @optim.AdamState, Int) {
+pub fn deserialize_qnet_checkpoint(s : String) -> (@rl.LinearQNet, @optim.AdamState, Int) {
   let lines = split_header_lines(s)
   let kind = header_lookup(lines, "kind")
   if kind != "QNetCheckpoint" {

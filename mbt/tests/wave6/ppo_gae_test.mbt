@@ -2,10 +2,10 @@
 
 ///|
 test "ppo_gae_collect_batch: per-episode shapes" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 7UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 11UL)
-  let eps = @snn_mbt.ppo_gae_collect_batch(env, p, v, 5, 5, 13UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 7UL)
+  let v = @rl.LinearValueNet::new(4, 11UL)
+  let eps = @rl.ppo_gae_collect_batch(env, p, v, 5, 5, 13UL)
   assert_eq(eps.length(), 5)
   for ep in eps {
     assert_eq(ep.states.length(), ep.actions.length())
@@ -20,9 +20,9 @@ test "ppo_gae_collect_batch: per-episode shapes" {
 test "gae_advantages_returns: shape + zero TD residual on perfect V" {
   // Construct an episode with known V. If V(s_t) = E[r + γ·V(s_{t+1})],
   // the TD residual δ_t should be small (sampling noise only).
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 17UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 19UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 17UL)
+  let v = @rl.LinearValueNet::new(4, 19UL)
   // Set V to a constant for simplicity: V(s) = 1.0 for all s.
   v.w[0] = 1.0F
   v.w[1] = 1.0F
@@ -39,13 +39,13 @@ test "gae_advantages_returns: shape + zero TD residual on perfect V" {
   let next_values : Array[Float] = []
   let dones : Array[Bool] = []
   while !done && t < 5 {
-    let x = @snn_mbt.rl_one_hot(state, env.n_states())
-    values.push(@snn_mbt.value_forward(v, x))
-    let (_l, probs) = @snn_mbt.policy_forward(p, x)
-    let (a, _) = @snn_mbt.sample_categorical(probs, rng)
+    let x = @rl.rl_one_hot(state, env.n_states())
+    values.push(@rl.value_forward(v, x))
+    let (_l, probs) = @rl.policy_forward(p, x)
+    let (a, _) = @rl.sample_categorical(probs, rng)
     let (next_state, r, d) = env.step(state, a)
-    let next_x = @snn_mbt.rl_one_hot(next_state, env.n_states())
-    next_values.push(if d { 0.0F } else { @snn_mbt.value_forward(v, next_x) })
+    let next_x = @rl.rl_one_hot(next_state, env.n_states())
+    next_values.push(if d { 0.0F } else { @rl.value_forward(v, next_x) })
     states.push(state)
     actions.push(a)
     rewards.push(r)
@@ -54,8 +54,8 @@ test "gae_advantages_returns: shape + zero TD residual on perfect V" {
     done = d
     t = t + 1
   }
-  let ep : @snn_mbt.PpoGaeEpisode = { states, actions, rewards, values, next_values, dones }
-  let (advs, rets) = @snn_mbt.gae_advantages_returns(ep, 1.0F, 1.0F)
+  let ep : @rl.PpoGaeEpisode = { states, actions, rewards, values, next_values, dones }
+  let (advs, rets) = @rl.gae_advantages_returns(ep, 1.0F, 1.0F)
   assert_eq(advs.length(), ep.states.length())
   assert_eq(rets.length(), ep.states.length())
   // With V(s) = 1 (constant), δ_t = r_t + 1·V(s_{t+1})·(1-done) - 1.
@@ -77,12 +77,12 @@ test "gae_advantages_returns: shape + zero TD residual on perfect V" {
 
 ///|
 test "gae_advantages_returns: returns are monotonically backward-decreasing" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 41UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 43UL)
-  let eps = @snn_mbt.ppo_gae_collect_batch(env, p, v, 3, 5, 47UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 41UL)
+  let v = @rl.LinearValueNet::new(4, 43UL)
+  let eps = @rl.ppo_gae_collect_batch(env, p, v, 3, 5, 47UL)
   for ep in eps {
-    let (_advs, rets) = @snn_mbt.gae_advantages_returns(ep, 0.9F, 0.95F)
+    let (_advs, rets) = @rl.gae_advantages_returns(ep, 0.9F, 0.95F)
     // Sanity: rets[t] should match the discounted backward sum.
     // For t < length-1: rets[t] = rewards[t] + γ · rets[t+1].
     for t in 0..<(rets.length() - 1) {
@@ -100,8 +100,8 @@ test "gae_advantages_returns: returns are monotonically backward-decreasing" {
 ///|
 test "ppo_gae_update: zero return episode -> critic moves toward zero" {
   // If every reward is 0 and target is 0, V(s) should drop to 0.
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 53UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 59UL)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 53UL)
+  let v = @rl.LinearValueNet::new(4, 59UL)
   // Set V(s) = 2 initially (far from the target 1.0).
   v.w[0] = 2.0F
   v.w[1] = 2.0F
@@ -114,19 +114,19 @@ test "ppo_gae_update: zero return episode -> critic moves toward zero" {
   let values : Array[Float] = [2.0F]
   let next_values : Array[Float] = [2.0F]
   let dones : Array[Bool] = [false]
-  let ep : @snn_mbt.PpoGaeEpisode = { states, actions, rewards, values, next_values, dones }
-  let episodes : Array[@snn_mbt.PpoGaeEpisode] = [ep]
-  @snn_mbt.ppo_gae_update(p, v, episodes, 1.0F, 1.0F, 0.2F, 0.1F, 0.5F)
+  let ep : @rl.PpoGaeEpisode = { states, actions, rewards, values, next_values, dones }
+  let episodes : Array[@rl.PpoGaeEpisode] = [ep]
+  @rl.ppo_gae_update(p, v, episodes, 1.0F, 1.0F, 0.2F, 0.1F, 0.5F)
   // After one update, V(s_0) = 2 - 0.5 · (2 - 1) = 1.5 (target R = 1).
   assert_true(v.w[0] < 2.0F)
 }
 
 ///|
 test "train_ppo_gae: shapes + return is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 67UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 71UL)
-  let last = @snn_mbt.train_ppo_gae(
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 67UL)
+  let v = @rl.LinearValueNet::new(4, 71UL)
+  let last = @rl.train_ppo_gae(
     env, p, v, 3, 5, 0.9F, 0.95F, 0.2F, 0.05F, 0.1F, 5, 73UL,
   )
   assert_true(last == last)
@@ -135,10 +135,10 @@ test "train_ppo_gae: shapes + return is finite" {
 
 ///|
 test "ppo_gae_update: weights change but stay bounded" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 79UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 83UL)
-  let eps = @snn_mbt.ppo_gae_collect_batch(env, p, v, 5, 5, 89UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 79UL)
+  let v = @rl.LinearValueNet::new(4, 83UL)
+  let eps = @rl.ppo_gae_collect_batch(env, p, v, 5, 5, 89UL)
   let snap : Array[Array[Float]] = Array::make(4, [])
   for i in 0..<4 {
     snap[i] = Array::make(4, 0.0F)
@@ -146,7 +146,7 @@ test "ppo_gae_update: weights change but stay bounded" {
       snap[i][j] = p.w[i][j]
     }
   }
-  @snn_mbt.ppo_gae_update(p, v, eps, 0.9F, 0.95F, 0.2F, 0.05F, 0.1F)
+  @rl.ppo_gae_update(p, v, eps, 0.9F, 0.95F, 0.2F, 0.05F, 0.1F)
   let mut changed = false
   for i in 0..<4 {
     for j in 0..<4 {

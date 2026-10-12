@@ -23,8 +23,8 @@
 ///
 /// Returns mean |δ| for monitoring.
 pub fn double_dqn_update_step(
-  online : LinearQNet,
-  target : LinearQNet,
+  online : @rl.LinearQNet,
+  target : @rl.LinearQNet,
   states : Array[Int],
   actions : Array[Int],
   rewards : Array[Float],
@@ -41,17 +41,17 @@ pub fn double_dqn_update_step(
     let r = rewards[k]
     let s_next = next_states[k]
     let d_t = dones[k]
-    let x = rl_one_hot(s, online.n_states)
-    let q = q_forward(online, x)
+    let x = @rl.rl_one_hot(s, online.n_states)
+    let q = @rl.q_forward(online, x)
     let q_sa = q[a]
     // Compute target using Double DQN rule.
     let target_value = if d_t {
       r
     } else {
-      let x_next = rl_one_hot(s_next, online.n_states)
-      let q_online_next = q_forward(online, x_next)
-      let a_star = q_argmax(q_online_next)
-      let q_target_next = q_forward(target, x_next)
+      let x_next = @rl.rl_one_hot(s_next, online.n_states)
+      let q_online_next = @rl.q_forward(online, x_next)
+      let a_star = @rl.q_argmax(q_online_next)
+      let q_target_next = @rl.q_forward(target, x_next)
       r + gamma * q_target_next[a_star]
     }
     let delta = target_value - q_sa
@@ -71,9 +71,9 @@ pub fn double_dqn_update_step(
 /// `train_dqn` but uses Double DQN update rule. Returns mean
 /// episode return over all episodes.
 pub fn train_double_dqn(
-  env : GridWorld,
-  q_net : LinearQNet,
-  target : LinearQNet,
+  env : @rl.GridWorld,
+  q_net : @rl.LinearQNet,
+  target : @rl.LinearQNet,
   n_episodes : Int,
   gamma : Float,
   lr : Float,
@@ -87,7 +87,7 @@ pub fn train_double_dqn(
   seed : UInt64,
 ) -> Float {
   let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
-  let buffer = ReplayBuffer::new(buffer_capacity)
+  let buffer = @rl.ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0
   for ep in 0..<n_episodes {
@@ -98,7 +98,7 @@ pub fn train_double_dqn(
     let mut t = 0
     let mut ep_return = 0.0F
     while !done && t < max_steps {
-      let a = eps_greedy_action(q_net, state, epsilon, rng)
+      let a = @rl.eps_greedy_action(q_net, state, epsilon, rng)
       let (next_state, r, d) = env.step(state, a)
       buffer.push(state, a, r, next_state, d)
       ep_return = ep_return + r
@@ -113,7 +113,7 @@ pub fn train_double_dqn(
       let _ = double_dqn_update_step(q_net, target, ss, aa, rr, nss, dd, gamma, lr)
     }
     if (ep + 1) % sync_every == 0 {
-      qnet_copy(target, q_net)
+      @rl.qnet_copy(target, q_net)
     }
   }
   if return_count > 0 {
@@ -129,8 +129,8 @@ pub fn train_double_dqn(
 /// decoupled rule produces different gradients than the coupled rule
 /// (which it should whenever online != target).
 pub fn double_dqn_vs_vanilla_diff(
-  online : LinearQNet,
-  target : LinearQNet,
+  online : @rl.LinearQNet,
+  target : @rl.LinearQNet,
   next_states : Array[Int],
   gamma : Float,
 ) -> Float {
@@ -138,12 +138,12 @@ pub fn double_dqn_vs_vanilla_diff(
   let mut total_diff = 0.0F
   for k in 0..<n {
     let s_next = next_states[k]
-    let x_next = rl_one_hot(s_next, online.n_states)
-    let q_online_next = q_forward(online, x_next)
-    let q_target_next = q_forward(target, x_next)
-    let a_star = q_argmax(q_online_next)
+    let x_next = @rl.rl_one_hot(s_next, online.n_states)
+    let q_online_next = @rl.q_forward(online, x_next)
+    let q_target_next = @rl.q_forward(target, x_next)
+    let a_star = @rl.q_argmax(q_online_next)
     let double_q = q_target_next[a_star]
-    let vanilla_q = q_max(q_target_next)
+    let vanilla_q = @rl.q_max(q_target_next)
     let diff = double_q - vanilla_q
     total_diff = total_diff + (if diff < 0.0F { -diff } else { diff })
   }

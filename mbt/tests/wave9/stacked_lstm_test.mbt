@@ -49,7 +49,7 @@ test "stacked_lstm_forward: layer 0 input is xs[t]" {
   // StackedLstmParam adds (l*7+1) to seed for layer l, so seed 4
   // gives layer 0 the same RNG state as LstmCellParam with seed 5.
   let p1 = @snn_mbt.StackedLstmParam::new(2, 3, 1, 4UL)
-  let p_single = @snn_mbt.LstmCellParam::new(2, 3, 5UL)
+  let p_single = @rl.LstmCellParam::new(2, 3, 5UL)
   let xs : Array[Array[Float]] = [
     [0.5F, -0.3F],
     [0.1F, 0.2F],
@@ -58,7 +58,7 @@ test "stacked_lstm_forward: layer 0 input is xs[t]" {
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let (h0s, c0s) = @snn_mbt.stacked_lstm_zero_init(1, 3)
   let (hs, _, _) = @snn_mbt.stacked_lstm_forward(xs, h0s, c0s, p1)
-  let (hs_single, _, _) = @snn_mbt.lstm_sequence_forward(xs, h0, c0, p_single)
+  let (hs_single, _, _) = @rl.lstm_sequence_forward(xs, h0, c0, p_single)
   for t in 0..<2 {
     for i in 0..<3 {
       let diff = if hs[t][0][i] > hs_single[t][i] {

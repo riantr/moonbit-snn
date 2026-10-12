@@ -15,7 +15,7 @@
 
 ///|
 test "serialize_linear_qnet_roundtrip" {
-  let q0 : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(3, 2, 7UL)
+  let q0 : @rl.LinearQNet = @rl.LinearQNet::new(3, 2, 7UL)
   // Set deterministic values to compare round-trip exactly.
   q0.w[0][0] = 0.1F
   q0.w[0][1] = -0.2F
@@ -47,7 +47,7 @@ test "serialize_linear_qnet_roundtrip" {
 ///|
 test "serialize_linear_qnet_independent_copy" {
   // Mutating q0 after serialize must not affect q1.
-  let q0 : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(2, 2, 11UL)
+  let q0 : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 11UL)
   q0.w[0][0] = 0.1F
   q0.b[1] = 0.5F
   let s = @snn_mbt.serialize_linear_qnet(q0)
@@ -60,7 +60,7 @@ test "serialize_linear_qnet_independent_copy" {
 
 ///|
 test "serialize_qnetwork_continuous_roundtrip" {
-  let q0 : @snn_mbt.QNetworkContinuous = @snn_mbt.QNetworkContinuous::new(3, 2, 4, 13UL)
+  let q0 : @rl.QNetworkContinuous = @rl.QNetworkContinuous::new(3, 2, 4, 13UL)
   // Override weights to known values. (b2 is `mut` and read-only from
   // outside the module, so we leave it at its default 0.0F and verify
   // that value round-trips below.)
@@ -95,7 +95,7 @@ test "serialize_qnetwork_continuous_independent" {
   // after serialize does not affect the deserialized copy. (b2 is
   // skipped because it is `mut` and read-only from outside the
   // module; the default round-trip test above already covers it.)
-  let q0 : @snn_mbt.QNetworkContinuous = @snn_mbt.QNetworkContinuous::new(2, 2, 2, 41UL)
+  let q0 : @rl.QNetworkContinuous = @rl.QNetworkContinuous::new(2, 2, 2, 41UL)
   q0.w1[0][0] = 0.7F
   q0.w2[0] = -0.3F
   q0.b1[1] = 0.42F
@@ -111,7 +111,7 @@ test "serialize_qnetwork_continuous_independent" {
 
 ///|
 test "serialize_deterministic_policy_roundtrip" {
-  let p0 : @snn_mbt.DeterministicPolicy = @snn_mbt.DeterministicPolicy::new(
+  let p0 : @rl.DeterministicPolicy = @rl.DeterministicPolicy::new(
     3, 2, 4, -1.5F, 1.5F, 17UL,
   )
   for h in 0..<4 {
@@ -216,7 +216,7 @@ test "serialize_adam_state_zero_state" {
 
 ///|
 test "serialize_qnet_checkpoint_roundtrip" {
-  let q0 : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(2, 3, 23UL)
+  let q0 : @rl.LinearQNet = @rl.LinearQNet::new(2, 3, 23UL)
   for i in 0..<3 {
     q0.w[i][0] = Float::from_int(i + 1) * 0.1F
     q0.w[i][1] = -Float::from_int(i + 1) * 0.1F
@@ -245,7 +245,7 @@ test "serialize_qnet_checkpoint_roundtrip" {
 test "serialize_qnet_checkpoint_independent_copies" {
   // Mutating the model after serialize must not affect the
   // deserialized copy.
-  let q0 : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(2, 2, 29UL)
+  let q0 : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 29UL)
   q0.w[0][0] = 0.5F
   let opt0 = @optim.adam_init(4, 2)
   let s = @snn_mbt.serialize_qnet_checkpoint(q0, opt0, 5)
@@ -256,7 +256,7 @@ test "serialize_qnet_checkpoint_independent_copies" {
 
 ///|
 test "serialize_linear_qnet_header_has_kind_tag" {
-  let q : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(2, 2, 31UL)
+  let q : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 31UL)
   let s = @snn_mbt.serialize_linear_qnet(q)
   // First non-empty line should be the magic header.
   if !(s.length() >= 11 && s[0] == 'S' && s[1] == 'N' && s[2] == 'N') {
@@ -270,7 +270,7 @@ test "serialize_linear_qnet_header_has_kind_tag" {
 ///|
 test "serialize_deterministic_policy_action_range_preserved" {
   // action_low / action_high must round-trip even with non-+-1 range.
-  let p0 : @snn_mbt.DeterministicPolicy = @snn_mbt.DeterministicPolicy::new(
+  let p0 : @rl.DeterministicPolicy = @rl.DeterministicPolicy::new(
     2, 1, 2, -2.5F, 3.5F, 43UL,
   )
   let s = @snn_mbt.serialize_deterministic_policy(p0)
@@ -282,7 +282,7 @@ test "serialize_deterministic_policy_action_range_preserved" {
 ///|
 test "serialize_then_deserialize_preserves_negative_floats" {
   // Negative-value round-trip across the whole pipeline.
-  let q0 : @snn_mbt.LinearQNet = @snn_mbt.LinearQNet::new(2, 2, 53UL)
+  let q0 : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 53UL)
   q0.w[0][0] = -3.14159F
   q0.w[1][1] = -0.0001F
   q0.b[0] = -42.0F

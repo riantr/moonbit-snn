@@ -28,7 +28,7 @@ fn zeros_hidden(gru_hidden : Int) -> Array[Float] {
 
 ///|
 test "gru_deterministic_policy_new: shape + squash range" {
-  let p : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 7UL,
   )
   assert_eq(p.state_dim, 3)
@@ -46,12 +46,12 @@ test "gru_deterministic_policy_new: shape + squash range" {
 
 ///|
 test "gru_deterministic_policy_step: action in squash range" {
-  let p : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -2.0F, 3.0F, 11UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h = zeros_hidden(4)
-  let (action, _h_next) = @snn_mbt.gru_deterministic_policy_step(p, obs, h)
+  let (action, _h_next) = @rl.gru_deterministic_policy_step(p, obs, h)
   assert_eq(action.length(), 2)
   assert_eq(action[0] >= -2.0F && action[0] <= 3.0F, true)
   assert_eq(action[1] >= -2.0F && action[1] <= 3.0F, true)
@@ -59,16 +59,16 @@ test "gru_deterministic_policy_step: action in squash range" {
 
 ///|
 test "gru_deterministic_policy_step: deterministic with same seed" {
-  let p1 : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p1 : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 17UL,
   )
-  let p2 : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p2 : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 17UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h = zeros_hidden(4)
-  let (a1, _) = @snn_mbt.gru_deterministic_policy_step(p1, obs, h)
-  let (a2, _) = @snn_mbt.gru_deterministic_policy_step(p2, obs, h)
+  let (a1, _) = @rl.gru_deterministic_policy_step(p1, obs, h)
+  let (a2, _) = @rl.gru_deterministic_policy_step(p2, obs, h)
   for i in 0..<a1.length() {
     assert_eq(a1[i], a2[i])
   }
@@ -76,16 +76,16 @@ test "gru_deterministic_policy_step: deterministic with same seed" {
 
 ///|
 test "gru_deterministic_policy_step: different seeds differ" {
-  let p1 : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p1 : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 17UL,
   )
-  let p2 : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p2 : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 29UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h = zeros_hidden(4)
-  let (a1, _) = @snn_mbt.gru_deterministic_policy_step(p1, obs, h)
-  let (a2, _) = @snn_mbt.gru_deterministic_policy_step(p2, obs, h)
+  let (a1, _) = @rl.gru_deterministic_policy_step(p1, obs, h)
+  let (a2, _) = @rl.gru_deterministic_policy_step(p2, obs, h)
   let mut differs = false
   for i in 0..<a1.length() {
     if a1[i] != a2[i] {
@@ -102,14 +102,14 @@ test "gru_deterministic_policy_step: hidden evolves over time" {
   // Two calls with the same observation but different hidden states
   // should produce different actions (because the GRU cell mixes the
   // previous hidden state into the new one).
-  let p : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 41UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h_zero = zeros_hidden(4)
   let h_other : Array[Float] = [0.7F, -0.4F, 0.2F, -0.1F]
-  let (a_zero, _) = @snn_mbt.gru_deterministic_policy_step(p, obs, h_zero)
-  let (a_other, _) = @snn_mbt.gru_deterministic_policy_step(p, obs, h_other)
+  let (a_zero, _) = @rl.gru_deterministic_policy_step(p, obs, h_zero)
+  let (a_other, _) = @rl.gru_deterministic_policy_step(p, obs, h_other)
   let mut differs = false
   for i in 0..<a_zero.length() {
     if a_zero[i] != a_other[i] {
@@ -123,7 +123,7 @@ test "gru_deterministic_policy_step: hidden evolves over time" {
 
 ///|
 test "gru_deterministic_policy_seq_forward: shape" {
-  let p : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     2, 3, 5, -1.0F, 1.0F, 53UL,
   )
   let seq_len = 4
@@ -132,7 +132,7 @@ test "gru_deterministic_policy_seq_forward: shape" {
     obs_seq[i] = Float::from_int(i) * 0.1F
   }
   let h = zeros_hidden(5)
-  let (action_seq, hidden_out) = @snn_mbt.gru_deterministic_policy_seq_forward(p, obs_seq, seq_len, h)
+  let (action_seq, hidden_out) = @rl.gru_deterministic_policy_seq_forward(p, obs_seq, seq_len, h)
   assert_eq(action_seq.length(), seq_len * 3)
   assert_eq(hidden_out.length(), 5)
   // All actions should be in the squash range.
@@ -145,19 +145,19 @@ test "gru_deterministic_policy_seq_forward: shape" {
 test "gru_deterministic_policy_seq_forward: matches single-step chain" {
   // Running seq_forward should produce the same action_seq as manually
   // chaining single-step calls.
-  let p : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     2, 2, 3, -1.0F, 1.0F, 67UL,
   )
   let seq_len = 3
   let obs_seq : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F]
   let h0 = zeros_hidden(3)
-  let (action_seq, _) = @snn_mbt.gru_deterministic_policy_seq_forward(p, obs_seq, seq_len, h0)
+  let (action_seq, _) = @rl.gru_deterministic_policy_seq_forward(p, obs_seq, seq_len, h0)
   // Manually chain.
   let mut h_cur = h0
   let mut all_match = true
   for t in 0..<seq_len {
     let obs_t : Array[Float] = [obs_seq[t * 2], obs_seq[t * 2 + 1]]
-    let (a_t, h_new) = @snn_mbt.gru_deterministic_policy_step(p, obs_t, h_cur)
+    let (a_t, h_new) = @rl.gru_deterministic_policy_step(p, obs_t, h_cur)
     let act_off = t * 2
     for k in 0..<2 {
       if a_t[k] != action_seq[act_off + k] {
@@ -173,16 +173,16 @@ test "gru_deterministic_policy_seq_forward: matches single-step chain" {
 
 ///|
 test "gru_deterministic_policy_seq_forward: deterministic with same seed" {
-  let p1 : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p1 : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     2, 2, 4, -1.0F, 1.0F, 89UL,
   )
-  let p2 : @snn_mbt.GRUDeterministicPolicy = @snn_mbt.GRUDeterministicPolicy::new(
+  let p2 : @rl.GRUDeterministicPolicy = @rl.GRUDeterministicPolicy::new(
     2, 2, 4, -1.0F, 1.0F, 89UL,
   )
   let obs_seq : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F]
   let h = zeros_hidden(4)
-  let (a1, _) = @snn_mbt.gru_deterministic_policy_seq_forward(p1, obs_seq, 3, h)
-  let (a2, _) = @snn_mbt.gru_deterministic_policy_seq_forward(p2, obs_seq, 3, h)
+  let (a1, _) = @rl.gru_deterministic_policy_seq_forward(p1, obs_seq, 3, h)
+  let (a2, _) = @rl.gru_deterministic_policy_seq_forward(p2, obs_seq, 3, h)
   for i in 0..<a1.length() {
     assert_eq(a1[i], a2[i])
   }

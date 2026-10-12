@@ -13,13 +13,13 @@
 
 ///|
 test "sequence_replay_buffer_new_is_empty" {
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 3, 2)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 3, 2)
   assert_eq(buf.len(), 0)
 }
 
 ///|
 test "sequence_replay_buffer_push_increments_len" {
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(4, 2, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(4, 2, 1)
   buf.push([0.1F, 0.2F], [0.5F], 1.0F, [0.3F, 0.4F], false)
   assert_eq(buf.len(), 1)
   buf.push([0.5F, 0.6F], [-0.5F], 2.0F, [0.7F, 0.8F], true)
@@ -28,7 +28,7 @@ test "sequence_replay_buffer_push_increments_len" {
 
 ///|
 test "sequence_replay_buffer_capacity_overflow_wraps" {
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(3, 2, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(3, 2, 1)
   for i in 0..<5 {
     buf.push([Float::from_int(i), 0.0F], [0.0F], Float::from_int(i), [0.0F, 0.0F], false)
   }
@@ -38,7 +38,7 @@ test "sequence_replay_buffer_capacity_overflow_wraps" {
 
 ///|
 test "sequence_replay_buffer_reset_returns_len_to_zero" {
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(4, 2, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(4, 2, 1)
   buf.push([0.1F, 0.2F], [0.5F], 1.0F, [0.3F, 0.4F], false)
   buf.push([0.5F, 0.6F], [-0.5F], 2.0F, [0.7F, 0.8F], false)
   assert_eq(buf.len(), 2)
@@ -48,7 +48,7 @@ test "sequence_replay_buffer_reset_returns_len_to_zero" {
 
 ///|
 test "sequence_replay_buffer_sample_seq_batch_shape" {
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 3, 2)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 3, 2)
   // Push 10 transitions; seq_len=4 means max_start = 10 - 4 = 6
   // start indices drawn from [0, 6).
   for i in 0..<10 {
@@ -76,7 +76,7 @@ test "sequence_replay_buffer_sample_seq_batch_empty_buffer_zero_pads" {
   // Buffer has 0 transitions; sampling should return all-zero arrays
   // without crashing. With safe_max=0, every sequence is zero-padded
   // and the terminal_mask is set for every step.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 2, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 2, 1)
   let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
   let (obs_seq, _act_seq, _r_seq, _next_seq, _done_seq, term_mask, hidden_init) = buf.sample_seq_batch(2, 3, rng)
   assert_eq(obs_seq.length(), 2 * 3 * 2)
@@ -96,7 +96,7 @@ test "sequence_replay_buffer_sample_seq_batch_window_crosses_done" {
   // Pick start_idx=2: window covers indices [2, 3, 4, 5].
   // index 3 is done => terminal_mask[1] (next slot) should be 1.0F;
   // slots 2,3 in the window stay zero-padded.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 1, 1)
   for i in 0..<6 {
     let done = i == 3
     buf.push(
@@ -131,8 +131,8 @@ test "sequence_replay_buffer_sample_seq_batch_window_crosses_done" {
 
 ///|
 test "sequence_replay_buffer_sample_seq_batch_reproducible_under_seed" {
-  let buf1 : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 2, 1)
-  let buf2 : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 2, 1)
+  let buf1 : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 2, 1)
+  let buf2 : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 2, 1)
   for i in 0..<6 {
     let s = [Float::from_int(i), Float::from_int(i + 1)]
     let a = [Float::from_int(i + 10)]
@@ -171,7 +171,7 @@ test "sequence_replay_buffer_sample_seq_batch_reproducible_under_seed" {
 ///|
 test "sequence_replay_buffer_dones_propagate_in_window" {
   // Push 8 transitions with dones at indices 3 and 6.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<8 {
     buf.push([Float::from_int(i)], [Float::from_int(i + 10)], Float::from_int(i), [Float::from_int(i + 100)], i == 3 || i == 6)
   }
@@ -217,7 +217,7 @@ test "sequence_replay_buffer_terminal_mask_binary_values_only" {
   // Every terminal_mask slot must be exactly 0.0F or 1.0F (no
   // fractional values; this is what callers test for with `> 0.5F`).
   // Sample multiple windows deterministically and check every slot.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<12 {
     let done = i == 4 || i == 8
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -244,7 +244,7 @@ test "sequence_replay_buffer_terminal_mask_semantics_next_slot_after_done" {
   //             slots 4 and beyond are post-terminal zero-padded,
   //             so term_mask=1 for ALL of them — the caller treats
   //             them as undefined and resets hidden state.)
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<12 {
     let done = i == 5
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -271,7 +271,7 @@ test "sequence_replay_buffer_terminal_mask_done_at_first_slot" {
   // Slots 2..3 are past the terminal: also term_mask=1 (zero-padded
   // region) — caller must treat them as undefined and reset hidden
   // state.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 1, 1)
   for i in 0..<6 {
     let done = i == 0
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -295,7 +295,7 @@ test "sequence_replay_buffer_terminal_mask_done_at_last_slot_of_window" {
   // (no next slot within window to mark). Caller must detect the
   // terminal via done_seq directly; term_mask at the last slot is 0
   // because there is no in-window successor to flag.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(8, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(8, 1, 1)
   for i in 0..<6 {
     let done = i == 3
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -327,7 +327,7 @@ test "sequence_replay_buffer_terminal_mask_consecutive_dones" {
   //                          but we don't expose it after the FIRST done
   //                          in the window)
   // This locks in the "first done wins" rule.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<10 {
     let done = i == 4 || i == 5
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -351,7 +351,7 @@ test "sequence_replay_buffer_terminal_mask_zero_when_no_done_in_window" {
   // no in-window successor to flag, so term_mask stays all zero even
   // though done_seq[3]=1. Caller detects the terminal via done_seq
   // directly.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<12 {
     let done = i == 2 || i == 7
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -375,7 +375,7 @@ test "sequence_replay_buffer_terminal_mask_no_done_in_window_all_zero" {
   // (no prior done in window), term_mask[2]=0 (terminal slot itself,
   // current slot stays 0), term_mask[3]=1 (post-terminal zero-pad —
   // slot 9 is past the first done in window).
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<12 {
     let done = i == 2 || i == 5 || i == 8
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -398,7 +398,7 @@ test "sequence_replay_buffer_terminal_mask_at_buffer_end_no_done" {
   // slots) but no done=1 in the populated portion. Expected: populated
   // slots have term_mask=0; zero-padded trailing slots have
   // term_mask=1 (caller knows data is undefined there).
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<3 {
     // No dones at all in the buffer.
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], false)
@@ -441,7 +441,7 @@ test "sequence_replay_buffer_terminal_mask_at_fifo_wrap_boundary" {
   // safe_max = 4 - 3 = 1; start_idx in [0, 1).
   // start_idx=1 → window [1,2,3]. Done at slot 2 (index 3) — the LAST
   // slot. No in-window successor to mark → term_mask stays all zero.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(4, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(4, 1, 1)
   for i in 0..<5 {
     let done = i == 3
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)
@@ -464,7 +464,7 @@ test "sequence_replay_buffer_terminal_mask_multi_batch_consistent" {
   // batch 1 to start at 0 (window [0,1,2,3], done at index 4 is OUTSIDE
   // the window → batch 1 has no done).
   // Verify batch 0's term_mask[3]=1 and batch 1's term_mask stays all zero.
-  let buf : @snn_mbt.SequenceReplayBuffer = @snn_mbt.SequenceReplayBuffer::new(16, 1, 1)
+  let buf : @rl.SequenceReplayBuffer = @rl.SequenceReplayBuffer::new(16, 1, 1)
   for i in 0..<8 {
     let done = i == 4
     buf.push([Float::from_int(i)], [Float::from_int(i)], Float::from_int(i), [Float::from_int(i + 1)], done)

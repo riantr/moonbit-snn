@@ -6,7 +6,7 @@
 
 ///|
 test "deterministic_policy_shapes" {
-  let p = @snn_mbt.DeterministicPolicy::new(3, 2, 4, -1.0F, 1.0F, 1UL)
+  let p = @rl.DeterministicPolicy::new(3, 2, 4, -1.0F, 1.0F, 1UL)
   assert_eq(p.state_dim, 3)
   assert_eq(p.action_dim, 2)
   assert_eq(p.hidden, 4)
@@ -20,10 +20,10 @@ test "deterministic_policy_shapes" {
 
 ///|
 test "policy_forward_output_in_range" {
-  let p = @snn_mbt.DeterministicPolicy::new(4, 2, 8, -1.0F, 1.0F, 2UL)
+  let p = @rl.DeterministicPolicy::new(4, 2, 8, -1.0F, 1.0F, 2UL)
   let state : Array[Float] = [0.5F, -0.3F, 0.1F, 0.8F]
   let hidden : Array[Float] = Array::make(p.hidden, 0.0F)
-  let action = @snn_mbt.deterministic_policy_forward(p, state, hidden)
+  let action = @rl.deterministic_policy_forward(p, state, hidden)
   assert_eq(action.length(), 2)
   let mut k = 0
   while k < action.length() {
@@ -37,22 +37,22 @@ test "policy_forward_output_in_range" {
 
 ///|
 test "policy_forward_deterministic_same_input_same_output" {
-  let p = @snn_mbt.DeterministicPolicy::new(2, 1, 4, -0.5F, 0.5F, 3UL)
+  let p = @rl.DeterministicPolicy::new(2, 1, 4, -0.5F, 0.5F, 3UL)
   let state : Array[Float] = [0.2F, -0.1F]
   let hidden_a : Array[Float] = Array::make(p.hidden, 0.0F)
   let hidden_b : Array[Float] = Array::make(p.hidden, 0.0F)
-  let action_a = @snn_mbt.deterministic_policy_forward(p, state, hidden_a)
-  let action_b = @snn_mbt.deterministic_policy_forward(p, state, hidden_b)
+  let action_a = @rl.deterministic_policy_forward(p, state, hidden_a)
+  let action_b = @rl.deterministic_policy_forward(p, state, hidden_b)
   assert_eq(action_a[0], action_b[0])
 }
 
 ///|
 test "policy_copy_preserves_all_weights" {
-  let p1 = @snn_mbt.DeterministicPolicy::new(2, 2, 4, -1.0F, 1.0F, 4UL)
-  let p2 = @snn_mbt.DeterministicPolicy::new(2, 2, 4, -1.0F, 1.0F, 5UL)
+  let p1 = @rl.DeterministicPolicy::new(2, 2, 4, -1.0F, 1.0F, 4UL)
+  let p2 = @rl.DeterministicPolicy::new(2, 2, 4, -1.0F, 1.0F, 5UL)
   p1.w1[0][1] = 7.5F
   p1.b2[1] = -2.5F
-  @snn_mbt.policy_copy(p2, p1)
+  @rl.policy_copy(p2, p1)
   assert_eq(p2.w1[0][1], 7.5F)
   assert_eq(p2.b2[1], -2.5F)
 }
@@ -63,7 +63,7 @@ test "policy_copy_preserves_all_weights" {
 
 ///|
 test "qnet_continuous_shapes" {
-  let q = @snn_mbt.QNetworkContinuous::new(3, 2, 4, 1UL)
+  let q = @rl.QNetworkContinuous::new(3, 2, 4, 1UL)
   assert_eq(q.state_dim, 3)
   assert_eq(q.action_dim, 2)
   assert_eq(q.hidden, 4)
@@ -74,22 +74,22 @@ test "qnet_continuous_shapes" {
 
 ///|
 test "qnet_continuous_forward_finite" {
-  let q = @snn_mbt.QNetworkContinuous::new(4, 2, 8, 2UL)
+  let q = @rl.QNetworkContinuous::new(4, 2, 8, 2UL)
   let state : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let action : Array[Float] = [0.5F, -0.5F]
   let hidden : Array[Float] = Array::make(q.hidden, 0.0F)
-  let qval = @snn_mbt.qnet_continuous_forward(q, state, action, hidden)
+  let qval = @rl.qnet_continuous_forward(q, state, action, hidden)
   assert_true(qval == qval)
 }
 
 ///|
 test "qnet_continuous_copy_preserves_all_weights" {
-  let q1 = @snn_mbt.QNetworkContinuous::new(2, 1, 4, 1UL)
-  let q2 = @snn_mbt.QNetworkContinuous::new(2, 1, 4, 2UL)
+  let q1 = @rl.QNetworkContinuous::new(2, 1, 4, 1UL)
+  let q2 = @rl.QNetworkContinuous::new(2, 1, 4, 2UL)
   q1.w1[2][1] = 3.14F
   // b2 is private mut — only mutable from within the same module.
   // Verify the copy function preserves w1 modifications.
-  @snn_mbt.qnet_continuous_copy(q2, q1)
+  @rl.qnet_continuous_copy(q2, q1)
   assert_eq(q2.w1[2][1], 3.14F)
 }
 
@@ -99,7 +99,7 @@ test "qnet_continuous_copy_preserves_all_weights" {
 
 ///|
 test "ddpg_new_targets_match_online" {
-  let ddpg = @snn_mbt.DDPG::new(3, 2, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 42UL)
+  let ddpg = @rl.DDPG::new(3, 2, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 42UL)
   let mut h = 0
   while h < ddpg.actor.hidden {
     if ddpg.actor.w1[h][0] != ddpg.actor_target.w1[h][0] {
@@ -118,9 +118,9 @@ test "ddpg_new_targets_match_online" {
 
 ///|
 test "ddpg_select_action_eval_in_range" {
-  let ddpg = @snn_mbt.DDPG::new(3, 2, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.0F, 7UL)
+  let ddpg = @rl.DDPG::new(3, 2, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.0F, 7UL)
   let state : Array[Float] = [0.5F, -0.5F, 0.1F]
-  let action = @snn_mbt.ddpg_select_action_eval(ddpg, state)
+  let action = @rl.ddpg_select_action_eval(ddpg, state)
   assert_eq(action.length(), 2)
   let mut k = 0
   while k < action.length() {
@@ -133,12 +133,12 @@ test "ddpg_select_action_eval_in_range" {
 
 ///|
 test "ddpg_select_action_with_noise_stays_in_range" {
-  let ddpg = @snn_mbt.DDPG::new(3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.5F, 7UL)
+  let ddpg = @rl.DDPG::new(3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.5F, 7UL)
   let state : Array[Float] = [0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let mut k = 0
   while k < 100 {
-    let action = @snn_mbt.ddpg_select_action(ddpg, state, rng)
+    let action = @rl.ddpg_select_action(ddpg, state, rng)
     let a = action[0]
     if a < -1.0F || a > 1.0F {
       fail("noisy action = \{a} out of range")
@@ -149,10 +149,10 @@ test "ddpg_select_action_with_noise_stays_in_range" {
 
 ///|
 test "ddpg_soft_update_moves_target_toward_online" {
-  let ddpg = @snn_mbt.DDPG::new(2, 1, 4, -1.0F, 1.0F, 0.99F, 0.5F, 0.1F, 7UL)
+  let ddpg = @rl.DDPG::new(2, 1, 4, -1.0F, 1.0F, 0.99F, 0.5F, 0.1F, 7UL)
   ddpg.actor.b2[0] = 10.0F
   let b2_target_before = ddpg.actor_target.b2[0]
-  @snn_mbt.ddpg_soft_update(ddpg)
+  @rl.ddpg_soft_update(ddpg)
   let b2_target_after = ddpg.actor_target.b2[0]
   let expected = b2_target_before * 0.5F + 5.0F
   let diff = if b2_target_after > expected {
@@ -167,8 +167,8 @@ test "ddpg_soft_update_moves_target_toward_online" {
 
 ///|
 test "ddpg_update_critic_runs_without_crash" {
-  let ddpg = @snn_mbt.DDPG::new(3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL)
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(16, 3, 1)
+  let ddpg = @rl.DDPG::new(3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL)
+  let buf = @rl.ContinuousReplayBuffer::new(16, 3, 1)
   let mut i = 0
   while i < 8 {
     buf.push(
@@ -182,7 +182,7 @@ test "ddpg_update_critic_runs_without_crash" {
   }
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let batch = buf.sample(4, rng)
-  let td = @snn_mbt.ddpg_update_critic(ddpg, batch, 0.001F)
+  let td = @rl.ddpg_update_critic(ddpg, batch, 0.001F)
   if td != td {
     fail("TD error is NaN")
   }
@@ -190,15 +190,15 @@ test "ddpg_update_critic_runs_without_crash" {
 
 ///|
 test "ddpg_update_actor_modifies_w2" {
-  let ddpg = @snn_mbt.DDPG::new(2, 1, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL)
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(8, 2, 1)
+  let ddpg = @rl.DDPG::new(2, 1, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL)
+  let buf = @rl.ContinuousReplayBuffer::new(8, 2, 1)
   buf.push([0.1F, 0.1F], [0.2F], 0.5F, [0.2F, 0.2F], false)
   buf.push([0.2F, 0.2F], [0.1F], 0.4F, [0.3F, 0.3F], false)
   let w2_before = ddpg.actor.w2[0][0]
   let b2_before = ddpg.actor.b2[0]
   let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
   let batch = buf.sample(2, rng)
-  @snn_mbt.ddpg_update_actor(ddpg, batch, 0.001F)
+  @rl.ddpg_update_actor(ddpg, batch, 0.001F)
   let w2_after = ddpg.actor.w2[0][0]
   let b2_after = ddpg.actor.b2[0]
   if w2_after == w2_before && b2_after == b2_before {
@@ -208,7 +208,7 @@ test "ddpg_update_actor_modifies_w2" {
 
 ///|
 test "continuous_replay_buffer_push_and_len" {
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(4, 2, 1)
+  let buf = @rl.ContinuousReplayBuffer::new(4, 2, 1)
   assert_eq(buf.len(), 0)
   buf.push([0.1F, 0.2F], [0.3F], 1.0F, [0.4F, 0.5F], false)
   assert_eq(buf.len(), 1)
@@ -218,7 +218,7 @@ test "continuous_replay_buffer_push_and_len" {
 
 ///|
 test "continuous_replay_buffer_overflow_wraps" {
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(2, 1, 1)
+  let buf = @rl.ContinuousReplayBuffer::new(2, 1, 1)
   buf.push([0.1F], [0.1F], 1.0F, [0.2F], false)
   buf.push([0.2F], [0.2F], 1.0F, [0.3F], false)
   assert_eq(buf.len(), 2)

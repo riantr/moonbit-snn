@@ -25,14 +25,14 @@ pub fn noisy_dqn_select_action(
   state : Int,
   rng : @core.Xoshiro,
 ) -> Int {
-  let x = rl_one_hot(state, net.n_states)
+  let x = @rl.rl_one_hot(state, net.n_states)
   noisy_q_argmax(net, x, rng)
 }
 
 ///|
 /// ε-free action selection at evaluation (μ weights only).
 pub fn noisy_dqn_select_action_eval(net : NoisyQNet, state : Int) -> Int {
-  let x = rl_one_hot(state, net.n_states)
+  let x = @rl.rl_one_hot(state, net.n_states)
   noisy_q_argmax_eval(net, x)
 }
 
@@ -105,7 +105,7 @@ pub fn noisy_dqn_update_step(
     let r = rewards[k]
     let s_next = next_states[k]
     let d_t = dones[k]
-    let x = rl_one_hot(s, online.n_states)
+    let x = @rl.rl_one_hot(s, online.n_states)
     // Online forward (noisy) — gives Q(s, a; θ_online) under THIS ε.
     let q = noisy_q_forward(online, x, rng)
     let q_sa = q[a]
@@ -113,7 +113,7 @@ pub fn noisy_dqn_update_step(
     let target_value = if d_t {
       r
     } else {
-      let x_next = rl_one_hot(s_next, target.n_states)
+      let x_next = @rl.rl_one_hot(s_next, target.n_states)
       let q_next = noisy_q_forward_eval(target, x_next)
       let max_q = noisy_q_max(q_next)
       r + gamma * max_q
@@ -229,7 +229,7 @@ fn noisy_q_max(q : Array[Float]) -> Float {
 /// Returns the mean undiscounted episode return over the last 10
 /// episodes (eval-mode argmax, μ weights).
 pub fn train_noisy_dqn(
-  env : GridWorld,
+  env : @rl.GridWorld,
   online : NoisyQNet,
   target : NoisyQNet,
   n_episodes : Int,
@@ -243,7 +243,7 @@ pub fn train_noisy_dqn(
   seed : UInt64,
 ) -> Float {
   let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
-  let buffer = ReplayBuffer::new(buffer_capacity)
+  let buffer = @rl.ReplayBuffer::new(buffer_capacity)
   let mut total_return = 0.0F
   let mut return_count = 0
   for ep in 0..<n_episodes {
@@ -283,7 +283,7 @@ pub fn train_noisy_dqn(
 /// Evaluate a trained NoisyQNet over `n_episodes` greedy episodes
 /// (μ weights, no noise). Returns mean episode return.
 pub fn eval_noisy_dqn(
-  env : GridWorld,
+  env : @rl.GridWorld,
   online : NoisyQNet,
   n_episodes : Int,
   max_steps : Int,

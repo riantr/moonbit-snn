@@ -2,7 +2,7 @@
 
 ///|
 test "grid_world_new: state count + start/goal" {
-  let env = @snn_mbt.GridWorld::new(3, 4, 20)
+  let env = @rl.GridWorld::new(3, 4, 20)
   assert_eq(env.n_rows, 3)
   assert_eq(env.n_cols, 4)
   assert_eq(env.n_states(), 12)
@@ -13,18 +13,18 @@ test "grid_world_new: state count + start/goal" {
 
 ///|
 test "grid_world_step: terminal at goal" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 10)
+  let env = @rl.GridWorld::new(2, 2, 10)
   // Step INTO the goal: state 2 = (1, 0), action right -> (1, 1) = state 3.
-  let (_s, r, done) = env.step(2, @snn_mbt.rl_action_right)
+  let (_s, r, done) = env.step(2, @rl.rl_action_right)
   assert_eq(r, 1.0F)
   assert_true(done)
 }
 
 ///|
 test "grid_world_step: stay on out-of-bounds" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 10)
+  let env = @rl.GridWorld::new(2, 2, 10)
   // At (0, 0), going up should stay.
-  let (s, r, done) = env.step(0, @snn_mbt.rl_action_up)
+  let (s, r, done) = env.step(0, @rl.rl_action_up)
   assert_eq(s, 0)
   assert_eq(r, -0.1F)
   assert_false(done)
@@ -32,9 +32,9 @@ test "grid_world_step: stay on out-of-bounds" {
 
 ///|
 test "grid_world_step: valid move" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 10)
+  let env = @rl.GridWorld::new(2, 2, 10)
   // At (0, 0), going right -> (0, 1) -> state 1.
-  let (s, r, done) = env.step(0, @snn_mbt.rl_action_right)
+  let (s, r, done) = env.step(0, @rl.rl_action_right)
   assert_eq(s, 1)
   assert_eq(r, -0.1F)
   assert_false(done)
@@ -42,9 +42,9 @@ test "grid_world_step: valid move" {
 
 ///|
 test "policy_forward: probs sum to 1 + uniform at zero weights" {
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 3, 7UL)
-  let x = @snn_mbt.rl_one_hot(2, 4)
-  let (logits, probs) = @snn_mbt.policy_forward(p, x)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 3, 7UL)
+  let x = @rl.rl_one_hot(2, 4)
+  let (logits, probs) = @rl.policy_forward(p, x)
   assert_eq(logits.length(), 3)
   assert_eq(probs.length(), 3)
   let mut s = 0.0F
@@ -61,11 +61,11 @@ test "policy_forward: probs sum to 1 + uniform at zero weights" {
 
 ///|
 test "policy_forward: deterministic with same seed" {
-  let p1 = @snn_mbt.LinearSoftmaxPolicy::new(4, 3, 11UL)
-  let p2 = @snn_mbt.LinearSoftmaxPolicy::new(4, 3, 11UL)
-  let x = @snn_mbt.rl_one_hot(1, 4)
-  let (_l1, probs1) = @snn_mbt.policy_forward(p1, x)
-  let (_l2, probs2) = @snn_mbt.policy_forward(p2, x)
+  let p1 = @rl.LinearSoftmaxPolicy::new(4, 3, 11UL)
+  let p2 = @rl.LinearSoftmaxPolicy::new(4, 3, 11UL)
+  let x = @rl.rl_one_hot(1, 4)
+  let (_l1, probs1) = @rl.policy_forward(p1, x)
+  let (_l2, probs2) = @rl.policy_forward(p2, x)
   for i in 0..<3 {
     assert_eq(probs1[i], probs2[i])
   }
@@ -74,7 +74,7 @@ test "policy_forward: deterministic with same seed" {
 ///|
 test "compute_returns: backward computation" {
   let rewards : Array[Float] = [1.0F, 2.0F, 3.0F]
-  let g = @snn_mbt.compute_returns(rewards, 1.0F)
+  let g = @rl.compute_returns(rewards, 1.0F)
   // G_2 = 3; G_1 = 2 + 3 = 5; G_0 = 1 + 5 = 6.
   assert_eq(g[2], 3.0F)
   assert_eq(g[1], 5.0F)
@@ -84,7 +84,7 @@ test "compute_returns: backward computation" {
 ///|
 test "compute_returns: with discount" {
   let rewards : Array[Float] = [1.0F, 2.0F, 3.0F]
-  let g = @snn_mbt.compute_returns(rewards, 0.5F)
+  let g = @rl.compute_returns(rewards, 0.5F)
   // G_2 = 3; G_1 = 2 + 0.5*3 = 3.5; G_0 = 1 + 0.5*3.5 = 2.75.
   assert_eq(g[2], 3.0F)
   assert_eq(g[1], 3.5F)
@@ -94,10 +94,10 @@ test "compute_returns: with discount" {
 
 ///|
 test "policy_rollout: episode length bounded by max_steps" {
-  let env = @snn_mbt.GridWorld::new(3, 3, 8)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(9, 4, 17UL)
+  let env = @rl.GridWorld::new(3, 3, 8)
+  let p = @rl.LinearSoftmaxPolicy::new(9, 4, 17UL)
   let rng = @core.Xoshiro::from_state(19UL, 23UL, 29UL, 31UL)
-  let ep = @snn_mbt.policy_rollout(env, p, 8, rng)
+  let ep = @rl.policy_rollout(env, p, 8, rng)
   assert_true(ep.states.length() <= 8)
   assert_eq(ep.states.length(), ep.actions.length())
   assert_eq(ep.states.length(), ep.rewards.length())
@@ -107,8 +107,8 @@ test "policy_rollout: episode length bounded by max_steps" {
 test "policy_rollout: ends at goal on optimal play" {
   // Hand-tune a policy that goes down from state 0 -> state 2,
   // then right from state 2 -> goal (state 3). That's 2 steps.
-  let env = @snn_mbt.GridWorld::new(2, 2, 10)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 0UL)
+  let env = @rl.GridWorld::new(2, 2, 10)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 0UL)
   for i in 0..<4 {
     for j in 0..<4 {
       p.w[i][j] = 0.0F
@@ -117,7 +117,7 @@ test "policy_rollout: ends at goal on optimal play" {
   p.w[1][0] = 20.0F // down from state 0 -> state 2
   p.w[3][2] = 20.0F // right from state 2 -> state 3 (goal)
   let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
-  let ep = @snn_mbt.policy_rollout(env, p, 10, rng)
+  let ep = @rl.policy_rollout(env, p, 10, rng)
   // Should reach state 3 (goal) in 2 steps. The last stored state
   // is the FROM state (before the final action); the goal reward
   // appears in the last reward entry.
@@ -128,10 +128,10 @@ test "policy_rollout: ends at goal on optimal play" {
 ///|
 test "train_reinforce: return improves over training" {
   // Train a small policy and check that mean return improves.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 41UL)
-  let init_mean = @snn_mbt.train_reinforce(env, p, 100, 0.9F, 0.05F, 5, 43UL)
-  let trained_mean = @snn_mbt.train_reinforce(env, p, 200, 0.9F, 0.05F, 5, 47UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 41UL)
+  let init_mean = @rl.train_reinforce(env, p, 100, 0.9F, 0.05F, 5, 43UL)
+  let trained_mean = @rl.train_reinforce(env, p, 200, 0.9F, 0.05F, 5, 47UL)
   if trained_mean <= init_mean {
     fail("trained return \{trained_mean} didn't improve over init \{init_mean}")
   }
@@ -139,12 +139,12 @@ test "train_reinforce: return improves over training" {
 
 ///|
 test "episode_return: sums rewards" {
-  let ep : @snn_mbt.Episode = {
+  let ep : @rl.Episode = {
     states: [0, 1, 2],
     actions: [0, 1, 2],
     rewards: [0.1F, -0.1F, 1.0F],
   }
-  let r = @snn_mbt.episode_return(ep)
+  let r = @rl.episode_return(ep)
   assert_eq(r, 1.0F)
 }
 
@@ -152,17 +152,17 @@ test "episode_return: sums rewards" {
 test "policy_gradient_update: increases chosen-action probability" {
   // After one update with positive return, the chosen action's
   // logit should increase for its starting state.
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(3, 3, 23UL)
-  let x = @snn_mbt.rl_one_hot(0, 3)
-  let (_l_before, probs_before) = @snn_mbt.policy_forward(p, x)
-  let ep : @snn_mbt.Episode = {
+  let p = @rl.LinearSoftmaxPolicy::new(3, 3, 23UL)
+  let x = @rl.rl_one_hot(0, 3)
+  let (_l_before, probs_before) = @rl.policy_forward(p, x)
+  let ep : @rl.Episode = {
     states: [0],
     actions: [1], // pick action 1
     rewards: [1.0F],
   }
   let returns : Array[Float] = [1.0F]
-  @snn_mbt.policy_gradient_update(p, ep, returns, 0.5F)
-  let (_l_after, probs_after) = @snn_mbt.policy_forward(p, x)
+  @rl.policy_gradient_update(p, ep, returns, 0.5F)
+  let (_l_after, probs_after) = @rl.policy_forward(p, x)
   // prob of action 1 should increase (or at least not decrease a lot).
   assert_true(probs_after[1] >= probs_before[1] - 1.0e-5F)
 }

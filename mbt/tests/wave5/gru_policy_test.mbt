@@ -2,7 +2,7 @@
 
 ///|
 test "gru_policy_new: shapes" {
-  let p = @snn_mbt.GruPolicy::new(3, 4, 11UL)
+  let p = @rl.GruPolicy::new(3, 4, 11UL)
   assert_eq(p.cell.d_x, 5) // 2 + 3
   assert_eq(p.cell.d_h, 4)
   assert_eq(p.w_out.length(), 2)
@@ -14,7 +14,7 @@ test "gru_policy_new: shapes" {
 
 ///|
 test "gru_policy_forward: action + cache lengths match obs_seq" {
-  let p = @snn_mbt.GruPolicy::new(3, 4, 13UL)
+  let p = @rl.GruPolicy::new(3, 4, 13UL)
   let obs_seq : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
@@ -22,7 +22,7 @@ test "gru_policy_forward: action + cache lengths match obs_seq" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(17UL, 19UL, 23UL, 29UL)
-  let (actions, cache) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng)
+  let (actions, cache) = @rl.gru_policy_forward(p, obs_seq, h0, rng)
   assert_eq(actions.length(), 3)
   for t in 0..<3 {
     assert_true(actions[t] == 0 || actions[t] == 1)
@@ -39,14 +39,14 @@ test "gru_policy_forward: action + cache lengths match obs_seq" {
 
 ///|
 test "gru_policy_gradient_update: zero returns -> no change" {
-  let p = @snn_mbt.GruPolicy::new(3, 3, 31UL)
+  let p = @rl.GruPolicy::new(3, 3, 31UL)
   let obs_seq : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
-  let (actions, cache) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng)
+  let (actions, cache) = @rl.gru_policy_forward(p, obs_seq, h0, rng)
   let w0_snapshot : Array[Array[Float]] = Array::make(2, [])
   for i in 0..<2 {
     w0_snapshot[i] = Array::make(3, 0.0F)
@@ -62,7 +62,7 @@ test "gru_policy_gradient_update: zero returns -> no change" {
     }
   }
   let returns : Array[Float] = [0.0F, 0.0F]
-  @snn_mbt.gru_policy_gradient_update(p, actions, returns, cache, 0.1F)
+  @rl.gru_policy_gradient_update(p, actions, returns, cache, 0.1F)
   for i in 0..<2 {
     for j in 0..<3 {
       assert_eq(p.w_out[i][j], w0_snapshot[i][j])
@@ -77,7 +77,7 @@ test "gru_policy_gradient_update: zero returns -> no change" {
 
 ///|
 test "gru_policy_gradient_update: positive return increases chosen prob" {
-  let p = @snn_mbt.GruPolicy::new(3, 3, 53UL)
+  let p = @rl.GruPolicy::new(3, 3, 53UL)
   let obs_seq : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
@@ -85,11 +85,11 @@ test "gru_policy_gradient_update: positive return increases chosen prob" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
-  let (actions, cache) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng)
+  let (actions, cache) = @rl.gru_policy_forward(p, obs_seq, h0, rng)
   let returns : Array[Float] = [1.0F, 1.0F, 1.0F]
-  @snn_mbt.gru_policy_gradient_update(p, actions, returns, cache, 0.5F)
+  @rl.gru_policy_gradient_update(p, actions, returns, cache, 0.5F)
   let rng2 = @core.Xoshiro::from_state(73UL, 79UL, 83UL, 89UL)
-  let (_a2, cache2) = @snn_mbt.gru_policy_forward(p, obs_seq, h0, rng2)
+  let (_a2, cache2) = @rl.gru_policy_forward(p, obs_seq, h0, rng2)
   for t in 0..<3 {
     let a = actions[t]
     assert_true(cache2.probs[t][a] >= cache.probs[t][a] - 1.0e-3F)
@@ -98,8 +98,8 @@ test "gru_policy_gradient_update: positive return increases chosen prob" {
 
 ///|
 test "train_gru_reinforce: shapes + return is finite" {
-  let p = @snn_mbt.GruPolicy::new(5, 8, 97UL)
-  let mean_return = @snn_mbt.train_gru_reinforce(5, p, 5, 0.9F, 0.01F, 4, 101UL)
+  let p = @rl.GruPolicy::new(5, 8, 97UL)
+  let mean_return = @rl.train_gru_reinforce(5, p, 5, 0.9F, 0.01F, 4, 101UL)
   assert_true(mean_return == mean_return)
   assert_true(mean_return > -100.0F && mean_return < 100.0F)
 }
@@ -108,8 +108,8 @@ test "train_gru_reinforce: shapes + return is finite" {
 test "gru_policy_indicator_attends: learns opposite actions per side" {
   // Train two simple policies (one per side) and verify they
   // produce opposite preferred actions on the corresponding obs.
-  let p_l = @snn_mbt.GruPolicy::new(3, 4, 131UL)
-  let p_r = @snn_mbt.GruPolicy::new(3, 4, 137UL)
+  let p_l = @rl.GruPolicy::new(3, 4, 131UL)
+  let p_r = @rl.GruPolicy::new(3, 4, 137UL)
   let obs_left : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
@@ -126,8 +126,8 @@ test "gru_policy_indicator_attends: learns opposite actions per side" {
   p_l.b_out[0] = 20.0F
   // Force p_r to prefer action 1 (right).
   p_r.b_out[1] = 20.0F
-  let (_al, cache_l) = @snn_mbt.gru_policy_forward(p_l, obs_left, h0, rng_l)
-  let (_ar, cache_r) = @snn_mbt.gru_policy_forward(p_r, obs_right, h0, rng_r)
+  let (_al, cache_l) = @rl.gru_policy_forward(p_l, obs_left, h0, rng_l)
+  let (_ar, cache_r) = @rl.gru_policy_forward(p_r, obs_right, h0, rng_r)
   // After projection, the cached probs should reflect the bias.
   assert_true(cache_l.probs[0][0] > 0.9F)
   assert_true(cache_r.probs[0][1] > 0.9F)

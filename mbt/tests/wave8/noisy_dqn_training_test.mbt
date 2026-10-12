@@ -9,7 +9,7 @@
 /// Helper: compute mean return of an untrained (random-ish) NoisyQNet
 /// over `n_episodes` greedy-eval episodes. Use as the "baseline"
 /// that NoisyDQN must beat after training.
-fn noisy_random_baseline(env : @snn_mbt.GridWorld, n_states : Int, n_actions : Int,
+fn noisy_random_baseline(env : @rl.GridWorld, n_states : Int, n_actions : Int,
   n_episodes : Int, max_steps : Int, seed : UInt64) -> Float {
   let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, seed)
   // Argmax-eval over μ weights at random init.
@@ -37,7 +37,7 @@ test "noisy_dqn_training_smoke_test" {
   // Build a GridWorld env, train NoisyDQN, eval. Assert that the
   // trained policy's eval return is at least the random-init baseline.
   // Use a small env (2x2 = 4 states) so the agent can learn quickly.
-  let env = @snn_mbt.GridWorld::new(2, 2, 20)
+  let env = @rl.GridWorld::new(2, 2, 20)
   let n_states = env.n_states()
   let n_actions = 4  // 4 cardinal actions, see GridWorld
   let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 11UL)
@@ -78,7 +78,7 @@ test "noisy_dqn_training_smoke_test" {
 test "noisy_dqn_training_eval_runs_greedy_after_training" {
   // Verify the eval pipeline produces a finite positive-length run
   // after a few training episodes.
-  let env = @snn_mbt.GridWorld::new(2, 2, 10)
+  let env = @rl.GridWorld::new(2, 2, 10)
   let n_states = env.n_states()
   let n_actions = 4
   let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 33UL)
@@ -100,7 +100,7 @@ test "noisy_dqn_two_seeds_train_different_policies" {
   // Two different seeds should produce two different policies (different
   // argmax actions at the same state after training). This validates
   // that noise-driven exploration is deterministic-but-seed-dependent.
-  let env = @snn_mbt.GridWorld::new(2, 2, 15)
+  let env = @rl.GridWorld::new(2, 2, 15)
   let n_states = env.n_states()
   let n_actions = 4
   // Net A — seed 1.
@@ -133,7 +133,7 @@ test "noisy_dqn_two_seeds_train_different_policies" {
 test "noisy_dqn_eval_finite_after_long_train" {
   // Long training run — verify eval returns a finite number
   // (no NaN, no -inf, no +inf even after many gradient steps).
-  let env = @snn_mbt.GridWorld::new(3, 3, 25)
+  let env = @rl.GridWorld::new(3, 3, 25)
   let n_states = env.n_states()
   let n_actions = 4
   let online = @snn_mbt.NoisyQNet::new(n_states, 16, n_actions, 7UL)
@@ -151,7 +151,7 @@ test "noisy_dqn_eval_finite_after_long_train" {
 test "noisy_dqn_trained_weights_change_from_init" {
   // Sanity: after training, the online weights must differ from a
   // fresh net with the same seed (because training is stochastic).
-  let env = @snn_mbt.GridWorld::new(2, 2, 12)
+  let env = @rl.GridWorld::new(2, 2, 12)
   let n_states = env.n_states()
   let n_actions = 4
   let online = @snn_mbt.NoisyQNet::new(n_states, 8, n_actions, 50UL)

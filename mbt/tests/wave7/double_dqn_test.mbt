@@ -2,16 +2,16 @@
 
 ///|
 test "double_dqn_update_step: zero return reduces |δ| (zero init)" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let q = @snn_mbt.LinearQNet::new(4, 4, 7UL)
-  let target = @snn_mbt.LinearQNet::new(4, 4, 11UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let q = @rl.LinearQNet::new(4, 4, 7UL)
+  let target = @rl.LinearQNet::new(4, 4, 11UL)
   for i in 0..<4 {
     for j in 0..<4 {
       q.w[i][j] = 0.0F
     }
     q.b[i] = 0.0F
   }
-  @snn_mbt.qnet_copy(target, q)
+  @rl.qnet_copy(target, q)
   let ss : Array[Int] = [0]
   let aa : Array[Int] = [0]
   let rr : Array[Float] = [0.0F]
@@ -24,8 +24,8 @@ test "double_dqn_update_step: zero return reduces |δ| (zero init)" {
 
 ///|
 test "double_dqn_update_step: positive reward increases Q" {
-  let q = @snn_mbt.LinearQNet::new(2, 2, 13UL)
-  let target = @snn_mbt.LinearQNet::new(2, 2, 17UL)
+  let q = @rl.LinearQNet::new(2, 2, 13UL)
+  let target = @rl.LinearQNet::new(2, 2, 17UL)
   for i in 0..<2 {
     for j in 0..<2 {
       q.w[i][j] = 0.0F
@@ -41,21 +41,21 @@ test "double_dqn_update_step: positive reward increases Q" {
   let dd : Array[Bool] = [true]
   let _ = @snn_mbt.double_dqn_update_step(q, target, ss, aa, rr, nss, dd, 0.9F, 0.1F)
   let x : Array[Float] = [1.0F, 0.0F]
-  let q_vals = @snn_mbt.q_forward(q, x)
+  let q_vals = @rl.q_forward(q, x)
   assert_true(q_vals[0] > 0.0F)
 }
 
 ///|
 test "double_dqn_vs_vanilla_diff: zero when online == target" {
-  let q = @snn_mbt.LinearQNet::new(2, 2, 19UL)
+  let q = @rl.LinearQNet::new(2, 2, 19UL)
   for i in 0..<2 {
     for j in 0..<2 {
       q.w[i][j] = 0.0F
     }
     q.b[i] = 0.0F
   }
-  let target = @snn_mbt.LinearQNet::new(2, 2, 23UL)
-  @snn_mbt.qnet_copy(target, q)
+  let target = @rl.LinearQNet::new(2, 2, 23UL)
+  @rl.qnet_copy(target, q)
   // With zero weights, all Q-values are 0. argmax picks 0;
   // vanilla max also picks 0. Difference = 0.
   let nss : Array[Int] = [0, 1]
@@ -66,14 +66,14 @@ test "double_dqn_vs_vanilla_diff: zero when online == target" {
 ///|
 test "double_dqn_vs_vanilla_diff: positive when online != target" {
   // Hand-craft so that online's argmax differs from target's max.
-  let q = @snn_mbt.LinearQNet::new(2, 2, 29UL)
+  let q = @rl.LinearQNet::new(2, 2, 29UL)
   // Online: action 0 has bigger logit.
   q.w[0][0] = 5.0F
   q.w[1][0] = 1.0F
   q.w[0][1] = 0.0F
   q.w[1][1] = 0.0F
   // Target: action 1 has bigger logit.
-  let target = @snn_mbt.LinearQNet::new(2, 2, 31UL)
+  let target = @rl.LinearQNet::new(2, 2, 31UL)
   target.w[0][0] = 0.0F
   target.w[1][0] = 10.0F
   target.w[0][1] = 0.0F
@@ -88,9 +88,9 @@ test "double_dqn_vs_vanilla_diff: positive when online != target" {
 
 ///|
 test "train_double_dqn: shapes + return is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let q = @snn_mbt.LinearQNet::new(4, 4, 37UL)
-  let target = @snn_mbt.LinearQNet::new(4, 4, 41UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let q = @rl.LinearQNet::new(4, 4, 37UL)
+  let target = @rl.LinearQNet::new(4, 4, 41UL)
   let mean = @snn_mbt.train_double_dqn(
     env, q, target, 30, 0.9F, 0.05F, 1.0F, 0.05F, 5, 100, 5, 10, 8, 43UL,
   )
@@ -100,11 +100,11 @@ test "train_double_dqn: shapes + return is finite" {
 
 ///|
 test "double_dqn_update_step: finite mean |δ| on random batch" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let q = @snn_mbt.LinearQNet::new(4, 4, 47UL)
-  let target = @snn_mbt.LinearQNet::new(4, 4, 53UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let q = @rl.LinearQNet::new(4, 4, 47UL)
+  let target = @rl.LinearQNet::new(4, 4, 53UL)
   let rng = @core.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
-  let buffer = @snn_mbt.ReplayBuffer::new(20)
+  let buffer = @rl.ReplayBuffer::new(20)
   for k in 0..<10 {
     buffer.push(k % 4, k % 4, 0.0F, (k + 1) % 4, false)
   }

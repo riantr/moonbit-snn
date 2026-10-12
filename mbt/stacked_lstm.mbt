@@ -30,7 +30,7 @@ pub struct StackedLstmParam {
   d_x : Int
   d_h : Int
   n_layers : Int
-  layers : Array[LstmCellParam]
+  layers : Array[@rl.LstmCellParam]
 }
 
 ///|
@@ -42,11 +42,11 @@ pub fn StackedLstmParam::new(
   n_layers : Int,
   seed : UInt64,
 ) -> StackedLstmParam {
-  let layers : Array[LstmCellParam] = []
+  let layers : Array[@rl.LstmCellParam] = []
   for l in 0..<n_layers {
     let layer_d_x = if l == 0 { d_x } else { d_h }
     let s = seed + (l * 7 + 1).to_uint64()
-    layers.push(LstmCellParam::new(layer_d_x, d_h, s))
+    layers.push(@rl.LstmCellParam::new(layer_d_x, d_h, s))
   }
   { d_x, d_h, n_layers, layers }
 }
@@ -55,7 +55,7 @@ pub fn StackedLstmParam::new(
 /// Forward cache: per-timestep, per-layer cell caches plus the
 /// forward outputs (needed by backward and for loss computation).
 pub struct StackedLstmCache {
-  caches : Array[Array[LstmCellCache]]
+  caches : Array[Array[@rl.LstmCellCache]]
   hs : Array[Array[Array[Float]]]
   cs : Array[Array[Array[Float]]]
 }
@@ -74,16 +74,16 @@ pub fn stacked_lstm_forward(
   let l_count = param.n_layers
   let hs : Array[Array[Array[Float]]] = []
   let cs : Array[Array[Array[Float]]] = []
-  let caches : Array[Array[LstmCellCache]] = []
+  let caches : Array[Array[@rl.LstmCellCache]] = []
   let mut cur_h : Array[Array[Float]] = h0s
   let mut cur_c : Array[Array[Float]] = c0s
   for t in 0..<n {
     let h_t : Array[Array[Float]] = []
     let c_t : Array[Array[Float]] = []
-    let cache_t : Array[LstmCellCache] = []
+    let cache_t : Array[@rl.LstmCellCache] = []
     for l in 0..<l_count {
       let input_l = if l == 0 { xs[t] } else { h_t[l - 1] }
-      let (h_l, cache_l) = lstm_cell_forward(
+      let (h_l, cache_l) = @rl.lstm_cell_forward(
         input_l, cur_h[l], cur_c[l], param.layers[l],
       )
       h_t.push(h_l)
@@ -145,7 +145,7 @@ pub fn stacked_lstm_backward(
   _h0s : Array[Array[Float]],
   _c0s : Array[Array[Float]],
   param : StackedLstmParam,
-) -> (Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], Array[LstmCellGrad]) {
+) -> (Array[Array[Float]], Array[Array[Float]], Array[Array[Float]], Array[@rl.LstmCellGrad]) {
   let n = hs.length()
   let l_count = param.n_layers
   let d_h = param.d_h
@@ -158,9 +158,9 @@ pub fn stacked_lstm_backward(
     d_xs[t] = Array::make(d_x, 0.0F)
   }
   // Per-layer grads init.
-  let grads : Array[LstmCellGrad] = []
+  let grads : Array[@rl.LstmCellGrad] = []
   for l in 0..<l_count {
-    grads.push(LstmCellGrad::zero(param.layers[l]))
+    grads.push(@rl.LstmCellGrad::zero(param.layers[l]))
   }
   // d_h_layer[l], d_c_layer[l]: carryover from time t+1 (initial: zero).
   let d_h_layer : Array[Array[Float]] = []
@@ -176,7 +176,7 @@ pub fn stacked_lstm_backward(
     // affecting d_h_layer which we'll overwrite with d_h_prev below).
     let d_h_t : Array[Array[Float]] = []
     for l in 0..<l_count {
-      d_h_t.push(zero_copy(d_h_layer[l]))
+      d_h_t.push(@rl.zero_copy(d_h_layer[l]))
     }
     // Add loss gradient to the top layer.
     let top_l = l_count - 1
@@ -187,7 +187,7 @@ pub fn stacked_lstm_backward(
     // d_h_t[l-1] BEFORE we run layer l-1's cell backward.
     for l_step in 0..<l_count {
       let l = l_count - 1 - l_step
-      let (d_h_prev, d_x, d_c_prev) = lstm_cell_backward(
+      let (d_h_prev, d_x, d_c_prev) = @rl.lstm_cell_backward(
         cache.caches[t][l], d_h_t[l], d_c_layer[l], param.layers[l], grads[l],
       )
       // Save d_h_prev, d_c_prev as carryover for time t-1.
@@ -210,11 +210,11 @@ pub fn stacked_lstm_backward(
 /// Apply SGD to all layers using per-layer grads.
 pub fn stacked_lstm_sgd_step(
   param : StackedLstmParam,
-  grads : Array[LstmCellGrad],
+  grads : Array[@rl.LstmCellGrad],
   lr : Float,
 ) -> Unit {
   for l in 0..<param.n_layers {
-    lstm_cell_sgd_step(param.layers[l], grads[l], lr)
+    @rl.lstm_cell_sgd_step(param.layers[l], grads[l], lr)
   }
 }
 
@@ -240,7 +240,7 @@ pub fn stacked_lstm_train_n_steps(
     )
     if clip > 0.0F {
       for l in 0..<param.n_layers {
-        lstm_clip_grad(grads[l], clip)
+        @rl.lstm_clip_grad(grads[l], clip)
       }
     }
     stacked_lstm_sgd_step(param, grads, lr)

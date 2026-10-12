@@ -51,7 +51,7 @@ pub fn GATLayer::new(
   let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
-  let w = xavier_normal(out_dim, in_dim, std, rng)
+  let w = @rl.xavier_normal(out_dim, in_dim, std, rng)
   let a_src : Array[Float] = Array::make(out_dim, 0.0F)
   let a_dst : Array[Float] = Array::make(out_dim, 0.0F)
   for i in 0..<out_dim {

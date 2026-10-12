@@ -46,7 +46,7 @@ pub fn EnergyFunction::new(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   let std1 = @core.sqrtf(2.0F / Float::from_int(input_dim))
-  let w1 = xavier_normal(hidden_dim, input_dim, std1, rng1)
+  let w1 = @rl.xavier_normal(hidden_dim, input_dim, std1, rng1)
   let b1 : Array[Float] = Array::make(hidden_dim, 0.0F)
   let hidden_w : Array[Array[Array[Float]]] = Array::make(
     num_layers - 1, Array::make(0, Array::make(0, 0.0F)),
@@ -62,14 +62,14 @@ pub fn EnergyFunction::new(
       seed + (l + 100).to_uint64() * 17UL,
     )
     let std_l = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
-    hidden_w[l] = xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
+    hidden_w[l] = @rl.xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
     hidden_b[l] = Array::make(hidden_dim, 0.0F)
   }
   let rng_out = @core.Xoshiro::from_state(
     seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL,
   )
   let std_out = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
-  let w_out = xavier_normal(1, hidden_dim, std_out, rng_out)
+  let w_out = @rl.xavier_normal(1, hidden_dim, std_out, rng_out)
   { input_dim, hidden_dim, num_layers, w1, b1, hidden_w, hidden_b, w_out, b_out: 0.0F }
 }
 

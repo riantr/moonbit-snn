@@ -3,15 +3,15 @@
 ///|
 test "dqn_update_step_n_step_basic_with_bootstrap" {
   // 2 states, 2 actions; n=2 with γ=0.5, single-row batch.
-  let online = @snn_mbt.LinearQNet::new(2, 2, 1UL)
-  let target = @snn_mbt.LinearQNet::new(2, 2, 2UL)
+  let online = @rl.LinearQNet::new(2, 2, 1UL)
+  let target = @rl.LinearQNet::new(2, 2, 2UL)
   let states : Array[Int] = [0]
   let actions : Array[Int] = [1]
   let rewards : Array[Float] = [1.0F + 0.5F * 2.0F] // G_2 = r_0 + γ·r_1 = 1 + 0.5·2 = 2
   let next_states : Array[Int] = [2] // s_lookahead = s_2
   let h_effs : Array[Int] = [2]
   let use_b : Array[Bool] = [true]
-  let mean_abs = @snn_mbt.dqn_update_step_n_step(
+  let mean_abs = @rl.dqn_update_step_n_step(
     online, target, states, actions, rewards, next_states, h_effs, use_b,
     0.5F, 0.1F,
   )
@@ -31,28 +31,28 @@ test "dqn_update_step_n_step_basic_with_bootstrap" {
 
 ///|
 test "dqn_update_step_n_step_no_bootstrap_when_done" {
-  let online = @snn_mbt.LinearQNet::new(2, 2, 3UL)
-  let target = @snn_mbt.LinearQNet::new(2, 2, 4UL)
+  let online = @rl.LinearQNet::new(2, 2, 3UL)
+  let target = @rl.LinearQNet::new(2, 2, 4UL)
   let states : Array[Int] = [0]
   let actions : Array[Int] = [0]
   let rewards : Array[Float] = [5.0F]
   let next_states : Array[Int] = [1]
   let h_effs : Array[Int] = [2]
   let use_b : Array[Bool] = [false]
-  let _ = @snn_mbt.dqn_update_step_n_step(
+  let _ = @rl.dqn_update_step_n_step(
     online, target, states, actions, rewards, next_states, h_effs, use_b,
     0.9F, 0.1F,
   )
   // When use_b=false, target_value = G_n = 5.0, so delta = 5 - q[0].
   // Since q[0] starts at 0, delta = 5. Online should increase.
-  let q_after = @snn_mbt.q_forward(online, @snn_mbt.rl_one_hot(0, online.n_states))
+  let q_after = @rl.q_forward(online, @rl.rl_one_hot(0, online.n_states))
   assert_true(q_after[0] > 0.0F)
 }
 
 ///|
 test "dqn_update_step_n_step_returns_finite_mean_abs" {
-  let online = @snn_mbt.LinearQNet::new(3, 2, 5UL)
-  let target = @snn_mbt.LinearQNet::new(3, 2, 6UL)
+  let online = @rl.LinearQNet::new(3, 2, 5UL)
+  let target = @rl.LinearQNet::new(3, 2, 6UL)
   let n = 4
   let states : Array[Int] = [0, 1, 2, 0]
   let actions : Array[Int] = [0, 1, 0, 1]
@@ -60,7 +60,7 @@ test "dqn_update_step_n_step_returns_finite_mean_abs" {
   let next_states : Array[Int] = [1, 2, 0, 1]
   let h_effs : Array[Int] = [n, n, n, n]
   let use_b : Array[Bool] = [true, true, true, false]
-  let m = @snn_mbt.dqn_update_step_n_step(
+  let m = @rl.dqn_update_step_n_step(
     online, target, states, actions, rewards, next_states, h_effs, use_b,
     0.9F, 0.1F,
   )
@@ -70,10 +70,10 @@ test "dqn_update_step_n_step_returns_finite_mean_abs" {
 
 ///|
 test "train_dqn_n_step_smoke_runs" {
-  let env = @snn_mbt.GridWorld::new(3, 3, 30)
-  let q_net = @snn_mbt.LinearQNet::new(env.n_states(), 4, 11UL)
-  let target = @snn_mbt.LinearQNet::new(env.n_states(), 4, 12UL)
-  let avg = @snn_mbt.train_dqn_n_step(
+  let env = @rl.GridWorld::new(3, 3, 30)
+  let q_net = @rl.LinearQNet::new(env.n_states(), 4, 11UL)
+  let target = @rl.LinearQNet::new(env.n_states(), 4, 12UL)
+  let avg = @rl.train_dqn_n_step(
     env, q_net, target,
     4, // n_episodes
     0.9F, // gamma
@@ -110,16 +110,16 @@ test "train_dqn_n_step_n1_matches_1step_dqn_in_distribution" {
   // We verify this indirectly by running both and checking that the resulting
   // Q-values after the same number of updates have similar magnitudes.
   // (Loose tolerance: just require both are finite.)
-  let env1 = @snn_mbt.GridWorld::new(3, 3, 20)
-  let q1 = @snn_mbt.LinearQNet::new(env1.n_states(), 4, 21UL)
-  let t1 = @snn_mbt.LinearQNet::new(env1.n_states(), 4, 22UL)
-  let avg1 = @snn_mbt.train_dqn_n_step(
+  let env1 = @rl.GridWorld::new(3, 3, 20)
+  let q1 = @rl.LinearQNet::new(env1.n_states(), 4, 21UL)
+  let t1 = @rl.LinearQNet::new(env1.n_states(), 4, 22UL)
+  let avg1 = @rl.train_dqn_n_step(
     env1, q1, t1, 3, 0.9F, 0.1F, 0.2F, 0.05F, 20, 32, 1, 1, 4, 1, 7UL,
   )
-  let env2 = @snn_mbt.GridWorld::new(3, 3, 20)
-  let q2 = @snn_mbt.LinearQNet::new(env2.n_states(), 4, 23UL)
-  let t2 = @snn_mbt.LinearQNet::new(env2.n_states(), 4, 24UL)
-  let avg2 = @snn_mbt.train_dqn_n_step(
+  let env2 = @rl.GridWorld::new(3, 3, 20)
+  let q2 = @rl.LinearQNet::new(env2.n_states(), 4, 23UL)
+  let t2 = @rl.LinearQNet::new(env2.n_states(), 4, 24UL)
+  let avg2 = @rl.train_dqn_n_step(
     env2, q2, t2, 3, 0.9F, 0.1F, 0.2F, 0.05F, 20, 32, 1, 1, 4, 3, 7UL,
   )
   let _ = avg1

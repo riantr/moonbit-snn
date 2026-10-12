@@ -2,7 +2,7 @@
 
 ///|
 test "lstm_sequence_forward: output has seq_len hidden states" {
-  let param = @snn_mbt.LstmCellParam::new(2, 3, 42UL)
+  let param = @rl.LstmCellParam::new(2, 3, 42UL)
   let xs : Array[Array[Float]] = [
     [0.1F, 0.2F],
     [0.3F, 0.4F],
@@ -10,7 +10,7 @@ test "lstm_sequence_forward: output has seq_len hidden states" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs, cs, caches) = @snn_mbt.lstm_sequence_forward(xs, h0, c0, param)
+  let (hs, cs, caches) = @rl.lstm_sequence_forward(xs, h0, c0, param)
   assert_eq(hs.length(), 3)
   assert_eq(caches.length(), 3)
   assert_eq(cs.length(), 3)
@@ -23,7 +23,7 @@ test "lstm_sequence_forward: output has seq_len hidden states" {
 test "lstm_sequence_forward: hidden state changes from initial" {
   // With non-trivial inputs, the hidden states at later times should
   // differ from the initial h0.
-  let param = @snn_mbt.LstmCellParam::new(2, 3, 7UL)
+  let param = @rl.LstmCellParam::new(2, 3, 7UL)
   let xs : Array[Array[Float]] = [
     [0.5F, 0.5F],
     [0.5F, 0.5F],
@@ -31,7 +31,7 @@ test "lstm_sequence_forward: hidden state changes from initial" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs, _, _) = @snn_mbt.lstm_sequence_forward(xs, h0, c0, param)
+  let (hs, _, _) = @rl.lstm_sequence_forward(xs, h0, c0, param)
   // hs[2] should differ from h0 in at least one component.
   let mut differ = false
   for i in 0..<3 {
@@ -50,7 +50,7 @@ test "lstm_sequence_loss: zero for identical sequences" {
     [1.0F, 2.0F],
     [3.0F, 4.0F],
   ]
-  let loss = @snn_mbt.lstm_sequence_loss(xs, xs)
+  let loss = @rl.lstm_sequence_loss(xs, xs)
   if loss != 0.0F {
     fail("loss = \{loss}, expected 0")
   }
@@ -67,7 +67,7 @@ test "lstm_sequence_loss: matches manual mean((p-t)²)" {
     [4.0F, 5.0F],
   ]
   // diffs: [-1,-1,-1,-1] → squared: [1,1,1,1] → mean: 1.0
-  let loss = @snn_mbt.lstm_sequence_loss(predicted, target)
+  let loss = @rl.lstm_sequence_loss(predicted, target)
   if (loss - 1.0F).abs() > 1.0e-4F {
     fail("loss = \{loss}, expected 1.0")
   }
@@ -75,7 +75,7 @@ test "lstm_sequence_loss: matches manual mean((p-t)²)" {
 
 ///|
 test "lstm_sequence_backward: gradient shapes match inputs" {
-  let param = @snn_mbt.LstmCellParam::new(2, 3, 5UL)
+  let param = @rl.LstmCellParam::new(2, 3, 5UL)
   let xs : Array[Array[Float]] = [
     [0.1F, 0.2F],
     [0.3F, 0.4F],
@@ -88,8 +88,8 @@ test "lstm_sequence_backward: gradient shapes match inputs" {
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs, _, caches) = @snn_mbt.lstm_sequence_forward(xs, h0, c0, param)
-  let (d_xs, d_h0, d_c0, grad) = @snn_mbt.lstm_sequence_backward(
+  let (hs, _, caches) = @rl.lstm_sequence_forward(xs, h0, c0, param)
+  let (d_xs, d_h0, d_c0, grad) = @rl.lstm_sequence_backward(
     hs, target, caches, h0, c0, param,
   )
   assert_eq(d_xs.length(), 3)
@@ -107,15 +107,15 @@ test "lstm_sequence_backward: loss decreases after SGD step" {
   // Train on the identity-shift task: target[t] = xs[(t-1) mod n].
   // After K steps of SGD, the MSE loss should drop noticeably.
   // Use d_x = d_h so target dimension matches hidden state dimension.
-  let param = @snn_mbt.LstmCellParam::new(4, 4, 11UL)
-  let (xs, target) = @snn_mbt.lstm_identity_dataset(8, 4, 17UL)
+  let param = @rl.LstmCellParam::new(4, 4, 11UL)
+  let (xs, target) = @rl.lstm_identity_dataset(8, 4, 17UL)
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   // Initial loss.
-  let (hs0, _, _) = @snn_mbt.lstm_sequence_forward(xs, h0, c0, param)
-  let init_loss = @snn_mbt.lstm_sequence_loss(hs0, target)
+  let (hs0, _, _) = @rl.lstm_sequence_forward(xs, h0, c0, param)
+  let init_loss = @rl.lstm_sequence_loss(hs0, target)
   // 50 SGD steps with small lr + clipping.
-  let final_loss = @snn_mbt.lstm_train_n_steps(
+  let final_loss = @rl.lstm_train_n_steps(
     xs, target, h0, c0, param, 50, 0.01F, 1.0F,
   )
   if final_loss >= init_loss {
@@ -125,12 +125,12 @@ test "lstm_sequence_backward: loss decreases after SGD step" {
 
 ///|
 test "lstm_clip_grad: bounds gradient magnitudes" {
-  let param = @snn_mbt.LstmCellParam::new(2, 2, 99UL)
-  let grad = @snn_mbt.LstmCellGrad::zero(param)
+  let param = @rl.LstmCellParam::new(2, 2, 99UL)
+  let grad = @rl.LstmCellGrad::zero(param)
   // Set some very large gradients.
   grad.d_w_f[0][0] = 100.0F
   grad.d_b_f[0] = -50.0F
-  @snn_mbt.lstm_clip_grad(grad, 1.0F)
+  @rl.lstm_clip_grad(grad, 1.0F)
   if grad.d_w_f[0][0] != 1.0F {
     fail("d_w_f[0][0] = \{grad.d_w_f[0][0]}, expected 1.0")
   }
@@ -141,7 +141,7 @@ test "lstm_clip_grad: bounds gradient magnitudes" {
 
 ///|
 test "lstm_identity_dataset: target[t] is lag-1 of xs (cyclic)" {
-  let (xs, target) = @snn_mbt.lstm_identity_dataset(5, 2, 23UL)
+  let (xs, target) = @rl.lstm_identity_dataset(5, 2, 23UL)
   assert_eq(xs.length(), 5)
   assert_eq(target.length(), 5)
   for t in 0..<5 {
@@ -168,11 +168,11 @@ test "lstm_identity_dataset: target[t] is lag-1 of xs (cyclic)" {
 
 ///|
 test "lstm_train_n_steps: returns final loss (finite)" {
-  let param = @snn_mbt.LstmCellParam::new(2, 2, 31UL)
-  let (xs, target) = @snn_mbt.lstm_identity_dataset(5, 2, 41UL)
+  let param = @rl.LstmCellParam::new(2, 2, 31UL)
+  let (xs, target) = @rl.lstm_identity_dataset(5, 2, 41UL)
   let h0 : Array[Float] = [0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F]
-  let loss = @snn_mbt.lstm_train_n_steps(xs, target, h0, c0, param, 5, 0.001F, 1.0F)
+  let loss = @rl.lstm_train_n_steps(xs, target, h0, c0, param, 5, 0.001F, 1.0F)
   if loss != loss {
     fail("final loss is NaN")
   }

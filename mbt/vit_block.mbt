@@ -54,11 +54,11 @@ pub fn ViTBlock::new(
   let mha = @nn.MultiHeadAttention::new(d_model, num_heads, seed)
   let rng1 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std1 = @core.sqrtf(2.0F / Float::from_int(d_model))
-  let mlp_w1 = xavier_normal(mlp_hidden, d_model, std1, rng1)
+  let mlp_w1 = @rl.xavier_normal(mlp_hidden, d_model, std1, rng1)
   let mlp_b1 : Array[Float] = Array::make(mlp_hidden, 0.0F)
   let rng2 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
   let std2 = @core.sqrtf(2.0F / Float::from_int(mlp_hidden))
-  let mlp_w2 = xavier_normal(d_model, mlp_hidden, std2, rng2)
+  let mlp_w2 = @rl.xavier_normal(d_model, mlp_hidden, std2, rng2)
   let mlp_b2 : Array[Float] = Array::make(d_model, 0.0F)
   { d_model, num_heads, ln1_gamma, ln1_beta, ln2_gamma, ln2_beta, mha, mlp_w1, mlp_b1, mlp_w2, mlp_b2, mlp_hidden }
 }

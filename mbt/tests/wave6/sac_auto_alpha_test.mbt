@@ -14,9 +14,9 @@
 
 ///|
 test "sac_auto_alpha_init" {
-  let sac = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 42UL)
+  let sac = @rl.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 42UL)
   // α = exp(0) = 1.0
-  assert_true((@snn_mbt.sac_auto_alpha_get(sac) - 1.0F).abs() < 1.0e-5F)
+  assert_true((@rl.sac_auto_alpha_get(sac) - 1.0F).abs() < 1.0e-5F)
   // Q nets and targets well-formed.
   assert_eq(sac.q1.n_states, 4)
   assert_eq(sac.q1.n_actions, 2)
@@ -28,11 +28,11 @@ test "sac_auto_alpha_init" {
 
 ///|
 test "sac_auto_alpha_determinism" {
-  let s1 = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 7UL)
-  let s2 = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 7UL)
+  let s1 = @rl.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 7UL)
+  let s2 = @rl.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 7UL)
   let states : Array[Int] = [0, 1, 2, 3]
-  let _ = @snn_mbt.sac_auto_alpha_update_alpha(s1, states)
-  let _ = @snn_mbt.sac_auto_alpha_update_alpha(s2, states)
+  let _ = @rl.sac_auto_alpha_update_alpha(s1, states)
+  let _ = @rl.sac_auto_alpha_update_alpha(s2, states)
   assert_true((s1.log_alpha - s2.log_alpha).abs() < 1.0e-7F)
 }
 
@@ -40,7 +40,7 @@ test "sac_auto_alpha_determinism" {
 test "sac_auto_alpha_grows_when_policy_too_deterministic" {
   // target_entropy = -1.0 (more negative than uniform's mean_neg_entropy
   // ≈ -0.693); policy too random relative to target → α should GROW.
-  let sac = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.5F, 11UL)
+  let sac = @rl.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.5F, 11UL)
   // Force uniform π by zeroing weights.
   for i in 0..<sac.policy.n_actions {
     for j in 0..<sac.policy.n_states {
@@ -49,17 +49,17 @@ test "sac_auto_alpha_grows_when_policy_too_deterministic" {
   }
   let states : Array[Int] = [0, 1, 2, 3]
   let before = sac.log_alpha
-  let delta = @snn_mbt.sac_auto_alpha_update_alpha(sac, states)
+  let delta = @rl.sac_auto_alpha_update_alpha(sac, states)
   assert_true(delta > 0.0F)
   assert_true(sac.log_alpha > before)
-  assert_true(@snn_mbt.sac_auto_alpha_get(sac) > 1.0F)
+  assert_true(@rl.sac_auto_alpha_get(sac) > 1.0F)
 }
 
 ///|
 test "sac_auto_alpha_shrinks_when_target_above_policy_randomness" {
   // target_entropy = 0.0 (target: fully deterministic).
   // Uniform π has mean_neg_entropy ≈ -0.693 < 0 → α should SHRINK.
-  let sac = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, 0.0F, 0.5F, 22UL)
+  let sac = @rl.SacAutoAlpha::new(4, 2, 0.0F, 0.0F, 0.5F, 22UL)
   // Force uniform π by zeroing weights.
   for i in 0..<sac.policy.n_actions {
     for j in 0..<sac.policy.n_states {
@@ -68,23 +68,23 @@ test "sac_auto_alpha_shrinks_when_target_above_policy_randomness" {
   }
   let states : Array[Int] = [0, 1, 2, 3]
   let before = sac.log_alpha
-  let delta = @snn_mbt.sac_auto_alpha_update_alpha(sac, states)
+  let delta = @rl.sac_auto_alpha_update_alpha(sac, states)
   assert_true(delta < 0.0F)
   assert_true(sac.log_alpha < before)
-  assert_true(@snn_mbt.sac_auto_alpha_get(sac) < 1.0F)
+  assert_true(@rl.sac_auto_alpha_get(sac) < 1.0F)
   // And α should stay positive.
-  assert_true(@snn_mbt.sac_auto_alpha_get(sac) > 0.0F)
+  assert_true(@rl.sac_auto_alpha_get(sac) > 0.0F)
 }
 
 ///|
 test "sac_auto_alpha_log_alpha_stays_finite" {
-  let sac = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.5F, 33UL)
+  let sac = @rl.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.5F, 33UL)
   let states : Array[Int] = [0, 1, 2, 3]
   for _iter in 0..<50 {
-    let _ = @snn_mbt.sac_auto_alpha_update_alpha(sac, states)
+    let _ = @rl.sac_auto_alpha_update_alpha(sac, states)
     // NaN check via self-inequality.
     assert_true(sac.log_alpha == sac.log_alpha)
-    let alpha = @snn_mbt.sac_auto_alpha_get(sac)
+    let alpha = @rl.sac_auto_alpha_get(sac)
     assert_true(alpha == alpha)
     assert_true(alpha > 0.0F)
     // Loose sanity: α shouldn't overflow to infinity in 50 steps.
@@ -97,9 +97,9 @@ test "sac_auto_alpha_log_alpha_stays_finite" {
 ///|
 test "sac_auto_alpha_train_returns_finite_mean" {
   // 2x2 grid → 4 states.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let sac = @snn_mbt.SacAutoAlpha::new(4, 4, 0.0F, -2.0F, 0.05F, 44UL)
-  let mean = @snn_mbt.train_sac_auto_alpha(
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let sac = @rl.SacAutoAlpha::new(4, 4, 0.0F, -2.0F, 0.05F, 44UL)
+  let mean = @rl.train_sac_auto_alpha(
     env, sac, 15, 0.99F, 0.05F, 0.02F, 0.05F, 50, 200, 2, 8, 55UL,
   )
   assert_true(mean == mean)  // NaN check
@@ -108,13 +108,13 @@ test "sac_auto_alpha_train_returns_finite_mean" {
 
 ///|
 test "sac_auto_alpha_critic_update_non_nan" {
-  let sac = @snn_mbt.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 66UL)
+  let sac = @rl.SacAutoAlpha::new(4, 2, 0.0F, -1.0F, 0.1F, 66UL)
   let states : Array[Int] = [0, 1, 0, 1]
   let actions : Array[Int] = [0, 1, 1, 0]
   let rewards : Array[Float] = [1.0F, 0.0F, 1.0F, 0.5F]
   let next_states : Array[Int] = [1, 0, 1, 0]
   let dones : Array[Bool] = [false, false, false, false]
-  let loss = @snn_mbt.sac_auto_alpha_critic_update(
+  let loss = @rl.sac_auto_alpha_critic_update(
     sac, states, actions, rewards, next_states, dones,
     0.99F, 0.05F,
   )
@@ -127,7 +127,7 @@ test "sac_auto_alpha_soft_update_moves_target_toward_online" {
   // After a Polyak update with τ = 0.1, the target should have moved
   // exactly 10% of the way from its initial value toward the new
   // online value.
-  let sac = @snn_mbt.SacAutoAlpha::new(3, 2, 0.0F, -1.0F, 0.1F, 77UL)
+  let sac = @rl.SacAutoAlpha::new(3, 2, 0.0F, -1.0F, 0.1F, 77UL)
   let w0 = sac.q1_target.w[0][0]
   // Mutate online weight via a critic step.
   let states : Array[Int] = [0]
@@ -135,13 +135,13 @@ test "sac_auto_alpha_soft_update_moves_target_toward_online" {
   let rewards : Array[Float] = [0.0F]
   let next_states : Array[Int] = [1]
   let dones : Array[Bool] = [false]
-  let _ = @snn_mbt.sac_auto_alpha_critic_update(
+  let _ = @rl.sac_auto_alpha_critic_update(
     sac, states, actions, rewards, next_states, dones,
     0.9F, 0.5F,
   )
   let w_after_online = sac.q1.w[0][0]
   // Soft-update with τ = 0.1.
-  @snn_mbt.sac_auto_alpha_soft_update(sac, 0.1F)
+  @rl.sac_auto_alpha_soft_update(sac, 0.1F)
   let w_after_target = sac.q1_target.w[0][0]
   let d1 = (w_after_target - w0).abs()
   assert_true(d1 == d1)  // NaN check

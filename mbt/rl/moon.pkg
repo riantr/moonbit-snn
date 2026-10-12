@@ -1,0 +1,28 @@
+// rl/ — reinforcement learning: recurrent policies, actors and critics.
+//
+// One package rather than several, and that is a measured decision rather than
+// a convenient one. The recurrent architectures call each other constantly --
+// gru_cell reaches into lstm_cell 39 times, the RL update code reaches back
+// into lstm_cell 18, lstm_cell's own wrappers are used by the SAC agents --
+// so splitting "recurrent" from "rl" would produce an import cycle between two
+// packages that are each half of the same idea.
+//
+// The Decision Transformer and Trajectory Transformer live here too. They are
+// offline-RL methods that happen to be built on an LSTM cell rather than a
+// transformer, and they are mutually entangled with it: decision_transformer
+// needs lstm_cell and gtrxl_block, trajectory_transformer needs the same, and
+// both bring their own buffers (dt_embeddings, beam_search_planner, n_step_buffer,
+// trajectory_buffer) that nothing outside this package uses.
+//
+// Depends on core, nn and optim. The GRU/LSTM cells are matrix arithmetic; the
+// critics and Q-networks are LinearParam plus the activ ops; and the trainers
+// step their parameters through an optimizer, which is optim/'s whole job.
+//
+// optim/ used to point back at nn/, which made this cycle until sqrtf moved
+// down to core/. The direction is now one-way: rl -> optim -> nn.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/optim",
+}

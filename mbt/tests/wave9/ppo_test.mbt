@@ -2,9 +2,9 @@
 
 ///|
 test "ppo_collect_batch: shapes + per-step returns" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 7UL)
-  let batch = @snn_mbt.ppo_collect_batch(env, p, 5, 0.9F, 5, 11UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 7UL)
+  let batch = @rl.ppo_collect_batch(env, p, 5, 0.9F, 5, 11UL)
   assert_true(batch.states.length() > 0)
   assert_eq(batch.states.length(), batch.actions.length())
   assert_eq(batch.states.length(), batch.returns.length())
@@ -18,9 +18,9 @@ test "ppo_collect_batch: shapes + per-step returns" {
 
 ///|
 test "ppo_collect_batch: old_probs positive + finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 13UL)
-  let batch = @snn_mbt.ppo_collect_batch(env, p, 5, 0.9F, 5, 17UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 13UL)
+  let batch = @rl.ppo_collect_batch(env, p, 5, 0.9F, 5, 17UL)
   for i in 0..<batch.old_probs.length() {
     assert_true(batch.old_probs[i] > 0.0F)
     assert_true(batch.old_probs[i] <= 1.0F)
@@ -29,9 +29,9 @@ test "ppo_collect_batch: old_probs positive + finite" {
 
 ///|
 test "ppo_update_step: zero return -> no weight change" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 19UL)
-  let batch = @snn_mbt.ppo_collect_batch(env, p, 3, 0.9F, 5, 23UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 19UL)
+  let batch = @rl.ppo_collect_batch(env, p, 3, 0.9F, 5, 23UL)
   // Snapshot.
   let snap : Array[Array[Float]] = Array::make(4, [])
   for i in 0..<4 {
@@ -41,14 +41,14 @@ test "ppo_update_step: zero return -> no weight change" {
     }
   }
   // Force all returns to 0.
-  let zero_batch : @snn_mbt.PpoBatch = {
+  let zero_batch : @rl.PpoBatch = {
     states: batch.states,
     actions: batch.actions,
     returns: Array::make(batch.returns.length(), 0.0F),
     old_probs: batch.old_probs,
     n_episodes: batch.n_episodes,
   }
-  @snn_mbt.ppo_update_step(p, zero_batch, 0.2F, 0.5F)
+  @rl.ppo_update_step(p, zero_batch, 0.2F, 0.5F)
   for i in 0..<4 {
     for j in 0..<4 {
       assert_eq(p.w[i][j], snap[i][j])
@@ -59,9 +59,9 @@ test "ppo_update_step: zero return -> no weight change" {
 ///|
 test "ppo_update_step: with clipping, no extreme weight jumps" {
   // After one PPO step, weights should change but stay bounded.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 29UL)
-  let batch = @snn_mbt.ppo_collect_batch(env, p, 5, 0.9F, 5, 31UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 29UL)
+  let batch = @rl.ppo_collect_batch(env, p, 5, 0.9F, 5, 31UL)
   let snap : Array[Array[Float]] = Array::make(4, [])
   for i in 0..<4 {
     snap[i] = Array::make(4, 0.0F)
@@ -69,7 +69,7 @@ test "ppo_update_step: with clipping, no extreme weight jumps" {
       snap[i][j] = p.w[i][j]
     }
   }
-  @snn_mbt.ppo_update_step(p, batch, 0.2F, 0.5F)
+  @rl.ppo_update_step(p, batch, 0.2F, 0.5F)
   for i in 0..<4 {
     for j in 0..<4 {
       let diff = if p.w[i][j] > snap[i][j] {
@@ -88,7 +88,7 @@ test "ppo_update_step: with clipping, no extreme weight jumps" {
 test "ppo_clip_active: ratio outside [1-eps, 1+eps] is clipped" {
   // Hand-craft a setup: old_probs[0] = 0.5 (chosen), but after one
   // big update cur_p[0] = 0.9 (ratio = 1.8, clipped to 1.2).
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 2, 37UL)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 2, 37UL)
   // Force policy: action 0 has huge logit. p.w has n_actions=2
   // rows and n_states=4 columns.
   for i in 0..<2 {
@@ -97,7 +97,7 @@ test "ppo_clip_active: ratio outside [1-eps, 1+eps] is clipped" {
     }
   }
   p.w[0][0] = 10.0F
-  let batch : @snn_mbt.PpoBatch = {
+  let batch : @rl.PpoBatch = {
     states: [0],
     actions: [0],
     returns: [1.0F],
@@ -105,7 +105,7 @@ test "ppo_clip_active: ratio outside [1-eps, 1+eps] is clipped" {
     n_episodes: 1,
   }
   let snap_00 = p.w[0][0]
-  @snn_mbt.ppo_update_step(p, batch, 0.2F, 0.1F)
+  @rl.ppo_update_step(p, batch, 0.2F, 0.1F)
   // Weight changed (proves update ran) but not by 1.0 (proves
   // effective ratio was clipped to 1.2).
   assert_true(p.w[0][0] != snap_00)
@@ -124,9 +124,9 @@ test "ppo_clip_active: ratio outside [1-eps, 1+eps] is clipped" {
 
 ///|
 test "train_ppo: shapes + return is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 41UL)
-  let last = @snn_mbt.train_ppo(env, p, 3, 5, 0.9F, 0.2F, 0.05F, 5, 43UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 41UL)
+  let last = @rl.train_ppo(env, p, 3, 5, 0.9F, 0.2F, 0.05F, 5, 43UL)
   assert_true(last == last)
   assert_true(last > -10.0F && last < 10.0F)
 }
@@ -135,15 +135,15 @@ test "train_ppo: shapes + return is finite" {
 test "ppo_old_prob_correct_for_handtuned_policy" {
   // With a policy that strongly prefers action 1 from state 0,
   // the old_prob for state 0 + action 1 should be > 0.5.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 47UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 47UL)
   for i in 0..<4 {
     for j in 0..<4 {
       p.w[i][j] = 0.0F
     }
   }
   p.w[1][0] = 5.0F
-  let batch = @snn_mbt.ppo_collect_batch(env, p, 3, 0.9F, 5, 53UL)
+  let batch = @rl.ppo_collect_batch(env, p, 3, 0.9F, 5, 53UL)
   // At least one transition should have action 1 from state 0,
   // and its old_prob should be > 0.5.
   let mut found = false

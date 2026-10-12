@@ -2,7 +2,7 @@
 
 ///|
 test "sac_new: shapes + targets synced to online" {
-  let sac = @snn_mbt.Sac::new(4, 3, 0.1F, 7UL)
+  let sac = @rl.Sac::new(4, 3, 0.1F, 7UL)
   assert_eq(sac.policy.n_states, 4)
   assert_eq(sac.policy.n_actions, 3)
   assert_eq(sac.q1.n_states, 4)
@@ -20,7 +20,7 @@ test "sac_new: shapes + targets synced to online" {
 
 ///|
 test "sac_soft_target: terminal -> reward only" {
-  let sac = @snn_mbt.Sac::new(2, 2, 0.1F, 11UL)
+  let sac = @rl.Sac::new(2, 2, 0.1F, 11UL)
   // Zero out everything.
   for i in 0..<2 {
     for j in 0..<2 {
@@ -35,7 +35,7 @@ test "sac_soft_target: terminal -> reward only" {
     sac.q1_target.b[i] = 0.0F
     sac.q2_target.b[i] = 0.0F
   }
-  let target = @snn_mbt.sac_soft_target(sac, 1, 1.0F, true, 0.9F)
+  let target = @rl.sac_soft_target(sac, 1, 1.0F, true, 0.9F)
   assert_eq(target, 1.0F)
 }
 
@@ -45,7 +45,7 @@ test "sac_soft_target: uniform pi + zero Q + non-zero reward" {
   // reduces to r + γ·Σ_a π(a) · (0 - α·log π(a)) = r + γ·(-α·H).
   // For uniform 2-action, H = log(2) ≈ 0.693. α=0.1 → -α·H ≈ -0.0693.
   // γ=0.9, r=1 → target ≈ 1 + 0.9·(-0.0693) ≈ 0.9376.
-  let sac = @snn_mbt.Sac::new(2, 2, 0.1F, 13UL)
+  let sac = @rl.Sac::new(2, 2, 0.1F, 13UL)
   for i in 0..<2 {
     for j in 0..<2 {
       sac.policy.w[i][j] = 0.0F
@@ -59,7 +59,7 @@ test "sac_soft_target: uniform pi + zero Q + non-zero reward" {
     sac.q1_target.b[i] = 0.0F
     sac.q2_target.b[i] = 0.0F
   }
-  let target = @snn_mbt.sac_soft_target(sac, 1, 1.0F, false, 0.9F)
+  let target = @rl.sac_soft_target(sac, 1, 1.0F, false, 0.9F)
   // Entropy bonus: Σ π(a) · (-α · log π(a)) = α · H(π) > 0.
   // For uniform 2-action, H = log(2) ≈ 0.693. α=0.1 → bonus ≈ 0.0693.
   // So target ≈ r + γ · α · H = 1 + 0.9 · 0.0693 ≈ 1.0624.
@@ -70,7 +70,7 @@ test "sac_soft_target: uniform pi + zero Q + non-zero reward" {
 
 ///|
 test "sac_critic_update: zero init + zero reward -> zero loss" {
-  let sac = @snn_mbt.Sac::new(2, 2, 0.1F, 17UL)
+  let sac = @rl.Sac::new(2, 2, 0.1F, 17UL)
   for i in 0..<2 {
     for j in 0..<2 {
       sac.policy.w[i][j] = 0.0F
@@ -86,13 +86,13 @@ test "sac_critic_update: zero init + zero reward -> zero loss" {
   let rr : Array[Float] = [0.0F]
   let nss : Array[Int] = [0]
   let dd : Array[Bool] = [true]
-  let loss = @snn_mbt.sac_critic_update(sac, ss, aa, rr, nss, dd, 0.9F, 0.1F)
+  let loss = @rl.sac_critic_update(sac, ss, aa, rr, nss, dd, 0.9F, 0.1F)
   assert_true(loss < 1.0e-5F)
 }
 
 ///|
 test "sac_critic_update: positive reward moves Q toward target" {
-  let sac = @snn_mbt.Sac::new(2, 2, 0.1F, 23UL)
+  let sac = @rl.Sac::new(2, 2, 0.1F, 23UL)
   for i in 0..<2 {
     for j in 0..<2 {
       sac.policy.w[i][j] = 0.0F
@@ -107,16 +107,16 @@ test "sac_critic_update: positive reward moves Q toward target" {
   let rr : Array[Float] = [1.0F]
   let nss : Array[Int] = [0]
   let dd : Array[Bool] = [true]
-  let _ = @snn_mbt.sac_critic_update(sac, ss, aa, rr, nss, dd, 0.9F, 0.1F)
+  let _ = @rl.sac_critic_update(sac, ss, aa, rr, nss, dd, 0.9F, 0.1F)
   let x : Array[Float] = [1.0F, 0.0F]
-  let q_after = @snn_mbt.q_forward(sac.q1, x)
+  let q_after = @rl.q_forward(sac.q1, x)
   // Q(0, 0) should have moved toward 1 from 0 → > 0.
   assert_true(q_after[0] > 0.0F)
 }
 
 ///|
 test "sac_actor_update: weights change + stay bounded" {
-  let sac = @snn_mbt.Sac::new(4, 3, 0.1F, 29UL)
+  let sac = @rl.Sac::new(4, 3, 0.1F, 29UL)
   let snap : Array[Array[Float]] = Array::make(3, [])
   for i in 0..<3 {
     snap[i] = Array::make(4, 0.0F)
@@ -125,7 +125,7 @@ test "sac_actor_update: weights change + stay bounded" {
     }
   }
   let ss : Array[Int] = [0, 1, 2, 3]
-  @snn_mbt.sac_actor_update(sac, ss, 0.05F)
+  @rl.sac_actor_update(sac, ss, 0.05F)
   let mut changed = false
   for i in 0..<3 {
     for j in 0..<4 {
@@ -145,7 +145,7 @@ test "sac_actor_update: weights change + stay bounded" {
 
 ///|
 test "sac_soft_update: target = tau · online + (1 - tau) · old_target" {
-  let sac = @snn_mbt.Sac::new(2, 2, 0.1F, 31UL)
+  let sac = @rl.Sac::new(2, 2, 0.1F, 31UL)
   // Set online = [2, 2] and target = [0, 0] (post-init zeros + drift).
   for i in 0..<2 {
     for j in 0..<2 {
@@ -157,7 +157,7 @@ test "sac_soft_update: target = tau · online + (1 - tau) · old_target" {
   }
   sac.q1.w[0][0] = 2.0F
   sac.q1_target.w[0][0] = 0.0F
-  @snn_mbt.sac_soft_update(sac, 0.1F)
+  @rl.sac_soft_update(sac, 0.1F)
   // Expected: 0.1·2 + 0.9·0 = 0.2.
   let diff = if sac.q1_target.w[0][0] > 0.2F {
     sac.q1_target.w[0][0] - 0.2F
@@ -169,17 +169,17 @@ test "sac_soft_update: target = tau · online + (1 - tau) · old_target" {
 
 ///|
 test "sac_sample_action: returns valid action" {
-  let sac = @snn_mbt.Sac::new(2, 3, 0.1F, 37UL)
+  let sac = @rl.Sac::new(2, 3, 0.1F, 37UL)
   let rng = @core.Xoshiro::from_state(41UL, 43UL, 47UL, 53UL)
-  let a = @snn_mbt.sac_sample_action(sac.policy, 0, rng)
+  let a = @rl.sac_sample_action(sac.policy, 0, rng)
   assert_true(a >= 0 && a < 3)
 }
 
 ///|
 test "train_sac: shapes + return is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let sac = @snn_mbt.Sac::new(4, 4, 0.1F, 59UL)
-  let mean = @snn_mbt.train_sac(
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let sac = @rl.Sac::new(4, 4, 0.1F, 59UL)
+  let mean = @rl.train_sac(
     env, sac, 20, 0.9F, 0.05F, 0.05F, 0.05F, 5, 100, 5, 8, 61UL,
   )
   assert_true(mean == mean)

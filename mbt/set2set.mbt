@@ -56,7 +56,7 @@
 pub struct Set2Set {
   in_dim : Int
   processing_steps : Int
-  lstm : LstmCellParam
+  lstm : @rl.LstmCellParam
   w_source : GraphLinear
   w_query : GraphLinear
 }
@@ -71,7 +71,7 @@ pub fn Set2Set::new(
   {
     in_dim,
     processing_steps,
-    lstm: LstmCellParam::new(in_dim, in_dim, seed),
+    lstm: @rl.LstmCellParam::new(in_dim, in_dim, seed),
     w_source: GraphLinear::new(in_dim, in_dim, seed + 20UL),
     w_query: GraphLinear::new(in_dim, in_dim, seed + 30UL),
   }
@@ -135,7 +135,7 @@ pub fn set2set_forward(
   for _ in 0..<m.processing_steps {
     // Query update: q* <- LSTM(q*, q*). The previous query is both the
     // input x and the hidden state h_prev.
-    let (q_next, cache) = lstm_cell_forward(q, q, c, m.lstm)
+    let (q_next, cache) = @rl.lstm_cell_forward(q, q, c, m.lstm)
     // Attention logits e_i = <W_s H_i, W_q q*>.
     let qproj = graph_linear_forward(m.w_query, q_next, 1)
     let logits : Array[Float] = Array::make(n_nodes, 0.0F)

@@ -2,7 +2,7 @@
 
 ///|
 test "linear_qnet_new: shapes" {
-  let q = @snn_mbt.LinearQNet::new(4, 3, 7UL)
+  let q = @rl.LinearQNet::new(4, 3, 7UL)
   assert_eq(q.n_states, 4)
   assert_eq(q.n_actions, 3)
   assert_eq(q.w.length(), 3)
@@ -14,7 +14,7 @@ test "linear_qnet_new: shapes" {
 
 ///|
 test "q_forward: linear + bias" {
-  let q = @snn_mbt.LinearQNet::new(3, 2, 11UL)
+  let q = @rl.LinearQNet::new(3, 2, 11UL)
   for i in 0..<2 {
     for j in 0..<3 {
       q.w[i][j] = 0.0F
@@ -29,13 +29,13 @@ test "q_forward: linear + bias" {
   let x0 : Array[Float] = [1.0F, 0.0F, 0.0F]
   let x2 : Array[Float] = [0.0F, 0.0F, 1.0F]
   let x1 : Array[Float] = [0.0F, 1.0F, 0.0F]
-  let q0 = @snn_mbt.q_forward(q, x0)
+  let q0 = @rl.q_forward(q, x0)
   assert_eq(q0[0], 11.0F)
   assert_eq(q0[1], 20.0F)
-  let q2 = @snn_mbt.q_forward(q, x2)
+  let q2 = @rl.q_forward(q, x2)
   assert_eq(q2[0], 12.0F)
   assert_eq(q2[1], 20.0F)
-  let q1 = @snn_mbt.q_forward(q, x1)
+  let q1 = @rl.q_forward(q, x1)
   assert_eq(q1[0], 10.0F)
   assert_eq(q1[1], 23.0F)
 }
@@ -43,16 +43,16 @@ test "q_forward: linear + bias" {
 ///|
 test "q_argmax: greedy with first-tie-break" {
   let q1 : Array[Float] = [1.0F, 2.0F, 3.0F]
-  assert_eq(@snn_mbt.q_argmax(q1), 2)
+  assert_eq(@rl.q_argmax(q1), 2)
   let q2 : Array[Float] = [3.0F, 3.0F, 1.0F]
-  assert_eq(@snn_mbt.q_argmax(q2), 0)
+  assert_eq(@rl.q_argmax(q2), 0)
   let q3 : Array[Float] = [0.5F]
-  assert_eq(@snn_mbt.q_argmax(q3), 0)
+  assert_eq(@rl.q_argmax(q3), 0)
 }
 
 ///|
 test "replay_buffer: push + len" {
-  let b = @snn_mbt.ReplayBuffer::new(3)
+  let b = @rl.ReplayBuffer::new(3)
   assert_eq(b.len(), 0)
   b.push(0, 1, 1.0F, 2, false)
   assert_eq(b.len(), 1)
@@ -66,7 +66,7 @@ test "replay_buffer: push + len" {
 
 ///|
 test "replay_buffer: sample returns valid transitions" {
-  let b = @snn_mbt.ReplayBuffer::new(5)
+  let b = @rl.ReplayBuffer::new(5)
   let rng = @core.Xoshiro::from_state(13UL, 17UL, 19UL, 23UL)
   for k in 0..<5 {
     b.push(k, k % 4, Float::from_int(k), (k + 1) % 5, false)
@@ -87,12 +87,12 @@ test "replay_buffer: sample returns valid transitions" {
 
 ///|
 test "qnet_copy: weights overwrite" {
-  let src = @snn_mbt.LinearQNet::new(2, 2, 19UL)
-  let dst = @snn_mbt.LinearQNet::new(2, 2, 23UL)
+  let src = @rl.LinearQNet::new(2, 2, 19UL)
+  let dst = @rl.LinearQNet::new(2, 2, 23UL)
   src.w[0][0] = 1.0F
   src.w[0][1] = 2.0F
   src.b[0] = 3.0F
-  @snn_mbt.qnet_copy(dst, src)
+  @rl.qnet_copy(dst, src)
   assert_eq(dst.w[0][0], 1.0F)
   assert_eq(dst.w[0][1], 2.0F)
   assert_eq(dst.b[0], 3.0F)
@@ -103,22 +103,22 @@ test "dqn_update_step: zero return reduces |δ|" {
   // With target = online, reward = 0, done = true, the TD error
   // for action a at state s should be 0 (since V(s,a) = V(s,a)).
   // We zero both nets so Q(s,a)=0 and target=0 => δ=0.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let q = @snn_mbt.LinearQNet::new(4, 4, 29UL)
-  let target = @snn_mbt.LinearQNet::new(4, 4, 31UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let q = @rl.LinearQNet::new(4, 4, 29UL)
+  let target = @rl.LinearQNet::new(4, 4, 31UL)
   for i in 0..<4 {
     for j in 0..<4 {
       q.w[i][j] = 0.0F
     }
     q.b[i] = 0.0F
   }
-  @snn_mbt.qnet_copy(target, q)
+  @rl.qnet_copy(target, q)
   let ss : Array[Int] = [0]
   let aa : Array[Int] = [0]
   let rr : Array[Float] = [0.0F]
   let nss : Array[Int] = [0]
   let dd : Array[Bool] = [true]
-  let mean_delta = @snn_mbt.dqn_update_step(q, target, ss, aa, rr, nss, dd, 0.9F, 0.1F)
+  let mean_delta = @rl.dqn_update_step(q, target, ss, aa, rr, nss, dd, 0.9F, 0.1F)
   assert_true(mean_delta.abs() < 1.0e-5F)
   let _ = env
 }
@@ -127,14 +127,14 @@ test "dqn_update_step: zero return reduces |δ|" {
 test "dqn_update_step: positive reward increases Q(s, a)" {
   // With reward = 1, done = true, target Q = 0 (untrained), the
   // TD error is +1, so Q(s, a) should increase.
-  let q = @snn_mbt.LinearQNet::new(2, 2, 37UL)
+  let q = @rl.LinearQNet::new(2, 2, 37UL)
   for i in 0..<2 {
     for j in 0..<2 {
       q.w[i][j] = 0.0F
     }
     q.b[i] = 0.0F
   }
-  let target = @snn_mbt.LinearQNet::new(2, 2, 41UL)
+  let target = @rl.LinearQNet::new(2, 2, 41UL)
   for i in 0..<2 {
     for j in 0..<2 {
       target.w[i][j] = 0.0F
@@ -146,32 +146,32 @@ test "dqn_update_step: positive reward increases Q(s, a)" {
   let rr : Array[Float] = [1.0F]
   let nss : Array[Int] = [0]
   let dd : Array[Bool] = [true]
-  let _ = @snn_mbt.dqn_update_step(q, target, ss, aa, rr, nss, dd, 0.9F, 0.1F)
+  let _ = @rl.dqn_update_step(q, target, ss, aa, rr, nss, dd, 0.9F, 0.1F)
   // Q(s=0, a=0) = w[0][0]*1 + w[0][1]*0 + b[0]. After update, Q
   // should have moved toward 1 from 0, so Q > 0.
   let x : Array[Float] = [1.0F, 0.0F]
-  let q_after = @snn_mbt.q_forward(q, x)
+  let q_after = @rl.q_forward(q, x)
   assert_true(q_after[0] > 0.0F)
 }
 
 ///|
 test "eps_greedy_action: epsilon=0 -> argmax" {
-  let q = @snn_mbt.LinearQNet::new(2, 2, 43UL)
+  let q = @rl.LinearQNet::new(2, 2, 43UL)
   q.w[0][0] = 5.0F
   q.w[0][1] = 0.0F
   q.w[1][0] = 0.0F
   q.w[1][1] = 0.0F
   let rng = @core.Xoshiro::from_state(47UL, 53UL, 59UL, 61UL)
-  let a = @snn_mbt.eps_greedy_action(q, 0, 0.0F, rng)
+  let a = @rl.eps_greedy_action(q, 0, 0.0F, rng)
   assert_eq(a, 0)
 }
 
 ///|
 test "train_dqn: shapes + mean return is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let q = @snn_mbt.LinearQNet::new(4, 4, 67UL)
-  let target = @snn_mbt.LinearQNet::new(4, 4, 71UL)
-  let mean = @snn_mbt.train_dqn(
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let q = @rl.LinearQNet::new(4, 4, 67UL)
+  let target = @rl.LinearQNet::new(4, 4, 71UL)
+  let mean = @rl.train_dqn(
     env, q, target, 30, 0.9F, 0.05F, 1.0F, 0.05F, 5, 100, 5, 10, 8, 73UL,
   )
   assert_true(mean == mean)
@@ -182,17 +182,17 @@ test "train_dqn: shapes + mean return is finite" {
 test "train_dqn: improves over training" {
   // Train a small DQN and check that the mean return in the second
   // half of training exceeds the first half.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let q = @snn_mbt.LinearQNet::new(4, 4, 79UL)
-  let target = @snn_mbt.LinearQNet::new(4, 4, 83UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let q = @rl.LinearQNet::new(4, 4, 79UL)
+  let target = @rl.LinearQNet::new(4, 4, 83UL)
   // Manually run two batches and compare.
-  let _ = @snn_mbt.train_dqn(
+  let _ = @rl.train_dqn(
     env, q, target, 30, 0.9F, 0.1F, 1.0F, 0.1F, 5, 100, 0, 5, 8, 89UL,
   )
   // q is now trained (or not). Q-values for state 0 should be
   // non-trivial.
   let x : Array[Float] = [1.0F, 0.0F, 0.0F, 0.0F]
-  let q_vals = @snn_mbt.q_forward(q, x)
+  let q_vals = @rl.q_forward(q, x)
   // Some Q-value should be non-zero (network has been updated).
   let mut any_nonzero = false
   for i in 0..<4 {

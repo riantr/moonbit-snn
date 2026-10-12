@@ -2,7 +2,7 @@
 
 ///|
 test "td3_new_targets_match_online" {
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     3, 2, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 0.2F, 0.5F, 2, 42UL,
   )
   let mut h = 0
@@ -23,11 +23,11 @@ test "td3_new_targets_match_online" {
 
 ///|
 test "td3_select_action_eval_in_range" {
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     3, 2, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.0F, 0.2F, 0.5F, 2, 7UL,
   )
   let state : Array[Float] = [0.5F, -0.5F, 0.1F]
-  let action = @snn_mbt.td3_select_action_eval(td3, state)
+  let action = @rl.td3_select_action_eval(td3, state)
   assert_eq(action.length(), 2)
   let mut k = 0
   while k < action.length() {
@@ -40,14 +40,14 @@ test "td3_select_action_eval_in_range" {
 
 ///|
 test "td3_select_action_with_noise_stays_in_range" {
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.5F, 0.2F, 0.5F, 2, 7UL,
   )
   let state : Array[Float] = [0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let mut k = 0
   while k < 100 {
-    let action = @snn_mbt.td3_select_action(td3, state, rng)
+    let action = @rl.td3_select_action(td3, state, rng)
     let a = action[0]
     if a < -1.0F || a > 1.0F {
       fail("noisy action = \{a} out of range")
@@ -60,10 +60,10 @@ test "td3_select_action_with_noise_stays_in_range" {
 test "td3_policy_delay_skips_actor_update" {
   // With policy_delay=2, the actor should only be updated on every 2nd
   // call to td3_update_step.
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     2, 1, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 0.2F, 0.5F, 2, 7UL,
   )
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(8, 2, 1)
+  let buf = @rl.ContinuousReplayBuffer::new(8, 2, 1)
   buf.push([0.1F, 0.1F], [0.2F], 0.5F, [0.2F, 0.2F], false)
   buf.push([0.2F, 0.2F], [0.1F], 0.4F, [0.3F, 0.3F], false)
   let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
@@ -71,14 +71,14 @@ test "td3_policy_delay_skips_actor_update" {
   let b2_before = td3.actor.b2[0]
   // step_count=1: NOT a multiple of policy_delay=2, so actor skip.
   let batch = buf.sample(2, rng)
-  let _ = @snn_mbt.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
+  let _ = @rl.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
   let w2_after_skip = td3.actor.w2[0][0]
   let b2_after_skip = td3.actor.b2[0]
   if w2_after_skip != w2_before || b2_after_skip != b2_before {
     fail("actor should NOT update on step_count=1 (policy_delay=2)")
   }
   // step_count=2: multiple of 2, actor + targets update.
-  let _ = @snn_mbt.td3_update_step(td3, batch, 0.001F, 0.0001F, 2, rng)
+  let _ = @rl.td3_update_step(td3, batch, 0.001F, 0.0001F, 2, rng)
   let w2_after_update = td3.actor.w2[0][0]
   let b2_after_update = td3.actor.b2[0]
   if w2_after_update == w2_before && b2_after_update == b2_before {
@@ -89,12 +89,12 @@ test "td3_policy_delay_skips_actor_update" {
 
 ///|
 test "td3_soft_update_moves_target_toward_online" {
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     2, 1, 4, -1.0F, 1.0F, 0.99F, 0.5F, 0.1F, 0.2F, 0.5F, 2, 7UL,
   )
   td3.actor.b2[0] = 10.0F
   let b2_target_before = td3.actor_target.b2[0]
-  @snn_mbt.td3_soft_update(td3)
+  @rl.td3_soft_update(td3)
   let b2_target_after = td3.actor_target.b2[0]
   let expected = b2_target_before * 0.5F + 5.0F
   let diff = if b2_target_after > expected {
@@ -109,10 +109,10 @@ test "td3_soft_update_moves_target_toward_online" {
 
 ///|
 test "td3_update_step_runs_finite" {
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     3, 1, 8, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 0.2F, 0.5F, 2, 7UL,
   )
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(16, 3, 1)
+  let buf = @rl.ContinuousReplayBuffer::new(16, 3, 1)
   let mut i = 0
   while i < 8 {
     buf.push(
@@ -126,7 +126,7 @@ test "td3_update_step_runs_finite" {
   }
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let batch = buf.sample(4, rng)
-  let td = @snn_mbt.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
+  let td = @rl.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
   if td != td {
     fail("TD error is NaN")
   }
@@ -134,10 +134,10 @@ test "td3_update_step_runs_finite" {
 
 ///|
 test "td3_target_noise_clipped_to_clip_range" {
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     2, 1, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 5.0F, 0.05F, 2, 7UL,
   )
-  let buf = @snn_mbt.ContinuousReplayBuffer::new(8, 2, 1)
+  let buf = @rl.ContinuousReplayBuffer::new(8, 2, 1)
   let mut i = 0
   while i < 4 {
     buf.push(
@@ -151,7 +151,7 @@ test "td3_target_noise_clipped_to_clip_range" {
   }
   let rng = @core.Xoshiro::from_state(99UL, 88UL, 77UL, 66UL)
   let batch = buf.sample(4, rng)
-  let _ = @snn_mbt.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
+  let _ = @rl.td3_update_step(td3, batch, 0.001F, 0.0001F, 1, rng)
   let b1_after = td3.critic1_target.b1[0]
   if b1_after != b1_after {
     fail("target b1 went NaN")
@@ -180,10 +180,10 @@ test "td3_train_runs_without_crash" {
     let done = false
     (next_state, r, done)
   }
-  let td3 = @snn_mbt.TD3::new(
+  let td3 = @rl.TD3::new(
     1, 1, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 0.2F, 0.5F, 2, 7UL,
   )
-  let avg = @snn_mbt.train_td3(
+  let avg = @rl.train_td3(
     1, 1, env_step, td3, 2, 32, 1, 4, 50, 42UL,
   )
   if avg != avg {

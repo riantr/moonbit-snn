@@ -12,7 +12,7 @@
 
 ///|
 test "lstm_deterministic_policy_new_dimensions" {
-  let p : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     3, 2, 4, -1.0F, 1.0F, 42UL,
   )
   assert_eq(p.state_dim, 3)
@@ -44,13 +44,13 @@ test "lstm_deterministic_policy_new_dimensions" {
 
 ///|
 test "lstm_deterministic_policy_action_in_range" {
-  let p : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     5, 3, 8, -2.0F, 2.0F, 7UL,
   )
   let hidden : Array[Float] = Array::make(p.lstm_hidden, 0.0F)
   let cell : Array[Float] = Array::make(p.lstm_hidden, 0.0F)
   let obs : Array[Float] = [0.3F, -0.1F, 0.5F, 0.0F, 0.2F]
-  let (action, new_hidden, new_cell) = @snn_mbt.lstm_deterministic_policy_step(
+  let (action, new_hidden, new_cell) = @rl.lstm_deterministic_policy_step(
     p, obs, hidden, cell,
   )
   assert_eq(action.length(), 3)
@@ -66,10 +66,10 @@ test "lstm_deterministic_policy_action_in_range" {
 
 ///|
 test "lstm_deterministic_policy_zero_initial_reproducible_under_seed" {
-  let p1 : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p1 : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     4, 2, 4, -1.0F, 1.0F, 99UL,
   )
-  let p2 : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p2 : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     4, 2, 4, -1.0F, 1.0F, 99UL,
   )
   let obs_seq : Array[Float] = [
@@ -79,10 +79,10 @@ test "lstm_deterministic_policy_zero_initial_reproducible_under_seed" {
   ]
   let hidden_init : Array[Float] = Array::make(p1.lstm_hidden, 0.0F)
   let cell_init : Array[Float] = Array::make(p1.lstm_hidden, 0.0F)
-  let (act1, h1, c1) = @snn_mbt.lstm_deterministic_policy_seq_forward(
+  let (act1, h1, c1) = @rl.lstm_deterministic_policy_seq_forward(
     p1, obs_seq, 3, hidden_init, cell_init,
   )
-  let (act2, h2, c2) = @snn_mbt.lstm_deterministic_policy_seq_forward(
+  let (act2, h2, c2) = @rl.lstm_deterministic_policy_seq_forward(
     p2, obs_seq, 3, hidden_init, cell_init,
   )
   // Element-wise equality.
@@ -97,19 +97,19 @@ test "lstm_deterministic_policy_zero_initial_reproducible_under_seed" {
 
 ///|
 test "lstm_deterministic_policy_different_seeds_differ" {
-  let p1 : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p1 : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     4, 2, 4, -1.0F, 1.0F, 1UL,
   )
-  let p2 : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p2 : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     4, 2, 4, -1.0F, 1.0F, 2UL,
   )
   let obs : Array[Float] = [0.1F, 0.5F, -0.3F, 0.7F]
   let hidden_init : Array[Float] = Array::make(4, 0.0F)
   let cell_init : Array[Float] = Array::make(4, 0.0F)
-  let (act1, _, _) = @snn_mbt.lstm_deterministic_policy_step(
+  let (act1, _, _) = @rl.lstm_deterministic_policy_step(
     p1, obs, hidden_init, cell_init,
   )
-  let (act2, _, _) = @snn_mbt.lstm_deterministic_policy_step(
+  let (act2, _, _) = @rl.lstm_deterministic_policy_step(
     p2, obs, hidden_init, cell_init,
   )
   // At least one action element should differ between the two seeds.
@@ -124,24 +124,24 @@ test "lstm_deterministic_policy_different_seeds_differ" {
 
 ///|
 test "lstm_deterministic_policy_seq_forward_threads_hidden_and_cell" {
-  let p : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     2, 1, 3, -0.5F, 0.5F, 13UL,
   )
   let hidden_init : Array[Float] = Array::make(p.lstm_hidden, 0.0F)
   let cell_init : Array[Float] = Array::make(p.lstm_hidden, 0.0F)
   // Manually step through 3 observations and compare against seq_forward.
-  let (a_step1, h_step1, c_step1) = @snn_mbt.lstm_deterministic_policy_step(
+  let (a_step1, h_step1, c_step1) = @rl.lstm_deterministic_policy_step(
     p, [0.1F, 0.2F], hidden_init, cell_init,
   )
-  let (a_step2, h_step2, c_step2) = @snn_mbt.lstm_deterministic_policy_step(
+  let (a_step2, h_step2, c_step2) = @rl.lstm_deterministic_policy_step(
     p, [0.3F, 0.4F], h_step1, c_step1,
   )
-  let (a_step3, h_step3, c_step3) = @snn_mbt.lstm_deterministic_policy_step(
+  let (a_step3, h_step3, c_step3) = @rl.lstm_deterministic_policy_step(
     p, [0.5F, 0.6F], h_step2, c_step2,
   )
   // Now run seq_forward.
   let obs_seq : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F]
-  let (act_seq, h_final, c_final) = @snn_mbt.lstm_deterministic_policy_seq_forward(
+  let (act_seq, h_final, c_final) = @rl.lstm_deterministic_policy_seq_forward(
     p, obs_seq, 3, hidden_init, cell_init,
   )
   // Step-wise action equality.
@@ -158,13 +158,13 @@ test "lstm_deterministic_policy_seq_forward_threads_hidden_and_cell" {
 ///|
 test "lstm_deterministic_policy_action_range_with_asymmetric_bounds" {
   // Asymmetric bounds [0.0, 3.0] - actions should map into that range.
-  let p : @snn_mbt.LSTMDeterministicPolicy = @snn_mbt.LSTMDeterministicPolicy::new(
+  let p : @rl.LSTMDeterministicPolicy = @rl.LSTMDeterministicPolicy::new(
     3, 4, 6, 0.0F, 3.0F, 21UL,
   )
   let hidden : Array[Float] = Array::make(p.lstm_hidden, 0.0F)
   let cell : Array[Float] = Array::make(p.lstm_hidden, 0.0F)
   let obs : Array[Float] = [1.0F, -2.0F, 0.5F]
-  let (action, _, _) = @snn_mbt.lstm_deterministic_policy_step(
+  let (action, _, _) = @rl.lstm_deterministic_policy_step(
     p, obs, hidden, cell,
   )
   for i in 0..<action.length() {

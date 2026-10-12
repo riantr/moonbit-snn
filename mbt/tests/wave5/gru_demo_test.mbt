@@ -2,14 +2,14 @@
 
 ///|
 test "gru_sequence_forward: returns one cache per timestep" {
-  let p = @snn_mbt.GruCellParam::new(2, 3, 7UL)
+  let p = @rl.GruCellParam::new(2, 3, 7UL)
   let xs : Array[Array[Float]] = [
     [0.5F, -0.3F],
     [0.1F, 0.2F],
     [-0.4F, 0.6F],
   ]
   let h0 : Array[Float] = [0.1F, 0.0F, -0.2F]
-  let (hs, caches) = @snn_mbt.gru_sequence_forward(xs, h0, p)
+  let (hs, caches) = @rl.gru_sequence_forward(xs, h0, p)
   assert_eq(hs.length(), 3)
   assert_eq(caches.length(), 3)
   for t in 0..<3 {
@@ -23,15 +23,15 @@ test "gru_sequence_forward: returns one cache per timestep" {
 
 ///|
 test "gru_sequence_forward: deterministic with same seed" {
-  let p1 = @snn_mbt.GruCellParam::new(2, 3, 99UL)
-  let p2 = @snn_mbt.GruCellParam::new(2, 3, 99UL)
+  let p1 = @rl.GruCellParam::new(2, 3, 99UL)
+  let p2 = @rl.GruCellParam::new(2, 3, 99UL)
   let xs : Array[Array[Float]] = [
     [0.5F, -0.3F],
     [0.1F, 0.2F],
   ]
   let h0 : Array[Float] = [0.1F, 0.0F, -0.2F]
-  let (hs1, _) = @snn_mbt.gru_sequence_forward(xs, h0, p1)
-  let (hs2, _) = @snn_mbt.gru_sequence_forward(xs, h0, p2)
+  let (hs1, _) = @rl.gru_sequence_forward(xs, h0, p1)
+  let (hs2, _) = @rl.gru_sequence_forward(xs, h0, p2)
   for t in 0..<2 {
     for i in 0..<3 {
       assert_eq(hs1[t][i], hs2[t][i])
@@ -41,33 +41,33 @@ test "gru_sequence_forward: deterministic with same seed" {
 
 ///|
 test "gru_sequence_loss: zero loss for matching sequences" {
-  let p = @snn_mbt.GruCellParam::new(2, 3, 5UL)
+  let p = @rl.GruCellParam::new(2, 3, 5UL)
   let xs : Array[Array[Float]] = [[0.5F, -0.3F], [0.1F, 0.2F]]
   let h0 : Array[Float] = [0.1F, 0.0F, -0.2F]
-  let (hs, _) = @snn_mbt.gru_sequence_forward(xs, h0, p)
-  let loss = @snn_mbt.gru_sequence_loss(hs, hs)
+  let (hs, _) = @rl.gru_sequence_forward(xs, h0, p)
+  let loss = @rl.gru_sequence_loss(hs, hs)
   assert_eq(loss, 0.0F)
 }
 
 ///|
 test "gru_sequence_loss: returns -1 on length mismatch" {
-  let p = @snn_mbt.GruCellParam::new(2, 3, 5UL)
+  let p = @rl.GruCellParam::new(2, 3, 5UL)
   let xs : Array[Array[Float]] = [[0.5F, -0.3F], [0.1F, 0.2F]]
   let h0 : Array[Float] = [0.1F, 0.0F, -0.2F]
-  let (hs, _) = @snn_mbt.gru_sequence_forward(xs, h0, p)
+  let (hs, _) = @rl.gru_sequence_forward(xs, h0, p)
   let bad : Array[Array[Float]] = [[0.0F, 0.0F, 0.0F]]
-  let loss = @snn_mbt.gru_sequence_loss(hs, bad)
+  let loss = @rl.gru_sequence_loss(hs, bad)
   assert_eq(loss, -1.0F)
 }
 
 ///|
 test "gru_sequence_backward: zero d_output -> zero d_xs + zero grad" {
-  let p = @snn_mbt.GruCellParam::new(2, 3, 11UL)
+  let p = @rl.GruCellParam::new(2, 3, 11UL)
   let xs : Array[Array[Float]] = [[0.5F, -0.3F], [0.1F, 0.2F], [-0.4F, 0.6F]]
   let h0 : Array[Float] = [0.1F, 0.0F, -0.2F]
-  let (hs, caches) = @snn_mbt.gru_sequence_forward(xs, h0, p)
+  let (hs, caches) = @rl.gru_sequence_forward(xs, h0, p)
   let target = hs // match exactly so loss is zero
-  let (d_xs, d_h0, grad) = @snn_mbt.gru_sequence_backward(target, target, caches, h0, p)
+  let (d_xs, d_h0, grad) = @rl.gru_sequence_backward(target, target, caches, h0, p)
   assert_eq(d_xs.length(), 3)
   for t in 0..<3 {
     assert_eq(d_xs[t].length(), 2)
@@ -86,16 +86,16 @@ test "gru_sequence_backward: zero d_output -> zero d_xs + zero grad" {
 
 ///|
 test "gru_sequence_backward: d_xs + d_h0 + grad shapes" {
-  let p = @snn_mbt.GruCellParam::new(2, 3, 13UL)
+  let p = @rl.GruCellParam::new(2, 3, 13UL)
   let xs : Array[Array[Float]] = [[0.5F, -0.3F], [0.1F, 0.2F], [-0.4F, 0.6F]]
   let h0 : Array[Float] = [0.1F, 0.0F, -0.2F]
-  let (hs, caches) = @snn_mbt.gru_sequence_forward(xs, h0, p)
+  let (hs, caches) = @rl.gru_sequence_forward(xs, h0, p)
   let target : Array[Array[Float]] = [
     [0.0F, 0.0F, 0.0F],
     [0.0F, 0.0F, 0.0F],
     [0.0F, 0.0F, 0.0F],
   ]
-  let (d_xs, d_h0, grad) = @snn_mbt.gru_sequence_backward(hs, target, caches, h0, p)
+  let (d_xs, d_h0, grad) = @rl.gru_sequence_backward(hs, target, caches, h0, p)
   assert_eq(d_xs.length(), 3)
   for t in 0..<3 {
     assert_eq(d_xs[t].length(), 2)
@@ -113,8 +113,8 @@ test "gru_sequence_backward: d_xs + d_h0 + grad shapes" {
 
 ///|
 test "gru_clip_grad: clamps all values" {
-  let p = @snn_mbt.GruCellParam::new(2, 2, 17UL)
-  let grad = @snn_mbt.GruCellGrad::zero(p)
+  let p = @rl.GruCellParam::new(2, 2, 17UL)
+  let grad = @rl.GruCellGrad::zero(p)
   grad.d_w_z[0][0] = 5.0F
   grad.d_w_z[0][1] = -5.0F
   grad.d_w_r[1][0] = 3.0F
@@ -122,7 +122,7 @@ test "gru_clip_grad: clamps all values" {
   grad.d_b_z[0] = 2.0F
   grad.d_b_r[1] = -2.0F
   grad.d_b_n[0] = 7.0F
-  @snn_mbt.gru_clip_grad(grad, 1.0F)
+  @rl.gru_clip_grad(grad, 1.0F)
   assert_eq(grad.d_w_z[0][0], 1.0F)
   assert_eq(grad.d_w_z[0][1], -1.0F)
   assert_eq(grad.d_w_r[1][0], 1.0F)
@@ -136,12 +136,12 @@ test "gru_clip_grad: clamps all values" {
 test "gru_train_n_steps: loss decreases after K-step SGD" {
   // Train on identity-shift task with d_x = d_target = d_h = 4 so
   // target dimension matches hidden state dimension.
-  let p = @snn_mbt.GruCellParam::new(4, 4, 23UL)
-  let (xs, target) = @snn_mbt.gru_identity_dataset(8, 4, 4, 31UL)
+  let p = @rl.GruCellParam::new(4, 4, 23UL)
+  let (xs, target) = @rl.gru_identity_dataset(8, 4, 4, 31UL)
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
-  let (hs0, _) = @snn_mbt.gru_sequence_forward(xs, h0, p)
-  let init_loss = @snn_mbt.gru_sequence_loss(hs0, target)
-  let final_loss = @snn_mbt.gru_train_n_steps(xs, target, h0, p, 60, 0.01F, 1.0F)
+  let (hs0, _) = @rl.gru_sequence_forward(xs, h0, p)
+  let init_loss = @rl.gru_sequence_loss(hs0, target)
+  let final_loss = @rl.gru_train_n_steps(xs, target, h0, p, 60, 0.01F, 1.0F)
   if final_loss >= init_loss {
     fail("loss didn't decrease: init = \{init_loss}, final = \{final_loss}")
   }
@@ -149,7 +149,7 @@ test "gru_train_n_steps: loss decreases after K-step SGD" {
 
 ///|
 test "gru_identity_dataset: shapes + cyclic shift" {
-  let (xs, target) = @snn_mbt.gru_identity_dataset(5, 3, 2, 7UL)
+  let (xs, target) = @rl.gru_identity_dataset(5, 3, 2, 7UL)
   assert_eq(xs.length(), 5)
   assert_eq(target.length(), 5)
   for t in 0..<5 {

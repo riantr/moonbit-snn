@@ -2,14 +2,14 @@
 
 ///|
 test "n_step_buffer_new_is_empty" {
-  let buf = @snn_mbt.NStepBuffer::new(4)
+  let buf = @rl.NStepBuffer::new(4)
   assert_eq(buf.len(), 0)
   assert_eq(buf.capacity(), 4)
 }
 
 ///|
 test "n_step_buffer_push_grows_until_full" {
-  let buf = @snn_mbt.NStepBuffer::new(3)
+  let buf = @rl.NStepBuffer::new(3)
   let r0 = buf.push(0, 0, 0.0F, 1, false)
   assert_eq(r0, false)
   assert_eq(buf.len(), 1)
@@ -23,7 +23,7 @@ test "n_step_buffer_push_grows_until_full" {
 
 ///|
 test "n_step_buffer_push_past_full_returns_true_each_time" {
-  let buf = @snn_mbt.NStepBuffer::new(2)
+  let buf = @rl.NStepBuffer::new(2)
   let _ = buf.push(0, 0, 0.0F, 1, false)
   let _ = buf.push(1, 0, 0.0F, 2, false)
   let r2 = buf.push(2, 0, 0.0F, 3, false)
@@ -35,7 +35,7 @@ test "n_step_buffer_push_past_full_returns_true_each_time" {
 
 ///|
 test "n_step_buffer_at_returns_records_in_order" {
-  let buf = @snn_mbt.NStepBuffer::new(3)
+  let buf = @rl.NStepBuffer::new(3)
   let _ = buf.push(10, 1, 0.5F, 11, false)
   let _ = buf.push(20, 2, 0.6F, 21, false)
   let _ = buf.push(30, 3, 0.7F, 31, true)
@@ -54,7 +54,7 @@ test "n_step_buffer_at_returns_records_in_order" {
 
 ///|
 test "n_step_buffer_overwrites_oldest_in_fifo_order" {
-  let buf = @snn_mbt.NStepBuffer::new(2)
+  let buf = @rl.NStepBuffer::new(2)
   let _ = buf.push(10, 0, 0.0F, 11, false)
   let _ = buf.push(20, 0, 0.0F, 21, false)
   let _ = buf.push(30, 0, 0.0F, 31, false) // overwrites 10
@@ -66,7 +66,7 @@ test "n_step_buffer_overwrites_oldest_in_fifo_order" {
 
 ///|
 test "n_step_buffer_reset_clears_count" {
-  let buf = @snn_mbt.NStepBuffer::new(3)
+  let buf = @rl.NStepBuffer::new(3)
   let _ = buf.push(0, 0, 0.0F, 1, false)
   let _ = buf.push(1, 0, 0.0F, 2, false)
   buf.reset()
@@ -75,7 +75,7 @@ test "n_step_buffer_reset_clears_count" {
 
 ///|
 test "n_step_return_basic_3_step" {
-  let buf = @snn_mbt.NStepBuffer::new(3)
+  let buf = @rl.NStepBuffer::new(3)
   let _ = buf.push(0, 1, 1.0F, 1, false)
   let _ = buf.push(1, 1, 2.0F, 2, false)
   let _ = buf.push(2, 1, 3.0F, 3, false)
@@ -93,7 +93,7 @@ test "n_step_return_basic_3_step" {
 
 ///|
 test "n_step_return_truncated_at_terminal" {
-  let buf = @snn_mbt.NStepBuffer::new(4)
+  let buf = @rl.NStepBuffer::new(4)
   let _ = buf.push(0, 1, 1.0F, 1, false)
   let _ = buf.push(1, 1, 2.0F, 2, true) // terminal at index 1
   let _ = buf.push(99, 99, 99.0F, 99, false) // after-terminal: still in buffer but won't be summed
@@ -113,7 +113,7 @@ test "n_step_return_truncated_at_terminal" {
 ///|
 test "n_step_return_partial_window" {
   // Buffer of capacity 4 but only 2 records pushed.
-  let buf = @snn_mbt.NStepBuffer::new(4)
+  let buf = @rl.NStepBuffer::new(4)
   let _ = buf.push(0, 1, 1.0F, 1, false)
   let _ = buf.push(1, 1, 2.0F, 2, false)
   let gamma = 0.5F

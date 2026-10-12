@@ -2,10 +2,10 @@
 
 ///|
 test "ppo_kl_collect_batch: shapes + old_probs positive" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 7UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 11UL)
-  let batch = @snn_mbt.ppo_kl_collect_batch(env, p, v, 5, 0.9F, 5, 13UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 7UL)
+  let v = @rl.LinearValueNet::new(4, 11UL)
+  let batch = @rl.ppo_kl_collect_batch(env, p, v, 5, 0.9F, 5, 13UL)
   assert_true(batch.states.length() > 0)
   assert_eq(batch.states.length(), batch.actions.length())
   assert_eq(batch.states.length(), batch.advantages.length())
@@ -29,7 +29,7 @@ test "ppo_kl_collect_batch: shapes + old_probs positive" {
 ///|
 test "per_state_kl: zero when distributions match" {
   let pi : Array[Float] = [0.25F, 0.25F, 0.25F, 0.25F]
-  let kl = @snn_mbt.per_state_kl(pi, pi)
+  let kl = @rl.per_state_kl(pi, pi)
   assert_true(kl.abs() < 1.0e-5F)
 }
 
@@ -37,7 +37,7 @@ test "per_state_kl: zero when distributions match" {
 test "per_state_kl: positive when distributions differ" {
   let pi_a : Array[Float] = [0.7F, 0.1F, 0.1F, 0.1F]
   let pi_b : Array[Float] = [0.25F, 0.25F, 0.25F, 0.25F]
-  let kl = @snn_mbt.per_state_kl(pi_a, pi_b)
+  let kl = @rl.per_state_kl(pi_a, pi_b)
   // KL is always >= 0.
   assert_true(kl > 0.0F)
 }
@@ -47,7 +47,7 @@ test "per_state_kl: zero when one side has zero mass on entry" {
   // π_cur[i] = 0 → that term is 0 · log(0/x) = 0 (limit).
   let pi_a : Array[Float] = [1.0F, 0.0F, 0.0F, 0.0F]
   let pi_b : Array[Float] = [0.5F, 0.5F, 0.0F, 0.0F]
-  let kl = @snn_mbt.per_state_kl(pi_a, pi_b)
+  let kl = @rl.per_state_kl(pi_a, pi_b)
   // Only action 0 has nonzero mass in π_a; KL = 1 · log(1/0.5).
   let expected = @core.logf(1.0F / 0.5F)
   let diff = if kl > expected { kl - expected } else { expected - kl }
@@ -56,10 +56,10 @@ test "per_state_kl: zero when one side has zero mass on entry" {
 
 ///|
 test "ppo_kl_update_step: zero advantage -> no weight change" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 17UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 19UL)
-  let batch = @snn_mbt.ppo_kl_collect_batch(env, p, v, 3, 0.9F, 5, 23UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 17UL)
+  let v = @rl.LinearValueNet::new(4, 19UL)
+  let batch = @rl.ppo_kl_collect_batch(env, p, v, 3, 0.9F, 5, 23UL)
   let snap : Array[Array[Float]] = Array::make(4, [])
   for i in 0..<4 {
     snap[i] = Array::make(4, 0.0F)
@@ -67,7 +67,7 @@ test "ppo_kl_update_step: zero advantage -> no weight change" {
       snap[i][j] = p.w[i][j]
     }
   }
-  let zero_batch : @snn_mbt.PpoKlBatch = {
+  let zero_batch : @rl.PpoKlBatch = {
     states: batch.states,
     actions: batch.actions,
     advantages: Array::make(batch.advantages.length(), 0.0F),
@@ -78,7 +78,7 @@ test "ppo_kl_update_step: zero advantage -> no weight change" {
   // is non-zero but the surrogate pushes against it via ∇r; for
   // A=0 the surrogate contribution is 0 but KL still pushes π
   // back to π_old. Allow small drift.)
-  let _ = @snn_mbt.ppo_kl_update_step(p, zero_batch, 0.0F, 0.5F)
+  let _ = @rl.ppo_kl_update_step(p, zero_batch, 0.0F, 0.5F)
   // With β=0 there should be no update at all.
   for i in 0..<4 {
     for j in 0..<4 {
@@ -92,7 +92,7 @@ test "ppo_kl_update_step: positive KL beta pulls policy back" {
   // Construct a batch with old_dist favoring action 0 and current
   // policy favoring action 1 (so KL > 0). Then with high β, the
   // update should pull the policy back toward old.
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 2, 29UL)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 2, 29UL)
   // Current policy strongly prefers action 1.
   for i in 0..<2 {
     for j in 0..<4 {
@@ -100,7 +100,7 @@ test "ppo_kl_update_step: positive KL beta pulls policy back" {
     }
   }
   p.w[1][0] = 5.0F
-  let batch : @snn_mbt.PpoKlBatch = {
+  let batch : @rl.PpoKlBatch = {
     states: [0],
     actions: [1],
     advantages: [0.0F],  // No advantage signal.
@@ -111,7 +111,7 @@ test "ppo_kl_update_step: positive KL beta pulls policy back" {
   let w0_0_before = p.w[0][0]
   let w0_1_before = p.w[0][1]
   let w1_0_before = p.w[1][0]
-  let _ = @snn_mbt.ppo_kl_update_step(p, batch, 1.0F, 0.5F)
+  let _ = @rl.ppo_kl_update_step(p, batch, 1.0F, 0.5F)
   // With β > 0 and KL > 0, weights should change to reduce KL.
   // We just check that the update happened.
   let changed = p.w[0][0] != w0_0_before ||
@@ -122,10 +122,10 @@ test "ppo_kl_update_step: positive KL beta pulls policy back" {
 
 ///|
 test "train_ppo_kl: shapes + return is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 31UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 37UL)
-  let last = @snn_mbt.train_ppo_kl(env, p, v, 3, 5, 0.9F, 0.1F, 0.05F, 5, 41UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 31UL)
+  let v = @rl.LinearValueNet::new(4, 37UL)
+  let last = @rl.train_ppo_kl(env, p, v, 3, 5, 0.9F, 0.1F, 0.05F, 5, 41UL)
   assert_true(last == last)
   assert_true(last > -10.0F && last < 10.0F)
 }
@@ -134,10 +134,10 @@ test "train_ppo_kl: shapes + return is finite" {
 test "ppo_kl_beta_zero: reduces to plain REINFORCE-style update" {
   // With β=0, the KL penalty vanishes and we get a vanilla
   // importance-weighted policy gradient.
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
-  let p = @snn_mbt.LinearSoftmaxPolicy::new(4, 4, 47UL)
-  let v = @snn_mbt.LinearValueNet::new(4, 53UL)
-  let batch = @snn_mbt.ppo_kl_collect_batch(env, p, v, 5, 0.9F, 5, 59UL)
+  let env = @rl.GridWorld::new(2, 2, 5)
+  let p = @rl.LinearSoftmaxPolicy::new(4, 4, 47UL)
+  let v = @rl.LinearValueNet::new(4, 53UL)
+  let batch = @rl.ppo_kl_collect_batch(env, p, v, 5, 0.9F, 5, 59UL)
   let snap : Array[Array[Float]] = Array::make(4, [])
   for i in 0..<4 {
     snap[i] = Array::make(4, 0.0F)
@@ -148,7 +148,7 @@ test "ppo_kl_beta_zero: reduces to plain REINFORCE-style update" {
   // Snapshot old_dist too.
   let mut changed_count = 0
   for _ in 0..<1 {
-    let _ = @snn_mbt.ppo_kl_update_step(p, batch, 0.0F, 0.05F)
+    let _ = @rl.ppo_kl_update_step(p, batch, 0.0F, 0.05F)
   }
   for i in 0..<4 {
     for j in 0..<4 {

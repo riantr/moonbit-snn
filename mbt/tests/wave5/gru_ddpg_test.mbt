@@ -3,7 +3,7 @@
 
 ///|
 test "ddpg_gru_new: 6 networks built + hyperparameters stored" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL,
   )
   assert_eq(agent.actor.state_dim, 3)
@@ -25,7 +25,7 @@ test "ddpg_gru_new: source and target networks start distinct" {
   // Polyak-averaged targets start at seed+100/101/102 to be far from
   // the source networks (seed/seed+1/seed+2). Verify that the actor's
   // initial weights differ from the actor_target's.
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 7UL,
   )
   let mut diff = false
@@ -43,14 +43,14 @@ test "ddpg_gru_new: source and target networks start distinct" {
 
 ///|
 test "ddpg_gru_select_action: deterministic with noise_std=0" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 17UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let (a1, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h, 0.0F, rng)
-  let (a2, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h, 0.0F, rng)
+  let (a1, _) = @rl.ddpg_gru_select_action(agent, obs, h, 0.0F, rng)
+  let (a2, _) = @rl.ddpg_gru_select_action(agent, obs, h, 0.0F, rng)
   for i in 0..<a1.length() {
     assert_eq(a1[i], a2[i])
   }
@@ -58,13 +58,13 @@ test "ddpg_gru_select_action: deterministic with noise_std=0" {
 
 ///|
 test "ddpg_gru_select_action: noise clipped to action range" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 23UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(7UL, 11UL, 13UL, 17UL)
-  let (action, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h, 5.0F, rng)
+  let (action, _) = @rl.ddpg_gru_select_action(agent, obs, h, 5.0F, rng)
   // noise_std=5 is far larger than the [-1, 1] range; the result must
   // be clipped.
   assert_eq(action[0] >= -1.0F && action[0] <= 1.0F, true)
@@ -73,15 +73,15 @@ test "ddpg_gru_select_action: noise clipped to action range" {
 
 ///|
 test "ddpg_gru_select_action: hidden state evolves" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 29UL,
   )
   let obs : Array[Float] = [0.5F, -0.3F, 0.1F]
   let h_zero : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let h_other : Array[Float] = [0.7F, -0.4F, 0.2F, -0.1F]
   let rng = @core.Xoshiro::from_state(31UL, 37UL, 41UL, 43UL)
-  let (a1, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h_zero, 0.0F, rng)
-  let (a2, _) = @snn_mbt.ddpg_gru_select_action(agent, obs, h_other, 0.0F, rng)
+  let (a1, _) = @rl.ddpg_gru_select_action(agent, obs, h_zero, 0.0F, rng)
+  let (a2, _) = @rl.ddpg_gru_select_action(agent, obs, h_other, 0.0F, rng)
   let mut diff = false
   for i in 0..<a1.length() {
     if a1[i] != a2[i] {
@@ -95,7 +95,7 @@ test "ddpg_gru_select_action: hidden state evolves" {
 
 ///|
 test "ddpg_gru_compute_td_target_seq: shape + finiteness" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     2, 1, 3, -1.0F, 1.0F, 0.9F, 0.01F, 0.05F, 37UL,
   )
   let seq_len = 3
@@ -103,7 +103,7 @@ test "ddpg_gru_compute_td_target_seq: shape + finiteness" {
   let next_act_seq : Array[Float] = [0.5F, -0.5F, 0.3F]
   let reward_seq : Array[Float] = [1.0F, 0.5F, -0.2F]
   let done_seq : Array[Float] = [0.0F, 0.0F, 1.0F]
-  let target = @snn_mbt.ddpg_gru_compute_td_target_seq(agent, next_obs_seq, next_act_seq, reward_seq, done_seq, seq_len)
+  let target = @rl.ddpg_gru_compute_td_target_seq(agent, next_obs_seq, next_act_seq, reward_seq, done_seq, seq_len)
   assert_eq(target.length(), seq_len)
   for t in 0..<seq_len {
     // Q value should be finite (not NaN).
@@ -118,7 +118,7 @@ test "ddpg_gru_compute_td_target_seq: zero rewards + gamma=0 -> zero target" {
   // With gamma=0 and rewards=0, the TD target is just 0 regardless
   // of critic values. Useful as a smoke test that the formula is
   // wired correctly.
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     2, 1, 3, -1.0F, 1.0F, 0.0F, 0.01F, 0.05F, 41UL,
   )
   let seq_len = 3
@@ -126,7 +126,7 @@ test "ddpg_gru_compute_td_target_seq: zero rewards + gamma=0 -> zero target" {
   let next_act_seq : Array[Float] = [0.5F, -0.5F, 0.3F]
   let reward_seq : Array[Float] = [0.0F, 0.0F, 0.0F]
   let done_seq : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let target = @snn_mbt.ddpg_gru_compute_td_target_seq(agent, next_obs_seq, next_act_seq, reward_seq, done_seq, seq_len)
+  let target = @rl.ddpg_gru_compute_td_target_seq(agent, next_obs_seq, next_act_seq, reward_seq, done_seq, seq_len)
   for t in 0..<seq_len {
     assert_eq(target[t], 0.0F)
   }
@@ -137,11 +137,11 @@ test "ddpg_gru_soft_update: actor_target moves toward actor" {
   // After one soft-update with tau=1.0, the actor_target should
   // exactly match the actor (Polyak averaging with tau=1 means full
   // copy).
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.005F, 0.1F, 47UL,
   )
-  let agent_tau1 : @snn_mbt.DDPG_GRU = { ..agent, tau: 1.0F }
-  @snn_mbt.ddpg_gru_soft_update(agent_tau1)
+  let agent_tau1 : @rl.DDPG_GRU = { ..agent, tau: 1.0F }
+  @rl.ddpg_gru_soft_update(agent_tau1)
   for i in 0..<agent_tau1.actor.mlp_w1.length() {
     for k in 0..<agent_tau1.actor.mlp_w1[i].length() {
       assert_eq(agent_tau1.actor.mlp_w1[i][k], agent_tau1.actor_target.mlp_w1[i][k])
@@ -159,23 +159,23 @@ test "ddpg_gru_soft_update: actor_target moves toward actor" {
 
 ///|
 test "ddpg_gru_soft_update: tau=0 leaves target unchanged" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 0.0F, 0.1F, 53UL,
   )
   // Snapshot the actor_target before soft update.
   let w00_before = agent.actor_target.mlp_w1[0][0]
-  @snn_mbt.ddpg_gru_soft_update(agent)
+  @rl.ddpg_gru_soft_update(agent)
   let w00_after = agent.actor_target.mlp_w1[0][0]
   assert_eq(w00_before, w00_after)
 }
 
 ///|
 test "ddpg_gru_soft_update: critics are also soft-updated" {
-  let agent : @snn_mbt.DDPG_GRU = @snn_mbt.DDPG_GRU::new(
+  let agent : @rl.DDPG_GRU = @rl.DDPG_GRU::new(
     3, 2, 4, -1.0F, 1.0F, 0.99F, 1.0F, 0.1F, 59UL,
   )
-  let agent_tau1 : @snn_mbt.DDPG_GRU = { ..agent, tau: 1.0F }
-  @snn_mbt.ddpg_gru_soft_update(agent_tau1)
+  let agent_tau1 : @rl.DDPG_GRU = { ..agent, tau: 1.0F }
+  @rl.ddpg_gru_soft_update(agent_tau1)
   // critic1_target should now match critic1.
   for i in 0..<agent_tau1.critic1.mlp_w1.length() {
     for k in 0..<agent_tau1.critic1.mlp_w1[i].length() {

@@ -13,9 +13,9 @@
 
 ///|
 test "recurrent_sac_init" {
-  let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 42UL)
+  let sac = @rl.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 42UL)
   // α = exp(0) = 1.0
-  assert_true((@snn_mbt.recurrent_sac_get_alpha(sac) - 1.0F).abs() < 1.0e-5F)
+  assert_true((@rl.recurrent_sac_get_alpha(sac) - 1.0F).abs() < 1.0e-5F)
   // LstmPolicy and LstmQNet shapes.
   assert_eq(sac.policy.cell.d_h, 4)
   assert_eq(sac.q1.cell.d_h, 4)
@@ -35,8 +35,8 @@ test "recurrent_sac_init" {
 
 ///|
 test "recurrent_sac_determinism" {
-  let s1 = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 7UL)
-  let s2 = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 7UL)
+  let s1 = @rl.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 7UL)
+  let s2 = @rl.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 7UL)
   assert_eq(s1.q1.w_out.length(), s2.q1.w_out.length())
   assert_eq(s1.policy.cell.d_h, s2.policy.cell.d_h)
   assert_true(
@@ -45,7 +45,7 @@ test "recurrent_sac_determinism" {
 }
 
 ///|
-fn make_zero_episode(n_cells : Int, n_steps : Int) -> @snn_mbt.RecurrentSacEpisode {
+fn make_zero_episode(n_cells : Int, n_steps : Int) -> @rl.RecurrentSacEpisode {
   let obs : Array[Array[Float]] = []
   let obs2 : Array[Array[Float]] = []
   let acts : Array[Int] = []
@@ -60,14 +60,14 @@ fn make_zero_episode(n_cells : Int, n_steps : Int) -> @snn_mbt.RecurrentSacEpiso
     rews.push(0.0F)
     dones.push(false)
   }
-  @snn_mbt.RecurrentSacEpisode::new(obs, obs2, acts, rews, dones, 2, 1)
+  @rl.RecurrentSacEpisode::new(obs, obs2, acts, rews, dones, 2, 1)
 }
 
 ///|
 test "recurrent_sac_alpha_grows_when_policy_too_random" {
   // target_entropy = -1.0; uniform over 2 actions has
   // mean_neg_entropy ≈ log(0.5) ≈ -0.693; delta > 0 → α grows.
-  let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.3F, 11UL)
+  let sac = @rl.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.3F, 11UL)
   // Zero out policy.w_out to force uniform π.
   for i in 0..<sac.policy.w_out.length() {
     for j in 0..<sac.policy.cell.d_h {
@@ -78,17 +78,17 @@ test "recurrent_sac_alpha_grows_when_policy_too_random" {
   let ep = make_zero_episode(4, 3)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let before = sac.log_alpha
-  let delta = @snn_mbt.recurrent_sac_update_alpha(sac, ep, rng)
+  let delta = @rl.recurrent_sac_update_alpha(sac, ep, rng)
   assert_true(delta > 0.0F)
   assert_true(sac.log_alpha > before)
-  assert_true(@snn_mbt.recurrent_sac_get_alpha(sac) > 1.0F)
+  assert_true(@rl.recurrent_sac_get_alpha(sac) > 1.0F)
 }
 
 ///|
 test "recurrent_sac_alpha_shrinks_when_policy_too_deterministic" {
   // target_entropy = 0.0; uniform π has mean_neg_entropy ≈ -0.693 < 0
   // → δ < 0 → α shrinks.
-  let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, 0.0F, 0.3F, 22UL)
+  let sac = @rl.RecurrentSac::new(4, 4, 0.0F, 0.0F, 0.3F, 22UL)
   for i in 0..<sac.policy.w_out.length() {
     for j in 0..<sac.policy.cell.d_h {
       sac.policy.w_out[i][j] = 0.0F
@@ -98,22 +98,22 @@ test "recurrent_sac_alpha_shrinks_when_policy_too_deterministic" {
   let ep = make_zero_episode(4, 3)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let before = sac.log_alpha
-  let delta = @snn_mbt.recurrent_sac_update_alpha(sac, ep, rng)
+  let delta = @rl.recurrent_sac_update_alpha(sac, ep, rng)
   assert_true(delta < 0.0F)
   assert_true(sac.log_alpha < before)
-  assert_true(@snn_mbt.recurrent_sac_get_alpha(sac) < 1.0F)
-  assert_true(@snn_mbt.recurrent_sac_get_alpha(sac) > 0.0F)
+  assert_true(@rl.recurrent_sac_get_alpha(sac) < 1.0F)
+  assert_true(@rl.recurrent_sac_get_alpha(sac) > 0.0F)
 }
 
 ///|
 test "recurrent_sac_log_alpha_stays_finite" {
-  let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.3F, 33UL)
+  let sac = @rl.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.3F, 33UL)
   let ep = make_zero_episode(4, 3)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   for _iter in 0..<30 {
-    let _ = @snn_mbt.recurrent_sac_update_alpha(sac, ep, rng)
+    let _ = @rl.recurrent_sac_update_alpha(sac, ep, rng)
     assert_true(sac.log_alpha == sac.log_alpha)  // NaN check
-    let alpha = @snn_mbt.recurrent_sac_get_alpha(sac)
+    let alpha = @rl.recurrent_sac_get_alpha(sac)
     assert_true(alpha == alpha)  // NaN check
     assert_true(alpha > 0.0F)
     assert_true(alpha < 1.0e30F)
@@ -122,8 +122,8 @@ test "recurrent_sac_log_alpha_stays_finite" {
 
 ///|
 test "recurrent_sac_train_returns_finite_mean" {
-  let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.5F, 0.05F, 44UL)
-  let ret = @snn_mbt.train_recurrent_sac(
+  let sac = @rl.RecurrentSac::new(4, 4, 0.0F, -1.5F, 0.05F, 44UL)
+  let ret = @rl.train_recurrent_sac(
     4, sac, 5, 0.9F, 0.02F, 0.01F, 0.1F, 8, 55UL,
   )
   assert_true(ret == ret)  // NaN check
@@ -132,7 +132,7 @@ test "recurrent_sac_train_returns_finite_mean" {
 
 ///|
 test "recurrent_sac_critic_update_produces_positive_loss" {
-  let sac = @snn_mbt.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 66UL)
+  let sac = @rl.RecurrentSac::new(4, 4, 0.0F, -1.0F, 0.1F, 66UL)
   // Build a fake 3-step episode with non-trivial rewards.
   let obs : Array[Array[Float]] = []
   let obs2 : Array[Array[Float]] = []
@@ -148,9 +148,9 @@ test "recurrent_sac_critic_update_produces_positive_loss" {
     rews.push(1.0F)
     dones.push(false)
   }
-  let ep = @snn_mbt.RecurrentSacEpisode::new(obs, obs2, acts, rews, dones, 2, 1)
+  let ep = @rl.RecurrentSacEpisode::new(obs, obs2, acts, rews, dones, 2, 1)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let loss = @snn_mbt.recurrent_sac_critic_update(sac, ep, 0.9F, 0.05F, rng)
+  let loss = @rl.recurrent_sac_critic_update(sac, ep, 0.9F, 0.05F, rng)
   assert_true(loss == loss)  // NaN check
   assert_true(loss > 0.0F)
 }
@@ -158,14 +158,14 @@ test "recurrent_sac_critic_update_produces_positive_loss" {
 ///|
 test "lstm_qnet_forward_returns_correct_shape" {
   // Build an LstmQNet and run a 4-step forward pass.
-  let qnet = @snn_mbt.LstmQNet::new(6, 3, 2, 99UL)
+  let qnet = @rl.LstmQNet::new(6, 3, 2, 99UL)
   let obs_seq : Array[Array[Float]] = []
   for _t in 0..<4 {
     obs_seq.push(Array::make(6, 0.1F))
   }
   let h0 : Array[Float] = Array::make(3, 0.0F)
   let c0 : Array[Float] = Array::make(3, 0.0F)
-  let (qs, cache) = @snn_mbt.lstm_qnet_forward(qnet, obs_seq, h0, c0)
+  let (qs, cache) = @rl.lstm_qnet_forward(qnet, obs_seq, h0, c0)
   assert_eq(qs.length(), 4)
   assert_eq(cache.hs.length(), 4)
   assert_eq(cache.cell_caches.length(), 4)

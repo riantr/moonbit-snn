@@ -18,6 +18,7 @@ import {
   "riantr/snn_mbt",
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/synapse",
+  "riantr/snn_mbt/rl",
 } for "test"
 
 options(

@@ -51,7 +51,7 @@ pub fn ScoreNetwork::new(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
   let std1 = @core.sqrtf(2.0F / Float::from_int(combined))
-  let w_in = xavier_normal(hidden_dim, combined, std1, rng1)
+  let w_in = @rl.xavier_normal(hidden_dim, combined, std1, rng1)
   let b_in : Array[Float] = Array::make(hidden_dim, 0.0F)
   let hidden_w : Array[Array[Array[Float]]] = Array::make(
     num_layers - 1, Array::make(0, Array::make(0, 0.0F)),
@@ -65,14 +65,14 @@ pub fn ScoreNetwork::new(
       seed + (l + 100).to_uint64() * 17UL,
     )
     let std_l = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
-    hidden_w[l] = xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
+    hidden_w[l] = @rl.xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
     hidden_b[l] = Array::make(hidden_dim, 0.0F)
   }
   let rng_out = @core.Xoshiro::from_state(
     seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL,
   )
   let std_out = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
-  let w_out = xavier_normal(input_dim, hidden_dim, std_out, rng_out)
+  let w_out = @rl.xavier_normal(input_dim, hidden_dim, std_out, rng_out)
   let b_out : Array[Float] = Array::make(input_dim, 0.0F)
   { input_dim, time_dim, hidden_dim, num_layers, w_in, b_in, hidden_w, hidden_b, w_out, b_out }
 }

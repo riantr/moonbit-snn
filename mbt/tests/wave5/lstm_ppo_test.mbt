@@ -2,8 +2,8 @@
 
 ///|
 test "lstm_ppo_collect_batch: shapes + per-step advantages" {
-  let p = @snn_mbt.LstmPolicy::new(5, 4, 7UL)
-  let batch = @snn_mbt.lstm_ppo_collect_batch(5, p, 4, 0.9F, 4, 11UL)
+  let p = @rl.LstmPolicy::new(5, 4, 7UL)
+  let batch = @rl.lstm_ppo_collect_batch(5, p, 4, 0.9F, 4, 11UL)
   assert_true(batch.states.length() > 0)
   assert_eq(batch.states.length(), batch.actions.length())
   assert_eq(batch.states.length(), batch.advantages.length())
@@ -19,8 +19,8 @@ test "lstm_ppo_collect_batch: shapes + per-step advantages" {
 
 ///|
 test "lstm_ppo_collect_batch: cur_probs sum to 1 + finite" {
-  let p = @snn_mbt.LstmPolicy::new(5, 4, 13UL)
-  let batch = @snn_mbt.lstm_ppo_collect_batch(5, p, 3, 0.9F, 4, 17UL)
+  let p = @rl.LstmPolicy::new(5, 4, 13UL)
+  let batch = @rl.lstm_ppo_collect_batch(5, p, 3, 0.9F, 4, 17UL)
   for i in 0..<batch.cur_dist.length() {
     let mut s = 0.0F
     for k in 0..<batch.cur_dist[i].length() {
@@ -35,8 +35,8 @@ test "lstm_ppo_collect_batch: cur_probs sum to 1 + finite" {
 
 ///|
 test "lstm_ppo_update_step: weights bounded after update" {
-  let p = @snn_mbt.LstmPolicy::new(5, 4, 23UL)
-  let batch = @snn_mbt.lstm_ppo_collect_batch(5, p, 3, 0.9F, 4, 29UL)
+  let p = @rl.LstmPolicy::new(5, 4, 23UL)
+  let batch = @rl.lstm_ppo_collect_batch(5, p, 3, 0.9F, 4, 29UL)
   let snap : Array[Array[Float]] = Array::make(2, [])
   for i in 0..<2 {
     snap[i] = Array::make(4, 0.0F)
@@ -44,7 +44,7 @@ test "lstm_ppo_update_step: weights bounded after update" {
       snap[i][j] = p.w_out[i][j]
     }
   }
-  let _ = @snn_mbt.lstm_ppo_update_step(p, batch, 0.2F, 0.05F)
+  let _ = @rl.lstm_ppo_update_step(p, batch, 0.2F, 0.05F)
   for i in 0..<2 {
     for j in 0..<4 {
       let diff = if p.w_out[i][j] > snap[i][j] {
@@ -61,7 +61,7 @@ test "lstm_ppo_update_step: weights bounded after update" {
 ///|
 test "lstm_ppo_update_step: zero advantage + clip active -> no-op" {
   // With single-pass PPO and advantage=0, scale=0 -> no update.
-  let p = @snn_mbt.LstmPolicy::new(3, 3, 31UL)
+  let p = @rl.LstmPolicy::new(3, 3, 31UL)
   let snap : Array[Array[Float]] = Array::make(2, [])
   for i in 0..<2 {
     snap[i] = Array::make(3, 0.0F)
@@ -69,7 +69,7 @@ test "lstm_ppo_update_step: zero advantage + clip active -> no-op" {
       snap[i][j] = p.w_out[i][j]
     }
   }
-  let batch : @snn_mbt.RecurrentPpoBatch = {
+  let batch : @rl.RecurrentPpoBatch = {
     states: [0, 0],
     actions: [0, 1],
     advantages: [0.0F, 0.0F],
@@ -78,7 +78,7 @@ test "lstm_ppo_update_step: zero advantage + clip active -> no-op" {
     cur_dist: [[0.5F, 0.5F], [0.5F, 0.5F]],
     old_dist: [[0.5F, 0.5F], [0.5F, 0.5F]],
   }
-  let _ = @snn_mbt.lstm_ppo_update_step(p, batch, 0.2F, 0.5F)
+  let _ = @rl.lstm_ppo_update_step(p, batch, 0.2F, 0.5F)
   for i in 0..<2 {
     for j in 0..<3 {
       assert_eq(p.w_out[i][j], snap[i][j])
@@ -88,17 +88,17 @@ test "lstm_ppo_update_step: zero advantage + clip active -> no-op" {
 
 ///|
 test "lstm_ppo_update_step: KL returns finite non-negative" {
-  let p = @snn_mbt.LstmPolicy::new(5, 4, 37UL)
-  let batch = @snn_mbt.lstm_ppo_collect_batch(5, p, 3, 0.9F, 4, 41UL)
-  let kl = @snn_mbt.lstm_ppo_update_step(p, batch, 0.2F, 0.05F)
+  let p = @rl.LstmPolicy::new(5, 4, 37UL)
+  let batch = @rl.lstm_ppo_collect_batch(5, p, 3, 0.9F, 4, 41UL)
+  let kl = @rl.lstm_ppo_update_step(p, batch, 0.2F, 0.05F)
   assert_true(kl >= 0.0F)
   assert_true(kl < 100.0F)
 }
 
 ///|
 test "train_lstm_ppo: shapes + mean is finite" {
-  let p = @snn_mbt.LstmPolicy::new(5, 4, 47UL)
-  let last = @snn_mbt.train_lstm_ppo(5, p, 3, 4, 0.9F, 0.2F, 0.01F, 4, 53UL)
+  let p = @rl.LstmPolicy::new(5, 4, 47UL)
+  let last = @rl.train_lstm_ppo(5, p, 3, 4, 0.9F, 0.2F, 0.01F, 4, 53UL)
   assert_true(last == last)
   assert_true(last > -10.0F && last < 10.0F)
 }

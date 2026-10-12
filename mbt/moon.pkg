@@ -13,4 +13,5 @@ import {
   "riantr/snn_mbt/nn",
   "riantr/snn_mbt/optim",
   "riantr/snn_mbt/analysis",
+  "riantr/snn_mbt/rl",
 }

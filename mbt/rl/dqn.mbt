@@ -22,6 +22,22 @@ pub struct LinearQNet {
 }
 
 ///|
+/// Rebuild a `LinearQNet` from saved weights.
+///
+/// `new` seeds an RNG and the fields are private, so once this type moved out
+/// of the root package `serialize.mbt` could no longer write the record
+/// literal it needs to restore a checkpoint. This is the deserialisation twin
+/// of `new`: same shape, values supplied rather than drawn.
+pub fn LinearQNet::from_arrays(
+  n_states : Int,
+  n_actions : Int,
+  w : Array[Array[Float]],
+  b : Array[Float],
+) -> LinearQNet {
+  { n_states, n_actions, w, b }
+}
+
+///|
 pub fn LinearQNet::new(
   n_states : Int,
   n_actions : Int,

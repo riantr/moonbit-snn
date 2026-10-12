@@ -43,7 +43,7 @@ pub fn GraphLinear::new(
   let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )
-  let w = xavier_normal(out_dim, in_dim, std, rng)
+  let w = @rl.xavier_normal(out_dim, in_dim, std, rng)
   let b : Array[Float] = Array::make(out_dim, 0.0F)
   { in_dim, out_dim, w, b }
 }

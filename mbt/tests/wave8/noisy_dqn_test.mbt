@@ -1,8 +1,8 @@
 // noisy_dqn_test.mbt — tests for v0.43.2 NoisyDQN agent.
 
 ///|
-fn make_grid(seed : Int) -> @snn_mbt.GridWorld {
-  @snn_mbt.GridWorld::new(2, 2, seed)
+fn make_grid(seed : Int) -> @rl.GridWorld {
+  @rl.GridWorld::new(2, 2, seed)
 }
 
 ///|

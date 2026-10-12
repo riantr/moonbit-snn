@@ -2,7 +2,7 @@
 
 ///|
 test "corridor_env_new: shape + goal on right" {
-  let env = @snn_mbt.CorridorEnv::new(5, 10)
+  let env = @rl.CorridorEnv::new(5, 10)
   assert_eq(env.n_cells, 5)
   assert_eq(env.goal_side, 1)
   assert_eq(env.goal_cell(), 4)
@@ -10,8 +10,8 @@ test "corridor_env_new: shape + goal on right" {
 
 ///|
 test "corridor_observation: indicator + position one-hot" {
-  let env = @snn_mbt.CorridorEnv::new(4, 10)
-  let obs = @snn_mbt.corridor_observation(env, 2)
+  let env = @rl.CorridorEnv::new(4, 10)
+  let obs = @rl.corridor_observation(env, 2)
   assert_eq(obs.length(), 6) // 2 + 4
   // Indicator: goal_side=1 -> obs[1]=1.
   assert_eq(obs[0], 0.0F)
@@ -28,10 +28,10 @@ test "corridor_observation: indicator + position one-hot" {
 
 ///|
 test "corridor_observation: indicator flips with goal_side" {
-  let env_l : @snn_mbt.CorridorEnv = @snn_mbt.CorridorEnv::{ n_cells: 4, goal_side: 0, step_penalty: -0.1F, goal_reward: 1.0F, max_steps: 10 }
-  let env_r : @snn_mbt.CorridorEnv = @snn_mbt.CorridorEnv::{ n_cells: 4, goal_side: 1, step_penalty: -0.1F, goal_reward: 1.0F, max_steps: 10 }
-  let obs_l = @snn_mbt.corridor_observation(env_l, 0)
-  let obs_r = @snn_mbt.corridor_observation(env_r, 0)
+  let env_l : @rl.CorridorEnv = @rl.CorridorEnv::{ n_cells: 4, goal_side: 0, step_penalty: -0.1F, goal_reward: 1.0F, max_steps: 10 }
+  let env_r : @rl.CorridorEnv = @rl.CorridorEnv::{ n_cells: 4, goal_side: 1, step_penalty: -0.1F, goal_reward: 1.0F, max_steps: 10 }
+  let obs_l = @rl.corridor_observation(env_l, 0)
+  let obs_r = @rl.corridor_observation(env_r, 0)
   assert_eq(obs_l[0], 1.0F)
   assert_eq(obs_l[1], 0.0F)
   assert_eq(obs_r[0], 0.0F)
@@ -40,7 +40,7 @@ test "corridor_observation: indicator flips with goal_side" {
 
 ///|
 test "corridor_step: terminal at goal" {
-  let env = @snn_mbt.CorridorEnv::new(3, 5)
+  let env = @rl.CorridorEnv::new(3, 5)
   // Goal at cell 2 (right). From cell 1, action=right -> cell 2 (goal).
   let (_s, r, done) = env.step(1, 1)
   assert_eq(r, 1.0F)
@@ -49,7 +49,7 @@ test "corridor_step: terminal at goal" {
 
 ///|
 test "corridor_step: stay on out-of-bounds" {
-  let env = @snn_mbt.CorridorEnv::new(3, 5)
+  let env = @rl.CorridorEnv::new(3, 5)
   // At cell 0 (left edge), action=left -> stay.
   let (s, r, done) = env.step(0, 0)
   assert_eq(s, 0)
@@ -59,7 +59,7 @@ test "corridor_step: stay on out-of-bounds" {
 
 ///|
 test "lstm_policy_new: shapes" {
-  let p = @snn_mbt.LstmPolicy::new(3, 4, 11UL)
+  let p = @rl.LstmPolicy::new(3, 4, 11UL)
   assert_eq(p.cell.d_x, 5) // 2 + 3
   assert_eq(p.cell.d_h, 4)
   assert_eq(p.w_out.length(), 2)
@@ -71,7 +71,7 @@ test "lstm_policy_new: shapes" {
 
 ///|
 test "lstm_policy_forward: action + cache lengths match obs_seq" {
-  let p = @snn_mbt.LstmPolicy::new(3, 4, 13UL)
+  let p = @rl.LstmPolicy::new(3, 4, 13UL)
   let obs_seq : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
@@ -80,7 +80,7 @@ test "lstm_policy_forward: action + cache lengths match obs_seq" {
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(17UL, 19UL, 23UL, 29UL)
-  let (actions, cache) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng)
+  let (actions, cache) = @rl.lstm_policy_forward(p, obs_seq, h0, c0, rng)
   assert_eq(actions.length(), 3)
   for t in 0..<3 {
     assert_true(actions[t] == 0 || actions[t] == 1)
@@ -98,7 +98,7 @@ test "lstm_policy_forward: action + cache lengths match obs_seq" {
 
 ///|
 test "lstm_policy_gradient_update: zero returns -> no change" {
-  let p = @snn_mbt.LstmPolicy::new(3, 3, 31UL)
+  let p = @rl.LstmPolicy::new(3, 3, 31UL)
   let obs_seq : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
@@ -106,7 +106,7 @@ test "lstm_policy_gradient_update: zero returns -> no change" {
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(37UL, 41UL, 43UL, 47UL)
-  let (actions, cache) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng)
+  let (actions, cache) = @rl.lstm_policy_forward(p, obs_seq, h0, c0, rng)
   // Snapshot weights before update.
   let w0_snapshot : Array[Array[Float]] = Array::make(2, [])
   for i in 0..<2 {
@@ -124,7 +124,7 @@ test "lstm_policy_gradient_update: zero returns -> no change" {
   }
   // Zero returns.
   let returns : Array[Float] = [0.0F, 0.0F]
-  @snn_mbt.lstm_policy_gradient_update(p, actions, returns, cache, 0.1F)
+  @rl.lstm_policy_gradient_update(p, actions, returns, cache, 0.1F)
   // Weights unchanged (returns are all zero -> early continue).
   for i in 0..<2 {
     for j in 0..<3 {
@@ -140,7 +140,7 @@ test "lstm_policy_gradient_update: zero returns -> no change" {
 
 ///|
 test "lstm_policy_gradient_update: positive return increases chosen prob" {
-  let p = @snn_mbt.LstmPolicy::new(3, 3, 53UL)
+  let p = @rl.LstmPolicy::new(3, 3, 53UL)
   let obs_seq : Array[Array[Float]] = [
     [1.0F, 0.0F, 1.0F, 0.0F, 0.0F],
     [1.0F, 0.0F, 0.0F, 1.0F, 0.0F],
@@ -149,14 +149,14 @@ test "lstm_policy_gradient_update: positive return increases chosen prob" {
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let rng = @core.Xoshiro::from_state(59UL, 61UL, 67UL, 71UL)
-  let (actions, cache) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng)
+  let (actions, cache) = @rl.lstm_policy_forward(p, obs_seq, h0, c0, rng)
   // Set all returns positive.
   let returns : Array[Float] = [1.0F, 1.0F, 1.0F]
-  @snn_mbt.lstm_policy_gradient_update(p, actions, returns, cache, 0.5F)
+  @rl.lstm_policy_gradient_update(p, actions, returns, cache, 0.5F)
   // After update, probabilities for the chosen actions should have
   // increased or stayed the same (REINFORCE with positive return).
   let rng2 = @core.Xoshiro::from_state(73UL, 79UL, 83UL, 89UL)
-  let (_a2, cache2) = @snn_mbt.lstm_policy_forward(p, obs_seq, h0, c0, rng2)
+  let (_a2, cache2) = @rl.lstm_policy_forward(p, obs_seq, h0, c0, rng2)
   for t in 0..<3 {
     let a = actions[t]
     // cache2 (after update) prob of chosen action >= cache (before).
@@ -166,8 +166,8 @@ test "lstm_policy_gradient_update: positive return increases chosen prob" {
 
 ///|
 test "train_lstm_reinforce: shapes + return is finite" {
-  let p = @snn_mbt.LstmPolicy::new(5, 8, 97UL)
-  let mean_return = @snn_mbt.train_lstm_reinforce(5, p, 5, 0.9F, 0.01F, 4, 101UL)
+  let p = @rl.LstmPolicy::new(5, 8, 97UL)
+  let mean_return = @rl.train_lstm_reinforce(5, p, 5, 0.9F, 0.01F, 4, 101UL)
   // Just verify it's a finite Float (not NaN or out of range).
   assert_true(mean_return == mean_return) // NaN check
   assert_true(mean_return > -100.0F && mean_return < 100.0F)
@@ -176,6 +176,6 @@ test "train_lstm_reinforce: shapes + return is finite" {
 ///|
 test "lstm_episode_return: sums rewards" {
   let r : Array[Float] = [0.1F, -0.1F, 1.0F, -0.1F]
-  let s = @snn_mbt.lstm_episode_return(r)
+  let s = @rl.lstm_episode_return(r)
   assert_eq(s, 0.9F)
 }

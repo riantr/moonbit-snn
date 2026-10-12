@@ -28,8 +28,8 @@
 /// plus the convex combination weights.
 pub struct TimeSeriesEnsemble {
   arima : ArimaFittedModel
-  lstm : LSTMForecaster
-  gru : GRUForecaster
+  lstm : @rl.LSTMForecaster
+  gru : @rl.GRUForecaster
   // Convex combination weights (sum to 1.0).
   w_arima : Float
   w_lstm : Float
@@ -46,8 +46,8 @@ pub struct TimeSeriesEnsemble {
 /// pre-windowed inputs of length `window_size`).
 pub fn TimeSeriesEnsemble::new(
   arima : ArimaFittedModel,
-  lstm : LSTMForecaster,
-  gru : GRUForecaster,
+  lstm : @rl.LSTMForecaster,
+  gru : @rl.GRUForecaster,
 ) -> TimeSeriesEnsemble {
   {
     arima,
@@ -80,7 +80,7 @@ pub fn ts_ensemble_forecast(
   // the window, we feed the window's last hidden state back as init
   // (caller pre-populates ensemble.last_input_window if needed). For
   // v0.88.0 we use zero-init for simplicity.
-  let (lstm_forecast_seq, _, _) = lstm_forecaster_seq_forward(
+  let (lstm_forecast_seq, _, _) = @rl.lstm_forecaster_seq_forward(
     ensemble.lstm,
     ensemble.last_input_window,
     ensemble.last_input_window.length() / ensemble.lstm.input_dim,
@@ -98,7 +98,7 @@ pub fn ts_ensemble_forecast(
     0.0F
   }
   // GRU forecast (parallel to LSTM).
-  let (gru_forecast_seq, _) = gru_forecaster_seq_forward(
+  let (gru_forecast_seq, _) = @rl.gru_forecaster_seq_forward(
     ensemble.gru,
     ensemble.last_input_window,
     ensemble.last_input_window.length() / ensemble.gru.input_dim,
@@ -134,7 +134,7 @@ pub fn ts_ensemble_evaluate(
     return (0.0F, 0.0F, 0.0F, 0.0F)
   }
   let arima_pred = arima_fitted_forecast(ensemble.arima, h)
-  let (lstm_seq, _, _) = lstm_forecaster_seq_forward(
+  let (lstm_seq, _, _) = @rl.lstm_forecaster_seq_forward(
     ensemble.lstm,
     ensemble.last_input_window,
     ensemble.last_input_window.length() / ensemble.lstm.input_dim,
@@ -146,7 +146,7 @@ pub fn ts_ensemble_evaluate(
   } else {
     0.0F
   }
-  let (gru_seq, _) = gru_forecaster_seq_forward(
+  let (gru_seq, _) = @rl.gru_forecaster_seq_forward(
     ensemble.gru,
     ensemble.last_input_window,
     ensemble.last_input_window.length() / ensemble.gru.input_dim,

@@ -69,7 +69,7 @@ test "dueling_q_forward: identical advantage -> Q = V" {
 
 ///|
 test "dueling_dqn_update_step: zero init + zero reward -> zero |δ|" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
+  let env = @rl.GridWorld::new(2, 2, 5)
   let q = @snn_mbt.DuelingQNet::new(4, 4, 23UL)
   let target = @snn_mbt.DuelingQNet::new(4, 4, 29UL)
   for i in 0..<4 {
@@ -141,7 +141,7 @@ test "dueling_eps_greedy_action: epsilon=0 -> argmax" {
 
 ///|
 test "train_dueling_dqn: shapes + mean is finite" {
-  let env = @snn_mbt.GridWorld::new(2, 2, 5)
+  let env = @rl.GridWorld::new(2, 2, 5)
   let q = @snn_mbt.DuelingQNet::new(4, 4, 67UL)
   let target = @snn_mbt.DuelingQNet::new(4, 4, 71UL)
   let mean = @snn_mbt.train_dueling_dqn(

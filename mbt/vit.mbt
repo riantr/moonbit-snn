@@ -83,7 +83,7 @@ pub fn ViT::new(
     seed + 300UL, seed + 301UL, seed + 302UL, seed + 303UL,
   )
   let std_head = @core.sqrtf(2.0F / Float::from_int(d_model))
-  let head_w = xavier_normal(num_classes, d_model, std_head, rng_head)
+  let head_w = @rl.xavier_normal(num_classes, d_model, std_head, rng_head)
   let head_b : Array[Float] = Array::make(num_classes, 0.0F)
   { patch_embed, cls_token, pos_embed, blocks, head_w, head_b, num_classes, d_model, n_patches }
 }

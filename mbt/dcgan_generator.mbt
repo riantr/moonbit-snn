@@ -70,7 +70,7 @@ pub fn DCGANGenerator::new(
     seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL,
   )
   let std0 = @core.sqrtf(2.0F / Float::from_int(latent_dim))
-  let fc_w = xavier_normal(proj_dim, latent_dim, std0, rng0)
+  let fc_w = @rl.xavier_normal(proj_dim, latent_dim, std0, rng0)
   let fc_b : Array[Float] = Array::make(proj_dim, 0.0F)
   // Conv 1: c_base -> c_base*2, applied at 8x8.
   let conv1_w = xavier_normal_conv(c_base * 2, c_base, 3)
