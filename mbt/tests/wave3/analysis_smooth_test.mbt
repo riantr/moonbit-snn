@@ -5,7 +5,7 @@
 test "gaussian_smooth — zero sigma returns copy" {
   let xs : Array[Float] = [0.0F, 1.0F, 2.0F, 3.0F, 4.0F]
   let x : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
-  let out = @snn_mbt.gaussian_smooth(xs, x, 0.0F, None)
+  let out = @analysis.gaussian_smooth(xs, x, 0.0F, None)
   assert_eq(out.length(), 5)
   // Should equal x.
   assert_eq(out[0], 1.0F)
@@ -20,7 +20,7 @@ test "gaussian_smooth — symmetric, narrow sigma: preserves signal" {
   // close to x[i] should be preserved.
   let xs : Array[Float] = [0.0F, 1.0F, 2.0F, 3.0F, 4.0F]
   let x : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
-  let out = @snn_mbt.gaussian_smooth(xs, x, 0.5F, None)
+  let out = @analysis.gaussian_smooth(xs, x, 0.5F, None)
   assert_eq(out.length(), 5)
   // Smoothed values should be close to original (within ~0.5).
   let mut i = 0
@@ -40,7 +40,7 @@ test "gaussian_smooth — symmetric, wide sigma: averages heavily" {
   // should be approximately the mean of x.
   let xs : Array[Float] = [0.0F, 1.0F, 2.0F, 3.0F, 4.0F]
   let x : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
-  let out = @snn_mbt.gaussian_smooth(xs, x, 10.0F, None)
+  let out = @analysis.gaussian_smooth(xs, x, 10.0F, None)
   // All values should be very close to mean (3.0).
   let mut i = 0
   while i < 5 {
@@ -70,7 +70,7 @@ test "gaussian_smooth — causal (Left): only past samples contribute" {
   // the kernel. Either way, the smoothed value depends on past+future.
   let xs : Array[Float] = [0.0F, 1.0F, 2.0F, 3.0F, 4.0F]
   let x : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
-  let out = @snn_mbt.gaussian_smooth(xs, x, 1.0F, Left)
+  let out = @analysis.gaussian_smooth(xs, x, 1.0F, Left)
   // For causal (Left), the smoothed output should still be in the
   // range of x (no NaN, no extreme values).
   let mut i = 0
@@ -93,7 +93,7 @@ test "gaussian_smooth — output length equals input length" {
     x[i] = (i % 5).to_float() * 0.5F
     i = i + 1
   }
-  let out = @snn_mbt.gaussian_smooth(xs, x, 1.5F, None)
+  let out = @analysis.gaussian_smooth(xs, x, 1.5F, None)
   assert_eq(out.length(), n)
 }
 
@@ -110,7 +110,7 @@ test "gaussian_smooth — boundary renormalisation keeps edge stable" {
     xs[i] = Float::from_int(i)
     i = i + 1
   }
-  let out = @snn_mbt.gaussian_smooth(xs, x, 2.0F, None)
+  let out = @analysis.gaussian_smooth(xs, x, 2.0F, None)
   // All values should be exactly 1.0 (constant signal × normalised kernel = 1.0).
   let mut j = 0
   while j < n {

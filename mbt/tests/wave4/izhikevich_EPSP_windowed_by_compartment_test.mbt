@@ -9,7 +9,7 @@ test "epsp_normalise_windowed_by_compartment / distinct windows give non-zero st
   // observation = last 5 (constant 1.0). mean over baseline = 0,
   // std over baseline = 0 -> degenerate, all zeros.
   let v : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F]
-  let z = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 5, 9, 0, 4,
   )
   if z.length() != 1 {
@@ -33,7 +33,7 @@ test "epsp_normalise_windowed_by_compartment / baseline std > 0 yields non-trivi
   // observation = t=4..7 (values 5,6,7,8).
   // mean over baseline = 2.5, std_pop = sqrt(1.25) ≈ 1.118.
   let v : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F]
-  let z = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 4, 7, 0, 3,
   )
   if z.length() != 1 {
@@ -66,7 +66,7 @@ test "epsp_normalise_windowed_by_compartment / multi-compartment per-column z-sc
     4.0F, 40.0F, // t=3
   ]
   // Baseline = t=0..1, observation = t=2..3.
-  let z = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 2, 3, 0, 1,
   )
   if z.length() != 2 {
@@ -97,21 +97,21 @@ test "epsp_normalise_windowed_by_compartment / invalid observation window return
   let n_compartments = 1
   let v : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
   // t_end out of range.
-  let z = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 0, 10, 0, 4,
   )
   if z.length() != 0 {
     fail("invalid t_end should yield empty, got \{z.length()} compartments")
   }
   // t_start > t_end.
-  let z2 = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z2 = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 4, 2, 0, 4,
   )
   if z2.length() != 0 {
     fail("t_start > t_end should yield empty, got \{z2.length()}")
   }
   // Negative t_start.
-  let z3 = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z3 = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, -1, 4, 0, 4,
   )
   if z3.length() != 0 {
@@ -124,21 +124,21 @@ test "epsp_normalise_windowed_by_compartment / invalid baseline window returns e
   let n_compartments = 1
   let v : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
   // win_end out of range.
-  let z = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 0, 4, 0, 10,
   )
   if z.length() != 0 {
     fail("invalid win_end should yield empty, got \{z.length()}")
   }
   // win_start > win_end.
-  let z2 = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z2 = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 0, 4, 4, 2,
   )
   if z2.length() != 0 {
     fail("win_start > win_end should yield empty, got \{z2.length()}")
   }
   // Negative win_start.
-  let z3 = @snn_mbt.epsp_normalise_windowed_by_compartment(
+  let z3 = @analysis.epsp_normalise_windowed_by_compartment(
     v, n_compartments, 0, 4, -1, 2,
   )
   if z3.length() != 0 {

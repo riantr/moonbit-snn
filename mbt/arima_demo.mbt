@@ -80,7 +80,7 @@ pub fn arima_synthesize(
   for _k in 0..<d {
     let next : Array[Float] = Array::make(current.length() + 1, 0.0F)
     next[0] = 0.0F
-    let cs = ts_cumsum(current)
+    let cs = @analysis.ts_cumsum(current)
     for i in 0..<cs.length() {
       next[i + 1] = cs[i]
     }
@@ -101,7 +101,7 @@ pub fn arima_fit(
   max_iter : Int,
   lr : Float,
 ) -> ArimaFit {
-  let z = ts_diff_n(y, d)
+  let z = @analysis.ts_diff_n(y, d)
   let param = arma_fit(z, p, q, max_iter, lr)
   {
     p,
@@ -128,7 +128,7 @@ pub fn arima_forecast(
   let n = y.length()
   // 1. Re-fit ARMA on differenced data so we have residuals for
   //    forecasting.
-  let z = ts_diff_n(y, fit.d)
+  let z = @analysis.ts_diff_n(y, fit.d)
   let param = ArmaParam::new(
     fit.p,
     fit.q,

@@ -44,7 +44,7 @@ fn main {
     // (no separate glu/gaba buffers — `step_iz` consumes ge/gi as
     // 2-state double-exp synaptic conductances).
     for j in 0..<n_post {
-      let s = @snn_mbt.get_poisson_spikes(rate_khz, dt, rng)
+      let s = @analysis.get_poisson_spikes(rate_khz, dt, rng)
       if s == 1.0F {
         post.ge[j] = post.ge[j] + 1.0F
       }

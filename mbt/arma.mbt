@@ -170,7 +170,7 @@ pub fn arma_fit(
   max_iter : Int,
   lr : Float,
 ) -> ArmaParam {
-  let intercept = ts_mean(y)
+  let intercept = @analysis.ts_mean(y)
   let ar_coeffs : Array[Float] = Array::make(p, 0.0F)
   let ma_thetas : Array[Float] = Array::make(q, 0.0F)
   let mut param = ArmaParam::new(p, q, intercept, ar_coeffs, ma_thetas)

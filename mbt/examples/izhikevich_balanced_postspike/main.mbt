@@ -46,19 +46,19 @@ fn main {
   for _step in 0..<steps {
     // E population: excitatory drive into ge.
     for j in 0..<n_e {
-      let s = @snn_mbt.get_poisson_spikes(rate_khz, dt, rng)
+      let s = @analysis.get_poisson_spikes(rate_khz, dt, rng)
       if s == 1.0F {
         e_pop.ge[j] = e_pop.ge[j] + 1.0F
       }
     }
     // I population: excitatory drive into ge (FS neurons are also driven).
     for j in 0..<n_i {
-      let s = @snn_mbt.get_poisson_spikes(rate_khz, dt, rng)
+      let s = @analysis.get_poisson_spikes(rate_khz, dt, rng)
       if s == 1.0F {
         i_pop.ge[j] = i_pop.ge[j] + 1.0F
       }
       // FS neurons also get weak inhibitory drive for balance.
-      let s2 = @snn_mbt.get_poisson_spikes(rate_khz * 0.5F, dt, rng)
+      let s2 = @analysis.get_poisson_spikes(rate_khz * 0.5F, dt, rng)
       if s2 == 1.0F {
         i_pop.gi[j] = i_pop.gi[j] + 0.5F
       }

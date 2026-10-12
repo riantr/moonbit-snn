@@ -119,16 +119,16 @@ pub fn ar_grad_coeffs(
 pub fn ar_fit_yule_walker(y : Array[Float], p : Int) -> ArParam {
   let n = y.length()
   if n == 0 || p == 0 {
-    return ArParam::new(p, ts_mean(y), Array::make(p, 0.0F))
+    return ArParam::new(p, @analysis.ts_mean(y), Array::make(p, 0.0F))
   }
-  let mu = ts_mean(y)
+  let mu = @analysis.ts_mean(y)
   // De-mean
   let yc : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
     yc[i] = y[i] - mu
   }
   // PACF of de-meaned series
-  let pacf = ts_pacf(yc, p)
+  let pacf = @analysis.ts_pacf(yc, p)
   // coeffs[i] = PACF[i+1] for i in 0..p
   let coeffs : Array[Float] = Array::make(p, 0.0F)
   for i in 0..<p {

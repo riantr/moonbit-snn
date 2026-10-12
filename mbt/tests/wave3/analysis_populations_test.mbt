@@ -12,7 +12,7 @@ test "population_indices — 10 + 5 → E=1..10, I=11..15" {
     ("E", 10),
     ("I", 5),
   ]
-  let idx = @snn_mbt.population_indices(pops)
+  let idx = @analysis.population_indices(pops)
   assert_eq(idx.length(), 2)
   // E: 1..10
   assert_eq(idx[0].name, "E")
@@ -30,7 +30,7 @@ test "population_indices — non-overlapping ranges cover 1..N_total" {
     ("E", 10),
     ("I", 5),
   ]
-  let idx = @snn_mbt.population_indices(pops)
+  let idx = @analysis.population_indices(pops)
   // Ranges non-overlapping.
   let e_end = idx[0].end_
   let i_start = idx[1].start
@@ -48,7 +48,7 @@ test "population_indices — three pops (E, I, PV) covers 1..20" {
     ("I", 5),
     ("PV", 5),
   ]
-  let idx = @snn_mbt.population_indices(pops)
+  let idx = @analysis.population_indices(pops)
   assert_eq(idx.length(), 3)
   assert_eq(idx[2].name, "PV")
   assert_eq(idx[2].start, 16)
@@ -62,7 +62,7 @@ test "population_indices — single pop starts at 1" {
   let pops : Array[(String, Int)] = [
     ("E", 8),
   ]
-  let idx = @snn_mbt.population_indices(pops)
+  let idx = @analysis.population_indices(pops)
   assert_eq(idx.length(), 1)
   assert_eq(idx[0].start, 1)
   assert_eq(idx[0].end_, 8)
@@ -77,7 +77,7 @@ test "filter_items — default drops 'noise_*' labels" {
     ("noise_input", 3),
     ("I", 7),
   ]
-  let filtered = @snn_mbt.filter_items(pops)
+  let filtered = @analysis.filter_items(pops)
   // E and I remain; both noise pops are dropped.
   assert_eq(filtered.length(), 2)
   assert_eq(filtered[0].0, "E")
@@ -91,7 +91,7 @@ test "filter_items_with — DropNoise equivalent to default" {
     ("noise_pop", 5),
     ("I", 7),
   ]
-  let filtered = @snn_mbt.filter_items_with(pops, DropNoise)
+  let filtered = @analysis.filter_items_with(pops, DropNoise)
   assert_eq(filtered.length(), 2)
   assert_eq(filtered[0].0, "E")
   assert_eq(filtered[1].0, "I")
@@ -103,7 +103,7 @@ test "filter_items_with — Greater(7) keeps only N > 7" {
     ("E", 10),
     ("I", 5),
   ]
-  let filtered = @snn_mbt.filter_items_with(pops, Greater(7))
+  let filtered = @analysis.filter_items_with(pops, Greater(7))
   // E (10) kept, I (5) dropped.
   assert_eq(filtered.length(), 1)
   assert_eq(filtered[0].0, "E")
@@ -115,7 +115,7 @@ test "filter_items_with — Less(7) keeps only N < 7" {
     ("E", 10),
     ("I", 5),
   ]
-  let filtered = @snn_mbt.filter_items_with(pops, Less(7))
+  let filtered = @analysis.filter_items_with(pops, Less(7))
   // I (5) kept, E (10) dropped.
   assert_eq(filtered.length(), 1)
   assert_eq(filtered[0].0, "I")
@@ -128,7 +128,7 @@ test "filter_items_with — Equal(5) keeps only N == 5" {
     ("I", 5),
     ("PV", 5),
   ]
-  let filtered = @snn_mbt.filter_items_with(pops, Equal(5))
+  let filtered = @analysis.filter_items_with(pops, Equal(5))
   // I (5) and PV (5) kept, E (10) dropped.
   assert_eq(filtered.length(), 2)
   assert_eq(filtered[0].0, "I")
@@ -147,11 +147,11 @@ test "average_conn_strength — A→A block mean / μ" {
     [3.0F, 4.0F, 0.0F],
     [0.0F, 0.0F, 5.0F],
   ]
-  let pops : Array[@snn_mbt.PopIndex] = [
+  let pops : Array[@analysis.PopIndex] = [
     { name: "A", start: 1, end_: 2 },
     { name: "B", start: 3, end_: 3 },
   ]
-  let result = @snn_mbt.average_conn_strength(m, pops, 1.0F)
+  let result = @analysis.average_conn_strength(m, pops, 1.0F)
   // A→A: mean of [[1,2],[3,4]] = (1+2+3+4)/4 = 2.5
   assert_eq(result.length(), 2)
   assert_eq(result[0].length(), 2)
@@ -173,11 +173,11 @@ test "average_conn_strength — μ = 2.0 halves the means" {
     [3.0F, 4.0F, 0.0F],
     [0.0F, 0.0F, 5.0F],
   ]
-  let pops : Array[@snn_mbt.PopIndex] = [
+  let pops : Array[@analysis.PopIndex] = [
     { name: "A", start: 1, end_: 2 },
     { name: "B", start: 3, end_: 3 },
   ]
-  let result = @snn_mbt.average_conn_strength(m, pops, 2.0F)
+  let result = @analysis.average_conn_strength(m, pops, 2.0F)
   // A→A: 2.5 / 2.0 = 1.25
   let diff = (result[0][0] - 1.25F).abs()
   assert_true(diff < 1.0e-4)
@@ -192,10 +192,10 @@ test "average_conn_strength — single pop, all-zeros block" {
     [0.0F, 0.0F],
     [0.0F, 0.0F],
   ]
-  let pops : Array[@snn_mbt.PopIndex] = [
+  let pops : Array[@analysis.PopIndex] = [
     { name: "A", start: 1, end_: 2 },
   ]
-  let result = @snn_mbt.average_conn_strength(m, pops, 1.0F)
+  let result = @analysis.average_conn_strength(m, pops, 1.0F)
   assert_eq(result.length(), 1)
   assert_eq(result[0].length(), 1)
   // Empty-block fallback: 0.0F (sum=0, count=4 → avg=0).
@@ -204,10 +204,10 @@ test "average_conn_strength — single pop, all-zeros block" {
 
 ///|
 test "PopIndex::length — end - start + 1" {
-  let p1 : @snn_mbt.PopIndex = { name: "X", start: 1, end_: 5 }
+  let p1 : @analysis.PopIndex = { name: "X", start: 1, end_: 5 }
   assert_eq(p1.length(), 5)
-  let p2 : @snn_mbt.PopIndex = { name: "Y", start: 6, end_: 10 }
+  let p2 : @analysis.PopIndex = { name: "Y", start: 6, end_: 10 }
   assert_eq(p2.length(), 5)
-  let p3 : @snn_mbt.PopIndex = { name: "Z", start: 11, end_: 11 }
+  let p3 : @analysis.PopIndex = { name: "Z", start: 11, end_: 11 }
   assert_eq(p3.length(), 1)
 }

@@ -14,7 +14,7 @@ test "epsp_normalise_by_compartment — multi-compartment returns per-column z-s
     -65.0F, 70.0F, 50.0F,
     -65.0F, 60.0F, 40.0F,
   ]
-  let result = @snn_mbt.epsp_normalise_by_compartment(v, 3, 0, 4)
+  let result = @analysis.epsp_normalise_by_compartment(v, 3, 0, 4)
   if result.length() != 3 { fail("expected 3 columns, got \{result.length()}") }
   // Compartment 0: all zeros.
   if result[0].length() != 5 { fail("col 0 length expected 5") }
@@ -38,11 +38,11 @@ test "epsp_normalise_by_compartment — multi-compartment returns per-column z-s
 ///|
 test "epsp_normalise_by_compartment — invalid window returns empty" {
   let v : Array[Float] = [-65.0F, 60.0F, 80.0F]
-  let result = @snn_mbt.epsp_normalise_by_compartment(v, 1, 5, 2)  // t_start > t_end
+  let result = @analysis.epsp_normalise_by_compartment(v, 1, 5, 2)  // t_start > t_end
   if result.length() != 0 { fail("invalid window should return empty") }
-  let result2 = @snn_mbt.epsp_normalise_by_compartment(v, 1, -1, 2)
+  let result2 = @analysis.epsp_normalise_by_compartment(v, 1, -1, 2)
   if result2.length() != 0 { fail("negative start should return empty") }
-  let result3 = @snn_mbt.epsp_normalise_by_compartment(v, 1, 0, 10)
+  let result3 = @analysis.epsp_normalise_by_compartment(v, 1, 0, 10)
   if result3.length() != 0 { fail("out-of-range end should return empty") }
 }
 
@@ -51,8 +51,8 @@ test "epsp_normalise_by_compartment — single-compartment case matches epsp_nor
   // With n_compartments=1, the result should be equivalent to
   // calling epsp_normalise on that compartment.
   let v : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
-  let result_multi = @snn_mbt.epsp_normalise_by_compartment(v, 1, 0, 4)
-  let result_single = @snn_mbt.epsp_normalise(v, 1, 0, 0, 4)
+  let result_multi = @analysis.epsp_normalise_by_compartment(v, 1, 0, 4)
+  let result_single = @analysis.epsp_normalise(v, 1, 0, 0, 4)
   if result_multi.length() != 1 { fail("expected 1 column") }
   if result_single.length() != 5 { fail("single should have 5 entries") }
   let mut k = 0
@@ -72,7 +72,7 @@ test "epsp_normalise_by_compartment — degenerate compartment returns zeros" {
     -63.0F, 0.0F,
     -60.0F, 0.0F,
   ]
-  let result = @snn_mbt.epsp_normalise_by_compartment(v, 2, 0, 2)
+  let result = @analysis.epsp_normalise_by_compartment(v, 2, 0, 2)
   // Compartment 0: rising, should have z-scores.
   // Compartment 1: constant zero → z-scores all 0.
   let mut k = 0
@@ -98,7 +98,7 @@ test "epsp_normalise_by_compartment — different std per compartment" {
     0.0F, 100.0F,
     1.0F, -100.0F,
   ]
-  let result = @snn_mbt.epsp_normalise_by_compartment(v, 2, 0, 2)
+  let result = @analysis.epsp_normalise_by_compartment(v, 2, 0, 2)
   // Compartment 0: mean = 0, std = sqrt(2/3) ≈ 0.816. z[0] = -1.225.
   if (result[0][0] - (-1.2247F)).abs() > 0.01 {
     fail("col 0 z[0] expected ≈-1.225, got \{result[0][0]}")

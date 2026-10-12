@@ -4,7 +4,7 @@
 test "get_poisson_spikes — rate=0 always returns 0" {
   let rng = @core.Xoshiro::new(42UL)
   for _ in 0..<100 {
-    let s = @snn_mbt.get_poisson_spikes(0.0F, 0.1F, rng)
+    let s = @analysis.get_poisson_spikes(0.0F, 0.1F, rng)
     if s != 0.0F { fail("rate=0 should always be 0, got \{s}") }
   }
 }
@@ -13,7 +13,7 @@ test "get_poisson_spikes — rate=0 always returns 0" {
 test "get_poisson_spikes — rate*dt=1 always returns 1" {
   let rng = @core.Xoshiro::new(42UL)
   for _ in 0..<100 {
-    let s = @snn_mbt.get_poisson_spikes(10.0F, 0.1F, rng)
+    let s = @analysis.get_poisson_spikes(10.0F, 0.1F, rng)
     // lambda = 1.0 → always 1 (since rand() < 1.0 is always true for rand ∈ [0,1))
     if s != 1.0F { fail("rate*dt=1 should always be 1, got \{s}") }
   }
@@ -25,8 +25,8 @@ test "get_poisson_spikes — seeded reproducibility" {
   let rng2 = @core.Xoshiro::new(42UL)
   let mut same = true
   for _ in 0..<100 {
-    let a = @snn_mbt.get_poisson_spikes(5.0F, 0.1F, rng1)
-    let b = @snn_mbt.get_poisson_spikes(5.0F, 0.1F, rng2)
+    let a = @analysis.get_poisson_spikes(5.0F, 0.1F, rng1)
+    let b = @analysis.get_poisson_spikes(5.0F, 0.1F, rng2)
     if a != b { same = false }
   }
   if !same { fail("same seed should produce same sequence") }
@@ -40,7 +40,7 @@ test "get_poisson_spikes — frequency approximation (mean ≈ rate*dt)" {
   let mut total : Float = 0.0F
   let n = 10000
   for _ in 0..<n {
-    total = total + @snn_mbt.get_poisson_spikes(2.0F, 0.1F, rng)
+    total = total + @analysis.get_poisson_spikes(2.0F, 0.1F, rng)
   }
   let frac = total / Float::from_int(n)
   // Expected ≈ 0.2; allow ±0.02.
@@ -49,7 +49,7 @@ test "get_poisson_spikes — frequency approximation (mean ≈ rate*dt)" {
 
 ///|
 test "logrange — 5 points from 1 to 100 (decade endpoints)" {
-  let r = @snn_mbt.logrange(1.0F, 100.0F, 5)
+  let r = @analysis.logrange(1.0F, 100.0F, 5)
   if r.length() != 5 { fail("expected 5 points, got \{r.length()}") }
   // Endpoints exact.
   if (r[0] - 1.0F).abs() > 1.0e-4 { fail("r[0] expected 1.0, got \{r[0]}") }
@@ -60,21 +60,21 @@ test "logrange — 5 points from 1 to 100 (decade endpoints)" {
 
 ///|
 test "logrange — 1 point entry returns [x1]" {
-  let r = @snn_mbt.logrange(3.0F, 30.0F, 1)
+  let r = @analysis.logrange(3.0F, 30.0F, 1)
   if r.length() != 1 { fail("expected 1 point") }
   if r[0] != 3.0F { fail("expected 3.0, got \{r[0]}") }
 }
 
 ///|
 test "logrange — n=0 returns empty array" {
-  let r = @snn_mbt.logrange(1.0F, 10.0F, 0)
+  let r = @analysis.logrange(1.0F, 10.0F, 0)
   if r.length() != 0 { fail("expected empty array") }
 }
 
 ///|
 test "logrange — log spacing is geometric" {
   // 4 points from 1 to 1000: 1, 10, 100, 1000
-  let r = @snn_mbt.logrange(1.0F, 1000.0F, 4)
+  let r = @analysis.logrange(1.0F, 1000.0F, 4)
   if (r[0] - 1.0F).abs() > 1.0e-4 { fail("r[0] expected 1.0, got \{r[0]}") }
   if (r[1] - 10.0F).abs() > 1.0e-2 { fail("r[1] expected 10.0, got \{r[1]}") }
   if (r[2] - 100.0F).abs() > 1.0e-1 { fail("r[2] expected 100.0, got \{r[2]}") }

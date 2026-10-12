@@ -30,7 +30,7 @@ fn main {
   let iend = 1000.0F
 
   // Compute STTC matrix.
-  let mat = @snn_mbt.sttc_matrix(trains, dt, istart, iend)
+  let mat = @analysis.sttc_matrix(trains, dt, istart, iend)
 
   println("sttc.mbt: STTC matrix for 3 spike trains (dt=" + dt.to_string() + " ms)")
   println("  interval: [" + istart.to_string() + ", " + iend.to_string() + "] ms")

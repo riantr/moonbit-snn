@@ -143,7 +143,7 @@ pub fn ma_fit(
   max_iter : Int,
   lr : Float,
 ) -> MaParam {
-  let intercept = ts_mean(y)
+  let intercept = @analysis.ts_mean(y)
   let thetas : Array[Float] = Array::make(q, 0.0F)
   let mut param = MaParam::new(q, intercept, thetas)
   for _iter in 0..<max_iter {

@@ -17,10 +17,10 @@ test "exc_peak_window — multi-compartment picks correct column" {
     -65.0F, -65.0F,
   ]
   // Window [2, 5] on the dend column: peak at t=4 is in the window.
-  let peak = @snn_mbt.exc_peak_window(v, 2, 2, 5, -65.0F, 1)
+  let peak = @analysis.exc_peak_window(v, 2, 2, 5, -65.0F, 1)
   if (peak - 10.0F).abs() > 1.0e-6 { fail("dend peak expected 10") }
   // Soma column stays flat → peak - rest = 0.
-  let peak_soma = @snn_mbt.exc_peak_window(v, 2, 0, 9, -65.0F, 0)
+  let peak_soma = @analysis.exc_peak_window(v, 2, 0, 9, -65.0F, 0)
   if peak_soma != 0.0F { fail("soma peak should be 0") }
 }
 
@@ -40,12 +40,12 @@ test "inh_trough_window — multi-compartment picks correct column" {
     -65.0F, -65.0F,
   ]
   // Window [0, 6] picks up dip at t=3 → trough = -75 - (-65) = -10.
-  let trough = @snn_mbt.inh_trough_window(v, 2, 0, 6, -65.0F, 1)
+  let trough = @analysis.inh_trough_window(v, 2, 0, 6, -65.0F, 1)
   if (trough - (-10.0F)).abs() > 1.0e-6 {
     fail("dend trough expected -10, got \{trough}")
   }
   // Window [4, 9] excludes dip → min in window is -72 → -7.
-  let trough2 = @snn_mbt.inh_trough_window(v, 2, 4, 9, -65.0F, 1)
+  let trough2 = @analysis.inh_trough_window(v, 2, 4, 9, -65.0F, 1)
   if (trough2 - (-7.0F)).abs() > 1.0e-6 {
     fail("window [4,9] trough expected -7, got \{trough2}")
   }
@@ -56,7 +56,7 @@ test "exc_peak_with_time — boundary case (peak at spiketime)" {
   // If the first sample (t=spiketime) is already the max, time_of_peak
   // is spiketime.
   let v : Array[Float] = [-50.0F, -55.0F, -60.0F, -65.0F]
-  let (_, time) = @snn_mbt.exc_peak_with_time(v, 1, 0, -65.0F, 0)
+  let (_, time) = @analysis.exc_peak_with_time(v, 1, 0, -65.0F, 0)
   if time != 0 { fail("time expected 0 (peak at spiketime), got \{time}") }
 }
 
@@ -71,10 +71,10 @@ test "exc_peak_with_time — multi-compartment" {
     -65.0F, -65.0F, -60.0F,
     -65.0F, -65.0F, -65.0F,
   ]
-  let (peak, time) = @snn_mbt.exc_peak_with_time(v, 3, 0, -65.0F, 2)
+  let (peak, time) = @analysis.exc_peak_with_time(v, 3, 0, -65.0F, 2)
   if (peak - 8.0F).abs() > 1.0e-6 { fail("peak expected 8, got \{peak}") }
   if time != 3 { fail("time expected 3, got \{time}") }
   // Verify other columns are 0.
-  let (peak0, _) = @snn_mbt.exc_peak_with_time(v, 3, 0, -65.0F, 0)
+  let (peak0, _) = @analysis.exc_peak_with_time(v, 3, 0, -65.0F, 0)
   if peak0 != 0.0F { fail("soma peak should be 0, got \{peak0}") }
 }

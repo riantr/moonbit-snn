@@ -50,6 +50,16 @@ def sub_files(pkg):
                   for f in glob.glob(os.path.join(MBT, pkg, "*.mbt")))
 
 
+# Constructors that belong to the language, not to any package. `None` and
+# `Some` are Option's cases: every `x : T?` in the tree can hold one, so any
+# file may write them and no file declares them. They were picked up as if
+# analysis/ had defined them, producing `@analysis.None` in residual_block.mbt
+# and `Constr Type Mismatch(constructor None)` on seven sites. Case is part of
+# the tell -- a package symbol here is Capitalised and CamelCase, and a bare
+# AllLowercase one is either a constant or a language constructor.
+BUILTIN = {'None', 'Some', 'Ok', 'Err', 'true', 'false'}
+
+
 def symbols_of(files, base=MBT):
     """name -> defining file, for the given basenames.
 
@@ -65,6 +75,8 @@ def symbols_of(files, base=MBT):
         if not os.path.exists(p):
             continue
         for s in load_own_symbols(open(p, encoding="utf-8").read()):
+            if s in BUILTIN:
+                continue
             owner.setdefault(s, f)
     return owner
 

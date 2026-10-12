@@ -3,7 +3,7 @@
 ///|
 test "poisson_input_single — rate=0 returns all-false" {
   let rng = @core.Xoshiro::new(42UL)
-  let spikes = @snn_mbt.poisson_input_single(0.0F, 100.0F, 0.1F, rng)
+  let spikes = @analysis.poisson_input_single(0.0F, 100.0F, 0.1F, rng)
   if spikes.length() != 1000 { fail("expected 1000 entries, got \{spikes.length()}") }
   let mut k = 0
   while k < spikes.length() {
@@ -15,7 +15,7 @@ test "poisson_input_single — rate=0 returns all-false" {
 ///|
 test "poisson_input_single — high rate (500Hz, 100ms) produces multiple spikes" {
   let rng = @core.Xoshiro::new(42UL)
-  let spikes = @snn_mbt.poisson_input_single(500.0F, 100.0F, 0.1F, rng)
+  let spikes = @analysis.poisson_input_single(500.0F, 100.0F, 0.1F, rng)
   if spikes.length() != 1000 { fail("expected 1000 entries") }
   let mut count : Int = 0
   let mut k = 0
@@ -33,8 +33,8 @@ test "poisson_input_single — high rate (500Hz, 100ms) produces multiple spikes
 test "poisson_input_single — seeded reproducibility" {
   let rng1 = @core.Xoshiro::new(42UL)
   let rng2 = @core.Xoshiro::new(42UL)
-  let s1 = @snn_mbt.poisson_input_single(100.0F, 100.0F, 0.1F, rng1)
-  let s2 = @snn_mbt.poisson_input_single(100.0F, 100.0F, 0.1F, rng2)
+  let s1 = @analysis.poisson_input_single(100.0F, 100.0F, 0.1F, rng1)
+  let s2 = @analysis.poisson_input_single(100.0F, 100.0F, 0.1F, rng2)
   if s1.length() != s2.length() { fail("length mismatch") }
   let mut k = 0
   while k < s1.length() {
@@ -46,7 +46,7 @@ test "poisson_input_single — seeded reproducibility" {
 ///|
 test "poisson_input_single — 100Hz × 1000ms → ~100 spikes" {
   let rng = @core.Xoshiro::new(42UL)
-  let spikes = @snn_mbt.poisson_input_single(100.0F, 1000.0F, 0.1F, rng)
+  let spikes = @analysis.poisson_input_single(100.0F, 1000.0F, 0.1F, rng)
   if spikes.length() != 10000 { fail("expected 10000 entries, got \{spikes.length()}") }
   let mut count : Int = 0
   let mut k = 0
@@ -63,7 +63,7 @@ test "poisson_input_single — 100Hz × 1000ms → ~100 spikes" {
 ///|
 test "poisson_input_single — spike indices are strictly increasing" {
   let rng = @core.Xoshiro::new(42UL)
-  let spikes = @snn_mbt.poisson_input_single(50.0F, 200.0F, 0.1F, rng)
+  let spikes = @analysis.poisson_input_single(50.0F, 200.0F, 0.1F, rng)
   let mut last_idx : Int = -1
   let mut k = 0
   while k < spikes.length() {
@@ -80,7 +80,7 @@ test "poisson_input_single — spike indices are strictly increasing" {
 ///|
 test "poisson_input — matrix shape (neurons × n_spikes)" {
   let rng = @core.Xoshiro::new(42UL)
-  let mat = @snn_mbt.poisson_input(50.0F, 100.0F, 0.1F, 5, rng)
+  let mat = @analysis.poisson_input(50.0F, 100.0F, 0.1F, 5, rng)
   if mat.length() != 5 { fail("expected 5 rows, got \{mat.length()}") }
   let mut k = 0
   while k < mat.length() {
@@ -93,7 +93,7 @@ test "poisson_input — matrix shape (neurons × n_spikes)" {
 test "poisson_input — different neurons have different patterns (likely)" {
   // With rate=50Hz × 100ms → ~5 spikes per neuron, RNG state independent.
   let rng = @core.Xoshiro::new(42UL)
-  let mat = @snn_mbt.poisson_input(50.0F, 100.0F, 0.1F, 10, rng)
+  let mat = @analysis.poisson_input(50.0F, 100.0F, 0.1F, 10, rng)
   // Count spikes per neuron.
   let mut total_a : Int = 0
   let mut total_b : Int = 0

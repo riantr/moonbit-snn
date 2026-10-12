@@ -16,7 +16,7 @@ test "izhikevich_balanced_postspike — 1 kHz Bernoulli drive reaches ~1kHz expe
   )
   for _ in 0..<total_steps {
     for j in 0..<n_post {
-      let s = @snn_mbt.get_poisson_spikes(rate_khz, dt, rng)
+      let s = @analysis.get_poisson_spikes(rate_khz, dt, rng)
       if s == 1.0F {
         post.ge[j] = post.ge[j] + 1.0F
       }
@@ -53,11 +53,11 @@ test "izhikevich_balanced_postspike — refractory caps firing rate" {
   for _ in 0..<total_steps {
     // Same Bernoulli drive to both (using same RNG state for fairness).
     for j in 0..<n_post {
-      let s = @snn_mbt.get_poisson_spikes(1.0F, dt, rng_a)
+      let s = @analysis.get_poisson_spikes(1.0F, dt, rng_a)
       if s == 1.0F {
         pop_none.ge[j] = pop_none.ge[j] + 1.0F
       }
-      let s2 = @snn_mbt.get_poisson_spikes(1.0F, dt, rng_b)
+      let s2 = @analysis.get_poisson_spikes(1.0F, dt, rng_b)
       if s2 == 1.0F {
         pop_refr.ge[j] = pop_refr.ge[j] + 1.0F
       }
@@ -87,7 +87,7 @@ test "izhikevich_balanced_postspike — fire rate is bounded by 1/(tabs_const*dt
   let mut fires : Int = 0
   for _ in 0..<total_steps {
     for j in 0..<n_post {
-      let s = @snn_mbt.get_poisson_spikes(10.0F, dt, rng)
+      let s = @analysis.get_poisson_spikes(10.0F, dt, rng)
       if s == 1.0F {
         post.ge[j] = post.ge[j] + 1.0F
       }
@@ -117,7 +117,7 @@ fn run_balanced_postspike_benchmark() -> Int {
   let mut fires : Int = 0
   for _ in 0..<total_steps {
     for j in 0..<n_post {
-      let s = @snn_mbt.get_poisson_spikes(2.0F, dt, rng)
+      let s = @analysis.get_poisson_spikes(2.0F, dt, rng)
       if s == 1.0F {
         post.ge[j] = post.ge[j] + 1.0F
       }
@@ -187,13 +187,13 @@ test "izhikevich_balanced_postspike — E/I balanced: both populations fire" {
   let mut i_spikes = 0
   for _ in 0..<total_steps {
     for j in 0..<n_e {
-      let s = @snn_mbt.get_poisson_spikes(1.0F, dt, rng)
+      let s = @analysis.get_poisson_spikes(1.0F, dt, rng)
       if s == 1.0F {
         e_pop.ge[j] = e_pop.ge[j] + 1.0F
       }
     }
     for j in 0..<n_i {
-      let s = @snn_mbt.get_poisson_spikes(1.0F, dt, rng)
+      let s = @analysis.get_poisson_spikes(1.0F, dt, rng)
       if s == 1.0F {
         i_pop.ge[j] = i_pop.ge[j] + 1.0F
       }
