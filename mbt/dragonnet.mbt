@@ -162,15 +162,15 @@ pub fn dragonnet_forward(
   n : Int,
 ) -> DragonNetOut {
   let z1 = linear_forward(x, n, net.enc1)
-  let z2 = linear_forward(elu_forward(z1, alpha=DN_ALPHA), n, net.enc2)
-  let z3 = linear_forward(elu_forward(z2, alpha=DN_ALPHA), n, net.enc3)
-  let phi = elu_forward(z3, alpha=DN_ALPHA)
+  let z2 = linear_forward(@activ.elu_forward(z1, alpha=DN_ALPHA), n, net.enc2)
+  let z3 = linear_forward(@activ.elu_forward(z2, alpha=DN_ALPHA), n, net.enc3)
+  let phi = @activ.elu_forward(z3, alpha=DN_ALPHA)
   let a0 = linear_forward(phi, n, net.y0_h1)
-  let b0 = linear_forward(elu_forward(a0, alpha=DN_ALPHA), n, net.y0_h2)
-  let y0 = linear_forward(elu_forward(b0, alpha=DN_ALPHA), n, net.y0_out)
+  let b0 = linear_forward(@activ.elu_forward(a0, alpha=DN_ALPHA), n, net.y0_h2)
+  let y0 = linear_forward(@activ.elu_forward(b0, alpha=DN_ALPHA), n, net.y0_out)
   let c1 = linear_forward(phi, n, net.y1_h1)
-  let d1 = linear_forward(elu_forward(c1, alpha=DN_ALPHA), n, net.y1_h2)
-  let y1 = linear_forward(elu_forward(d1, alpha=DN_ALPHA), n, net.y1_out)
+  let d1 = linear_forward(@activ.elu_forward(c1, alpha=DN_ALPHA), n, net.y1_h2)
+  let y1 = linear_forward(@activ.elu_forward(d1, alpha=DN_ALPHA), n, net.y1_out)
   let t_raw = linear_forward(phi, n, net.t_head)
   // The paper's `make_dragonnet` puts a SIGMOID on the propensity head. A
   // variant seen in the wild drops it and leaves the head linear; with the
@@ -429,25 +429,25 @@ pub fn dragonnet_backward(
   let lam = l2_lambda
   // ---- y0 head (linear output, so no mask before y0_out) ----
   let (d_b0, dw_y0_out, db_y0_out) = linear_backward(
-    elu_forward(out.b0, alpha=DN_ALPHA), d_y0, n, net.y0_out,
+    @activ.elu_forward(out.b0, alpha=DN_ALPHA), d_y0, n, net.y0_out,
   )
-  let d_b0 = elu_backward(out.b0, d_b0, alpha=DN_ALPHA)
+  let d_b0 = @activ.elu_backward(out.b0, d_b0, alpha=DN_ALPHA)
   let (d_a0, dw_y0_h2, db_y0_h2) = linear_backward(
-    elu_forward(out.a0, alpha=DN_ALPHA), d_b0, n, net.y0_h2,
+    @activ.elu_forward(out.a0, alpha=DN_ALPHA), d_b0, n, net.y0_h2,
   )
-  let d_a0 = elu_backward(out.a0, d_a0, alpha=DN_ALPHA)
+  let d_a0 = @activ.elu_backward(out.a0, d_a0, alpha=DN_ALPHA)
   let (d_phi0, dw_y0_h1, db_y0_h1) = linear_backward(
     out.phi, d_a0, n, net.y0_h1,
   )
   // ---- y1 head ----
   let (d_d1, dw_y1_out, db_y1_out) = linear_backward(
-    elu_forward(out.d1, alpha=DN_ALPHA), d_y1, n, net.y1_out,
+    @activ.elu_forward(out.d1, alpha=DN_ALPHA), d_y1, n, net.y1_out,
   )
-  let d_d1 = elu_backward(out.d1, d_d1, alpha=DN_ALPHA)
+  let d_d1 = @activ.elu_backward(out.d1, d_d1, alpha=DN_ALPHA)
   let (d_c1, dw_y1_h2, db_y1_h2) = linear_backward(
-    elu_forward(out.c1, alpha=DN_ALPHA), d_d1, n, net.y1_h2,
+    @activ.elu_forward(out.c1, alpha=DN_ALPHA), d_d1, n, net.y1_h2,
   )
-  let d_c1 = elu_backward(out.c1, d_c1, alpha=DN_ALPHA)
+  let d_c1 = @activ.elu_backward(out.c1, d_c1, alpha=DN_ALPHA)
   let (d_phi1, dw_y1_h1, db_y1_h1) = linear_backward(
     out.phi, d_c1, n, net.y1_h1,
   )
@@ -473,13 +473,13 @@ pub fn dragonnet_backward(
   }
   let d_phi = d_phi0
   let (d_e2, dw_enc3, db_enc3) = linear_backward(
-    elu_forward(out.z2, alpha=DN_ALPHA), d_phi, n, net.enc3,
+    @activ.elu_forward(out.z2, alpha=DN_ALPHA), d_phi, n, net.enc3,
   )
-  let d_e2 = elu_backward(out.z2, d_e2, alpha=DN_ALPHA)
+  let d_e2 = @activ.elu_backward(out.z2, d_e2, alpha=DN_ALPHA)
   let (d_e1, dw_enc2, db_enc2) = linear_backward(
-    elu_forward(out.z1, alpha=DN_ALPHA), d_e2, n, net.enc2,
+    @activ.elu_forward(out.z1, alpha=DN_ALPHA), d_e2, n, net.enc2,
   )
-  let d_e1 = elu_backward(out.z1, d_e1, alpha=DN_ALPHA)
+  let d_e1 = @activ.elu_backward(out.z1, d_e1, alpha=DN_ALPHA)
   let (_d_x, dw_enc1, db_enc1) = linear_backward(x, d_e1, n, net.enc1)
   {
     enc1: (dw_enc1, db_enc1),

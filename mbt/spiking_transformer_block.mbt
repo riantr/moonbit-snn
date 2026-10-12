@@ -109,7 +109,7 @@ pub fn spiking_transformer_block_forward(
   for i in 0..<pre_gelu.length() {
     ffn_hidden_pre_gelu[i] = pre_gelu[i]
   }
-  let post_gelu = gelu_forward(pre_gelu)
+  let post_gelu = @activ.gelu_forward(pre_gelu)
   let ffn_hidden_post_gelu = Array::make(post_gelu.length(), 0.0F)
   for i in 0..<post_gelu.length() {
     ffn_hidden_post_gelu[i] = post_gelu[i]
@@ -151,7 +151,7 @@ pub fn spiking_transformer_block_backward(
   let (d_ffn_hidden_post_gelu, d_w2, d_b2) = linear_backward(
     cache.ffn_hidden_post_gelu, d_output, seq_len, block.ffn_w2,
   )
-  let d_ffn_pre_gelu = gelu_backward(
+  let d_ffn_pre_gelu = @activ.gelu_backward(
     cache.ffn_hidden_pre_gelu, d_ffn_hidden_post_gelu,
   )
   let (d_x_norm2, d_w1, d_b1) = linear_backward(

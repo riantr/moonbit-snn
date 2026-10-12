@@ -140,7 +140,7 @@ fn lstm_actor_step_with_cache(
   cell : Array[Float],
 ) -> (Array[Float], Array[Float], LstmCellCache) {
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, state)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   let (hidden_next, cache) = lstm_cell_forward(x_proj, hidden, cell, policy.lstm)
   let a_pre = matvec(policy.mlp_w2, policy.mlp_b2, hidden_next)
   let half_range = (policy.action_high - policy.action_low) * 0.5F

@@ -1,0 +1,11 @@
+// activ/ — activation functions, pooling and shape-preserving elementwise ops.
+//
+// A layer above core that only core sits under: none of these files reference
+// anything outside activ and core, so activ can import core without any risk of
+// an import loop, and nothing below can depend on it.
+//
+// `gelu_sparse.mbt` reaches libm through core, which is why core is imported
+// here at all.
+import {
+  "riantr/snn_mbt/core",
+}

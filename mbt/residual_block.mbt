@@ -142,7 +142,7 @@ pub fn residual_block_forward(
   let w1 = (w + 2 * b.conv1.pad - b.conv1.kw) / b.conv1.stride + 1
   let c1 = b.conv1.c_out
   let (bn1_out, bn1_cache) = batch_norm2d_forward(conv1_out, n, c1, h1, w1, b.bn1)
-  let relu1 = relu_forward(bn1_out)
+  let relu1 = @activ.relu_forward(bn1_out)
   let conv2_out = conv2d_forward(relu1, n, c1, h1, w1, b.conv2)
   let h2 = (h1 + 2 * b.conv2.pad - b.conv2.kh) / b.conv2.stride + 1
   let w2 = (w1 + 2 * b.conv2.pad - b.conv2.kw) / b.conv2.stride + 1
@@ -162,8 +162,8 @@ pub fn residual_block_forward(
     _ => (x, None)
   }
   // ---- Sum + ReLU ----
-  let sum = add_forward(bn2_out, shortcut_out)
-  let out = relu_forward(sum)
+  let sum = @activ.add_forward(bn2_out, shortcut_out)
+  let out = @activ.relu_forward(sum)
   let cache : ResidualCache = {
     x,
     sum,
@@ -194,8 +194,8 @@ pub fn residual_block_backward(
   let h = cache.h
   let w = cache.w
   // ReLU backward at the block output.
-  let d_sum = relu_backward(cache.sum, d_output)
-  let (d_bn2, d_shortcut) = add_backward(d_sum)
+  let d_sum = @activ.relu_backward(cache.sum, d_output)
+  let (d_bn2, d_shortcut) = @activ.add_backward(d_sum)
   let (d_conv2_in, d_bn2_gamma, d_bn2_beta) = batch_norm2d_backward(
     d_bn2, cache.bn2_cache, b.bn2,
   )
@@ -204,7 +204,7 @@ pub fn residual_block_backward(
     cache.conv2_input_c, cache.conv2_input_h, cache.conv2_input_w,
     b.conv2,
   )
-  let d_bn1 = relu_backward(cache.bn1_out, d_relu1)
+  let d_bn1 = @activ.relu_backward(cache.bn1_out, d_relu1)
   let (d_conv1_in, d_bn1_gamma, d_bn1_beta) = batch_norm2d_backward(
     d_bn1, cache.bn1_cache, b.bn1,
   )

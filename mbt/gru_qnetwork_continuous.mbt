@@ -65,7 +65,7 @@ pub fn gru_qnetwork_continuous_step(
   let sa = vec_concat(state, action)
   // x_proj = ReLU(w1 · sa + b1)
   let x_proj_pre = matvec(qnet.mlp_w1, qnet.mlp_b1, sa)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   // hidden_next = GRU_cell(x_proj, hidden)
   let (hidden_next, _cache) = gru_cell_forward(x_proj, hidden, qnet.gru)
   // q = w2 · hidden_next + b2

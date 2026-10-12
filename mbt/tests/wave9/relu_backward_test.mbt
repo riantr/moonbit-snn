@@ -5,7 +5,7 @@ test "relu_backward / pass-through where input > 0" {
   // input[i] > 0 -> d_input[i] = d_output[i].
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 0.5F]
   let d_output : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let d_input = @snn_mbt.relu_backward(input, d_output)
+  let d_input = @activ.relu_backward(input, d_output)
   for i in 0..<4 {
     if (d_input[i] - d_output[i]).abs() > 1.0e-7 {
       fail("d_input[\{i}] expected \{d_output[i]}, got \{d_input[i]}")
@@ -18,7 +18,7 @@ test "relu_backward / zero where input <= 0" {
   // input[i] <= 0 -> d_input[i] = 0 regardless of d_output.
   let input : Array[Float] = [-2.0F, -1.0F, 0.0F, -0.5F]
   let d_output : Array[Float] = [99.0F, -99.0F, 100.0F, 50.0F]
-  let d_input = @snn_mbt.relu_backward(input, d_output)
+  let d_input = @activ.relu_backward(input, d_output)
   for i in 0..<4 {
     if d_input[i] != 0.0F {
       fail("d_input[\{i}] expected 0, got \{d_input[i]}")
@@ -32,7 +32,7 @@ test "relu_backward / does not mutate d_output" {
   let input : Array[Float] = [1.0F, -1.0F, 2.0F]
   let d_output : Array[Float] = [10.0F, 20.0F, 30.0F]
   let original = d_output.copy()
-  let d_input = @snn_mbt.relu_backward(input, d_output)
+  let d_input = @activ.relu_backward(input, d_output)
   // Mutate d_input and verify d_output is unchanged.
   d_input[0] = -42.0F
   for i in 0..<3 {
@@ -63,7 +63,7 @@ test "relu_backward / gradient check vs numerical (strictly-positive/negative in
   }
   let num = @snn_mbt.numerical_gradient(input, eps, fwd)
   let d_output : Array[Float] = Array::make(input.length(), 1.0F)
-  let analytic = @snn_mbt.relu_backward(input, d_output)
+  let analytic = @activ.relu_backward(input, d_output)
   let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, analytic)
   if max_diff > 1.0e-3 {
     fail("relu backward gradient mismatch: max diff \{max_diff} at \{max_idx} (num=\{num[max_idx]} vs analytic=\{analytic[max_idx]})")

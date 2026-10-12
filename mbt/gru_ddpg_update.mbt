@@ -181,7 +181,7 @@ pub fn gru_critic_step_with_cache(
 ) -> (Float, Array[Float], GruCellCache) {
   let sa = vec_concat(state, action)
   let x_proj_pre = matvec(qnet.mlp_w1, qnet.mlp_b1, sa)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   let (hidden_next, cache) = gru_cell_forward(x_proj, hidden, qnet.gru)
   let q_pre = matvec(qnet.mlp_w2, [qnet.mlp_b2], hidden_next)
   (q_pre[0], x_proj, cache)

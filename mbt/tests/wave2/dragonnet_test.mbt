@@ -283,7 +283,7 @@ test "layer offsets tile the flat vector exactly, bias then weight" {
 test "elu forward and backward agree with finite differences" {
   let xs : Array[Float] = [-2.0F, -0.5F, 0.0F, 0.25F, 1.5F, 3.0F]
   let d : Array[Float] = [1.0F, -2.0F, 0.5F, 3.0F, -1.0F, 0.75F]
-  let up = @snn_mbt.elu_backward(xs, d)
+  let up = @activ.elu_backward(xs, d)
   let h = 1.0e-3F
   // Difference a SCALAR objective `L(x) = sum_j d_j * elu(x)_j`, not the
   // bare derivative. `elu_forward(x2)[i]` alone differences to `elu'(x_i)`,
@@ -295,8 +295,8 @@ test "elu forward and backward agree with finite differences" {
     x2[i] = xs[i] + h
     let x1 = xs.copy()
     x1[i] = xs[i] - h
-    let l2 = @snn_mbt.elu_forward(x2)
-    let l1 = @snn_mbt.elu_forward(x1)
+    let l2 = @activ.elu_forward(x2)
+    let l1 = @activ.elu_forward(x1)
     let mut a2 = 0.0F
     let mut a1 = 0.0F
     for j in 0..<xs.length() {
@@ -314,7 +314,7 @@ test "elu forward and backward agree with finite differences" {
 ///|
 test "elu is identity above zero and alpha*(e^x-1) below" {
   let xs : Array[Float] = [-2.0F, -0.5F, 0.0F, 0.25F, 1.5F]
-  let out = @snn_mbt.elu_forward(xs)
+  let out = @activ.elu_forward(xs)
   for i in 0..<xs.length() {
     let want = if xs[i] > 0.0F { xs[i] } else { @core.expf(xs[i]) - 1.0F }
     if (out[i] - want).abs() > 1.0e-6F {

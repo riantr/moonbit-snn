@@ -87,7 +87,7 @@ pub fn energy_function_predict(
     for k in 0..<net.input_dim {
       a = a + net.w1[i][k] * x[k]
     }
-    h[i] = gelu(a)
+    h[i] = @activ.gelu(a)
   }
   // Hidden layers with GELU.
   for l in 0..<(net.num_layers - 1) {
@@ -97,7 +97,7 @@ pub fn energy_function_predict(
       for k in 0..<hidden_dim {
         a = a + net.hidden_w[l][i][k] * h[k]
       }
-      new_h[i] = gelu(a)
+      new_h[i] = @activ.gelu(a)
     }
     h = new_h
   }

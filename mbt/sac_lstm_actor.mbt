@@ -79,7 +79,7 @@ pub fn sac_lstm_actor_step(
   rng : @core.Xoshiro,
 ) -> (Array[Float], Float, Array[Float], Array[Float]) {
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, state)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   let (hidden_next, cache) = lstm_cell_forward(x_proj, hidden, cell, policy.lstm)
   let cell_next = cache.c_t
   let mean_pre = matvec(policy.mlp_w_mean, policy.mlp_b_mean, hidden_next)

@@ -9,7 +9,7 @@ fn am_eps(a : Float, b : Float, eps : Float) -> Bool {
 ///|
 test "causal_mask: shape + diagonal=0 + above-diagonal=-1e9" {
   let seq_len = 4
-  let m = @snn_mbt.causal_mask(seq_len)
+  let m = @activ.causal_mask(seq_len)
   assert_eq(m.length(), seq_len * seq_len)
   // Below diagonal (j <= i): unconstrained
   for i in 0..<seq_len {
@@ -33,7 +33,7 @@ test "causal_mask: shape + diagonal=0 + above-diagonal=-1e9" {
 ///|
 test "causal_mask: row 0 can only attend to position 0" {
   // Strong test: row 0 has only m[0,0] = 0; all others = -1e9.
-  let m = @snn_mbt.causal_mask(5)
+  let m = @activ.causal_mask(5)
   assert_eq(m[0], 0.0F)
   for j in 1..<5 {
     let v = m[0 * 5 + j]
@@ -47,8 +47,8 @@ test "causal_mask: row 0 can only attend to position 0" {
 test "mask_broadcast: shape + values replicated across heads" {
   let seq_len = 3
   let num_heads = 2
-  let mask_2d = @snn_mbt.causal_mask(seq_len)
-  let full = @snn_mbt.mask_broadcast(mask_2d, seq_len, num_heads)
+  let mask_2d = @activ.causal_mask(seq_len)
+  let full = @activ.mask_broadcast(mask_2d, seq_len, num_heads)
   assert_eq(full.length(), num_heads * seq_len * seq_len)
   // Each head has the same mask.
   for h in 0..<num_heads {
@@ -77,7 +77,7 @@ test "mask_from_allowed: arbitrary boolean matrix" {
     [true, true, false],
     [false, true, true],
   ]
-  let m = @snn_mbt.mask_from_allowed(seq_len, allowed)
+  let m = @activ.mask_from_allowed(seq_len, allowed)
   assert_eq(m.length(), 9)
   // Expected values (0 = allowed, -1e9 = blocked):
   //   [0, -1e9, -1e9]
@@ -107,7 +107,7 @@ test "causal_mask_heads: end-to-end via MHA, position i only attends to ≤i" {
   let num_heads = 1
   let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
-  let mask = @snn_mbt.causal_mask_heads(seq_len, num_heads)
+  let mask = @activ.causal_mask_heads(seq_len, num_heads)
   let (_out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, mask)
   // Verify weights: weight[i, j] = 0 for j > i (causal block).
   let w = cache.weights

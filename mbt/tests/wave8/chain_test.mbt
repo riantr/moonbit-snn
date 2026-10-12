@@ -97,7 +97,7 @@ test "chain / CNN: Conv2d -> ReLU -> MaxPool2d -> Flatten -> Linear" {
     [0.0F, 0.0F],
     2, 1, 3, 3, stride=1, pad=1,
   )
-  let pool = @snn_mbt.MaxPool2dParam::new(2, 2, stride=2, pad=0)
+  let pool = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   let linear = @snn_mbt.LinearParam::new(Array::make(2 * 8, 0.1F), [0.0F, 0.0F], 8, 2)
   let layers : Array[@snn_mbt.Layer] = [
     @snn_mbt.Layer::conv2d(conv), @snn_mbt.Layer::relu(), @snn_mbt.Layer::max_pool2d(pool),

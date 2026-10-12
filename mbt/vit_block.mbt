@@ -121,7 +121,7 @@ pub fn vit_block_mlp(
       for k in 0..<block.d_model {
         a = a + block.mlp_w1[i][k] * x[off + k]
       }
-      hidden[h_off + i] = gelu(a)
+      hidden[h_off + i] = @activ.gelu(a)
     }
     // Second Linear.
     for i in 0..<block.d_model {

@@ -84,7 +84,7 @@ pub fn gru_deterministic_policy_step(
 ) -> (Array[Float], Array[Float]) {
   // x_proj = ReLU(w1 · obs + b1)
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, obs)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   // hidden_next = GRU_cell(x_proj, hidden)
   let (hidden_next, _cache) = gru_cell_forward(x_proj, hidden, policy.gru)
   // a_pre = w2 · hidden_next + b2

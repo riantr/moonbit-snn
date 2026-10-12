@@ -26,7 +26,7 @@ pub fn maxpool2d_forward_with_idx(
   c : Int,
   h : Int,
   w : Int,
-  param : MaxPool2dParam,
+  param : @activ.MaxPool2dParam,
 ) -> (Array[Float], Array[Int]) {
   let kh = param.kh
   let kw = param.kw
@@ -103,7 +103,7 @@ pub fn maxpool2d_backward(
   c : Int,
   h : Int,
   w : Int,
-  param : MaxPool2dParam,
+  param : @activ.MaxPool2dParam,
 ) -> Array[Float] {
   let kh = param.kh
   let kw = param.kw

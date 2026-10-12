@@ -119,7 +119,7 @@ pub fn tarnet_forward_full(
     n * t,
     LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
   )
-  let mfa_relu = relu_forward(mfa)
+  let mfa_relu = @activ.relu_forward(mfa)
   let (fused, se_cache) = se_forward_full(mfa_relu, n, net.mfa_se)
   let (pooled, asp_cache) = asp_forward(fused, n, net.asp)
   let (bn_seg, bn_seg_cache) = batch_norm2d_forward(
@@ -214,7 +214,7 @@ pub fn tarnet_backward(
   let se_g = se_backward(cache.mfa_relu, asp_g.d_x, n, net.mfa_se, cache.se_cache)
   // multi-feature aggregation. relu_backward needs its own INPUT, not its
   // output, to know which entries were negative.
-  let d_mfa = relu_backward(cache.mfa, se_g.d_x)
+  let d_mfa = @activ.relu_backward(cache.mfa, se_g.d_x)
   let (d_cat, d_mfa_w, d_mfa_b) = linear_backward(
     cache.cat,
     d_mfa,

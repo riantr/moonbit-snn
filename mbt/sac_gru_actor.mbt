@@ -98,7 +98,7 @@ pub fn sac_gru_actor_step(
   rng : @core.Xoshiro,
 ) -> (Array[Float], Float, Array[Float]) {
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, state)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   let (hidden_next, _cache) = gru_cell_forward(x_proj, hidden, policy.gru)
   let mean_pre = matvec(policy.mlp_w_mean, policy.mlp_b_mean, hidden_next)
   let log_std_pre = matvec(policy.mlp_w_log_std, policy.mlp_b_log_std, hidden_next)

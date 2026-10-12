@@ -27,7 +27,7 @@
 pub enum Layer {
   Conv2d(Conv2dParam)
   ReLU
-  MaxPool2d(MaxPool2dParam)
+  MaxPool2d(@activ.MaxPool2dParam)
   Flatten
   Linear(LinearParam)
   BatchNorm2d(BatchNorm2d)
@@ -46,7 +46,7 @@ pub fn Layer::conv2d(param : Conv2dParam) -> Layer { Layer::Conv2d(param) }
 pub fn Layer::relu() -> Layer { Layer::ReLU }
 
 ///|
-pub fn Layer::max_pool2d(param : MaxPool2dParam) -> Layer { Layer::MaxPool2d(param) }
+pub fn Layer::max_pool2d(param : @activ.MaxPool2dParam) -> Layer { Layer::MaxPool2d(param) }
 
 ///|
 pub fn Layer::flatten() -> Layer { Layer::Flatten }
@@ -130,7 +130,7 @@ pub fn chain_forward(
       }
       ReLU => {
         caches.push(LayerCache::ReLU(data))
-        data = relu_forward(data)
+        data = @activ.relu_forward(data)
         // shape unchanged
       }
       MaxPool2d(param) => {
@@ -211,7 +211,7 @@ pub fn chain_backward(
     match (layer, cache) {
       // ---- Layers without parameters ----
       (ReLU, LayerCache::ReLU(input)) => {
-        d = relu_backward(input, d)
+        d = @activ.relu_backward(input, d)
         // shape unchanged
       }
       (Flatten, LayerCache::Flatten) => {

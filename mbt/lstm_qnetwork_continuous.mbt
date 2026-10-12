@@ -67,7 +67,7 @@ pub fn lstm_qnetwork_continuous_step(
   let sa = vec_concat(state, action)
   // x_proj = ReLU(w1 · sa + b1)
   let x_proj_pre = matvec(qnet.mlp_w1, qnet.mlp_b1, sa)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   // (hidden_next, cell_next) = LSTM_cell(x_proj, hidden, cell)
   let (hidden_next, cache) = lstm_cell_forward(x_proj, hidden, cell, qnet.lstm)
   let cell_next = cache.c_t

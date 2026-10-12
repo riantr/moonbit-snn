@@ -106,7 +106,7 @@ pub fn gtrxl_block_token_step(
   let ffn_pre : Array[Float] = matvec(block.ffn_w1, block.ffn_b1, x)
   let ffn_post : Array[Float] = Array::make(block.d_ff, 0.0F)
   for i in 0..<block.d_ff {
-    ffn_post[i] = gelu(ffn_pre[i])
+    ffn_post[i] = @activ.gelu(ffn_pre[i])
   }
   let ffn_out : Array[Float] = matvec(block.ffn_w2, block.ffn_b2, ffn_post)
   // Gated FFN + residual.

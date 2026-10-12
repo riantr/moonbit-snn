@@ -8,7 +8,7 @@ fn ls_eps(a : Float, b : Float, eps : Float) -> Bool {
 
 ///|
 test "LayerScale::new: default init value = 1e-4 + shape" {
-  let ls = @snn_mbt.LayerScale::new(8)
+  let ls = @activ.LayerScale::new(8)
   assert_eq(ls.dim, 8)
   assert_eq(ls.gamma.length(), 8)
   for i in 0..<8 {
@@ -20,7 +20,7 @@ test "LayerScale::new: default init value = 1e-4 + shape" {
 
 ///|
 test "LayerScale::new: custom init value" {
-  let ls = @snn_mbt.LayerScale::new(4, init_value=0.001F)
+  let ls = @activ.LayerScale::new(4, init_value=0.001F)
   for i in 0..<4 {
     if !ls_eps(ls.gamma[i], 0.001F, 0.0001F) {
       fail("gamma[\{i}] = \{ls.gamma[i]}, expected 1e-3")
@@ -30,9 +30,9 @@ test "LayerScale::new: custom init value" {
 
 ///|
 test "layer_scale_forward: out[i] = gamma[i] * sublayer[i] (per-channel)" {
-  let ls = @snn_mbt.LayerScale::new(2, init_value=0.5F)
+  let ls = @activ.LayerScale::new(2, init_value=0.5F)
   let sublayer : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]  // batch=2, dim=2
-  let out = @snn_mbt.layer_scale_forward(sublayer, ls)
+  let out = @activ.layer_scale_forward(sublayer, ls)
   assert_eq(out.length(), 4)
   // gamma[0] = 0.5, gamma[1] = 0.5 → out = [0.5, 1.0, 1.5, 2.0]
   let expected : Array[Float] = [0.5F, 1.0F, 1.5F, 2.0F]
@@ -45,10 +45,10 @@ test "layer_scale_forward: out[i] = gamma[i] * sublayer[i] (per-channel)" {
 
 ///|
 test "layer_scale_backward: d_sublayer = gamma * d_output" {
-  let ls = @snn_mbt.LayerScale::new(2, init_value=0.5F)
+  let ls = @activ.LayerScale::new(2, init_value=0.5F)
   let sublayer : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let d_output : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F]
-  let (d_sublayer, _) = @snn_mbt.layer_scale_backward(sublayer, d_output, ls)
+  let (d_sublayer, _) = @activ.layer_scale_backward(sublayer, d_output, ls)
   // d_sublayer[i] = gamma[i % 2] * d_output[i]
   for i in 0..<4 {
     let g = if i % 2 == 0 { 0.5F } else { 0.5F }
@@ -61,10 +61,10 @@ test "layer_scale_backward: d_sublayer = gamma * d_output" {
 
 ///|
 test "layer_scale_backward: d_gamma[i] = sum d_output[*, i] * sublayer[*, i]" {
-  let ls = @snn_mbt.LayerScale::new(2, init_value=0.1F)
+  let ls = @activ.LayerScale::new(2, init_value=0.1F)
   let sublayer : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let d_output : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F]
-  let (_, d_gamma) = @snn_mbt.layer_scale_backward(sublayer, d_output, ls)
+  let (_, d_gamma) = @activ.layer_scale_backward(sublayer, d_output, ls)
   // gamma[0] = sum over b in 0,1: d_output[b*2+0] * sublayer[b*2+0]
   //         = 0.5*1.0 + 0.7*3.0 = 0.5 + 2.1 = 2.6
   // gamma[1] = 0.6*2.0 + 0.8*4.0 = 1.2 + 3.2 = 4.4
@@ -78,10 +78,10 @@ test "layer_scale_backward: d_gamma[i] = sum d_output[*, i] * sublayer[*, i]" {
 
 ///|
 test "layer_scale_backward: zero d_output → zero d_sublayer + zero d_gamma" {
-  let ls = @snn_mbt.LayerScale::new(2)
+  let ls = @activ.LayerScale::new(2)
   let sublayer : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let zero : Array[Float] = Array::make(4, 0.0F)
-  let (d_sublayer, d_gamma) = @snn_mbt.layer_scale_backward(sublayer, zero, ls)
+  let (d_sublayer, d_gamma) = @activ.layer_scale_backward(sublayer, zero, ls)
   for i in 0..<4 {
     if d_sublayer[i] != 0.0F {
       fail("d_sublayer[\{i}] = \{d_sublayer[i]} for zero d_output")

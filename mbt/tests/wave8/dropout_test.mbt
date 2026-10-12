@@ -8,20 +8,20 @@ fn drop_eps(a : Float, b : Float, eps : Float) -> Bool {
 
 ///|
 test "Dropout::new: defaults + out-of-range aborts" {
-  let d = @snn_mbt.Dropout::new()
+  let d = @activ.Dropout::new()
   assert_eq(d.p, 0.5F)
   assert_eq(d.training, true)
-  let d_off = @snn_mbt.Dropout::new(p=0.0F)
+  let d_off = @activ.Dropout::new(p=0.0F)
   assert_eq(d_off.p, 0.0F)
 }
 
 ///|
 test "dropout_forward: inference mode is identity" {
-  let d = @snn_mbt.Dropout::new(p=0.5F)
+  let d = @activ.Dropout::new(p=0.5F)
   d.training = false
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F]
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
+  let (out, mask) = @activ.dropout_forward(input, d, rng)
   for i in 0..<input.length() {
     if !drop_eps(out[i], input[i], 0.0001F) {
       fail("inference out[\{i}] = \{out[i]}, expected identity")
@@ -34,11 +34,11 @@ test "dropout_forward: inference mode is identity" {
 
 ///|
 test "dropout_forward: training mode zeros ~p fraction + scales by 1/(1-p)" {
-  let d = @snn_mbt.Dropout::new(p=0.5F)
+  let d = @activ.Dropout::new(p=0.5F)
   let n = 1000
   let input : Array[Float] = Array::make(n, 1.0F)
   let rng = @core.Xoshiro::from_state(42UL, 0UL, 0UL, 0UL)
-  let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
+  let (out, mask) = @activ.dropout_forward(input, d, rng)
   // Count kept positions (mask == 1)
   let mut kept = 0
   for i in 0..<n {
@@ -66,12 +66,12 @@ test "dropout_forward: training mode zeros ~p fraction + scales by 1/(1-p)" {
 
 ///|
 test "dropout_forward: deterministic same-seed → same mask" {
-  let d = @snn_mbt.Dropout::new(p=0.3F)
+  let d = @activ.Dropout::new(p=0.3F)
   let input : Array[Float] = Array::make(50, 0.7F)
   let rng_a = @core.Xoshiro::from_state(7UL, 0UL, 0UL, 0UL)
   let rng_b = @core.Xoshiro::from_state(7UL, 0UL, 0UL, 0UL)
-  let (_out_a, mask_a) = @snn_mbt.dropout_forward(input, d, rng_a)
-  let (_out_b, mask_b) = @snn_mbt.dropout_forward(input, d, rng_b)
+  let (_out_a, mask_a) = @activ.dropout_forward(input, d, rng_a)
+  let (_out_b, mask_b) = @activ.dropout_forward(input, d, rng_b)
   for i in 0..<mask_a.length() {
     if mask_a[i] != mask_b[i] {
       fail("mask[\{i}]: \{mask_a[i]} vs \{mask_b[i]}")
@@ -81,10 +81,10 @@ test "dropout_forward: deterministic same-seed → same mask" {
 
 ///|
 test "dropout_forward: p=0 → identity (no-op)" {
-  let d = @snn_mbt.Dropout::new(p=0.0F)
+  let d = @activ.Dropout::new(p=0.0F)
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let rng = @core.Xoshiro::default()
-  let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
+  let (out, mask) = @activ.dropout_forward(input, d, rng)
   for i in 0..<input.length() {
     if !drop_eps(out[i], input[i], 0.0001F) {
       fail("p=0 out[\{i}] = \{out[i]}")
@@ -97,10 +97,10 @@ test "dropout_forward: p=0 → identity (no-op)" {
 
 ///|
 test "dropout_forward: p=1 → all zeros (full dropout)" {
-  let d = @snn_mbt.Dropout::new(p=1.0F)
+  let d = @activ.Dropout::new(p=1.0F)
   let input : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let rng = @core.Xoshiro::default()
-  let (out, mask) = @snn_mbt.dropout_forward(input, d, rng)
+  let (out, mask) = @activ.dropout_forward(input, d, rng)
   for i in 0..<input.length() {
     if out[i] != 0.0F {
       fail("p=1 out[\{i}] = \{out[i]}, expected 0")
@@ -113,13 +113,13 @@ test "dropout_forward: p=1 → all zeros (full dropout)" {
 
 ///|
 test "dropout_backward: matches forward (mask * scale) + zero d_output" {
-  let d = @snn_mbt.Dropout::new(p=0.5F)
+  let d = @activ.Dropout::new(p=0.5F)
   let input : Array[Float] = Array::make(8, 0.7F)
   let rng = @core.Xoshiro::from_state(11UL, 0UL, 0UL, 0UL)
-  let (_out, mask) = @snn_mbt.dropout_forward(input, d, rng)
+  let (_out, mask) = @activ.dropout_forward(input, d, rng)
   let d_output : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F,
                                   0.5F, 0.6F, 0.7F, 0.8F]
-  let d_input = @snn_mbt.dropout_backward(d_output, mask, d)
+  let d_input = @activ.dropout_backward(d_output, mask, d)
   // For each kept position: d_input = d_output * 2.0 (inverted scale).
   // For each dropped position: d_input = 0.
   for i in 0..<8 {
@@ -136,7 +136,7 @@ test "dropout_backward: matches forward (mask * scale) + zero d_output" {
   }
   // Zero d_output → zero d_input
   let zero : Array[Float] = Array::make(8, 0.0F)
-  let d_zero = @snn_mbt.dropout_backward(zero, mask, d)
+  let d_zero = @activ.dropout_backward(zero, mask, d)
   for i in 0..<8 {
     if d_zero[i] != 0.0F {
       fail("zero d_output [\{i}] = \{d_zero[i]}")
@@ -146,11 +146,11 @@ test "dropout_backward: matches forward (mask * scale) + zero d_output" {
 
 ///|
 test "dropout_backward: inference mode is identity" {
-  let d = @snn_mbt.Dropout::new(p=0.5F)
+  let d = @activ.Dropout::new(p=0.5F)
   d.training = false
   let mask : Array[Float] = [0.0F, 0.0F, 0.0F, 0.0F]  // doesn't matter
   let d_output : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
-  let d_input = @snn_mbt.dropout_backward(d_output, mask, d)
+  let d_input = @activ.dropout_backward(d_output, mask, d)
   for i in 0..<4 {
     if !drop_eps(d_input[i], d_output[i], 0.0001F) {
       fail("inference d_input[\{i}] = \{d_input[i]}")

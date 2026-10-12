@@ -90,7 +90,7 @@ pub fn lstm_deterministic_policy_step(
 ) -> (Array[Float], Array[Float], Array[Float]) {
   // x_proj = ReLU(w1 · obs + b1)
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, obs)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   // (hidden_next, cell_next) = LSTM_cell(x_proj, hidden, cell)
   let (hidden_next, cache) = lstm_cell_forward(
     x_proj, hidden, cell, policy.lstm,

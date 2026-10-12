@@ -92,7 +92,7 @@ pub fn gtrxl_actor_step(
 ) -> (Array[Float], GTrXLTokenCache) {
   // embed = ReLU(w1 · obs + b1)
   let x_proj_pre = matvec(policy.mlp_w1, policy.mlp_b1, obs)
-  let x_proj = relu_forward(x_proj_pre)
+  let x_proj = @activ.relu_forward(x_proj_pre)
   // hidden_next = gtrxl_block_token_step(embed)
   let (hidden_next, cache) = gtrxl_block_token_step(policy.block, x_proj)
   // a_pre = w2 · hidden_next + b2

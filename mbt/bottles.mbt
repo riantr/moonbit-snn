@@ -168,7 +168,7 @@ pub fn SimpleCNN::new(in_c : Int, c1 : Int, c2 : Int, seed : UInt64) -> SimpleCN
   let b2 : Array[Float] = Array::make(c2, 0.0F)
   let conv2 = Conv2dParam::new(w2, b2, c2, c1, 3, 3, stride=1, pad=1)
   // Pool: 2x2 stride 2.
-  let pool = MaxPool2dParam::new(2, 2, stride=2, pad=0)
+  let pool = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   // FC: c2 * 7 * 7 -> 10.
   let fc_in = c2 * 7 * 7
   let fc_out = 10
@@ -234,12 +234,12 @@ pub fn LeNet5::new(seed : UInt64) -> LeNet5 {
   let w1 = he_init(rng, 6 * 1 * 5 * 5, 1 * 5 * 5)
   let b1 : Array[Float] = Array::make(6, 0.0F)
   let conv1 = Conv2dParam::new(w1, b1, 6, 1, 5, 5, stride=1, pad=0)
-  let pool1 = MaxPool2dParam::new(2, 2, stride=2, pad=0)
+  let pool1 = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   // C3: 6 -> 16, 5x5, stride=1, pad=0.
   let w2 = he_init(rng, 16 * 6 * 5 * 5, 6 * 5 * 5)
   let b2 : Array[Float] = Array::make(16, 0.0F)
   let conv2 = Conv2dParam::new(w2, b2, 16, 6, 5, 5, stride=1, pad=0)
-  let pool2 = MaxPool2dParam::new(2, 2, stride=2, pad=0)
+  let pool2 = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   // C5: 16 -> 120, 5x5, stride=1, pad=0.
   let w3 = he_init(rng, 120 * 16 * 5 * 5, 16 * 5 * 5)
   let b3 : Array[Float] = Array::make(120, 0.0F)
