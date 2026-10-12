@@ -15,4 +15,5 @@ import {
   "riantr/snn_mbt/analysis",
   "riantr/snn_mbt/rl",
   "riantr/snn_mbt/gnn",
+  "riantr/snn_mbt/generative",
 }

@@ -1,0 +1,26 @@
+// generative/ — density and sample generation: GANs, flows, VAEs, diffusion.
+//
+// Sits on nn and optim. Every model here is trained, so every model here needs
+// an optimiser; the ones that score pixels run on Conv2dParameter.
+//
+// The components without a model prefix belong here for the same reason
+// message_passing did in gnn/: diffusion_forward, score_network, langevin_sampler,
+// energy_function, gaussian_reparameterization, elbo and gradient_penalty are
+// each used by exactly the model they belong to -- two files apiece at most --
+// and by nothing outside this package. DDPM needs a score and a forward
+// diffusion schedule; EBM needs an energy and a sampler; VAE and IWAE share a
+// reparameterisation and an ELBO; WGAN-GP needs the penalty. Naming them after
+// the model that consumes them would have meant five packages of two files.
+// rl/ is imported for `box_muller`-adjacent sampling in the GANs and the
+// normalizing flows: those draw noise from the core RNG, and the flows'
+// base distribution is a Gaussian. The dependency is declared here rather than
+// discovered by the compiler because a pre-split scan of the root package could
+// not see it -- at that point the referencing files were still in the root and
+// rl/ had already left.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/optim",
+  "riantr/snn_mbt/rl",
+}
