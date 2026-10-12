@@ -43,6 +43,6 @@ pub fn spiking_attention_backward(
   cache : SpikingMultiHeadAttnCache,
   d_output : Array[Float],
   sa : SpikingMultiHeadAttention,
-) -> (Array[Float], MHAGrad) {
+) -> (Array[Float], @nn.MHAGrad) {
   spiking_multi_head_attention_backward(cache, d_output, sa)
 }

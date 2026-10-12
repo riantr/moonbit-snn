@@ -42,6 +42,25 @@ pub struct BatchNorm2d {
 }
 
 ///|
+/// Build a BatchNorm2d carrying existing state.
+///
+/// `with_gamma_beta` starts running statistics at zero; a caller that is
+/// cloning a trained network into a fresh parameter block needs to carry them
+/// across, and could not write the record literal that used to do that once
+/// the fields became private to this package.
+pub fn BatchNorm2d::with_state(
+  gamma : Array[Float],
+  beta : Array[Float],
+  running_mean : Array[Float],
+  running_var : Array[Float],
+  momentum : Float,
+  eps : Float,
+  training : Bool,
+) -> BatchNorm2d {
+  { gamma, beta, running_mean, running_var, momentum, eps, training }
+}
+
+///|
 /// Build a BatchNorm2d for `c` channels. `gamma` is initialised to all-1,
 /// `beta` to all-0; running stats to all-0. `momentum` defaults to 0.1,
 /// `eps` to 1e-5.

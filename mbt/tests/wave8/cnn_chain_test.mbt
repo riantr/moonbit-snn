@@ -27,10 +27,10 @@ test "cnn_chain / Conv 鈫扲eLU 鈫扢axPool 鈫扡latten 鈫扐inear produces 
   let conv_weight : Array[Float] = Array::make(2 * 1 * 3 * 3, 1.0F)
   // Bias: ch0=0.5, ch1=-0.5 (after ReLU, ch1 becomes 0).
   let conv_bias : Array[Float] = [0.5F, -0.5F]
-  let conv_param = @snn_mbt.Conv2dParam::new(
+  let conv_param = @nn.Conv2dParam::new(
     conv_weight, conv_bias, 2, 1, 3, 3, stride=1, pad=1,
   )
-  let conv_out = @snn_mbt.conv2d_forward(input, 1, 1, 4, 4, conv_param)
+  let conv_out = @nn.conv2d_forward(input, 1, 1, 4, 4, conv_param)
   if conv_out.length() != 1 * 2 * 4 * 4 {
     fail("conv_out expected length 32, got \{conv_out.length()}")
   }
@@ -78,8 +78,8 @@ test "cnn_chain / Conv 鈫扲eLU 鈫扢axPool 鈫扡latten 鈫扐inear produces 
     1.0F, -1.0F, 1.0F, -1.0F, -1.0F, 1.0F, -1.0F, 1.0F,
   ]
   let linear_bias : Array[Float] = [10.0F, 20.0F, 0.0F]
-  let linear_param = @snn_mbt.LinearParam::new(linear_weight, linear_bias, 8, 3)
-  let linear_out = @snn_mbt.linear_forward(flat_out, 1, linear_param)
+  let linear_param = @nn.LinearParam::new(linear_weight, linear_bias, 8, 3)
+  let linear_out = @nn.linear_forward(flat_out, 1, linear_param)
   if linear_out.length() != 3 {
     fail("linear_out expected length 3, got \{linear_out.length()}")
   }
@@ -169,10 +169,10 @@ test "cnn_chain / shapes are deterministic across re-runs (bit-exact repeat)" {
   // Conv 2x2 pad=0 stride=1 c_out=1 -> 2x2.
   let conv_weight : Array[Float] = [1.0F, 1.0F, 1.0F, 1.0F]
   let conv_bias : Array[Float] = [0.0F]
-  let conv_param = @snn_mbt.Conv2dParam::new(
+  let conv_param = @nn.Conv2dParam::new(
     conv_weight, conv_bias, 1, 1, 2, 2, stride=1, pad=0,
   )
-  let relu_out_a = @activ.relu_forward(@snn_mbt.conv2d_forward(input, 1, 1, 3, 3, conv_param))
+  let relu_out_a = @activ.relu_forward(@nn.conv2d_forward(input, 1, 1, 3, 3, conv_param))
   let pool_param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   let flat_a = @activ.flatten_forward(
     @activ.maxpool2d_forward(relu_out_a, 1, 1, 2, 2, pool_param),
@@ -181,15 +181,15 @@ test "cnn_chain / shapes are deterministic across re-runs (bit-exact repeat)" {
   // Linear (in=1, out=1) so we just project flat[0].
   let linear_weight : Array[Float] = [3.0F]
   let linear_bias : Array[Float] = [7.0F]
-  let linear_param = @snn_mbt.LinearParam::new(linear_weight, linear_bias, 1, 1)
-  let out_a = @snn_mbt.linear_forward(flat_a, 1, linear_param)
+  let linear_param = @nn.LinearParam::new(linear_weight, linear_bias, 1, 1)
+  let out_a = @nn.linear_forward(flat_a, 1, linear_param)
   // Run again.
-  let relu_out_b = @activ.relu_forward(@snn_mbt.conv2d_forward(input, 1, 1, 3, 3, conv_param))
+  let relu_out_b = @activ.relu_forward(@nn.conv2d_forward(input, 1, 1, 3, 3, conv_param))
   let flat_b = @activ.flatten_forward(
     @activ.maxpool2d_forward(relu_out_b, 1, 1, 2, 2, pool_param),
     1, 1, 1, 1,
   )
-  let out_b = @snn_mbt.linear_forward(flat_b, 1, linear_param)
+  let out_b = @nn.linear_forward(flat_b, 1, linear_param)
   if out_a.length() != 1 { fail("out_a should be length 1") }
   if out_b.length() != 1 { fail("out_b should be length 1") }
   if out_a[0] != out_b[0] {

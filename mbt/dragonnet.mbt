@@ -56,16 +56,16 @@ const DN_TARREG_SCALE : Float = 1.02F
 ///|
 /// The DragonNet parameter set: ten dense layers plus the targeting scalar.
 pub(all) struct DragonNet {
-  enc1 : LinearParam
-  enc2 : LinearParam
-  enc3 : LinearParam
-  y0_h1 : LinearParam
-  y0_h2 : LinearParam
-  y0_out : LinearParam
-  y1_h1 : LinearParam
-  y1_h2 : LinearParam
-  y1_out : LinearParam
-  t_head : LinearParam
+  enc1 : @nn.LinearParam
+  enc2 : @nn.LinearParam
+  enc3 : @nn.LinearParam
+  y0_h1 : @nn.LinearParam
+  y0_h2 : @nn.LinearParam
+  y0_out : @nn.LinearParam
+  y1_h1 : @nn.LinearParam
+  y1_h2 : @nn.LinearParam
+  y1_out : @nn.LinearParam
+  t_head : @nn.LinearParam
   epsilon : Float
   t_sigmoid : Bool
 }
@@ -74,7 +74,7 @@ pub(all) struct DragonNet {
 /// Flat N(0, std) weights + zero bias. `Xoshiro` mutates through value
 /// passing (`next_u64` writes `r.s0`..`r.s3`), so looping here advances the
 /// stream rather than redrawing the same number.
-fn dn_linear(rng : @core.Xoshiro, in_f : Int, out_f : Int, std : Float) -> LinearParam {
+fn dn_linear(rng : @core.Xoshiro, in_f : Int, out_f : Int, std : Float) -> @nn.LinearParam {
   let w : Array[Float] = Array::make(out_f * in_f, 0.0F)
   for i in 0..<(out_f * in_f) {
     let (z1, z2) = @neuron.box_muller(rng)
@@ -82,7 +82,7 @@ fn dn_linear(rng : @core.Xoshiro, in_f : Int, out_f : Int, std : Float) -> Linea
     w[i] = Float::from_double(z) * std
   }
   let b : Array[Float] = Array::make(out_f, 0.0F)
-  LinearParam::new(w, b, in_f, out_f)
+  @nn.LinearParam::new(w, b, in_f, out_f)
 }
 
 ///|
@@ -161,17 +161,17 @@ pub fn dragonnet_forward(
   x : Array[Float],
   n : Int,
 ) -> DragonNetOut {
-  let z1 = linear_forward(x, n, net.enc1)
-  let z2 = linear_forward(@activ.elu_forward(z1, alpha=DN_ALPHA), n, net.enc2)
-  let z3 = linear_forward(@activ.elu_forward(z2, alpha=DN_ALPHA), n, net.enc3)
+  let z1 = @nn.linear_forward(x, n, net.enc1)
+  let z2 = @nn.linear_forward(@activ.elu_forward(z1, alpha=DN_ALPHA), n, net.enc2)
+  let z3 = @nn.linear_forward(@activ.elu_forward(z2, alpha=DN_ALPHA), n, net.enc3)
   let phi = @activ.elu_forward(z3, alpha=DN_ALPHA)
-  let a0 = linear_forward(phi, n, net.y0_h1)
-  let b0 = linear_forward(@activ.elu_forward(a0, alpha=DN_ALPHA), n, net.y0_h2)
-  let y0 = linear_forward(@activ.elu_forward(b0, alpha=DN_ALPHA), n, net.y0_out)
-  let c1 = linear_forward(phi, n, net.y1_h1)
-  let d1 = linear_forward(@activ.elu_forward(c1, alpha=DN_ALPHA), n, net.y1_h2)
-  let y1 = linear_forward(@activ.elu_forward(d1, alpha=DN_ALPHA), n, net.y1_out)
-  let t_raw = linear_forward(phi, n, net.t_head)
+  let a0 = @nn.linear_forward(phi, n, net.y0_h1)
+  let b0 = @nn.linear_forward(@activ.elu_forward(a0, alpha=DN_ALPHA), n, net.y0_h2)
+  let y0 = @nn.linear_forward(@activ.elu_forward(b0, alpha=DN_ALPHA), n, net.y0_out)
+  let c1 = @nn.linear_forward(phi, n, net.y1_h1)
+  let d1 = @nn.linear_forward(@activ.elu_forward(c1, alpha=DN_ALPHA), n, net.y1_h2)
+  let y1 = @nn.linear_forward(@activ.elu_forward(d1, alpha=DN_ALPHA), n, net.y1_out)
+  let t_raw = @nn.linear_forward(phi, n, net.t_head)
   // The paper's `make_dragonnet` puts a SIGMOID on the propensity head. A
   // variant seen in the wild drops it and leaves the head linear; with the
   // reference's smoothing `p = (t_hat + 0.001)/1.002` that produces negative
@@ -428,27 +428,27 @@ pub fn dragonnet_backward(
 ) -> DragonNetGrad {
   let lam = l2_lambda
   // ---- y0 head (linear output, so no mask before y0_out) ----
-  let (d_b0, dw_y0_out, db_y0_out) = linear_backward(
+  let (d_b0, dw_y0_out, db_y0_out) = @nn.linear_backward(
     @activ.elu_forward(out.b0, alpha=DN_ALPHA), d_y0, n, net.y0_out,
   )
   let d_b0 = @activ.elu_backward(out.b0, d_b0, alpha=DN_ALPHA)
-  let (d_a0, dw_y0_h2, db_y0_h2) = linear_backward(
+  let (d_a0, dw_y0_h2, db_y0_h2) = @nn.linear_backward(
     @activ.elu_forward(out.a0, alpha=DN_ALPHA), d_b0, n, net.y0_h2,
   )
   let d_a0 = @activ.elu_backward(out.a0, d_a0, alpha=DN_ALPHA)
-  let (d_phi0, dw_y0_h1, db_y0_h1) = linear_backward(
+  let (d_phi0, dw_y0_h1, db_y0_h1) = @nn.linear_backward(
     out.phi, d_a0, n, net.y0_h1,
   )
   // ---- y1 head ----
-  let (d_d1, dw_y1_out, db_y1_out) = linear_backward(
+  let (d_d1, dw_y1_out, db_y1_out) = @nn.linear_backward(
     @activ.elu_forward(out.d1, alpha=DN_ALPHA), d_y1, n, net.y1_out,
   )
   let d_d1 = @activ.elu_backward(out.d1, d_d1, alpha=DN_ALPHA)
-  let (d_c1, dw_y1_h2, db_y1_h2) = linear_backward(
+  let (d_c1, dw_y1_h2, db_y1_h2) = @nn.linear_backward(
     @activ.elu_forward(out.c1, alpha=DN_ALPHA), d_d1, n, net.y1_h2,
   )
   let d_c1 = @activ.elu_backward(out.c1, d_c1, alpha=DN_ALPHA)
-  let (d_phi1, dw_y1_h1, db_y1_h1) = linear_backward(
+  let (d_phi1, dw_y1_h1, db_y1_h1) = @nn.linear_backward(
     out.phi, d_c1, n, net.y1_h1,
   )
   // ---- propensity head ----
@@ -461,7 +461,7 @@ pub fn dragonnet_backward(
     let f = if net.t_sigmoid { p * (1.0F - p) } else { 1.0F }
     d_t_raw[i] = d_t[i] * f
   }
-  let (d_phet, dw_t, db_t) = linear_backward(
+  let (d_phet, dw_t, db_t) = @nn.linear_backward(
     out.phi, d_t_raw, n, net.t_head,
   )
   // ---- the shared representation receives all three heads ----
@@ -472,15 +472,15 @@ pub fn dragonnet_backward(
     d_phi0[i] = d_phi0[i] + d_phi1[i] + d_phet[i]
   }
   let d_phi = d_phi0
-  let (d_e2, dw_enc3, db_enc3) = linear_backward(
+  let (d_e2, dw_enc3, db_enc3) = @nn.linear_backward(
     @activ.elu_forward(out.z2, alpha=DN_ALPHA), d_phi, n, net.enc3,
   )
   let d_e2 = @activ.elu_backward(out.z2, d_e2, alpha=DN_ALPHA)
-  let (d_e1, dw_enc2, db_enc2) = linear_backward(
+  let (d_e1, dw_enc2, db_enc2) = @nn.linear_backward(
     @activ.elu_forward(out.z1, alpha=DN_ALPHA), d_e2, n, net.enc2,
   )
   let d_e1 = @activ.elu_backward(out.z1, d_e1, alpha=DN_ALPHA)
-  let (_d_x, dw_enc1, db_enc1) = linear_backward(x, d_e1, n, net.enc1)
+  let (_d_x, dw_enc1, db_enc1) = @nn.linear_backward(x, d_e1, n, net.enc1)
   {
     enc1: (dw_enc1, db_enc1),
     enc2: (dw_enc2, db_enc2),
@@ -501,7 +501,7 @@ pub fn dragonnet_backward(
 /// `dragonnet_flatten` / `dragonnet_unflatten` / `dragonnet_grad_flatten`.
 /// Changing this order silently invalidates a saved parameter vector, so it
 /// lives in exactly one place.
-fn dn_layers(net : DragonNet) -> Array[LinearParam] {
+fn dn_layers(net : DragonNet) -> Array[@nn.LinearParam] {
   [
     net.enc1,
     net.enc2,
@@ -601,7 +601,7 @@ pub fn dragonnet_unflatten(
       w2[i] = flat[k]
       k = k + 1
     }
-    rebuilt.push(LinearParam::new(w2, b2, l.in_features, l.out_features))
+    rebuilt.push(@nn.LinearParam::new(w2, b2, l.in_features, l.out_features))
   }
   {
     enc1: rebuilt[0],

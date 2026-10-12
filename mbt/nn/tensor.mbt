@@ -21,6 +21,15 @@ pub struct Tensor {
 }
 
 ///|
+/// Build a tensor from raw data and a shape. Does not copy the arrays.
+///
+/// The fields are private, so a caller in another package cannot write the
+/// record literal that used to do this; `tensor_ops.mbt` needs one.
+pub fn Tensor::new(data : Array[Float], shape : Array[Int]) -> Tensor {
+  { data, shape }
+}
+
+///|
 fn total_size(shape : Array[Int]) -> Int {
   let mut n = 1
   for i in 0..<shape.length() {

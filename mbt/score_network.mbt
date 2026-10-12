@@ -94,8 +94,8 @@ pub fn sinusoidal_time_embedding(
     let denom = Float::from_int(time_dim)
     let omega = @core.expf(-two_k_f * 9.21034F / denom)
     let arg = Float::from_int(t) * omega
-    out[2 * k] = sinf(arg)
-    out[2 * k + 1] = cosf(arg)
+    out[2 * k] = @core.sinf(arg)
+    out[2 * k + 1] = @core.cosf(arg)
   }
   // If time_dim is odd, fill the last slot with a constant zero
   // (it would have no matching pair).

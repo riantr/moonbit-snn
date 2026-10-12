@@ -4,7 +4,7 @@
 
 ///|
 test "tensor_zeros / numel matches total_size(shape)" {
-  let t = @snn_mbt.Tensor::zeros([2, 3, 4])
+  let t = @nn.Tensor::zeros([2, 3, 4])
   if t.numel() != 24 { fail("expected 24, got \{t.numel()}") }
   for i in 0..<t.numel() {
     if t.data[i] != 0.0F { fail("zeros[\{i}] should be 0.0, got \{t.data[i]}") }
@@ -13,7 +13,7 @@ test "tensor_zeros / numel matches total_size(shape)" {
 
 ///|
 test "tensor_ones / numel and shape" {
-  let t = @snn_mbt.Tensor::ones([3, 5])
+  let t = @nn.Tensor::ones([3, 5])
   if t.numel() != 15 { fail("expected 15, got \{t.numel()}") }
   for i in 0..<t.numel() {
     if t.data[i] != 1.0F { fail("ones[\{i}] should be 1.0, got \{t.data[i]}") }
@@ -22,7 +22,7 @@ test "tensor_ones / numel and shape" {
 
 ///|
 test "tensor_reshape / total size preserved, data shared" {
-  let t = @snn_mbt.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F], [2, 3])
+  let t = @nn.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F], [2, 3])
   let r = t.reshape([3, 2])
   if r.numel() != 6 { fail("expected 6, got \{r.numel()}") }
   if r.shape[0] != 3 || r.shape[1] != 2 {
@@ -35,9 +35,9 @@ test "tensor_reshape / total size preserved, data shared" {
 
 ///|
 test "tensor_add / same shape: element-wise add" {
-  let a = @snn_mbt.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F], [2, 2])
-  let b = @snn_mbt.Tensor::from([10.0F, 20.0F, 30.0F, 40.0F], [2, 2])
-  let c = @snn_mbt.tensor_add(a, b)
+  let a = @nn.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F], [2, 2])
+  let b = @nn.Tensor::from([10.0F, 20.0F, 30.0F, 40.0F], [2, 2])
+  let c = @nn.tensor_add(a, b)
   let expected : Array[Float] = [11.0F, 22.0F, 33.0F, 44.0F]
   for i in 0..<4 {
     if (c.data[i] - expected[i]).abs() > 1.0e-7 {
@@ -52,9 +52,9 @@ test "tensor_add / same shape: element-wise add" {
 
 ///|
 test "tensor_add / broadcasting (scalar)" {
-  let a = @snn_mbt.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F], [2, 3])
-  let b = @snn_mbt.Tensor::from([10.0F], [1])
-  let c = @snn_mbt.tensor_add(a, b)
+  let a = @nn.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F], [2, 3])
+  let b = @nn.Tensor::from([10.0F], [1])
+  let c = @nn.tensor_add(a, b)
   if c.shape.length() != 2 || c.shape[0] != 2 || c.shape[1] != 3 {
     fail("broadcast add shape should be [2,3], got \{c.shape}")
   }
@@ -68,14 +68,14 @@ test "tensor_add / broadcasting (scalar)" {
 
 ///|
 test "tensor_add / broadcasting (row vector across rows)" {
-  let a = @snn_mbt.Tensor::from(
+  let a = @nn.Tensor::from(
     [1.0F, 2.0F, 3.0F, 4.0F,
      5.0F, 6.0F, 7.0F, 8.0F,
      9.0F, 10.0F, 11.0F, 12.0F],
     [3, 4],
   )
-  let b = @snn_mbt.Tensor::from([100.0F, 200.0F, 300.0F, 400.0F], [4])
-  let c = @snn_mbt.tensor_add(a, b)
+  let b = @nn.Tensor::from([100.0F, 200.0F, 300.0F, 400.0F], [4])
+  let c = @nn.tensor_add(a, b)
   if c.shape.length() != 2 || c.shape[0] != 3 || c.shape[1] != 4 {
     fail("row-broadcast add shape should be [3,4]")
   }
@@ -93,26 +93,26 @@ test "tensor_add / broadcasting (row vector across rows)" {
 
 ///|
 test "tensor_sub / mul / div / basic" {
-  let a = @snn_mbt.Tensor::from([10.0F, 20.0F, 30.0F, 40.0F], [4])
-  let b = @snn_mbt.Tensor::from([2.0F, 4.0F, 5.0F, 8.0F], [4])
-  let s = @snn_mbt.tensor_sub(a, b)
+  let a = @nn.Tensor::from([10.0F, 20.0F, 30.0F, 40.0F], [4])
+  let b = @nn.Tensor::from([2.0F, 4.0F, 5.0F, 8.0F], [4])
+  let s = @nn.tensor_sub(a, b)
   if (s.data[0] - 8.0F).abs() > 1.0e-7 { fail("sub[0] expected 8") }
   if (s.data[3] - 32.0F).abs() > 1.0e-7 { fail("sub[3] expected 32") }
-  let m = @snn_mbt.tensor_mul(a, b)
+  let m = @nn.tensor_mul(a, b)
   if (m.data[0] - 20.0F).abs() > 1.0e-7 { fail("mul[0] expected 20") }
   if (m.data[3] - 320.0F).abs() > 1.0e-7 { fail("mul[3] expected 320") }
-  let d = @snn_mbt.tensor_div(a, b)
+  let d = @nn.tensor_div(a, b)
   if (d.data[0] - 5.0F).abs() > 1.0e-7 { fail("div[0] expected 5") }
   if (d.data[2] - 6.0F).abs() > 1.0e-7 { fail("div[2] expected 6") }
 }
 
 ///|
 test "tensor_add / does not alias inputs" {
-  let a = @snn_mbt.Tensor::from([1.0F, 2.0F], [2])
-  let b = @snn_mbt.Tensor::from([10.0F, 20.0F], [2])
+  let a = @nn.Tensor::from([1.0F, 2.0F], [2])
+  let b = @nn.Tensor::from([10.0F, 20.0F], [2])
   let a_orig = a.data.copy()
   let b_orig = b.data.copy()
-  let c = @snn_mbt.tensor_add(a, b)
+  let c = @nn.tensor_add(a, b)
   c.data[0] = -1.0F
   if a.data[0] != a_orig[0] || a.data[1] != a_orig[1] {
     fail("tensor_add should not alias a")
@@ -124,14 +124,14 @@ test "tensor_add / does not alias inputs" {
 
 ///|
 test "tensor_add / broadcasting (column vector)" {
-  let a = @snn_mbt.Tensor::from(
+  let a = @nn.Tensor::from(
     [1.0F, 2.0F, 3.0F, 4.0F,
      5.0F, 6.0F, 7.0F, 8.0F,
      9.0F, 10.0F, 11.0F, 12.0F],
     [3, 4],
   )
-  let b = @snn_mbt.Tensor::from([100.0F, 200.0F, 300.0F], [3, 1])
-  let c = @snn_mbt.tensor_add(a, b)
+  let b = @nn.Tensor::from([100.0F, 200.0F, 300.0F], [3, 1])
+  let c = @nn.tensor_add(a, b)
   let expected : Array[Float] = [
     101.0F, 102.0F, 103.0F, 104.0F,
     205.0F, 206.0F, 207.0F, 208.0F,

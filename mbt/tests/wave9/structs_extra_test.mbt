@@ -6,22 +6,22 @@
 
 ///|
 test "EmptyParam::new defaults" {
-  let p = @snn_mbt.EmptyParam::new()
+  let p = @nn.EmptyParam::new()
   assert_eq(p.p_type, "empty")
-  assert_eq(@snn_mbt.EmptyParam::type_str(p), "empty")
+  assert_eq(@nn.EmptyParam::type_str(p), "empty")
 }
 
 ///|
 test "EmptyParam::with_type custom" {
-  let p = @snn_mbt.EmptyParam::with_type("custom_type")
+  let p = @nn.EmptyParam::with_type("custom_type")
   assert_eq(p.p_type, "custom_type")
 }
 
 ///|
 test "NetworkModel::new is_valid = true" {
-  let m = @snn_mbt.NetworkModel::new()
+  let m = @nn.NetworkModel::new()
   assert_eq(m.is_valid, true)
-  assert_eq(@snn_mbt.isa_model(m), true)
+  assert_eq(@nn.isa_model(m), true)
 }
 
 ///|

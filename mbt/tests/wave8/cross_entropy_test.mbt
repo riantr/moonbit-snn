@@ -5,8 +5,8 @@ test "cross_entropy_loss / perfect predictions give loss = 0" {
   // log_probs with prob 1 at target class -> log_prob = 0 -> loss = 0.
   // log_probs = [[0, -inf, -inf, ...]] (batch 1, 3 classes).
   // For target=0, log_prob[0,0] = 0 -> loss = -0 = 0.
-  let log_probs = @snn_mbt.Tensor::from([0.0F, -100.0F, -100.0F], [1, 3])
-  let targets = @snn_mbt.Tensor::from([0.0F], [1])
+  let log_probs = @nn.Tensor::from([0.0F, -100.0F, -100.0F], [1, 3])
+  let targets = @nn.Tensor::from([0.0F], [1])
   let loss = @snn_mbt.cross_entropy_loss(log_probs, targets)
   if (loss.mean.data[0] - 0.0F).abs() > 1.0e-5 {
     fail("perfect predictions should give loss 0, got \{loss.mean.data[0]}")
@@ -17,8 +17,8 @@ test "cross_entropy_loss / perfect predictions give loss = 0" {
 test "cross_entropy_loss / uniform over 3 classes -> log(3)" {
   // log_probs = [-log(3), -log(3), -log(3)]; loss = -log(3) ≈ 1.0986.
   // We use -1.0F as a rough stand-in: loss = 1.0.
-  let log_probs = @snn_mbt.Tensor::from([-1.0F, -1.0F, -1.0F], [1, 3])
-  let targets = @snn_mbt.Tensor::from([0.0F], [1])
+  let log_probs = @nn.Tensor::from([-1.0F, -1.0F, -1.0F], [1, 3])
+  let targets = @nn.Tensor::from([0.0F], [1])
   let loss = @snn_mbt.cross_entropy_loss(log_probs, targets)
   if (loss.mean.data[0] - 1.0F).abs() > 1.0e-5 {
     fail("expected loss 1.0, got \{loss.mean.data[0]}")
@@ -30,7 +30,7 @@ test "cross_entropy_loss / batch with mixed targets" {
   // batch = 3, classes = 4. Target losses = [0.5, 1.5, 2.5] -> mean = 1.5.
   // Construct log_probs so that picking the target gives the desired loss.
   // log_prob[batch, target] = -desired_loss.
-  let log_probs = @snn_mbt.Tensor::from(
+  let log_probs = @nn.Tensor::from(
     [
       // batch 0, target 1 -> loss 0.5
       -10.0F, -0.5F, -10.0F, -10.0F,
@@ -41,7 +41,7 @@ test "cross_entropy_loss / batch with mixed targets" {
     ],
     [3, 4],
   )
-  let targets = @snn_mbt.Tensor::from([1.0F, 3.0F, 0.0F], [3])
+  let targets = @nn.Tensor::from([1.0F, 3.0F, 0.0F], [3])
   let loss = @snn_mbt.cross_entropy_loss(log_probs, targets)
   if (loss.mean.data[0] - 1.5F).abs() > 1.0e-5 {
     fail("mean expected 1.5, got \{loss.mean.data[0]}")
@@ -64,13 +64,13 @@ test "cross_entropy_loss / softmax + cross_entropy pipeline" {
   // the highest-logit class. Verify loss values are positive and the
   // second batch's loss is much smaller (since target=2 is the very-
   // dominant class).
-  let logits = @snn_mbt.Tensor::from(
+  let logits = @nn.Tensor::from(
     [1.0F, 2.0F, 3.0F,
      0.0F, 0.0F, 10.0F],
     [2, 3],
   )
   let log_probs = @snn_mbt.tensor_log_softmax(logits)
-  let targets = @snn_mbt.Tensor::from([2.0F, 2.0F], [2])
+  let targets = @nn.Tensor::from([2.0F, 2.0F], [2])
   let loss = @snn_mbt.cross_entropy_loss(log_probs, targets)
   // Both losses should be small (target is the max-logit class).
   let l0 = loss.per_batch.data[0]

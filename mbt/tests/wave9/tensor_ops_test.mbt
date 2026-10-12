@@ -8,8 +8,8 @@ test "tensor_matmul / 2x3 times 3x2 -> 2x2" {
   // c[0,1] = 1*8 + 2*10 + 3*12 = 64
   // c[1,0] = 4*7 + 5*9 + 6*11 = 139
   // c[1,1] = 4*8 + 5*10 + 6*12 = 154
-  let a = @snn_mbt.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F], [2, 3])
-  let b = @snn_mbt.Tensor::from([7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F], [3, 2])
+  let a = @nn.Tensor::from([1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F], [2, 3])
+  let b = @nn.Tensor::from([7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F], [3, 2])
   let c = @snn_mbt.tensor_matmul(a, b)
   if c.shape.length() != 2 || c.shape[0] != 2 || c.shape[1] != 2 {
     fail("matmul shape wrong")
@@ -25,13 +25,13 @@ test "tensor_matmul / 2x3 times 3x2 -> 2x2" {
 ///|
 test "tensor_matmul / identity matrix" {
   // a (3x3) * I (3x3) == a.
-  let a = @snn_mbt.Tensor::from(
+  let a = @nn.Tensor::from(
     [1.0F, 2.0F, 3.0F,
      4.0F, 5.0F, 6.0F,
      7.0F, 8.0F, 9.0F],
     [3, 3],
   )
-  let i_mat = @snn_mbt.Tensor::from(
+  let i_mat = @nn.Tensor::from(
     [1.0F, 0.0F, 0.0F,
      0.0F, 1.0F, 0.0F,
      0.0F, 0.0F, 1.0F],
@@ -47,8 +47,8 @@ test "tensor_matmul / identity matrix" {
 
 ///|
 test "tensor_matmul / 1x1 x 1x1 scalar" {
-  let a = @snn_mbt.Tensor::from([3.0F], [1, 1])
-  let b = @snn_mbt.Tensor::from([4.0F], [1, 1])
+  let a = @nn.Tensor::from([3.0F], [1, 1])
+  let b = @nn.Tensor::from([4.0F], [1, 1])
   let c = @snn_mbt.tensor_matmul(a, b)
   if c.data[0] != 12.0F { fail("3*4 expected 12, got \{c.data[0]}") }
 }
@@ -56,7 +56,7 @@ test "tensor_matmul / 1x1 x 1x1 scalar" {
 ///|
 test "tensor_softmax / uniform input gives uniform output" {
   // All inputs equal -> softmax = 1/n each.
-  let x = @snn_mbt.Tensor::from([1.0F, 1.0F, 1.0F, 1.0F], [1, 4])
+  let x = @nn.Tensor::from([1.0F, 1.0F, 1.0F, 1.0F], [1, 4])
   let s = @snn_mbt.tensor_softmax(x)
   for i in 0..<4 {
     if (s.data[i] - 0.25F).abs() > 1.0e-5 {
@@ -75,8 +75,8 @@ test "tensor_softmax / uniform input gives uniform output" {
 test "tensor_softmax / large inputs stable (subtract max)" {
   // Adding a large constant to all inputs must not change softmax.
   // Without subtracting the max, exp(100) would overflow.
-  let x1 = @snn_mbt.Tensor::from([1.0F, 2.0F, 3.0F], [1, 3])
-  let x2 = @snn_mbt.Tensor::from([101.0F, 102.0F, 103.0F], [1, 3])
+  let x1 = @nn.Tensor::from([1.0F, 2.0F, 3.0F], [1, 3])
+  let x2 = @nn.Tensor::from([101.0F, 102.0F, 103.0F], [1, 3])
   let s1 = @snn_mbt.tensor_softmax(x1)
   let s2 = @snn_mbt.tensor_softmax(x2)
   for i in 0..<3 {
@@ -89,7 +89,7 @@ test "tensor_softmax / large inputs stable (subtract max)" {
 ///|
 test "tensor_softmax / batched (2 batches, 3 classes each)" {
   // Each row sums to 1.
-  let x = @snn_mbt.Tensor::from(
+  let x = @nn.Tensor::from(
     [1.0F, 2.0F, 3.0F,
      -1.0F, 0.0F, 1.0F],
     [2, 3],
@@ -109,7 +109,7 @@ test "tensor_softmax / batched (2 batches, 3 classes each)" {
 ///|
 test "tensor_log_softmax / exp(log_softmax(x)) == softmax(x)" {
   // Verify roundtrip.
-  let x = @snn_mbt.Tensor::from([0.5F, 1.0F, -0.2F, 0.8F], [1, 4])
+  let x = @nn.Tensor::from([0.5F, 1.0F, -0.2F, 0.8F], [1, 4])
   let ls = @snn_mbt.tensor_log_softmax(x)
   // exp each entry.
   let s_expected = @snn_mbt.tensor_softmax(x)
@@ -123,7 +123,7 @@ test "tensor_log_softmax / exp(log_softmax(x)) == softmax(x)" {
 
 ///|
 test "tensor_log_softmax / sum of exp(log_softmax) == 1" {
-  let x = @snn_mbt.Tensor::from([2.0F, 0.5F, -1.0F, 3.0F], [1, 4])
+  let x = @nn.Tensor::from([2.0F, 0.5F, -1.0F, 3.0F], [1, 4])
   let ls = @snn_mbt.tensor_log_softmax(x)
   let mut sum : Float = 0.0F
   for i in 0..<4 {
@@ -137,13 +137,13 @@ test "tensor_log_softmax / sum of exp(log_softmax) == 1" {
 ///|
 test "tensor_matmul / shape (5x3) * (3x4) -> (5x4) verify values" {
   // First row of a is all 1s, first row of b is [1,2,3,4] -> sum [10,20,30,40].
-  let a = @snn_mbt.Tensor::from(Array::make(15, 1.0F), [5, 3])
+  let a = @nn.Tensor::from(Array::make(15, 1.0F), [5, 3])
   let b_data : Array[Float] = [
     1.0F, 2.0F, 3.0F, 4.0F,
     5.0F, 6.0F, 7.0F, 8.0F,
     9.0F, 10.0F, 11.0F, 12.0F,
   ]
-  let b = @snn_mbt.Tensor::from(b_data, [3, 4])
+  let b = @nn.Tensor::from(b_data, [3, 4])
   let c = @snn_mbt.tensor_matmul(a, b)
   // Every row should give [1+5+9, 2+6+10, 3+7+11, 4+8+12] = [15, 18, 21, 24].
   for i in 0..<5 {

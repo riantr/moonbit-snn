@@ -304,7 +304,7 @@ pub fn tn_pointwise(
   weight : Array[Float],
   bias : Array[Float],
 ) -> Array[Float] {
-  linear_forward(x, n, LinearParam::new(weight, bias, in_ch, out_ch))
+  @nn.linear_forward(x, n, @nn.LinearParam::new(weight, bias, in_ch, out_ch))
 }
 
 ///|

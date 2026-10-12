@@ -217,7 +217,7 @@ pub fn conv1d_pointwise_forward(
   weight : Array[Float],
   bias : Array[Float],
 ) -> Array[Float] {
-  linear_forward(x, t, LinearParam::new(weight, bias, in_ch, out_ch))
+  @nn.linear_forward(x, t, @nn.LinearParam::new(weight, bias, in_ch, out_ch))
 }
 ///|
 /// Rebuild a `Conv1DDepthwise` around new weight / bias arrays, keeping the

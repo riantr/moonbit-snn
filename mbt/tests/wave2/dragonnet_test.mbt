@@ -206,7 +206,7 @@ test "flatten/unflatten round-trips and reports the right count" {
 /// check them against its slice of the flat vector.
 fn dn_layer_params(
   net : @snn_mbt.DragonNet,
-) -> Array[@snn_mbt.LinearParam] {
+) -> Array[@nn.LinearParam] {
   [
     net.enc1,
     net.enc2,

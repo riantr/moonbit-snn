@@ -128,7 +128,7 @@ test "adamw_update_arrays / loss converges on y=2x+1 with weight_decay" {
 
 ///|
 test "adamw_update_linear / preserves LinearParam shape" {
-  let p = @snn_mbt.LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
+  let p = @nn.LinearParam::new([1.0F, 2.0F, 3.0F, 4.0F], [0.0F, 0.0F], 2, 2)
   let dw : Array[Float] = [0.1F, 0.1F, 0.1F, 0.1F]
   let db : Array[Float] = [0.05F, 0.05F]
   let state0 = @snn_mbt.adamw_init(4, 2)
@@ -145,7 +145,7 @@ test "adamw_update_linear / preserves LinearParam shape" {
 
 ///|
 test "adamw_update_conv / preserves Conv2dParam shape" {
-  let p = @snn_mbt.Conv2dParam::new(
+  let p = @nn.Conv2dParam::new(
     [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F],
     [0.0F, 0.1F],
     2, 2, 2, 2, stride=1, pad=0,

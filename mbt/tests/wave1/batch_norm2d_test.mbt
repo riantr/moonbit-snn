@@ -2,9 +2,9 @@
 
 ///|
 test "batch_norm2d_forward / output shape equals input shape" {
-  let bn = @snn_mbt.BatchNorm2d::new(3)
+  let bn = @nn.BatchNorm2d::new(3)
   let input : Array[Float] = Array::make(2 * 3 * 4 * 5, 0.5F)
-  let (out, _) = @snn_mbt.batch_norm2d_forward(input, 2, 3, 4, 5, bn)
+  let (out, _) = @nn.batch_norm2d_forward(input, 2, 3, 4, 5, bn)
   if out.length() != input.length() {
     fail("output length should equal input length, got \{out.length()}")
   }
@@ -16,7 +16,7 @@ test "batch_norm2d_forward / per-channel mean ~ 0 and std ~ 1 after normalisatio
   //   channel 0: mean=10, std=2 (after subtracting mean should be 0)
   //   channel 1: mean=0,  std=1
   //   channel 2: mean=-5, std=0.5
-  let bn = @snn_mbt.BatchNorm2d::new(3) // gamma=1, beta=0
+  let bn = @nn.BatchNorm2d::new(3) // gamma=1, beta=0
   let n = 4
   let c = 3
   let h = 2
@@ -37,7 +37,7 @@ test "batch_norm2d_forward / per-channel mean ~ 0 and std ~ 1 after normalisatio
       }
     }
   }
-  let (out, _) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn)
+  let (out, _) = @nn.batch_norm2d_forward(input, n, c, h, w, bn)
   // Compute per-channel mean / std of output; should be ~0 and ~1.
   for ci in 0..<c {
     let mut sum = 0.0F
@@ -70,9 +70,9 @@ test "batch_norm2d_forward / per-channel mean ~ 0 and std ~ 1 after normalisatio
 test "batch_norm2d_forward / gamma and beta are applied correctly" {
   // With gamma=2, beta=3: y = 2 * (x-mean)*inv_std + 3.
   // For a zero-mean input batch, mean=0 and inv_std~1, so y ~ 2*x + 3.
-  let bn = @snn_mbt.BatchNorm2d::with_gamma_beta([2.0F], [3.0F])
+  let bn = @nn.BatchNorm2d::with_gamma_beta([2.0F], [3.0F])
   let input : Array[Float] = [1.0F, -1.0F, 1.0F, -1.0F]
-  let (out, _) = @snn_mbt.batch_norm2d_forward(input, 4, 1, 1, 1, bn)
+  let (out, _) = @nn.batch_norm2d_forward(input, 4, 1, 1, 1, bn)
   // Per-channel mean over {1, -1, 1, -1} = 0; std = sqrt(1) = 1.
   // y[n] = 2 * (x[n] - 0) / 1 + 3 = 2*x[n] + 3.
   // x[0]=1 -> y=5, x[1]=-1 -> y=1, x[2]=1 -> y=5, x[3]=-1 -> y=1.
@@ -88,9 +88,9 @@ test "batch_norm2d_forward / gamma and beta are applied correctly" {
 test "batch_norm2d_forward / running stats change during training" {
   // After one forward pass with momentum=0.1, the running stats should
   // match (1 - momentum) * 0 + momentum * batch_stats.
-  let bn = @snn_mbt.BatchNorm2d::new(1, momentum=0.1)
+  let bn = @nn.BatchNorm2d::new(1, momentum=0.1)
   let input : Array[Float] = [10.0F, 12.0F, 14.0F, 16.0F]
-  let _ = @snn_mbt.batch_norm2d_forward(input, 4, 1, 1, 1, bn)
+  let _ = @nn.batch_norm2d_forward(input, 4, 1, 1, 1, bn)
   // Batch mean = 13, var = ((10-13)^2 + (12-13)^2 + (14-13)^2 + (16-13)^2) / 4
   //            = (9 + 1 + 1 + 9) / 4 = 5.
   // PyTorch convention: running = (1 - momentum) * running + momentum * batch.
@@ -105,22 +105,22 @@ test "batch_norm2d_forward / running stats change during training" {
 
 ///|
 test "batch_norm2d_backward / d_gamma and d_beta shape" {
-  let bn = @snn_mbt.BatchNorm2d::new(3)
+  let bn = @nn.BatchNorm2d::new(3)
   let input : Array[Float] = Array::make(2 * 3 * 2 * 2, 0.5F)
-  let (out, cache) = @snn_mbt.batch_norm2d_forward(input, 2, 3, 2, 2, bn)
+  let (out, cache) = @nn.batch_norm2d_forward(input, 2, 3, 2, 2, bn)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let (_d_input, d_gamma, d_beta) = @snn_mbt.batch_norm2d_backward(d_output, cache, bn)
+  let (_d_input, d_gamma, d_beta) = @nn.batch_norm2d_backward(d_output, cache, bn)
   if d_gamma.length() != 3 { fail("d_gamma length should be 3") }
   if d_beta.length() != 3 { fail("d_beta length should be 3") }
 }
 
 ///|
 test "batch_norm2d_backward / d_input shape equals input shape" {
-  let bn = @snn_mbt.BatchNorm2d::new(3)
+  let bn = @nn.BatchNorm2d::new(3)
   let input : Array[Float] = Array::make(2 * 3 * 2 * 2, 0.7F)
-  let (out, cache) = @snn_mbt.batch_norm2d_forward(input, 2, 3, 2, 2, bn)
+  let (out, cache) = @nn.batch_norm2d_forward(input, 2, 3, 2, 2, bn)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let (d_input, _, _) = @snn_mbt.batch_norm2d_backward(d_output, cache, bn)
+  let (d_input, _, _) = @nn.batch_norm2d_backward(d_output, cache, bn)
   if d_input.length() != input.length() {
     fail("d_input length should be \{input.length()}, got \{d_input.length()}")
   }
@@ -128,11 +128,11 @@ test "batch_norm2d_backward / d_input shape equals input shape" {
 
 ///|
 test "batch_norm2d_backward / zero d_output gives zero gradients" {
-  let bn = @snn_mbt.BatchNorm2d::new(2)
+  let bn = @nn.BatchNorm2d::new(2)
   let input : Array[Float] = Array::make(2 * 2 * 2 * 2, 0.5F)
-  let (_, cache) = @snn_mbt.batch_norm2d_forward(input, 2, 2, 2, 2, bn)
+  let (_, cache) = @nn.batch_norm2d_forward(input, 2, 2, 2, 2, bn)
   let d_output : Array[Float] = Array::make(input.length(), 0.0F)
-  let (d_input, d_gamma, d_beta) = @snn_mbt.batch_norm2d_backward(d_output, cache, bn)
+  let (d_input, d_gamma, d_beta) = @nn.batch_norm2d_backward(d_output, cache, bn)
   for i in 0..<d_input.length() {
     if d_input[i] != 0.0F { fail("d_input[\{i}] should be 0") }
   }
@@ -146,16 +146,16 @@ test "batch_norm2d_backward / zero d_output gives zero gradients" {
 test "batch_norm2d_backward / d_input gradient check vs numerical" {
   // Single channel, simple input. Use finite-difference central
   // differences (eps=1e-3, tol=1e-2 due to Float32 noise).
-  let bn = @snn_mbt.BatchNorm2d::new(1)
+  let bn = @nn.BatchNorm2d::new(1)
   let n = 4
   let c = 1
   let h = 1
   let w = 1
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
-  let (out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn)
+  let (out, cache) = @nn.batch_norm2d_forward(input, n, c, h, w, bn)
   // Loss = sum(out).  d_loss / d_out = 1 for every element.
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let (d_input, _d_gamma, _d_beta) = @snn_mbt.batch_norm2d_backward(d_output, cache, bn)
+  let (d_input, _d_gamma, _d_beta) = @nn.batch_norm2d_backward(d_output, cache, bn)
   // Numerical gradient: d/dx[i] of sum(out) ≈ (loss(x+eps) - loss(x-eps)) / 2eps.
   let eps = 0.001F
   for i in 0..<input.length() {
@@ -168,8 +168,8 @@ test "batch_norm2d_backward / d_input gradient check vs numerical" {
     }
     input_plus[i] = input[i] + eps
     input_minus[i] = input[i] - eps
-    let (out_plus, _) = @snn_mbt.batch_norm2d_forward(input_plus, n, c, h, w, bn)
-    let (out_minus, _) = @snn_mbt.batch_norm2d_forward(input_minus, n, c, h, w, bn)
+    let (out_plus, _) = @nn.batch_norm2d_forward(input_plus, n, c, h, w, bn)
+    let (out_minus, _) = @nn.batch_norm2d_forward(input_minus, n, c, h, w, bn)
     let mut sum_plus = 0.0F
     let mut sum_minus = 0.0F
     for k in 0..<out_plus.length() {
@@ -192,10 +192,10 @@ fn bn_obj(
   c : Int,
   h : Int,
   w : Int,
-  bn : @snn_mbt.BatchNorm2d,
+  bn : @nn.BatchNorm2d,
   wt : Array[Float],
 ) -> Float {
-  let (out, _cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn)
+  let (out, _cache) = @nn.batch_norm2d_forward(input, n, c, h, w, bn)
   let mut s = 0.0F
   for i in 0..<out.length() {
     s = s + out[i] * wt[i]
@@ -215,7 +215,7 @@ fn bn_obj(
 /// `inv_std ~ 1` and the bug is arithmetically invisible. The three channels
 /// here have scales 1.0, 0.05 and 20.0, so no single omitted factor can hide.
 /// The TARNet model-level sweep is what finally caught it, on `bn_seg`.
-fn bn_scaled_fixture() -> (@snn_mbt.BatchNorm2d, Array[Float], Array[Float], Int, Int, Int, Int) {
+fn bn_scaled_fixture() -> (@nn.BatchNorm2d, Array[Float], Array[Float], Int, Int, Int, Int) {
   let n = 4
   let c = 3
   let h = 2
@@ -238,7 +238,7 @@ fn bn_scaled_fixture() -> (@snn_mbt.BatchNorm2d, Array[Float], Array[Float], Int
   for i in 0..<wt.length() {
     wt[i] = 1.0F + 0.23F * Float::from_int(i % 7)
   }
-  (@snn_mbt.BatchNorm2d::new(c), input, wt, n, c, h, w)
+  (@nn.BatchNorm2d::new(c), input, wt, n, c, h, w)
 }
 
 ///|
@@ -287,8 +287,8 @@ test "batch_norm2d_backward / d_input matches numerical across samples AND chann
   // 1.0 / 0.05 / 20.0, so the per-channel statistics differ by orders of
   // magnitude and no single term dominates.
   let (bn, input, wt, n, c, h, w) = bn_scaled_fixture()
-  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn)
-  let (d_input, _dg, _db) = @snn_mbt.batch_norm2d_backward(wt, cache, bn)
+  let (_out, cache) = @nn.batch_norm2d_forward(input, n, c, h, w, bn)
+  let (d_input, _dg, _db) = @nn.batch_norm2d_backward(wt, cache, bn)
   let eps = 0.002F
   let mut worst = 0.0F
   let mut worst_i = -1
@@ -352,7 +352,7 @@ test "batch_norm2d_backward / inference mode: the cache must record what the for
   // Running stats are made deliberately unlike the batch's, so a backward that
   // quietly reuses the batch statistics cannot accidentally agree.
   let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
-  let bn2 = @snn_mbt.BatchNorm2d::with_gamma_beta(
+  let bn2 = @nn.BatchNorm2d::with_gamma_beta(
     Array::make(c, 1.4F),
     Array::make(c, 0.0F),
   )
@@ -361,9 +361,9 @@ test "batch_norm2d_backward / inference mode: the cache must record what the for
     bn2.running_mean[k] = 3.0F + Float::from_int(k)
     bn2.running_var[k] = 0.5F + 0.25F * Float::from_int(k)
   }
-  @snn_mbt.BatchNorm2d::set_training(bn2, false)
-  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn2)
-  let (d_input, _dg, _db) = @snn_mbt.batch_norm2d_backward(wt, cache, bn2)
+  @nn.BatchNorm2d::set_training(bn2, false)
+  let (_out, cache) = @nn.batch_norm2d_forward(input, n, c, h, w, bn2)
+  let (d_input, _dg, _db) = @nn.batch_norm2d_backward(wt, cache, bn2)
   let eps = 0.002F
   let mut over = 0
   let mut worst = 0.0F
@@ -431,9 +431,9 @@ test "batch_norm2d_backward / d_gamma matches numerical on wildly scaled channel
   if ratio < 20.0F {
     fail("fixture channels differ in scale by only \{ratio}x -- d_gamma's inv_std factor would be invisible here")
   }
-  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn0)
+  let (_out, cache) = @nn.batch_norm2d_forward(input, n, c, h, w, bn0)
   let wt2 : Array[Float] = wt
-  let (_di, d_gamma, _db) = @snn_mbt.batch_norm2d_backward(wt2, cache, bn0)
+  let (_di, d_gamma, _db) = @nn.batch_norm2d_backward(wt2, cache, bn0)
   let g0 = bn0.gamma.copy()
   let f0 = bn_obj(input, n, c, h, w, bn0, wt2)
   let eps = 0.002F
@@ -444,11 +444,11 @@ test "batch_norm2d_backward / d_gamma matches numerical on wildly scaled channel
     dn[k] = g0[k] - eps
     let fu = bn_obj(
       input, n, c, h, w,
-      @snn_mbt.BatchNorm2d::with_gamma_beta(up, bn0.beta), wt2,
+      @nn.BatchNorm2d::with_gamma_beta(up, bn0.beta), wt2,
     )
     let fm = bn_obj(
       input, n, c, h, w,
-      @snn_mbt.BatchNorm2d::with_gamma_beta(dn, bn0.beta), wt2,
+      @nn.BatchNorm2d::with_gamma_beta(dn, bn0.beta), wt2,
     )
     let fd = (fu - fm) / (2.0F * eps)
     if (d_gamma[k] - fd).abs() > 0.01F {
@@ -463,8 +463,8 @@ test "batch_norm2d_backward / d_gamma matches numerical on wildly scaled channel
 ///|
 test "batch_norm2d_backward / d_beta matches numerical" {
   let (bn0, input, wt, n, c, h, w) = bn_scaled_fixture()
-  let (_out, cache) = @snn_mbt.batch_norm2d_forward(input, n, c, h, w, bn0)
-  let (_di, _dg, d_beta) = @snn_mbt.batch_norm2d_backward(wt, cache, bn0)
+  let (_out, cache) = @nn.batch_norm2d_forward(input, n, c, h, w, bn0)
+  let (_di, _dg, d_beta) = @nn.batch_norm2d_backward(wt, cache, bn0)
   let b0 = bn0.beta.copy()
   let eps = 0.002F
   for k in 0..<c {
@@ -474,11 +474,11 @@ test "batch_norm2d_backward / d_beta matches numerical" {
     dn[k] = b0[k] - eps
     let fu = bn_obj(
       input, n, c, h, w,
-      @snn_mbt.BatchNorm2d::with_gamma_beta(bn0.gamma, up), wt,
+      @nn.BatchNorm2d::with_gamma_beta(bn0.gamma, up), wt,
     )
     let fm = bn_obj(
       input, n, c, h, w,
-      @snn_mbt.BatchNorm2d::with_gamma_beta(bn0.gamma, dn), wt,
+      @nn.BatchNorm2d::with_gamma_beta(bn0.gamma, dn), wt,
     )
     let fd = (fu - fm) / (2.0F * eps)
     if (d_beta[k] - fd).abs() > 0.01F {

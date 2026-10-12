@@ -59,6 +59,25 @@ pub struct MHAGrad {
 }
 
 ///|
+/// Build an `MHAGrad` from the eight gradient arrays.
+///
+/// The fields are private, so once this type moved into its own package a
+/// caller outside it could no longer write the record literal that used to
+/// build one here. Same reason `LinearParam::new` and `Conv2dParam::new` exist.
+pub fn MHAGrad::new(
+  d_w_q : Array[Float],
+  d_b_q : Array[Float],
+  d_w_k : Array[Float],
+  d_b_k : Array[Float],
+  d_w_v : Array[Float],
+  d_b_v : Array[Float],
+  d_w_o : Array[Float],
+  d_b_o : Array[Float],
+) -> MHAGrad {
+  { d_w_q, d_b_q, d_w_k, d_b_k, d_w_v, d_b_v, d_w_o, d_b_o }
+}
+
+///|
 /// Forward / backward cache for an MHA forward pass.
 pub struct AttnCache {
   seq_len : Int

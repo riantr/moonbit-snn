@@ -13,7 +13,7 @@ fn zeros(n : Int) -> Array[Float] {
 
 ///|
 test "MultiHeadAttention::new weight shapes + num_heads divides d_model" {
-  let mha = @snn_mbt.MultiHeadAttention::new(8, 2, 1UL)
+  let mha = @nn.MultiHeadAttention::new(8, 2, 1UL)
   assert_eq(mha.d_model, 8)
   assert_eq(mha.num_heads, 2)
   assert_eq(mha.d_k, 4)
@@ -38,10 +38,10 @@ test "forward: output shape + softmax weights sum to 1 across key axis" {
   let seq_len = 3
   let d_model = 4
   let num_heads = 2
-  let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 42UL)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, 42UL)
   // Input: simple constant 0.1
   let x : Array[Float] = Array::make(seq_len * d_model, 0.1F)
-  let (out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, zeros(0))
+  let (out, cache) = @nn.multi_head_attention_forward(x, mha, zeros(0))
   assert_eq(out.length(), seq_len * d_model)
   // Weights shape + sum-to-1 per (h, s)
   assert_eq(cache.weights.length(), num_heads * seq_len * seq_len)
@@ -60,11 +60,11 @@ test "forward: output shape + softmax weights sum to 1 across key axis" {
 
 ///|
 test "forward: same seed + same input → identical output (deterministic)" {
-  let mha_a = @snn_mbt.MultiHeadAttention::new(4, 2, 7UL)
-  let mha_b = @snn_mbt.MultiHeadAttention::new(4, 2, 7UL)
+  let mha_a = @nn.MultiHeadAttention::new(4, 2, 7UL)
+  let mha_b = @nn.MultiHeadAttention::new(4, 2, 7UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F]
-  let (out_a, _) = @snn_mbt.multi_head_attention_forward(x, mha_a, zeros(0))
-  let (out_b, _) = @snn_mbt.multi_head_attention_forward(x, mha_b, zeros(0))
+  let (out_a, _) = @nn.multi_head_attention_forward(x, mha_a, zeros(0))
+  let (out_b, _) = @nn.multi_head_attention_forward(x, mha_b, zeros(0))
   for i in 0..<out_a.length() {
     if out_a[i] != out_b[i] {
       fail("diff at \{i}: \{out_a[i]} vs \{out_b[i]}")
@@ -74,11 +74,11 @@ test "forward: same seed + same input → identical output (deterministic)" {
 
 ///|
 test "forward: heads are independent — different seeds produce different outputs" {
-  let mha_a = @snn_mbt.MultiHeadAttention::new(4, 2, 7UL)
-  let mha_b = @snn_mbt.MultiHeadAttention::new(4, 2, 8UL)
+  let mha_a = @nn.MultiHeadAttention::new(4, 2, 7UL)
+  let mha_b = @nn.MultiHeadAttention::new(4, 2, 8UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F]
-  let (out_a, _) = @snn_mbt.multi_head_attention_forward(x, mha_a, zeros(0))
-  let (out_b, _) = @snn_mbt.multi_head_attention_forward(x, mha_b, zeros(0))
+  let (out_a, _) = @nn.multi_head_attention_forward(x, mha_a, zeros(0))
+  let (out_b, _) = @nn.multi_head_attention_forward(x, mha_b, zeros(0))
   let mut differ = false
   for i in 0..<out_a.length() {
     if out_a[i] != out_b[i] {
@@ -96,7 +96,7 @@ test "forward + mask: blocked positions contribute zero weight" {
   let seq_len = 3
   let d_model = 4
   let num_heads = 2
-  let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 1UL)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
   // Mask: block position t=2 for (h=0, s=0,1) and all positions for (h=0, s=2).
   // Use a very large negative value to simulate -inf for softmax.
@@ -111,7 +111,7 @@ test "forward + mask: blocked positions contribute zero weight" {
       }
     }
   }
-  let (_out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, mask)
+  let (_out, cache) = @nn.multi_head_attention_forward(x, mha, mask)
   for h in 0..<num_heads {
     for s in 0..<seq_len {
       let s_row = h * seq_len * seq_len + s * seq_len
@@ -140,11 +140,11 @@ test "backward: d_input / d_weight shapes match" {
   let seq_len = 3
   let d_model = 4
   let num_heads = 2
-  let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 1UL)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
-  let (_out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, zeros(0))
+  let (_out, cache) = @nn.multi_head_attention_forward(x, mha, zeros(0))
   let d_output : Array[Float] = Array::make(seq_len * d_model, 0.25F)
-  let (d_x, grads) = @snn_mbt.multi_head_attention_backward(cache, d_output, mha)
+  let (d_x, grads) = @nn.multi_head_attention_backward(cache, d_output, mha)
   assert_eq(d_x.length(), seq_len * d_model)
   assert_eq(grads.d_w_q.length(), d_model * d_model)
   assert_eq(grads.d_b_q.length(), d_model)
@@ -156,11 +156,11 @@ test "backward: zero d_output → zero d_input + zero grads" {
   let seq_len = 3
   let d_model = 4
   let num_heads = 2
-  let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 1UL)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
-  let (_out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, zeros(0))
+  let (_out, cache) = @nn.multi_head_attention_forward(x, mha, zeros(0))
   let zero_d : Array[Float] = Array::make(seq_len * d_model, 0.0F)
-  let (d_x, grads) = @snn_mbt.multi_head_attention_backward(cache, zero_d, mha)
+  let (d_x, grads) = @nn.multi_head_attention_backward(cache, zero_d, mha)
   for i in 0..<d_x.length() {
     if d_x[i] != 0.0F {
       fail("d_x[\{i}] = \{d_x[i]} for zero d_output")
@@ -187,20 +187,20 @@ test "backward: gradient check vs numerical (central difference)" {
   let seq_len = 2
   let d_model = 2
   let num_heads = 1
-  let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 3UL)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, 3UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let d_output : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F]
-  let (_out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, zeros(0))
-  let (_d_x, grads) = @snn_mbt.multi_head_attention_backward(cache, d_output, mha)
+  let (_out, cache) = @nn.multi_head_attention_forward(x, mha, zeros(0))
+  let (_d_x, grads) = @nn.multi_head_attention_backward(cache, d_output, mha)
 
   // Numerical gradient via central difference on a single scalar weight.
   // Pick weight w_o[0, 0] (in_features=0, out_features=0).
   let eps = 0.001F
   let orig = mha.w_o.weight[0]
   mha.w_o.weight[0] = orig + eps
-  let (out_plus, _) = @snn_mbt.multi_head_attention_forward(x, mha, zeros(0))
+  let (out_plus, _) = @nn.multi_head_attention_forward(x, mha, zeros(0))
   mha.w_o.weight[0] = orig - eps
-  let (out_minus, _) = @snn_mbt.multi_head_attention_forward(x, mha, zeros(0))
+  let (out_minus, _) = @nn.multi_head_attention_forward(x, mha, zeros(0))
   mha.w_o.weight[0] = orig
   let mut loss_plus = 0.0F
   let mut loss_minus = 0.0F

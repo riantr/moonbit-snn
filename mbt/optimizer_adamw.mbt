@@ -104,7 +104,7 @@ pub fn adamw_update_arrays(
 ///|
 /// AdamW wrapper for `LinearParam`.
 pub fn adamw_update_linear(
-  param : LinearParam,
+  param : @nn.LinearParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : AdamWState,
@@ -113,20 +113,21 @@ pub fn adamw_update_linear(
   beta2 : Float,
   eps : Float,
   weight_decay : Float,
-) -> (LinearParam, AdamWState) {
+) -> (@nn.LinearParam, AdamWState) {
   let (w, b, s2) = adamw_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state,
     lr, beta1, beta2, eps, weight_decay,
   )
-  let p2 = { weight: w, bias: b, in_features: param.in_features,
-             out_features: param.out_features }
+  let p2 = @nn.LinearParam::new(
+    w, b, param.in_features, param.out_features,
+  )
   (p2, s2)
 }
 
 ///|
 /// AdamW wrapper for `Conv2dParam`.
 pub fn adamw_update_conv(
-  param : Conv2dParam,
+  param : @nn.Conv2dParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : AdamWState,
@@ -135,12 +136,15 @@ pub fn adamw_update_conv(
   beta2 : Float,
   eps : Float,
   weight_decay : Float,
-) -> (Conv2dParam, AdamWState) {
+) -> (@nn.Conv2dParam, AdamWState) {
   let (w, b, s2) = adamw_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state,
     lr, beta1, beta2, eps, weight_decay,
   )
-  let p2 = { weight: w, bias: b, c_out: param.c_out, c_in: param.c_in,
-             kh: param.kh, kw: param.kw, stride: param.stride, pad: param.pad }
+  let p2 = @nn.Conv2dParam::new(
+    w, b, param.c_out, param.c_in,
+    param.kh, param.kw,
+    stride=param.stride, pad=param.pad,
+  )
   (p2, s2)
 }

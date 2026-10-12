@@ -662,7 +662,7 @@ test "layer_norm: d_input matches central differences at every coordinate" {
   let n = 3
   let c = 5
   let t = 8
-  let ln = @snn_mbt.LayerNorm::new(c, 1, t, eps=1.0e-4F)
+  let ln = @nn.LayerNorm::new(c, 1, t, eps=1.0e-4F)
   let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(133UL))
   // an arbitrary upstream gradient, asymmetric in position so a layout
   // mistake cannot hide behind a symmetric one
@@ -672,8 +672,8 @@ test "layer_norm: d_input matches central differences at every coordinate" {
     w[i] = Float::from_int((i * 7 + 3) % 11) - 5.0F
     i = i + 1
   }
-  let (_y, cache) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
-  let (d_x, _dg, _db) = @snn_mbt.layer_norm_backward(w, cache, ln)
+  let (_y, cache) = @nn.layer_norm_forward(x, n, c, 1, t, ln)
+  let (d_x, _dg, _db) = @nn.layer_norm_backward(w, cache, ln)
   let h = TN_H
   let mut over = 0
   let mut worst = 0.0F
@@ -685,8 +685,8 @@ test "layer_norm: d_input matches central differences at every coordinate" {
     let xd = x.copy()
     xu[i] = x[i] + h
     xd[i] = x[i] - h
-    let (yu, _ca) = @snn_mbt.layer_norm_forward(xu, n, c, 1, t, ln)
-    let (yd, _cb) = @snn_mbt.layer_norm_forward(xd, n, c, 1, t, ln)
+    let (yu, _ca) = @nn.layer_norm_forward(xu, n, c, 1, t, ln)
+    let (yd, _cb) = @nn.layer_norm_forward(xd, n, c, 1, t, ln)
     let mut au = 0.0F
     let mut ad = 0.0F
     let mut j = 0
@@ -896,10 +896,10 @@ const DN_H_STACK : Float = 2.0e-4F
 
 ///|
 fn tn_ln_with_beta(
-  proto : @snn_mbt.LayerNorm,
+  proto : @nn.LayerNorm,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.LayerNorm {
+) -> @nn.LayerNorm {
   let b = proto.beta.copy()
   b[idx] = proto.beta[idx] + delta
   { gamma: proto.gamma.copy(), beta: b, eps: proto.eps, c: proto.c, h: proto.h,
@@ -914,7 +914,7 @@ test "layer_norm: d_beta matches central differences in BETA" {
   let chw = c * t
   let g0 = @snn_mbt.tn_randn(chw, 0.7F, @core.Xoshiro::new(321UL))
   let b0 = @snn_mbt.tn_randn(chw, 0.3F, @core.Xoshiro::new(322UL))
-  let ln : @snn_mbt.LayerNorm = {
+  let ln : @nn.LayerNorm = {
     gamma: g0,
     beta: b0,
     eps: 1.0e-4F,
@@ -929,8 +929,8 @@ test "layer_norm: d_beta matches central differences in BETA" {
     u[i] = Float::from_int((i * 5 + 1) % 9) - 4.0F
     i = i + 1
   }
-  let (_y, cache) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
-  let db = @snn_mbt.layer_norm_backward(u, cache, ln).2
+  let (_y, cache) = @nn.layer_norm_forward(x, n, c, 1, t, ln)
+  let db = @nn.layer_norm_backward(u, cache, ln).2
   let f_base = tn_ln_obj(x, n, c, t, ln, u)
   let tol = dn_split_tol(f_base, TN_H)
   let mut over = 0
@@ -979,10 +979,10 @@ test "layer_norm: d_beta matches central differences in BETA" {
 
 ///|
 fn tn_ln_with_gamma(
-  proto : @snn_mbt.LayerNorm,
+  proto : @nn.LayerNorm,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.LayerNorm {
+) -> @nn.LayerNorm {
   let g = proto.gamma.copy()
   g[idx] = proto.gamma[idx] + delta
   { gamma: g, beta: proto.beta.copy(), eps: proto.eps, c: proto.c, h: proto.h,
@@ -995,10 +995,10 @@ fn tn_ln_obj(
   n : Int,
   c : Int,
   t : Int,
-  ln : @snn_mbt.LayerNorm,
+  ln : @nn.LayerNorm,
   u : Array[Float],
 ) -> Float {
-  let (y, _c) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
+  let (y, _c) = @nn.layer_norm_forward(x, n, c, 1, t, ln)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -1016,7 +1016,7 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
   let chw = c * t
   let g0 = @snn_mbt.tn_randn(chw, 0.7F, @core.Xoshiro::new(311UL))
   let b0 = @snn_mbt.tn_randn(chw, 0.3F, @core.Xoshiro::new(312UL))
-  let ln : @snn_mbt.LayerNorm = {
+  let ln : @nn.LayerNorm = {
     gamma: g0,
     beta: b0,
     eps: 1.0e-4F,
@@ -1031,8 +1031,8 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
     u[i] = Float::from_int((i * 7 + 3) % 11) - 5.0F
     i = i + 1
   }
-  let (_y, cache) = @snn_mbt.layer_norm_forward(x, n, c, 1, t, ln)
-  let dg = @snn_mbt.layer_norm_backward(u, cache, ln).1
+  let (_y, cache) = @nn.layer_norm_forward(x, n, c, 1, t, ln)
+  let dg = @nn.layer_norm_backward(u, cache, ln).1
   let f_base = tn_ln_obj(x, n, c, t, ln, u)
   let tol = dn_split_tol(f_base, TN_H)
   let mut over = 0

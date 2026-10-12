@@ -18,7 +18,7 @@
 /// Every cache the model-level backward needs. Held as one struct so a missing
 /// stage is a compile error rather than a silently absent gradient.
 pub(all) struct TarnetFullCache {
-  ln_in_cache : GlnCache // gLN over the log-Mel input
+  ln_in_cache : @nn.GlnCache // gLN over the log-Mel input
   gln : Array[Float]           // gLN output, the 1x1 conv's input
   bn : Array[Float]            // bottleneck, the three stacks' shared input
   stack_s : TarnetStackCache
@@ -31,10 +31,10 @@ pub(all) struct TarnetFullCache {
   fused : Array[Float]         // SE output, the ASP's input
   asp_cache : AspCache
   pooled : Array[Float]        // ASP output [n, 2c]
-  bn_seg_cache : BatchNormCache
+  bn_seg_cache : @nn.BatchNormCache
   bn_seg : Array[Float]
   emb : Array[Float]
-  bn_out_cache : BatchNormCache
+  bn_out_cache : @nn.BatchNormCache
   embedding : Array[Float]
 }
 
@@ -106,37 +106,37 @@ pub fn tarnet_forward_full(
   // on the struct as the expected length, not as a constraint.
   let t = x.length() / (n * c)
   // bottleneck: gLN over (in_chan, t) jointly, then a 1x1 convolution
-  let (gln, bn_ln_cache) = gln_forward(x, n, c, t, net.ln_in)
-  let bn = linear_forward(
-    gln, n * t, LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
+  let (gln, bn_ln_cache) = @nn.gln_forward(x, n, c, t, net.ln_in)
+  let bn = @nn.linear_forward(
+    gln, n * t, @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
   )
   let (x_s, stack_s) = tn_stack_forward_full(net.stack_s, bn, n)
   let (x_m, stack_m) = tn_stack_forward_full(net.stack_m, bn, n)
   let (x_l, stack_l) = tn_stack_forward_full(net.stack_l, bn, n)
   let cat = tn_concat3(x_s, x_m, x_l, n, net.bn_chan, t)
-  let mfa = linear_forward(
+  let mfa = @nn.linear_forward(
     cat,
     n * t,
-    LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
+    @nn.LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
   )
   let mfa_relu = @activ.relu_forward(mfa)
   let (fused, se_cache) = se_forward_full(mfa_relu, n, net.mfa_se)
   let (pooled, asp_cache) = asp_forward(fused, n, net.asp)
-  let (bn_seg, bn_seg_cache) = batch_norm2d_forward(
+  let (bn_seg, bn_seg_cache) = @nn.batch_norm2d_forward(
     pooled, n, 2 * net.fuse_out, 1, 1, net.bn_seg,
   )
-  let emb = linear_forward(
+  let emb = @nn.linear_forward(
     bn_seg,
     n,
-    LinearParam::new(net.fc_w, net.fc_b, 2 * net.fuse_out, net.emb_dim),
+    @nn.LinearParam::new(net.fc_w, net.fc_b, 2 * net.fuse_out, net.emb_dim),
   )
-  let (embedding, bn_out_cache) = batch_norm2d_forward(
+  let (embedding, bn_out_cache) = @nn.batch_norm2d_forward(
     emb, n, net.emb_dim, 1, 1, net.bn_out,
   )
-  let logits = linear_forward(
+  let logits = @nn.linear_forward(
     embedding,
     n,
-    LinearParam::new(net.cls_w, net.cls_b, net.emb_dim, net.n_classes),
+    @nn.LinearParam::new(net.cls_w, net.cls_b, net.emb_dim, net.n_classes),
   )
   let out = {
     logits,
@@ -190,23 +190,23 @@ pub fn tarnet_backward(
   // read off the cache's bottleneck, which is where the forward left it
   let t = cache.bn.length() / (n * net.bn_chan)
   // classifier
-  let (d_embedding, d_cls_w, d_cls_b) = linear_backward(
+  let (d_embedding, d_cls_w, d_cls_b) = @nn.linear_backward(
     cache.embedding,
     d_logits,
     n,
-    LinearParam::new(net.cls_w, net.cls_b, net.emb_dim, net.n_classes),
+    @nn.LinearParam::new(net.cls_w, net.cls_b, net.emb_dim, net.n_classes),
   )
-  let (d_emb, d_bn_out_g, d_bn_out_b) = batch_norm2d_backward(
+  let (d_emb, d_bn_out_g, d_bn_out_b) = @nn.batch_norm2d_backward(
     d_embedding, cache.bn_out_cache, net.bn_out,
   )
   // embedding projection
-  let (d_bn_seg, d_fc_w, d_fc_b) = linear_backward(
+  let (d_bn_seg, d_fc_w, d_fc_b) = @nn.linear_backward(
     cache.bn_seg,
     d_emb,
     n,
-    LinearParam::new(net.fc_w, net.fc_b, 2 * net.fuse_out, net.emb_dim),
+    @nn.LinearParam::new(net.fc_w, net.fc_b, 2 * net.fuse_out, net.emb_dim),
   )
-  let (d_pooled, d_bn_seg_g, d_bn_seg_b) = batch_norm2d_backward(
+  let (d_pooled, d_bn_seg_g, d_bn_seg_b) = @nn.batch_norm2d_backward(
     d_bn_seg, cache.bn_seg_cache, net.bn_seg,
   )
   // attentional statistics pooling
@@ -215,11 +215,11 @@ pub fn tarnet_backward(
   // multi-feature aggregation. relu_backward needs its own INPUT, not its
   // output, to know which entries were negative.
   let d_mfa = @activ.relu_backward(cache.mfa, se_g.d_x)
-  let (d_cat, d_mfa_w, d_mfa_b) = linear_backward(
+  let (d_cat, d_mfa_w, d_mfa_b) = @nn.linear_backward(
     cache.cat,
     d_mfa,
     n * t,
-    LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
+    @nn.LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
   )
   let (d_s, d_m, d_l) = tn_split3(d_cat, n, net.bn_chan, t)
   // the three stacks are parallel branches off ONE bottleneck, so their input
@@ -232,13 +232,13 @@ pub fn tarnet_backward(
   for i in 0..<cache.bn.length() {
     d_bn[i] = d_bn_s[i] + d_bn_m[i] + d_bn_l[i]
   }
-  let (d_gln, d_bn_w, d_bn_b) = linear_backward(
+  let (d_gln, d_bn_w, d_bn_b) = @nn.linear_backward(
     cache.gln,
     d_bn,
     n * t,
-    LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
+    @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
   )
-  let (d_x, d_ln_g, d_ln_b) = gln_backward(
+  let (d_x, d_ln_g, d_ln_b) = @nn.gln_backward(
     d_gln, cache.ln_in_cache, net.ln_in,
   )
   let g : Array[Float] = Array::make(tarnet_param_count(net), 0.0F)

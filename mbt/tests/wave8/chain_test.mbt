@@ -3,7 +3,7 @@
 ///|
 test "chain / empty chain returns input unchanged with no caches" {
   let input : Array[Float] = [1.0F, 2.0F, 3.0F]
-  let (out, caches, _, _, _, _) = @snn_mbt.chain_forward([], input, 1, 1, 1, 3)
+  let (out, caches, _, _, _, _) = @nn.chain_forward([], input, 1, 1, 1, 3)
   if out.length() != input.length() {
     fail("empty chain output length mismatch")
   }
@@ -21,18 +21,18 @@ test "chain / MLP: Linear -> ReLU -> Linear forward" {
     0.5F, 0.5F, 0.5F, 0.5F, // out[2] = 0.5 * sum
   ]
   let b1 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let p1 = @snn_mbt.LinearParam::new(w1, b1, 4, 3)
+  let p1 = @nn.LinearParam::new(w1, b1, 4, 3)
   let w2 : Array[Float] = [1.0F, -1.0F, 0.0F, 1.0F, 0.0F, -1.0F]
   let b2 : Array[Float] = [0.0F, 0.0F]
-  let p2 = @snn_mbt.LinearParam::new(w2, b2, 3, 2)
-  let layers : Array[@snn_mbt.Layer] = [
-    @snn_mbt.Layer::linear(p1), @snn_mbt.Layer::relu(), @snn_mbt.Layer::linear(p2),
+  let p2 = @nn.LinearParam::new(w2, b2, 3, 2)
+  let layers : Array[@nn.Layer] = [
+    @nn.Layer::linear(p1), @nn.Layer::relu(), @nn.Layer::linear(p2),
   ]
   let input : Array[Float] = [
     1.0F, 2.0F, 3.0F, 4.0F,  // sample 0
     0.5F, -1.0F, 0.5F, 0.0F, // sample 1
   ]
-  let (out, caches, n_out, c_out, h_out, w_out) = @snn_mbt.chain_forward(
+  let (out, caches, n_out, c_out, h_out, w_out) = @nn.chain_forward(
     layers, input, 2, 4, 1, 1,
   )
   if n_out != 2 || c_out != 2 || h_out != 1 || w_out != 1 {
@@ -54,34 +54,34 @@ test "chain / MLP backward: shape and d_input sanity" {
   // matching the input shape and the right number of grads.
   let w1 : Array[Float] = Array::make(3 * 4, 0.1F)
   let b1 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let p1 = @snn_mbt.LinearParam::new(w1, b1, 4, 3)
+  let p1 = @nn.LinearParam::new(w1, b1, 4, 3)
   let w2 : Array[Float] = Array::make(2 * 3, 0.1F)
   let b2 : Array[Float] = [0.0F, 0.0F]
-  let p2 = @snn_mbt.LinearParam::new(w2, b2, 3, 2)
-  let layers : Array[@snn_mbt.Layer] = [
-    @snn_mbt.Layer::linear(p1), @snn_mbt.Layer::relu(), @snn_mbt.Layer::linear(p2),
+  let p2 = @nn.LinearParam::new(w2, b2, 3, 2)
+  let layers : Array[@nn.Layer] = [
+    @nn.Layer::linear(p1), @nn.Layer::relu(), @nn.Layer::linear(p2),
   ]
   let input : Array[Float] = Array::make(2 * 4, 0.5F)
-  let (_out, caches, _n, _c, _h, _w) = @snn_mbt.chain_forward(
+  let (_out, caches, _n, _c, _h, _w) = @nn.chain_forward(
     layers, input, 2, 4, 1, 1,
   )
   let d_output : Array[Float] = Array::make(2 * 2, 1.0F)
-  let (d_input, grads) = @snn_mbt.chain_backward(layers, caches, d_output, 2, 2, 1, 1)
+  let (d_input, grads) = @nn.chain_backward(layers, caches, d_output, 2, 2, 1, 1)
   if d_input.length() != input.length() {
     fail("d_input length should be \{input.length()}, got \{d_input.length()}")
   }
   if grads.length() != 3 { fail("should have 3 grads") }
   // Check grad types.
   match grads[0] {
-    @snn_mbt.LayerGrad::Linear(_, _) => ()
+    @nn.LayerGrad::Linear(_, _) => ()
     _ => fail("grads[0] should be Linear")
   }
   match grads[1] {
-    @snn_mbt.LayerGrad::Empty => ()
+    @nn.LayerGrad::Empty => ()
     _ => fail("grads[1] (ReLU) should be Empty")
   }
   match grads[2] {
-    @snn_mbt.LayerGrad::Linear(_, _) => ()
+    @nn.LayerGrad::Linear(_, _) => ()
     _ => fail("grads[2] should be Linear")
   }
 }
@@ -91,20 +91,20 @@ test "chain / CNN: Conv2d -> ReLU -> MaxPool2d -> Flatten -> Linear" {
   // 1x1x4x4 input -> Conv(2x1x3x3, pad=1, stride=1) -> 1x2x4x4
   // -> ReLU (shape unchanged) -> MaxPool2d(2x2, stride=2) -> 1x2x2x2
   // -> Flatten -> 1x8x1x1 -> Linear(2) -> 1x2x1x1.
-  let conv = @snn_mbt.Conv2dParam::new(
+  let conv = @nn.Conv2dParam::new(
     [0.1F, 0.0F, 0.1F, 0.0F, 0.1F, 0.0F, 0.1F, 0.0F, 0.1F,
      0.0F, 0.1F, 0.0F, 0.1F, 0.0F, 0.1F, 0.0F, 0.1F, 0.0F],
     [0.0F, 0.0F],
     2, 1, 3, 3, stride=1, pad=1,
   )
   let pool = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-  let linear = @snn_mbt.LinearParam::new(Array::make(2 * 8, 0.1F), [0.0F, 0.0F], 8, 2)
-  let layers : Array[@snn_mbt.Layer] = [
-    @snn_mbt.Layer::conv2d(conv), @snn_mbt.Layer::relu(), @snn_mbt.Layer::max_pool2d(pool),
-    @snn_mbt.Layer::flatten(), @snn_mbt.Layer::linear(linear),
+  let linear = @nn.LinearParam::new(Array::make(2 * 8, 0.1F), [0.0F, 0.0F], 8, 2)
+  let layers : Array[@nn.Layer] = [
+    @nn.Layer::conv2d(conv), @nn.Layer::relu(), @nn.Layer::max_pool2d(pool),
+    @nn.Layer::flatten(), @nn.Layer::linear(linear),
   ]
   let input : Array[Float] = Array::make(1 * 1 * 4 * 4, 0.5F)
-  let (out, caches, n_out, c_out, h_out, w_out) = @snn_mbt.chain_forward(
+  let (out, caches, n_out, c_out, h_out, w_out) = @nn.chain_forward(
     layers, input, 1, 1, 4, 4,
   )
   if n_out != 1 || c_out != 2 || h_out != 1 || w_out != 1 {
@@ -118,19 +118,19 @@ test "chain / CNN: Conv2d -> ReLU -> MaxPool2d -> Flatten -> Linear" {
 test "chain / gradient sanity: zero d_output yields zero d_input + zero grads" {
   let w1 : Array[Float] = Array::make(3 * 2, 0.1F)
   let b1 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let p1 = @snn_mbt.LinearParam::new(w1, b1, 2, 3)
-  let layers : Array[@snn_mbt.Layer] = [@snn_mbt.Layer::linear(p1), @snn_mbt.Layer::relu()]
+  let p1 = @nn.LinearParam::new(w1, b1, 2, 3)
+  let layers : Array[@nn.Layer] = [@nn.Layer::linear(p1), @nn.Layer::relu()]
   let input : Array[Float] = [1.0F, -1.0F, 2.0F, -2.0F]
-  let (_out, caches, _n, c_out, _h, _w) = @snn_mbt.chain_forward(
+  let (_out, caches, _n, c_out, _h, _w) = @nn.chain_forward(
     layers, input, 2, 2, 1, 1,
   )
   let d_output : Array[Float] = Array::make(2 * c_out, 0.0F)
-  let (d_input, grads) = @snn_mbt.chain_backward(layers, caches, d_output, 2, c_out, 1, 1)
+  let (d_input, grads) = @nn.chain_backward(layers, caches, d_output, 2, c_out, 1, 1)
   for i in 0..<d_input.length() {
     if d_input[i] != 0.0F { fail("d_input[\{i}] should be 0") }
   }
   match grads[0] {
-    @snn_mbt.LayerGrad::Linear(d_w, d_b) => {
+    @nn.LayerGrad::Linear(d_w, d_b) => {
       for i in 0..<d_w.length() {
         if d_w[i] != 0.0F { fail("d_w[\{i}] should be 0") }
       }
@@ -141,7 +141,7 @@ test "chain / gradient sanity: zero d_output yields zero d_input + zero grads" {
     _ => fail("grads[0] should be Linear")
   }
   match grads[1] {
-    @snn_mbt.LayerGrad::Empty => ()
+    @nn.LayerGrad::Empty => ()
     _ => fail("grads[1] (ReLU) should be Empty")
   }
 }
@@ -151,17 +151,17 @@ test "chain / backward gradient check vs numerical (Linear + ReLU)" {
   // Numerical gradient of sum(output) w.r.t. input via central diff.
   let w1 : Array[Float] = [0.3F, -0.2F, 0.1F, 0.5F, -0.4F, 0.2F]
   let b1 : Array[Float] = [0.0F, 0.0F]
-  let p1 = @snn_mbt.LinearParam::new(w1, b1, 3, 2)
-  let layers : Array[@snn_mbt.Layer] = [@snn_mbt.Layer::linear(p1), @snn_mbt.Layer::relu()]
+  let p1 = @nn.LinearParam::new(w1, b1, 3, 2)
+  let layers : Array[@nn.Layer] = [@nn.Layer::linear(p1), @nn.Layer::relu()]
   let n = 2
   // Inputs chosen so all post-Linear pre-ReLU activations are well away
   // from 0 (ReLU is non-smooth at 0, gradient checks fail there).
   let input : Array[Float] = [1.0F, 0.5F, -0.5F, -1.0F, 1.5F, -2.0F]
-  let (out, caches, _, c_out, _, _) = @snn_mbt.chain_forward(
+  let (out, caches, _, c_out, _, _) = @nn.chain_forward(
     layers, input, n, 3, 1, 1,
   )
   let d_output : Array[Float] = Array::make(n * c_out, 1.0F)
-  let (d_input, _grads) = @snn_mbt.chain_backward(layers, caches, d_output, n, c_out, 1, 1)
+  let (d_input, _grads) = @nn.chain_backward(layers, caches, d_output, n, c_out, 1, 1)
   let eps = 0.001F
   for i in 0..<input.length() {
     let input_plus : Array[Float] = Array::make(input.length(), 0.0F)
@@ -172,10 +172,10 @@ test "chain / backward gradient check vs numerical (Linear + ReLU)" {
     }
     input_plus[i] = input[i] + eps
     input_minus[i] = input[i] - eps
-    let (out_plus, _, _, _, _, _) = @snn_mbt.chain_forward(
+    let (out_plus, _, _, _, _, _) = @nn.chain_forward(
       layers, input_plus, n, 3, 1, 1,
     )
-    let (out_minus, _, _, _, _, _) = @snn_mbt.chain_forward(
+    let (out_minus, _, _, _, _, _) = @nn.chain_forward(
       layers, input_minus, n, 3, 1, 1,
     )
     let mut sum_plus = 0.0F
@@ -198,33 +198,33 @@ test "chain / BN included in MLP forward + backward" {
   // d_beta for the BN slot.
   let w1 : Array[Float] = Array::make(3 * 2, 0.2F)
   let b1 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let p1 = @snn_mbt.LinearParam::new(w1, b1, 2, 3)
-  let bn = @snn_mbt.BatchNorm2d::new(3)
+  let p1 = @nn.LinearParam::new(w1, b1, 2, 3)
+  let bn = @nn.BatchNorm2d::new(3)
   let w2 : Array[Float] = Array::make(2 * 3, 0.1F)
   let b2 : Array[Float] = [0.0F, 0.0F]
-  let p2 = @snn_mbt.LinearParam::new(w2, b2, 3, 2)
-  let layers : Array[@snn_mbt.Layer] = [
-    @snn_mbt.Layer::linear(p1), @snn_mbt.Layer::batch_norm2d(bn), @snn_mbt.Layer::relu(),
-    @snn_mbt.Layer::linear(p2),
+  let p2 = @nn.LinearParam::new(w2, b2, 3, 2)
+  let layers : Array[@nn.Layer] = [
+    @nn.Layer::linear(p1), @nn.Layer::batch_norm2d(bn), @nn.Layer::relu(),
+    @nn.Layer::linear(p2),
   ]
   let input : Array[Float] = Array::make(2 * 2, 0.5F)
-  let (_out, caches, _, c_out, _, _) = @snn_mbt.chain_forward(
+  let (_out, caches, _, c_out, _, _) = @nn.chain_forward(
     layers, input, 2, 2, 1, 1,
   )
   let d_output : Array[Float] = Array::make(2 * c_out, 1.0F)
-  let (d_input, grads) = @snn_mbt.chain_backward(layers, caches, d_output, 2, c_out, 1, 1)
+  let (d_input, grads) = @nn.chain_backward(layers, caches, d_output, 2, c_out, 1, 1)
   if d_input.length() != input.length() {
     fail("d_input length should match input length")
   }
   if grads.length() != 4 { fail("should have 4 grads") }
   // Layer 0: Linear
   match grads[0] {
-    @snn_mbt.LayerGrad::Linear(_, _) => ()
+    @nn.LayerGrad::Linear(_, _) => ()
     _ => fail("grads[0] should be Linear")
   }
   // Layer 1: BatchNorm2d (expect d_gamma + d_beta)
   match grads[1] {
-    @snn_mbt.LayerGrad::BatchNorm2d(d_g, d_b) => {
+    @nn.LayerGrad::BatchNorm2d(d_g, d_b) => {
       if d_g.length() != 3 { fail("d_gamma should have length 3") }
       if d_b.length() != 3 { fail("d_beta should have length 3") }
     }
@@ -232,12 +232,12 @@ test "chain / BN included in MLP forward + backward" {
   }
   // Layer 2: ReLU (Empty)
   match grads[2] {
-    @snn_mbt.LayerGrad::Empty => ()
+    @nn.LayerGrad::Empty => ()
     _ => fail("grads[2] (ReLU) should be Empty")
   }
   // Layer 3: Linear
   match grads[3] {
-    @snn_mbt.LayerGrad::Linear(_, _) => ()
+    @nn.LayerGrad::Linear(_, _) => ()
     _ => fail("grads[3] should be Linear")
   }
 }

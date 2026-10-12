@@ -33,10 +33,10 @@ pub struct SpikingMultiHeadAttention {
   num_heads : Int
   d_k : Int
   beta : Float
-  w_q : LinearParam
-  w_k : LinearParam
-  w_v : LinearParam
-  w_o : LinearParam
+  w_q : @nn.LinearParam
+  w_k : @nn.LinearParam
+  w_v : @nn.LinearParam
+  w_o : @nn.LinearParam
 }
 
 ///|
@@ -69,10 +69,10 @@ pub struct SpikingAttention {
   num_heads : Int
   d_k : Int
   beta : Float
-  w_q : LinearParam
-  w_k : LinearParam
-  w_v : LinearParam
-  w_o : LinearParam
+  w_q : @nn.LinearParam
+  w_k : @nn.LinearParam
+  w_v : @nn.LinearParam
+  w_o : @nn.LinearParam
 }
 
 ///|
@@ -87,10 +87,10 @@ pub fn SpikingMultiHeadAttention::new(
     abort("SpikingMultiHeadAttention::new: d_model not divisible by num_heads")
   }
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let w_q = linear_xavier(rng, d_model)
-  let w_k = linear_xavier(rng, d_model)
-  let w_v = linear_xavier(rng, d_model)
-  let w_o = linear_xavier(rng, d_model)
+  let w_q = @nn.linear_xavier(rng, d_model)
+  let w_k = @nn.linear_xavier(rng, d_model)
+  let w_v = @nn.linear_xavier(rng, d_model)
+  let w_o = @nn.linear_xavier(rng, d_model)
   { d_model, num_heads, d_k: d_model / num_heads, beta, w_q, w_k, w_v, w_o }
 }
 
@@ -122,9 +122,9 @@ pub fn spiking_multi_head_attention_forward(
   let scale = 1.0F / @core.sqrtf(Float::from_int(d_k))
   let beta = sa.beta
 
-  let q = linear_forward(x, seq_len, sa.w_q)
-  let k = linear_forward(x, seq_len, sa.w_k)
-  let v = linear_forward(x, seq_len, sa.w_v)
+  let q = @nn.linear_forward(x, seq_len, sa.w_q)
+  let k = @nn.linear_forward(x, seq_len, sa.w_k)
+  let v = @nn.linear_forward(x, seq_len, sa.w_v)
 
   let scores : Array[Float] = Array::make(num_heads * seq_len * seq_len, 0.0F)
   let use_mask = mask.length() > 0
@@ -179,7 +179,7 @@ pub fn spiking_multi_head_attention_forward(
     }
   }
 
-  let out = linear_forward(out_pre, seq_len, sa.w_o)
+  let out = @nn.linear_forward(out_pre, seq_len, sa.w_o)
   let cache : SpikingMultiHeadAttnCache = {
     seq_len,
     x,
@@ -202,7 +202,7 @@ pub fn spiking_multi_head_attention_backward(
   cache : SpikingMultiHeadAttnCache,
   d_output : Array[Float],
   sa : SpikingMultiHeadAttention,
-) -> (Array[Float], MHAGrad) {
+) -> (Array[Float], @nn.MHAGrad) {
   let seq_len = cache.seq_len
   let d_model = sa.d_model
   let num_heads = sa.num_heads
@@ -210,7 +210,7 @@ pub fn spiking_multi_head_attention_backward(
   let scale = cache.scale
   let beta = cache.beta
 
-  let (d_out_pre, d_w_o, d_b_o) = linear_backward(
+  let (d_out_pre, d_w_o, d_b_o) = @nn.linear_backward(
     cache.out_pre, d_output, seq_len, sa.w_o,
   )
 
@@ -289,14 +289,15 @@ pub fn spiking_multi_head_attention_backward(
   }
 
   let x = cache.x
-  let (d_x_q, d_w_q, d_b_q) = linear_backward(x, d_q, seq_len, sa.w_q)
-  let (d_x_k, d_w_k, d_b_k) = linear_backward(x, d_k_buf, seq_len, sa.w_k)
-  let (d_x_v, d_w_v, d_b_v) = linear_backward(x, d_v, seq_len, sa.w_v)
+  let (d_x_q, d_w_q, d_b_q) = @nn.linear_backward(x, d_q, seq_len, sa.w_q)
+  let (d_x_k, d_w_k, d_b_k) = @nn.linear_backward(x, d_k_buf, seq_len, sa.w_k)
+  let (d_x_v, d_w_v, d_b_v) = @nn.linear_backward(x, d_v, seq_len, sa.w_v)
   let d_x : Array[Float] = Array::make(seq_len * d_model, 0.0F)
   for i in 0..<(seq_len * d_model) {
     d_x[i] = d_x_q[i] + d_x_k[i] + d_x_v[i]
   }
-  let grads : MHAGrad = {
+  // Through the constructor because `MHAGrad`'s fields are private to nn/.
+  let grads : @nn.MHAGrad = @nn.MHAGrad::new(
     d_w_q,
     d_b_q,
     d_w_k,
@@ -305,7 +306,7 @@ pub fn spiking_multi_head_attention_backward(
     d_b_v,
     d_w_o,
     d_b_o,
-  }
+  )
   (d_x, grads)
 }
 
@@ -326,10 +327,10 @@ pub struct SpikingCrossAttention {
   num_heads : Int
   d_k : Int
   beta : Float
-  w_q : LinearParam
-  w_k : LinearParam
-  w_v : LinearParam
-  w_o : LinearParam
+  w_q : @nn.LinearParam
+  w_k : @nn.LinearParam
+  w_v : @nn.LinearParam
+  w_o : @nn.LinearParam
 }
 
 ///|
@@ -362,10 +363,10 @@ pub fn SpikingCrossAttention::new(
     abort("SpikingCrossAttention::new: d_model not divisible by num_heads")
   }
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let w_q = linear_xavier(rng, d_model)
-  let w_k = linear_xavier(rng, d_model)
-  let w_v = linear_xavier(rng, d_model)
-  let w_o = linear_xavier(rng, d_model)
+  let w_q = @nn.linear_xavier(rng, d_model)
+  let w_k = @nn.linear_xavier(rng, d_model)
+  let w_v = @nn.linear_xavier(rng, d_model)
+  let w_o = @nn.linear_xavier(rng, d_model)
   { d_model, num_heads, d_k: d_model / num_heads, beta, w_q, w_k, w_v, w_o }
 }
 
@@ -390,9 +391,9 @@ pub fn spiking_cross_attention_forward(
   let scale = 1.0F / @core.sqrtf(Float::from_int(d_k))
   let beta = sa.beta
 
-  let q = linear_forward(x_q, seq_len_q, sa.w_q)
-  let k = linear_forward(x_kv, seq_len_kv, sa.w_k)
-  let v = linear_forward(x_kv, seq_len_kv, sa.w_v)
+  let q = @nn.linear_forward(x_q, seq_len_q, sa.w_q)
+  let k = @nn.linear_forward(x_kv, seq_len_kv, sa.w_k)
+  let v = @nn.linear_forward(x_kv, seq_len_kv, sa.w_v)
 
   // scores[h, s, t] = sum_k q[s, h*d_k+k] * k[t, h*d_k+k] * scale
   let scores : Array[Float] = Array::make(
@@ -451,7 +452,7 @@ pub fn spiking_cross_attention_forward(
     }
   }
 
-  let out = linear_forward(out_pre, seq_len_q, sa.w_o)
+  let out = @nn.linear_forward(out_pre, seq_len_q, sa.w_o)
   let cache : SpikingCrossAttnCache = {
     seq_len_q,
     seq_len_kv,
@@ -478,7 +479,7 @@ pub fn spiking_cross_attention_backward(
   cache : SpikingCrossAttnCache,
   d_output : Array[Float],
   sa : SpikingCrossAttention,
-) -> (Array[Float], Array[Float], MHAGrad) {
+) -> (Array[Float], Array[Float], @nn.MHAGrad) {
   let seq_len_q = cache.seq_len_q
   let seq_len_kv = cache.seq_len_kv
   let d_model = sa.d_model
@@ -487,7 +488,7 @@ pub fn spiking_cross_attention_backward(
   let scale = cache.scale
   let beta = cache.beta
 
-  let (d_out_pre, d_w_o, d_b_o) = linear_backward(
+  let (d_out_pre, d_w_o, d_b_o) = @nn.linear_backward(
     cache.out_pre, d_output, seq_len_q, sa.w_o,
   )
 
@@ -572,17 +573,18 @@ pub fn spiking_cross_attention_backward(
   let x_q = cache.x_q
   let x_kv = cache.x_kv
   // Q path: d_x_q via d_q.
-  let (d_x_q, d_w_q, d_b_q) = linear_backward(x_q, d_q, seq_len_q, sa.w_q)
+  let (d_x_q, d_w_q, d_b_q) = @nn.linear_backward(x_q, d_q, seq_len_q, sa.w_q)
   // KV path: d_x_kv via d_k + d_v.
-  let (d_x_k, d_w_k, d_b_k) = linear_backward(
+  let (d_x_k, d_w_k, d_b_k) = @nn.linear_backward(
     x_kv, d_k_buf, seq_len_kv, sa.w_k,
   )
-  let (d_x_v, d_w_v, d_b_v) = linear_backward(x_kv, d_v, seq_len_kv, sa.w_v)
+  let (d_x_v, d_w_v, d_b_v) = @nn.linear_backward(x_kv, d_v, seq_len_kv, sa.w_v)
   let d_x_kv : Array[Float] = Array::make(seq_len_kv * d_model, 0.0F)
   for i in 0..<(seq_len_kv * d_model) {
     d_x_kv[i] = d_x_k[i] + d_x_v[i]
   }
-  let grads : MHAGrad = {
+  // Through the constructor because `MHAGrad`'s fields are private to nn/.
+  let grads : @nn.MHAGrad = @nn.MHAGrad::new(
     d_w_q,
     d_b_q,
     d_w_k,
@@ -591,6 +593,6 @@ pub fn spiking_cross_attention_backward(
     d_b_v,
     d_w_o,
     d_b_o,
-  }
+  )
   (d_x_q, d_x_kv, grads)
 }

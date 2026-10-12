@@ -34,18 +34,18 @@ test "cnn_backward_chain / gradient check d_input end-to-end" {
   // 3x3 conv weight, c_in=1, c_out=2 -> 2*1*3*3 = 18.
   let conv_weight : Array[Float] = Array::make(18, 0.5F)
   let conv_bias : Array[Float] = [0.0F, 0.0F]
-  let conv_param = @snn_mbt.Conv2dParam::new(
+  let conv_param = @nn.Conv2dParam::new(
     conv_weight, conv_bias, 2, 1, 3, 3, stride=1, pad=1,
   )
   let linear_weight : Array[Float] = Array::make(3 * 8, 0.1F)
   let linear_bias : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let linear_param = @snn_mbt.LinearParam::new(linear_weight, linear_bias, 8, 3)
+  let linear_param = @nn.LinearParam::new(linear_weight, linear_bias, 8, 3)
 
   // ---- Forward pass ----
-  let conv_out = @snn_mbt.conv2d_forward(input, 1, 1, 4, 4, conv_param)
+  let conv_out = @nn.conv2d_forward(input, 1, 1, 4, 4, conv_param)
   let relu_out = @activ.relu_forward(conv_out)
   let pool_param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-  let (pool_out, argmax) = @snn_mbt.maxpool2d_forward_with_idx(
+  let (pool_out, argmax) = @nn.maxpool2d_forward_with_idx(
     relu_out, 1, 2, 4, 4, pool_param,
   )
   let flat_out = @activ.flatten_forward(pool_out, 1, 2, 2, 2)
@@ -54,7 +54,7 @@ test "cnn_backward_chain / gradient check d_input end-to-end" {
   // d_loss / d_linear_out = ones.
   let n_out = 3
   let d_linear_out : Array[Float] = Array::make(n_out, 1.0F)
-  let (d_flat, d_lin_weight, d_lin_bias) = @snn_mbt.linear_backward(
+  let (d_flat, d_lin_weight, d_lin_bias) = @nn.linear_backward(
     flat_out, d_linear_out, 1, linear_param,
   )
   let _ = d_lin_weight
@@ -62,11 +62,11 @@ test "cnn_backward_chain / gradient check d_input end-to-end" {
   // d_flat -> d_pool (reshape identity, but flatten_backward handles it).
   let d_pool = @activ.flatten_backward(d_flat, 1, 2, 2, 2)
   // d_pool -> d_relu via maxpool backward.
-  let d_relu = @snn_mbt.maxpool2d_backward(d_pool, argmax, 1, 2, 4, 4, pool_param)
+  let d_relu = @nn.maxpool2d_backward(d_pool, argmax, 1, 2, 4, 4, pool_param)
   // d_relu -> d_conv via relu backward (need pre-activation conv_out).
   let d_conv = @activ.relu_backward(conv_out, d_relu)
   // d_conv -> d_input via conv backward (only need d_input).
-  let (d_input, _, _) = @snn_mbt.conv2d_backward(input, d_conv, 1, 1, 4, 4, conv_param)
+  let (d_input, _, _) = @nn.conv2d_backward(input, d_conv, 1, 1, 4, 4, conv_param)
   // (Note: conv_out had bias added; relu_forward was applied AFTER that.
   // The d_conv here is gradient w.r.t. conv pre-activation output, which
   // is what conv2d_backward expects.)
@@ -74,11 +74,11 @@ test "cnn_backward_chain / gradient check d_input end-to-end" {
   // ---- Numerical gradient check ----
   let eps = 0.001F
   let fwd = fn(inp : Array[Float]) -> Float {
-    let c_out2 = @snn_mbt.conv2d_forward(inp, 1, 1, 4, 4, conv_param)
+    let c_out2 = @nn.conv2d_forward(inp, 1, 1, 4, 4, conv_param)
     let r_out = @activ.relu_forward(c_out2)
-    let (p_out, _) = @snn_mbt.maxpool2d_forward_with_idx(r_out, 1, 2, 4, 4, pool_param)
+    let (p_out, _) = @nn.maxpool2d_forward_with_idx(r_out, 1, 2, 4, 4, pool_param)
     let f_out = @activ.flatten_forward(p_out, 1, 2, 2, 2)
-    let l_out = @snn_mbt.linear_forward(f_out, 1, linear_param)
+    let l_out = @nn.linear_forward(f_out, 1, linear_param)
     let mut s : Float = 0.0F
     for i in 0..<l_out.length() { s = s + l_out[i] }
     s
@@ -108,7 +108,7 @@ test "cnn_backward_chain / bit-exact: gradient values match across re-runs" {
     -0.7F, -0.8F, -0.9F,
   ]
   let conv_bias : Array[Float] = [0.0F, 0.0F]
-  let conv_param = @snn_mbt.Conv2dParam::new(
+  let conv_param = @nn.Conv2dParam::new(
     conv_weight, conv_bias, 2, 1, 3, 3, stride=1, pad=0,
   )
   let linear_weight : Array[Float] = [
@@ -118,23 +118,23 @@ test "cnn_backward_chain / bit-exact: gradient values match across re-runs" {
     0.2F, 0.4F,
   ]
   let linear_bias : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let linear_param = @snn_mbt.LinearParam::new(linear_weight, linear_bias, 2, 3)
+  let linear_param = @nn.LinearParam::new(linear_weight, linear_bias, 2, 3)
 
   // Run chain twice; verify d_input is bit-exact.
   let run_once = fn() -> Array[Float] {
-    let conv_out = @snn_mbt.conv2d_forward(input, 1, 1, 4, 4, conv_param)
+    let conv_out = @nn.conv2d_forward(input, 1, 1, 4, 4, conv_param)
     let relu_out = @activ.relu_forward(conv_out)
     let pool_param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-    let (pool_out, argmax) = @snn_mbt.maxpool2d_forward_with_idx(
+    let (pool_out, argmax) = @nn.maxpool2d_forward_with_idx(
       relu_out, 1, 2, 2, 2, pool_param,
     )
     let flat_out = @activ.flatten_forward(pool_out, 1, 2, 1, 1)
     let d_linear_out : Array[Float] = Array::make(3, 1.0F)
-    let (d_flat, _, _) = @snn_mbt.linear_backward(flat_out, d_linear_out, 1, linear_param)
+    let (d_flat, _, _) = @nn.linear_backward(flat_out, d_linear_out, 1, linear_param)
     let d_pool = @activ.flatten_backward(d_flat, 1, 2, 1, 1)
-    let d_relu = @snn_mbt.maxpool2d_backward(d_pool, argmax, 1, 2, 2, 2, pool_param)
+    let d_relu = @nn.maxpool2d_backward(d_pool, argmax, 1, 2, 2, 2, pool_param)
     let d_conv = @activ.relu_backward(conv_out, d_relu)
-    let (d_input, _, _) = @snn_mbt.conv2d_backward(input, d_conv, 1, 1, 4, 4, conv_param)
+    let (d_input, _, _) = @nn.conv2d_backward(input, d_conv, 1, 1, 4, 4, conv_param)
     d_input
   }
   let a = run_once()
@@ -162,21 +162,21 @@ test "cnn_backward_chain / gradient check d_weight (conv weights) end-to-end" {
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F]
   let conv_weight : Array[Float] = [1.0F, 1.0F, 1.0F, 1.0F]
   let conv_bias : Array[Float] = [0.0F]
-  let conv_param = @snn_mbt.Conv2dParam::new(
+  let conv_param = @nn.Conv2dParam::new(
     conv_weight, conv_bias, c_out, c_in, kh, kw, stride=1, pad=0,
   )
-  let linear_param = @snn_mbt.LinearParam::new(
+  let linear_param = @nn.LinearParam::new(
     Array::make(1 * 1, 1.0F), [0.0F], 1, 1,
   )
   // Run the chain end-to-end.
   let chain = fn() -> Float {
-    let c_out2 = @snn_mbt.conv2d_forward(input, n, c_in, h, w, conv_param)
+    let c_out2 = @nn.conv2d_forward(input, n, c_in, h, w, conv_param)
     let r_out = @activ.relu_forward(c_out2)
     // After conv 2x2 valid on 3x3 -> 2x2 output.
     let pool_param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-    let (p_out, _) = @snn_mbt.maxpool2d_forward_with_idx(r_out, 1, 1, 2, 2, pool_param)
+    let (p_out, _) = @nn.maxpool2d_forward_with_idx(r_out, 1, 1, 2, 2, pool_param)
     let f_out = @activ.flatten_forward(p_out, 1, 1, 1, 1)
-    let l_out = @snn_mbt.linear_forward(f_out, 1, linear_param)
+    let l_out = @nn.linear_forward(f_out, 1, linear_param)
     l_out[0]
   }
   let _ = chain()
@@ -192,19 +192,19 @@ test "cnn_backward_chain / gradient check d_weight (conv weights) end-to-end" {
     num_d_weight[k] = (loss_p - loss_m) / (2.0F * eps)
   }
   // Analytical d_weight: via full backward chain.
-  let conv_out = @snn_mbt.conv2d_forward(input, n, c_in, h, w, conv_param)
+  let conv_out = @nn.conv2d_forward(input, n, c_in, h, w, conv_param)
   let relu_out = @activ.relu_forward(conv_out)
   let pool_param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-  let (pool_out, argmax) = @snn_mbt.maxpool2d_forward_with_idx(
+  let (pool_out, argmax) = @nn.maxpool2d_forward_with_idx(
     relu_out, 1, 1, 2, 2, pool_param,
   )
   let flat_out = @activ.flatten_forward(pool_out, 1, 1, 1, 1)
   let d_linear_out : Array[Float] = [1.0F]
-  let (d_flat, _, _) = @snn_mbt.linear_backward(flat_out, d_linear_out, 1, linear_param)
+  let (d_flat, _, _) = @nn.linear_backward(flat_out, d_linear_out, 1, linear_param)
   let d_pool = @activ.flatten_backward(d_flat, 1, 1, 1, 1)
-  let d_relu = @snn_mbt.maxpool2d_backward(d_pool, argmax, 1, 1, 2, 2, pool_param)
+  let d_relu = @nn.maxpool2d_backward(d_pool, argmax, 1, 1, 2, 2, pool_param)
   let d_conv = @activ.relu_backward(conv_out, d_relu)
-  let (_, analytic_d_weight, _) = @snn_mbt.conv2d_backward(
+  let (_, analytic_d_weight, _) = @nn.conv2d_backward(
     input, d_conv, n, c_in, h, w, conv_param,
   )
   let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num_d_weight, analytic_d_weight)

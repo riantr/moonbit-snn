@@ -62,37 +62,41 @@ pub fn rmsprop_update_arrays(
 ///|
 /// RMSprop wrapper for `LinearParam`.
 pub fn rmsprop_update_linear(
-  param : LinearParam,
+  param : @nn.LinearParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : RMSpropState,
   lr : Float,
   alpha : Float,
   eps : Float,
-) -> (LinearParam, RMSpropState) {
+) -> (@nn.LinearParam, RMSpropState) {
   let (w, b, s2) = rmsprop_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state, lr, alpha, eps,
   )
-  let p2 = { weight: w, bias: b, in_features: param.in_features,
-             out_features: param.out_features }
+  let p2 = @nn.LinearParam::new(
+    w, b, param.in_features, param.out_features,
+  )
   (p2, s2)
 }
 
 ///|
 /// RMSprop wrapper for `Conv2dParam`.
 pub fn rmsprop_update_conv(
-  param : Conv2dParam,
+  param : @nn.Conv2dParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : RMSpropState,
   lr : Float,
   alpha : Float,
   eps : Float,
-) -> (Conv2dParam, RMSpropState) {
+) -> (@nn.Conv2dParam, RMSpropState) {
   let (w, b, s2) = rmsprop_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state, lr, alpha, eps,
   )
-  let p2 = { weight: w, bias: b, c_out: param.c_out, c_in: param.c_in,
-             kh: param.kh, kw: param.kw, stride: param.stride, pad: param.pad }
+  let p2 = @nn.Conv2dParam::new(
+    w, b, param.c_out, param.c_in,
+    param.kh, param.kw,
+    stride=param.stride, pad=param.pad,
+  )
   (p2, s2)
 }

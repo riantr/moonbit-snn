@@ -2,9 +2,9 @@
 
 ///|
 test "layer_norm_forward / output shape equals input shape" {
-  let ln = @snn_mbt.LayerNorm::new(3, 4, 5)
+  let ln = @nn.LayerNorm::new(3, 4, 5)
   let input : Array[Float] = Array::make(2 * 3 * 4 * 5, 0.5F)
-  let (out, _) = @snn_mbt.layer_norm_forward(input, 2, 3, 4, 5, ln)
+  let (out, _) = @nn.layer_norm_forward(input, 2, 3, 4, 5, ln)
   if out.length() != input.length() {
     fail("output length should equal input length, got \{out.length()}")
   }
@@ -14,7 +14,7 @@ test "layer_norm_forward / output shape equals input shape" {
 test "layer_norm_forward / per-sample mean ~ 0 and std ~ 1" {
   // Each sample has a distinct mean and std; after LN they should all
   // be normalised to mean=0, std=1 independently.
-  let ln = @snn_mbt.LayerNorm::new(1, 1, 4) // 4 features per sample
+  let ln = @nn.LayerNorm::new(1, 1, 4) // 4 features per sample
   let n = 3
   let c = 1
   let h = 1
@@ -27,7 +27,7 @@ test "layer_norm_forward / per-sample mean ~ 0 and std ~ 1" {
     -1.0F, 0.0F, 0.0F, 1.0F,   // mean=0, std=sqrt(0.5)
     -5.5F, -5.0F, -5.0F, -4.5F, // mean=-5, std=sqrt(0.0625)=0.25
   ]
-  let (out, _) = @snn_mbt.layer_norm_forward(input, n, c, h, w, ln)
+  let (out, _) = @nn.layer_norm_forward(input, n, c, h, w, ln)
   for ni in 0..<n {
     let mut sum = 0.0F
     let mut sum_sq = 0.0F
@@ -52,9 +52,9 @@ test "layer_norm_forward / per-sample mean ~ 0 and std ~ 1" {
 test "layer_norm_forward / different samples normalised independently" {
   // Two samples with opposite scales; LN should normalise each one,
   // not jointly across the batch.
-  let ln = @snn_mbt.LayerNorm::new(1, 1, 2)
+  let ln = @nn.LayerNorm::new(1, 1, 2)
   let input : Array[Float] = [100.0F, 200.0F, -100.0F, -200.0F]
-  let (out, _) = @snn_mbt.layer_norm_forward(input, 2, 1, 1, 2, ln)
+  let (out, _) = @nn.layer_norm_forward(input, 2, 1, 1, 2, ln)
   // Sample 0: mean=150, std=sqrt((50)^2 + (50)^2)/2 = 50.
   //   y[0] = (100 - 150) / 50 = -1
   //   y[1] = (200 - 150) / 50 =  1
@@ -71,31 +71,31 @@ test "layer_norm_forward / different samples normalised independently" {
 test "layer_norm_forward / gamma and beta are applied per feature" {
   // gamma = [2, 0.5], beta = [3, -1].
   // For x = [1, -1] (already mean=0, std=1): y = [2*1+3, 0.5*(-1)+(-1)] = [5, -1.5].
-  let ln = @snn_mbt.LayerNorm::with_gamma_beta([2.0F, 0.5F], [3.0F, -1.0F], 1, 1, 2)
+  let ln = @nn.LayerNorm::with_gamma_beta([2.0F, 0.5F], [3.0F, -1.0F], 1, 1, 2)
   let input : Array[Float] = [1.0F, -1.0F]
-  let (out, _) = @snn_mbt.layer_norm_forward(input, 1, 1, 1, 2, ln)
+  let (out, _) = @nn.layer_norm_forward(input, 1, 1, 1, 2, ln)
   if (out[0] - 5.0F).abs() > 0.001F { fail("out[0] expected 5, got \{out[0]}") }
   if (out[1] - -1.5F).abs() > 0.001F { fail("out[1] expected -1.5, got \{out[1]}") }
 }
 
 ///|
 test "layer_norm_backward / d_gamma and d_beta shape = c*h*w" {
-  let ln = @snn_mbt.LayerNorm::new(3, 2, 2)
+  let ln = @nn.LayerNorm::new(3, 2, 2)
   let input : Array[Float] = Array::make(2 * 3 * 2 * 2, 0.5F)
-  let (out, cache) = @snn_mbt.layer_norm_forward(input, 2, 3, 2, 2, ln)
+  let (out, cache) = @nn.layer_norm_forward(input, 2, 3, 2, 2, ln)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let (_d_input, d_gamma, d_beta) = @snn_mbt.layer_norm_backward(d_output, cache, ln)
+  let (_d_input, d_gamma, d_beta) = @nn.layer_norm_backward(d_output, cache, ln)
   if d_gamma.length() != 12 { fail("d_gamma length should be 12, got \{d_gamma.length()}") }
   if d_beta.length() != 12 { fail("d_beta length should be 12, got \{d_beta.length()}") }
 }
 
 ///|
 test "layer_norm_backward / d_input shape equals input shape" {
-  let ln = @snn_mbt.LayerNorm::new(3, 2, 2)
+  let ln = @nn.LayerNorm::new(3, 2, 2)
   let input : Array[Float] = Array::make(2 * 3 * 2 * 2, 0.5F)
-  let (out, cache) = @snn_mbt.layer_norm_forward(input, 2, 3, 2, 2, ln)
+  let (out, cache) = @nn.layer_norm_forward(input, 2, 3, 2, 2, ln)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let (d_input, _, _) = @snn_mbt.layer_norm_backward(d_output, cache, ln)
+  let (d_input, _, _) = @nn.layer_norm_backward(d_output, cache, ln)
   if d_input.length() != input.length() {
     fail("d_input length should be \{input.length()}, got \{d_input.length()}")
   }
@@ -103,11 +103,11 @@ test "layer_norm_backward / d_input shape equals input shape" {
 
 ///|
 test "layer_norm_backward / zero d_output gives zero gradients" {
-  let ln = @snn_mbt.LayerNorm::new(2, 1, 2)
+  let ln = @nn.LayerNorm::new(2, 1, 2)
   let input : Array[Float] = Array::make(3 * 2 * 1 * 2, 0.5F)
-  let (_, cache) = @snn_mbt.layer_norm_forward(input, 3, 2, 1, 2, ln)
+  let (_, cache) = @nn.layer_norm_forward(input, 3, 2, 1, 2, ln)
   let d_output : Array[Float] = Array::make(input.length(), 0.0F)
-  let (d_input, d_gamma, d_beta) = @snn_mbt.layer_norm_backward(d_output, cache, ln)
+  let (d_input, d_gamma, d_beta) = @nn.layer_norm_backward(d_output, cache, ln)
   for i in 0..<d_input.length() {
     if d_input[i] != 0.0F { fail("d_input[\{i}] should be 0") }
   }
@@ -120,15 +120,15 @@ test "layer_norm_backward / zero d_output gives zero gradients" {
 ///|
 test "layer_norm_backward / d_input gradient check vs numerical" {
   // 2 samples × 1 channel × 1 H × 3 features = 6 elements.
-  let ln = @snn_mbt.LayerNorm::new(1, 1, 3)
+  let ln = @nn.LayerNorm::new(1, 1, 3)
   let n = 2
   let c = 1
   let h = 1
   let w = 3
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F]
-  let (out, cache) = @snn_mbt.layer_norm_forward(input, n, c, h, w, ln)
+  let (out, cache) = @nn.layer_norm_forward(input, n, c, h, w, ln)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let (d_input, _d_gamma, _d_beta) = @snn_mbt.layer_norm_backward(d_output, cache, ln)
+  let (d_input, _d_gamma, _d_beta) = @nn.layer_norm_backward(d_output, cache, ln)
   // Numerical gradient.
   let eps = 0.001F
   for i in 0..<input.length() {
@@ -140,8 +140,8 @@ test "layer_norm_backward / d_input gradient check vs numerical" {
     }
     input_plus[i] = input[i] + eps
     input_minus[i] = input[i] - eps
-    let (out_plus, _) = @snn_mbt.layer_norm_forward(input_plus, n, c, h, w, ln)
-    let (out_minus, _) = @snn_mbt.layer_norm_forward(input_minus, n, c, h, w, ln)
+    let (out_plus, _) = @nn.layer_norm_forward(input_plus, n, c, h, w, ln)
+    let (out_minus, _) = @nn.layer_norm_forward(input_minus, n, c, h, w, ln)
     let mut sum_plus = 0.0F
     let mut sum_minus = 0.0F
     for k in 0..<out_plus.length() {

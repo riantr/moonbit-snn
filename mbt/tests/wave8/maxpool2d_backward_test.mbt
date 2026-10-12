@@ -6,9 +6,9 @@ test "maxpool2d_backward / pass-through at argmax, zeros elsewhere" {
   // routes gradient to (1,1) only.
   let input : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-  let (_, argmax) = @snn_mbt.maxpool2d_forward_with_idx(input, 1, 1, 2, 2, param)
+  let (_, argmax) = @nn.maxpool2d_forward_with_idx(input, 1, 1, 2, 2, param)
   let d_output : Array[Float] = [5.0F]
-  let d_input = @snn_mbt.maxpool2d_backward(d_output, argmax, 1, 1, 2, 2, param)
+  let d_input = @nn.maxpool2d_backward(d_output, argmax, 1, 1, 2, 2, param)
   if d_input.length() != 4 { fail("expected length 4, got \{d_input.length()}") }
   // Expected: [0, 0, 0, 5]
   let expected : Array[Float] = [0.0F, 0.0F, 0.0F, 5.0F]
@@ -32,9 +32,9 @@ test "maxpool2d_backward / multi-channel routes gradient per channel" {
     50.0F, 60.0F, 100.0F, 70.0F,
   ]
   let param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-  let (_, argmax) = @snn_mbt.maxpool2d_forward_with_idx(input, 1, 3, 2, 2, param)
+  let (_, argmax) = @nn.maxpool2d_forward_with_idx(input, 1, 3, 2, 2, param)
   let d_output : Array[Float] = [1.0F, 2.0F, 3.0F]
-  let d_input = @snn_mbt.maxpool2d_backward(d_output, argmax, 1, 3, 2, 2, param)
+  let d_input = @nn.maxpool2d_backward(d_output, argmax, 1, 3, 2, 2, param)
   if d_input.length() != 12 { fail("expected length 12, got \{d_input.length()}") }
   // ch0: d at flat idx 3 = 1, others 0
   if d_input[3] != 1.0F { fail("ch0 max flat 3 should be 1.0, got \{d_input[3]}") }
@@ -54,9 +54,9 @@ test "maxpool2d_backward / batch N=2" {
     5.0F, 6.0F, 7.0F, 8.0F,
   ]
   let param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
-  let (_, argmax) = @snn_mbt.maxpool2d_forward_with_idx(input, 2, 1, 2, 2, param)
+  let (_, argmax) = @nn.maxpool2d_forward_with_idx(input, 2, 1, 2, 2, param)
   let d_output : Array[Float] = [10.0F, 20.0F]
-  let d_input = @snn_mbt.maxpool2d_backward(d_output, argmax, 2, 1, 2, 2, param)
+  let d_input = @nn.maxpool2d_backward(d_output, argmax, 2, 1, 2, 2, param)
   if d_input.length() != 8 { fail("expected length 8, got \{d_input.length()}") }
   if d_input[3] != 10.0F { fail("batch 0 max idx 3 should be 10, got \{d_input[3]}") }
   if d_input[7] != 20.0F { fail("batch 1 max idx 7 should be 20, got \{d_input[7]}") }
@@ -73,15 +73,15 @@ test "maxpool2d_backward / gradient check vs numerical (2x2 stride=2)" {
   let param = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   let eps = 0.001F
   let fwd = fn(inp : Array[Float]) -> Float {
-    let (out, _) = @snn_mbt.maxpool2d_forward_with_idx(inp, 1, 1, 3, 3, param)
+    let (out, _) = @nn.maxpool2d_forward_with_idx(inp, 1, 1, 3, 3, param)
     let mut s : Float = 0.0F
     for i in 0..<out.length() { s = s + out[i] }
     s
   }
   let num = @snn_mbt.numerical_gradient(input, eps, fwd)
-  let (out, argmax) = @snn_mbt.maxpool2d_forward_with_idx(input, 1, 1, 3, 3, param)
+  let (out, argmax) = @nn.maxpool2d_forward_with_idx(input, 1, 1, 3, 3, param)
   let d_output : Array[Float] = Array::make(out.length(), 1.0F)
-  let analytic = @snn_mbt.maxpool2d_backward(d_output, argmax, 1, 1, 3, 3, param)
+  let analytic = @nn.maxpool2d_backward(d_output, argmax, 1, 1, 3, 3, param)
   let (max_diff, max_idx) = @snn_mbt.max_abs_diff(num, analytic)
   if max_diff > 1.0e-3 {
     fail("maxpool backward gradient mismatch: max diff \{max_diff} at \{max_idx}")

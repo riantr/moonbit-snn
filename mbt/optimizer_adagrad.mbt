@@ -62,35 +62,42 @@ pub fn adagrad_update_arrays(
 ///|
 /// AdaGrad wrapper for `LinearParam`.
 pub fn adagrad_update_linear(
-  param : LinearParam,
+  param : @nn.LinearParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : AdaGradState,
   lr : Float,
   eps : Float,
-) -> (LinearParam, AdaGradState) {
+) -> (@nn.LinearParam, AdaGradState) {
   let (w, b, s2) = adagrad_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state, lr, eps,
   )
-  let p2 = { weight: w, bias: b, in_features: param.in_features,
-             out_features: param.out_features }
+  // Built through the constructor rather than as a record literal: once
+  // `LinearParam` moved to another package the literal's field set could no
+  // longer be inferred, and `as @nn.LinearParam` did not supply it either.
+  let p2 = @nn.LinearParam::new(
+    w, b, param.in_features, param.out_features,
+  )
   (p2, s2)
 }
 
 ///|
 /// AdaGrad wrapper for `Conv2dParam`.
 pub fn adagrad_update_conv(
-  param : Conv2dParam,
+  param : @nn.Conv2dParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : AdaGradState,
   lr : Float,
   eps : Float,
-) -> (Conv2dParam, AdaGradState) {
+) -> (@nn.Conv2dParam, AdaGradState) {
   let (w, b, s2) = adagrad_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state, lr, eps,
   )
-  let p2 = { weight: w, bias: b, c_out: param.c_out, c_in: param.c_in,
-             kh: param.kh, kw: param.kw, stride: param.stride, pad: param.pad }
+  let p2 = @nn.Conv2dParam::new(
+    w, b, param.c_out, param.c_in,
+    param.kh, param.kw,
+    stride=param.stride, pad=param.pad,
+  )
   (p2, s2)
 }

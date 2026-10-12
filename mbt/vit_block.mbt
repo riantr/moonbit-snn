@@ -30,7 +30,7 @@ pub struct ViTBlock {
   ln2_gamma : Array[Float]
   ln2_beta : Array[Float]
   // MHA.
-  mha : MultiHeadAttention
+  mha : @nn.MultiHeadAttention
   // MLP (2-layer FFN with GELU).
   mlp_w1 : Array[Array[Float]]
   mlp_b1 : Array[Float]
@@ -51,7 +51,7 @@ pub fn ViTBlock::new(
   let ln1_beta : Array[Float] = Array::make(d_model, 0.0F)
   let ln2_gamma : Array[Float] = Array::make(d_model, 1.0F)
   let ln2_beta : Array[Float] = Array::make(d_model, 0.0F)
-  let mha = MultiHeadAttention::new(d_model, num_heads, seed)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, seed)
   let rng1 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
   let std1 = @core.sqrtf(2.0F / Float::from_int(d_model))
   let mlp_w1 = xavier_normal(mlp_hidden, d_model, std1, rng1)
@@ -150,7 +150,7 @@ pub fn vit_block_forward(
   )
   // Build an empty mask (no masking).
   let empty_mask : Array[Float] = Array::make(0, 0.0F)
-  let (attn_out, _cache) = multi_head_attention_forward(
+  let (attn_out, _cache) = @nn.multi_head_attention_forward(
     norm1, block.mha, empty_mask,
   )
   let residual1 : Array[Float] = Array::make(

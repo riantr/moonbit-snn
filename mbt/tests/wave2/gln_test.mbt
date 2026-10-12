@@ -19,10 +19,10 @@ fn gln_obj(
   n : Int,
   c : Int,
   t : Int,
-  p : @snn_mbt.GlobalLayerNorm,
+  p : @nn.GlobalLayerNorm,
   w : Array[Float],
 ) -> Float {
-  let (y, _cache) = @snn_mbt.gln_forward(x, n, c, t, p)
+  let (y, _cache) = @nn.gln_forward(x, n, c, t, p)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -38,8 +38,8 @@ fn gln_fixture(
   t : Int,
   lift : Float,
   seed : UInt64,
-) -> (@snn_mbt.GlobalLayerNorm, Array[Float], Array[Float]) {
-  let proto = @snn_mbt.GlobalLayerNorm::new(c)
+) -> (@nn.GlobalLayerNorm, Array[Float], Array[Float]) {
+  let proto = @nn.GlobalLayerNorm::new(c)
   let n = 3
   let x = @core.rand_f32(@core.Xoshiro::new(seed), n * c * t)
   let w = @core.rand_f32(@core.Xoshiro::new(seed + 1UL), n * c * t)
@@ -66,7 +66,7 @@ test "gLN: one mean and one std per SAMPLE, over the (c, t) plane jointly" {
   let c = 3
   let t = 4
   let n = 2
-  let p = @snn_mbt.GlobalLayerNorm::new(c)
+  let p = @nn.GlobalLayerNorm::new(c)
   let x : Array[Float] = Array::make(n * c * t, 0.0F)
   // sample 0: 0..11, sample 1: 100..111
     let ct = c * t
@@ -77,7 +77,7 @@ test "gLN: one mean and one std per SAMPLE, over the (c, t) plane jointly" {
     }
     i = i + 1
   }
-  let (y, _cache) = @snn_mbt.gln_forward(x, n, c, t, p)
+  let (y, _cache) = @nn.gln_forward(x, n, c, t, p)
   // per-sample mean of 0..11 is 5.5; of 100..111 is 105.5
   let mean0 = 5.5F
   let mean1 = 105.5F
@@ -122,15 +122,15 @@ test "gLN: gamma and beta are per CHANNEL, broadcast over time" {
   if p.beta.length() != c {
     fail("beta has length \{p.beta.length()}, expected c = \{c}")
   }
-  let (y, _cache) = @snn_mbt.gln_forward(x, n, c, t, p)
+  let (y, _cache) = @nn.gln_forward(x, n, c, t, p)
   // The broadcast property, checked by perturbing ONE channel's gamma: every
   // frame of that channel must move, and no frame of any other channel may.
   // With a per-element affine, only the single (c, t) coordinate would move.
   let bumped = p.gamma.copy()
   let ch = 1
   bumped[ch] = p.gamma[ch] + 0.5F
-  let bumped_p : @snn_mbt.GlobalLayerNorm = { gamma: bumped, beta: p.beta, eps: p.eps, c }
-  let (y2, _c2) = @snn_mbt.gln_forward(x, n, c, t, bumped_p)
+  let bumped_p : @nn.GlobalLayerNorm = { gamma: bumped, beta: p.beta, eps: p.eps, c }
+  let (y2, _c2) = @nn.gln_forward(x, n, c, t, bumped_p)
   let mut moved = 0
   let mut foreign = 0
   let mut i = 0
@@ -161,8 +161,8 @@ test "gLN: d_input, d_gamma and d_beta all match central differences" {
   let t = 4
   let n = 3
   let (p, x, w) = gln_fixture(c, t, 0.2F, 43UL)
-  let (_y, cache) = @snn_mbt.gln_forward(x, n, c, t, p)
-  let (d_x, d_gamma, d_beta) = @snn_mbt.gln_backward(w, cache, p)
+  let (_y, cache) = @nn.gln_forward(x, n, c, t, p)
+  let (d_x, d_gamma, d_beta) = @nn.gln_backward(w, cache, p)
   if d_gamma.length() != c || d_beta.length() != c || d_x.length() != x.length() {
     fail("gLN backward returned wrong shapes")
   }
@@ -176,8 +176,8 @@ test "gLN: d_input, d_gamma and d_beta all match central differences" {
     let gm = p.gamma.copy()
     gp[k] = p.gamma[k] + GLN_H
     gm[k] = p.gamma[k] - GLN_H
-    let up : @snn_mbt.GlobalLayerNorm = { gamma: gp, beta: p.beta, eps: p.eps, c }
-    let dn : @snn_mbt.GlobalLayerNorm = { gamma: gm, beta: p.beta, eps: p.eps, c }
+    let up : @nn.GlobalLayerNorm = { gamma: gp, beta: p.beta, eps: p.eps, c }
+    let dn : @nn.GlobalLayerNorm = { gamma: gm, beta: p.beta, eps: p.eps, c }
     let fd = (gln_obj(x, n, c, t, up, w) - gln_obj(x, n, c, t, dn, w)) /
       (2.0F * GLN_H)
     if (d_gamma[k] - fd).abs() > 1.0e-3F {
@@ -190,8 +190,8 @@ test "gLN: d_input, d_gamma and d_beta all match central differences" {
     let bm = p.beta.copy()
     bp[k] = p.beta[k] + GLN_H
     bm[k] = p.beta[k] - GLN_H
-    let up2 : @snn_mbt.GlobalLayerNorm = { gamma: p.gamma, beta: bp, eps: p.eps, c }
-    let dn2 : @snn_mbt.GlobalLayerNorm = { gamma: p.gamma, beta: bm, eps: p.eps, c }
+    let up2 : @nn.GlobalLayerNorm = { gamma: p.gamma, beta: bp, eps: p.eps, c }
+    let dn2 : @nn.GlobalLayerNorm = { gamma: p.gamma, beta: bm, eps: p.eps, c }
     let fd2 = (gln_obj(x, n, c, t, up2, w) - gln_obj(x, n, c, t, dn2, w)) /
       (2.0F * GLN_H)
     if (d_beta[k] - fd2).abs() > 1.0e-3F {
@@ -230,7 +230,7 @@ test "gLN: d_input, d_gamma and d_beta all match central differences" {
 }
 
 test "gLN: eps is the reference's 1e-8, not this package's LayerNorm 1e-5" {
-  let p = @snn_mbt.GlobalLayerNorm::new(2)
+  let p = @nn.GlobalLayerNorm::new(2)
   if p.eps != 0.00000001F {
     fail("gLN eps is \{p.eps}, expected 1e-8 (asteroid's GlobLN default)")
   }

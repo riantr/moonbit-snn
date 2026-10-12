@@ -50,10 +50,10 @@
 pub(all) struct TarnetBlock {
   pw1 : Array[Float]
   pb1 : Array[Float]
-  ln1 : GlobalLayerNorm
+  ln1 : @nn.GlobalLayerNorm
   dw : Conv1DDepthwise
   prelu1 : Float
-  ln2 : GlobalLayerNorm
+  ln2 : @nn.GlobalLayerNorm
   pw2 : Array[Float]
   pb2 : Array[Float]
   se : CtseParam
@@ -88,11 +88,11 @@ pub fn TarnetBlock::new(
   {
     pw1: tn_randn(hid * chan, 0.05F, rng),
     pb1: Array::make(hid, 0.0F),
-    ln1: GlobalLayerNorm::new(hid),
+    ln1: @nn.GlobalLayerNorm::new(hid),
     dw,
     // PReLU's initial slope is 0.25, as in PyTorch's default.
     prelu1: 0.25F,
-    ln2: GlobalLayerNorm::new(hid),
+    ln2: @nn.GlobalLayerNorm::new(hid),
     pw2: tn_randn(chan * hid, 0.05F, rng),
     pb2: Array::make(chan, 0.0F),
     se: CtseParam::new(chan, seed + 1UL),
@@ -130,10 +130,10 @@ pub fn tarnet_block_forward(
   // utterance, which is what makes it a *global* layer norm. Passing `n * t`
   // here (as the 1x1 convolutions above do) would normalise each frame on its
   // own and ask the layer for n*hid*t^2 elements it does not have.
-  let (ln1_out, _c1) = gln_forward(pw1_post, n, b.hid, t, b.ln1)
+  let (ln1_out, _c1) = @nn.gln_forward(pw1_post, n, b.hid, t, b.ln1)
   let dw_out = conv1d_depthwise_forward(ln1_out, n, b.dw)
   let dw_post = prelu_forward(dw_out, b.prelu1)
-  let (ln2_out, _c2) = gln_forward(dw_post, n, b.hid, t, b.ln2)
+  let (ln2_out, _c2) = @nn.gln_forward(dw_post, n, b.hid, t, b.ln2)
   let pw2_out = tn_conv1x1_forward(
     ln2_out, n, b.hid, b.chan, b.pw2, b.pb2,
   )
@@ -152,7 +152,7 @@ pub fn tarnet_block_forward(
 /// The whole trainable network.
 pub(all) struct Tarnet {
   // bottleneck
-  ln_in : GlobalLayerNorm
+  ln_in : @nn.GlobalLayerNorm
   bn_w : Array[Float]
   bn_b : Array[Float]
   // three parallel stacks
@@ -166,10 +166,10 @@ pub(all) struct Tarnet {
   // attentive statistics pooling
   asp : AspParam
   // embedding projection
-  bn_seg : BatchNorm2d
+  bn_seg : @nn.BatchNorm2d
   fc_w : Array[Float]
   fc_b : Array[Float]
-  bn_out : BatchNorm2d
+  bn_out : @nn.BatchNorm2d
   // classifier
   cls_w : Array[Float]
   cls_b : Array[Float]
@@ -247,7 +247,7 @@ pub fn Tarnet::new(
   let _ = (tn_stack_len(dil_s, repeats_s), tn_stack_len(dil_m, repeats_m),
     tn_stack_len(dil_l, repeats_l))
   {
-    ln_in: GlobalLayerNorm::new(in_chan),
+    ln_in: @nn.GlobalLayerNorm::new(in_chan),
     bn_w: tn_randn(width * in_chan, 0.05F, rng),
     bn_b: Array::make(width, 0.0F),
     stack_s: tn_build_stack(dil_s, repeats_s, width, hid_chan, kernel, t_frames,
@@ -261,10 +261,10 @@ pub fn Tarnet::new(
     mfa_se: SeParam::new(fuse_out, if fuse_out / 4 < 32 { 32 } else { fuse_out / 4 },
       seed + 400UL),
     asp: AspParam::new(fuse_out, att_hidden, seed + 500UL),
-    bn_seg: BatchNorm2d::new(2 * fuse_out),
+    bn_seg: @nn.BatchNorm2d::new(2 * fuse_out),
     fc_w: tn_randn(emb_dim * 2 * fuse_out, 0.05F, rng),
     fc_b: Array::make(emb_dim, 0.0F),
-    bn_out: BatchNorm2d::new(emb_dim),
+    bn_out: @nn.BatchNorm2d::new(emb_dim),
     // DOCUMENTED DEVIATION, not an oversight: the reference writes
     // `nn.init.xavier_uniform_(self.fc.weight)` here, and this used to carry a
     // comment saying so while allocating randn(0.05) -- i.e. the comment
@@ -297,7 +297,7 @@ pub(all) struct TarnetOut {
   pooled : Array[Float]
   fused : Array[Float]
   bottleneck : Array[Float]
-  bottleneck_ln_cache : GlnCache
+  bottleneck_ln_cache : @nn.GlnCache
 }
 
 ///|
@@ -615,26 +615,30 @@ pub fn tarnet_unflatten(
       channels: asp.channels,
       att_hidden: asp.att_hidden,
     },
-    bn_seg: {
-      gamma: sg_g,
-      beta: sg_b,
-      running_mean: net.bn_seg.running_mean.copy(),
-      running_var: net.bn_seg.running_var.copy(),
-      momentum: net.bn_seg.momentum,
-      eps: net.bn_seg.eps,
-      training: net.bn_seg.training,
-    },
+    // Through the constructor: `BatchNorm2d`'s fields are private to nn/, so the
+    // record literal that used to rebuild a layer's BN state no longer
+    // compiles from here.
+    bn_seg: @nn.BatchNorm2d::with_state(
+      sg_g,
+      sg_b,
+      net.bn_seg.running_mean.copy(),
+      net.bn_seg.running_var.copy(),
+      net.bn_seg.momentum,
+      net.bn_seg.eps,
+      net.bn_seg.training,
+    ),
     fc_w: fc_w,
     fc_b: fc_b,
-    bn_out: {
-      gamma: bo_g,
-      beta: bo_b,
-      running_mean: net.bn_out.running_mean.copy(),
-      running_var: net.bn_out.running_var.copy(),
-      momentum: net.bn_out.momentum,
-      eps: net.bn_out.eps,
-      training: net.bn_out.training,
-    },
+    // Same reason as bn_seg above.
+    bn_out: @nn.BatchNorm2d::with_state(
+      bo_g,
+      bo_b,
+      net.bn_out.running_mean.copy(),
+      net.bn_out.running_var.copy(),
+      net.bn_out.momentum,
+      net.bn_out.eps,
+      net.bn_out.training,
+    ),
     cls_w: cls_w,
     cls_b: cls_b,
     in_chan: net.in_chan,
@@ -655,11 +659,11 @@ pub(all) struct TarnetBlockFullCache {
   pw1_out : Array[Float]
   pw1_post : Array[Float]
   ln1_out : Array[Float]
-  ln1_cache : GlnCache
+  ln1_cache : @nn.GlnCache
   dw_out : Array[Float]
   dw_post : Array[Float]
   ln2_out : Array[Float]
-  ln2_cache : GlnCache
+  ln2_cache : @nn.GlnCache
   pw2_out : Array[Float]
   se_cache : CtseCache
 }
@@ -674,12 +678,12 @@ pub fn tarnet_block_forward_full(
   let t = x.length() / (n * b.chan)
   let pw1_out = tn_conv1x1_forward(x, n, b.chan, b.hid, b.pw1, b.pb1)
   let pw1_post = prelu_forward(pw1_out, b.prelu1)
-  let (ln1_out, ln1_cache) = gln_forward(
+  let (ln1_out, ln1_cache) = @nn.gln_forward(
     pw1_post, n, b.hid, t, b.ln1,
   )
   let dw_out = conv1d_depthwise_forward(ln1_out, n, b.dw)
   let dw_post = prelu_forward(dw_out, b.prelu1)
-  let (ln2_out, ln2_cache) = gln_forward(
+  let (ln2_out, ln2_cache) = @nn.gln_forward(
     dw_post, n, b.hid, t, b.ln2,
   )
   let pw2_out = tn_conv1x1_forward(
@@ -746,7 +750,7 @@ pub fn tarnet_block_backward(
   let (d_ln2_out, dw2, db2) = tn_conv1x1_backward(
     cache.ln2_out, se_g.d_x, n, b.hid, b.chan, b.pw2,
   )
-  let (d_dw_post, ln2_g, ln2_b) = gln_backward(
+  let (d_dw_post, ln2_g, ln2_b) = @nn.gln_backward(
     d_ln2_out, cache.ln2_cache, b.ln2,
   )
   let (d_dw_out, d_prelu2) = prelu_backward(
@@ -755,7 +759,7 @@ pub fn tarnet_block_backward(
   let (d_ln1_out, dww, dwb) = conv1d_depthwise_backward(
     cache.ln1_out, d_dw_out, n, b.dw,
   )
-  let (d_pw1_post, ln1_g, ln1_b) = gln_backward(
+  let (d_pw1_post, ln1_g, ln1_b) = @nn.gln_backward(
     d_ln1_out, cache.ln1_cache, b.ln1,
   )
   let (d_pw1_out, d_prelu1) = prelu_backward(

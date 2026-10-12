@@ -105,10 +105,10 @@ test "causal_mask_heads: end-to-end via MHA, position i only attends to ≤i" {
   let seq_len = 4
   let d_model = 4
   let num_heads = 1
-  let mha = @snn_mbt.MultiHeadAttention::new(d_model, num_heads, 1UL)
+  let mha = @nn.MultiHeadAttention::new(d_model, num_heads, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
   let mask = @activ.causal_mask_heads(seq_len, num_heads)
-  let (_out, cache) = @snn_mbt.multi_head_attention_forward(x, mha, mask)
+  let (_out, cache) = @nn.multi_head_attention_forward(x, mha, mask)
   // Verify weights: weight[i, j] = 0 for j > i (causal block).
   let w = cache.weights
   for i in 0..<seq_len {

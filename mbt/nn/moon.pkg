@@ -1,0 +1,26 @@
+// nn/ — layers, parameter containers and the composite models built on them.
+//
+// Sits above activ: conv2d, pooling and the norms compose the elementwise ops.
+// It imports core directly as well, for sqrtf and the libm bindings the
+// normalisation paths use.
+//
+// `tensor.mbt` is here rather than in core because its broadcast and softmax
+// semantics are defined against the layer conventions -- 5D [T,B,C,H,W] for
+// the convolutions, 2D for the classifier heads -- not against any arithmetic
+// that would make it independent of them.
+//
+// `bottles.mbt` carries the Box-Muller transform, which is why it needs
+// core's sqrtf/logf/sinf/cosf. Those four bindings all used to live in
+// unrelated files; sqrtf in optimizer_adam.mbt, cosf in scheduler.mbt, sinf in
+// bottles.mbt itself. Moving them into core/ is what let this package exist.
+//
+// neuron/ is imported only for `box_muller`, which is declared in
+// neuron_iz.mbt yet called from 95 places across the tree -- ARIMA, BiLSTM, C51,
+// DCGAN, DDPM among them. A Gaussian sampler is not part of an Izhikevich
+// neuron, and keeping it there forces every package that draws noise to depend
+// on the neuron package. Moving it down to core/ is the follow-up.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/neuron",
+}

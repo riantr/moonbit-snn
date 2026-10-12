@@ -54,4 +54,16 @@ pub extern "C" fn erff(x : Float) -> Float = "erff"
 /// turned a cosmetic misplacement into a blocker: nn/ would have had to
 /// depend on optim/ to call sqrt.
 pub extern "C" fn sqrtf(x : Float) -> Float = "sqrtf"
+///|
+/// Float32 sin/cos via libm.
+///
+/// These were declared in `scheduler.mbt` and `bottles.mbt`, next to the
+/// code that happened to call them first. Same problem as sqrtf: a
+/// trigonometric function is not part of a learning-rate schedule, and
+/// bottles.mbt would otherwise have needed optim/ for `cosf` during the
+/// Box-Muller step.
+pub extern "C" fn sinf(x : Float) -> Float = "sinf"
+
+///|
+pub extern "C" fn cosf(x : Float) -> Float = "cosf"
 

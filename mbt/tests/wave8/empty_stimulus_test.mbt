@@ -9,7 +9,7 @@ test "EmptyStimulus::new — default" {
 
 ///|
 test "EmptyStimulus::with_param — custom EmptyParam" {
-  let p = @snn_mbt.EmptyParam::with_type("none")
+  let p = @nn.EmptyParam::with_type("none")
   let s = @snn_mbt.EmptyStimulus::with_param(p)
   assert_eq(s.param.type_str(), "none")
 }

@@ -35,7 +35,7 @@ pub fn sinusoidal_position_encoding(
       let two_i_over_d = 2.0F * Float::from_int(j / 2) / Float::from_int(d_model)
       let freq = 1.0F / pow_10000(two_i_over_d)
       let angle = Float::from_int(pos) * freq
-      let v = if j % 2 == 0 { sinf(angle) } else { cosf(angle) }
+      let v = if j % 2 == 0 { @core.sinf(angle) } else { @core.cosf(angle) }
       out[pos * d_model + j] = v
     }
   }

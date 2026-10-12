@@ -224,21 +224,21 @@ pub fn scnn_single_step() -> (Float, Int) {
   let mut g_idx = 0
   while g_idx < grads.length() {
     match grads[g_idx] {
-      Conv2d(d_w, _d_b) => {
+      @nn.Conv2d(d_w, _d_b) => {
         let mut k = 0
         while k < d_w.length() {
           if d_w[k] != 0.0F { grad_count = grad_count + 1 }
           k = k + 1
         }
       }
-      Linear(d_w, _d_b) => {
+      @nn.Linear(d_w, _d_b) => {
         let mut k = 0
         while k < d_w.length() {
           if d_w[k] != 0.0F { grad_count = grad_count + 1 }
           k = k + 1
         }
       }
-      BatchNorm2d(d_g, _d_b) => {
+      @nn.BatchNorm2d(d_g, _d_b) => {
         let mut k = 0
         while k < d_g.length() {
           if d_g[k] != 0.0F { grad_count = grad_count + 1 }
@@ -381,7 +381,7 @@ pub fn scnn_train_step_with_sgd(
     let d_grad = grads[g_idx]
     let d_layer = model.layers[g_idx]
     match (d_layer, d_grad) {
-      (Conv2d(param), LayerGrad::Conv2d(d_w, d_b)) => {
+      (@nn.Conv2d(param), @nn.LayerGrad::Conv2d(d_w, d_b)) => {
         clip_grad_array(d_w, clip)
         clip_grad_array(d_b, clip)
         for i in 0..<param.weight.length() {
@@ -391,7 +391,7 @@ pub fn scnn_train_step_with_sgd(
           param.bias[i] = param.bias[i] - lr * d_b[i]
         }
       }
-      (Linear(param), LayerGrad::Linear(d_w, d_b)) => {
+      (@nn.Linear(param), @nn.LayerGrad::Linear(d_w, d_b)) => {
         clip_grad_array(d_w, clip)
         clip_grad_array(d_b, clip)
         for i in 0..<param.weight.length() {
@@ -401,7 +401,7 @@ pub fn scnn_train_step_with_sgd(
           param.bias[i] = param.bias[i] - lr * d_b[i]
         }
       }
-      (BatchNorm2d(bn), LayerGrad::BatchNorm2d(d_g, d_b)) => {
+      (@nn.BatchNorm2d(bn), @nn.LayerGrad::BatchNorm2d(d_g, d_b)) => {
         clip_grad_array(d_g, clip)
         clip_grad_array(d_b, clip)
         for i in 0..<bn.gamma.length() {

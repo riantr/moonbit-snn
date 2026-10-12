@@ -78,9 +78,9 @@ pub fn MathPrims::on(tape : Tape[Float]) -> MathPrims {
   // ln(x); bwd(g, x) = g / x
   let ln = tape.op1("ln", fn(a) { @core.logf(a) }, fn(g, x) { g / x })
   // sin(x); bwd(g, x) = g * cos(x)
-  let sin = tape.op1("sin", fn(a) { sinf(a) }, fn(g, x) { g * cosf(x) })
+  let sin = tape.op1("sin", fn(a) { @core.sinf(a) }, fn(g, x) { g * @core.cosf(x) })
   // cos(x); bwd(g, x) = -g * sin(x)
-  let cos = tape.op1("cos", fn(a) { cosf(a) }, fn(g, x) { -g * sinf(x) })
+  let cos = tape.op1("cos", fn(a) { @core.cosf(a) }, fn(g, x) { -g * @core.sinf(x) })
   // tanh(x); bwd(g, x) = g * (1 - tanh^2(x))
   let tanh = tape.op1("tanh", fn(a) { @core.tanhf(a) }, fn(g, x) {
     let t = @core.tanhf(x)

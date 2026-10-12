@@ -95,61 +95,72 @@ pub fn sgd_momentum_update_arrays(
 /// SGD wrapper for `LinearParam`. Returns a fresh `LinearParam` with
 /// updated weights / biases.
 pub fn sgd_update_linear(
-  param : LinearParam,
+  param : @nn.LinearParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   lr : Float,
-) -> LinearParam {
+) -> @nn.LinearParam {
   let (w, b) = sgd_update_arrays(param.weight, param.bias, d_weight, d_bias, lr)
-  { weight: w, bias: b, in_features: param.in_features, out_features: param.out_features }
+  // Through the constructor, not a record literal: `LinearParam`'s fields are
+  // private, so once the type moved to another package only its constructor
+  // can build one.
+  @nn.LinearParam::new(w, b, param.in_features, param.out_features)
 }
 
 ///|
 /// SGD wrapper for `Conv2dParam`. Returns a fresh `Conv2dParam` with
 /// updated weights / biases.
 pub fn sgd_update_conv(
-  param : Conv2dParam,
+  param : @nn.Conv2dParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   lr : Float,
-) -> Conv2dParam {
+) -> @nn.Conv2dParam {
   let (w, b) = sgd_update_arrays(param.weight, param.bias, d_weight, d_bias, lr)
-  { weight: w, bias: b, c_out: param.c_out, c_in: param.c_in,
-    kh: param.kh, kw: param.kw, stride: param.stride, pad: param.pad }
+  // Through the constructor, for the same reason as the LinearParam wrapper
+  // above: `Conv2dParam`'s fields are private to nn/.
+  @nn.Conv2dParam::new(
+    w, b, param.c_out, param.c_in, param.kh, param.kw,
+    stride=param.stride, pad=param.pad,
+  )
 }
 
 ///|
 /// SGD-with-momentum wrapper for `LinearParam`.
 pub fn sgd_momentum_update_linear(
-  param : LinearParam,
+  param : @nn.LinearParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : SGDMomentumState,
   lr : Float,
   momentum : Float,
-) -> (LinearParam, SGDMomentumState) {
+) -> (@nn.LinearParam, SGDMomentumState) {
   let (w, b, s2) = sgd_momentum_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state, lr, momentum,
   )
-  let p2 = { weight: w, bias: b, in_features: param.in_features,
-             out_features: param.out_features }
+  let p2 = @nn.LinearParam::new(
+    w, b, param.in_features, param.out_features,
+  )
   (p2, s2)
 }
 
 ///|
 /// SGD-with-momentum wrapper for `Conv2dParam`.
 pub fn sgd_momentum_update_conv(
-  param : Conv2dParam,
+  param : @nn.Conv2dParam,
   d_weight : Array[Float],
   d_bias : Array[Float],
   state : SGDMomentumState,
   lr : Float,
   momentum : Float,
-) -> (Conv2dParam, SGDMomentumState) {
+) -> (@nn.Conv2dParam, SGDMomentumState) {
   let (w, b, s2) = sgd_momentum_update_arrays(
     param.weight, param.bias, d_weight, d_bias, state, lr, momentum,
   )
-  let p2 = { weight: w, bias: b, c_out: param.c_out, c_in: param.c_in,
-             kh: param.kh, kw: param.kw, stride: param.stride, pad: param.pad }
+  let p2 = @nn.Conv2dParam::new(
+    w, b, param.c_out, param.c_in,
+    param.kh, param.kw,
+    stride=param.stride, pad=param.pad,
+  )
   (p2, s2)
 }

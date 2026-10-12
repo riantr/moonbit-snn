@@ -77,7 +77,7 @@ pub fn cosine_schedule(num_steps : Int, s : Float) -> DiffusionSchedule {
 ///|
 /// helper: cos(x)^p via powf on exp(log(cos(x)) * p).
 fn pow_cosf(x : Float, p : Float) -> Float {
-  let c = cosf(x)
+  let c = @core.cosf(x)
   let abs_c = if c < 0.0F { -c } else { c }
   @core.expf(@core.logf(abs_c) * p)
 }

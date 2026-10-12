@@ -15,19 +15,19 @@
 /// Uses the existing EmptyParam struct from structs_extra.mbt
 /// (added in v0.10.54). `stimulate_empty` is a no-op.
 pub struct EmptyStimulus {
-  param : EmptyParam
+  param : @nn.EmptyParam
   records : Array[Int] // empty dict proxy (MoonBit has no Dict)
 }
 
 ///|
 /// Default EmptyStimulus (EmptyParam type="empty").
 pub fn EmptyStimulus::new() -> EmptyStimulus {
-  { param: EmptyParam::new(), records: [] }
+  { param: @nn.EmptyParam::new(), records: [] }
 }
 
 ///|
 /// Custom EmptyStimulus with explicit EmptyParam.
-pub fn EmptyStimulus::with_param(p : EmptyParam) -> EmptyStimulus {
+pub fn EmptyStimulus::with_param(p : @nn.EmptyParam) -> EmptyStimulus {
   { param: p, records: [] }
 }
 
@@ -35,7 +35,7 @@ pub fn EmptyStimulus::with_param(p : EmptyParam) -> EmptyStimulus {
 /// stimulate_empty — no-op (matches Julia's empty body).
 pub fn stimulate_empty(
   _stim : EmptyStimulus,
-  _param : EmptyParam,
+  _param : @nn.EmptyParam,
   _t : Float,
   _dt : Float,
 ) -> Unit {

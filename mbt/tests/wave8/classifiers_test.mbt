@@ -3,28 +3,28 @@
 ///|
 test "argmax_basic" {
   let scores : Array[Float] = [0.1F, 0.5F, 0.3F, 0.9F, 0.2F]
-  if @snn_mbt.argmax(scores) != 3 {
-    fail("argmax = \{@snn_mbt.argmax(scores)}, expected 3")
+  if @nn.argmax(scores) != 3 {
+    fail("argmax = \{@nn.argmax(scores)}, expected 3")
   }
 }
 
 ///|
 test "argmax_first_occurrence_on_ties" {
   let scores : Array[Float] = [0.5F, 0.5F, 0.5F, 0.7F]
-  if @snn_mbt.argmax(scores) != 3 {
-    fail("argmax should pick 3 (highest), got \{@snn_mbt.argmax(scores)}")
+  if @nn.argmax(scores) != 3 {
+    fail("argmax should pick 3 (highest), got \{@nn.argmax(scores)}")
   }
   // All-equal tie → first index (0).
   let ties : Array[Float] = [1.0F, 1.0F, 1.0F]
-  if @snn_mbt.argmax(ties) != 0 {
-    fail("argmax of all-equal should be 0, got \{@snn_mbt.argmax(ties)}")
+  if @nn.argmax(ties) != 0 {
+    fail("argmax of all-equal should be 0, got \{@nn.argmax(ties)}")
   }
 }
 
 ///|
 test "argmax_empty_returns_zero" {
   let scores : Array[Float] = []
-  if @snn_mbt.argmax(scores) != 0 {
+  if @nn.argmax(scores) != 0 {
     fail("argmax of empty should be 0")
   }
 }
@@ -33,15 +33,15 @@ test "argmax_empty_returns_zero" {
 test "argmax_negative_values" {
   // Works with all-negative scores.
   let scores : Array[Float] = [-2.0F, -1.0F, -3.0F, -0.5F]
-  if @snn_mbt.argmax(scores) != 3 {
-    fail("argmax of negatives = \{@snn_mbt.argmax(scores)}, expected 3")
+  if @nn.argmax(scores) != 3 {
+    fail("argmax of negatives = \{@nn.argmax(scores)}, expected 3")
   }
 }
 
 ///|
 test "softmax_sums_to_one" {
   let scores : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
-  let probs = @snn_mbt.softmax(scores)
+  let probs = @nn.softmax(scores)
   let mut sum : Float = 0.0F
   for i in 0..<probs.length() {
     sum = sum + probs[i]
@@ -57,9 +57,9 @@ test "softmax_sums_to_one" {
 ///|
 test "softmax_argmax_matches_input_argmax" {
   let scores : Array[Float] = [0.1F, 0.9F, 0.4F]
-  let probs = @snn_mbt.softmax(scores)
-  if @snn_mbt.argmax(probs) != @snn_mbt.argmax(scores) {
-    fail("softmax argmax = \{@snn_mbt.argmax(probs)}, expected \{@snn_mbt.argmax(scores)}")
+  let probs = @nn.softmax(scores)
+  if @nn.argmax(probs) != @nn.argmax(scores) {
+    fail("softmax argmax = \{@nn.argmax(probs)}, expected \{@nn.argmax(scores)}")
   }
 }
 
@@ -67,7 +67,7 @@ test "softmax_argmax_matches_input_argmax" {
 test "softmax_numerically_stable_for_large_inputs" {
   // Large scores — naive softmax would overflow exp.
   let scores : Array[Float] = [1000.0F, 1001.0F, 1002.0F]
-  let probs = @snn_mbt.softmax(scores)
+  let probs = @nn.softmax(scores)
   // Probabilities should be valid.
   let mut sum : Float = 0.0F
   for i in 0..<probs.length() {
@@ -83,8 +83,8 @@ test "softmax_numerically_stable_for_large_inputs" {
     fail("softmax sum = \{sum}, expected ~1.0")
   }
   // argmax of input is 2 (highest), softmax argmax should also be 2.
-  if @snn_mbt.argmax(probs) != 2 {
-    fail("argmax of softmax(probs) = \{@snn_mbt.argmax(probs)}, expected 2")
+  if @nn.argmax(probs) != 2 {
+    fail("argmax of softmax(probs) = \{@nn.argmax(probs)}, expected 2")
   }
 }
 
@@ -92,7 +92,7 @@ test "softmax_numerically_stable_for_large_inputs" {
 test "softmax_constant_input_returns_uniform" {
   // All same score → uniform distribution.
   let scores : Array[Float] = [0.5F, 0.5F, 0.5F, 0.5F]
-  let probs = @snn_mbt.softmax(scores)
+  let probs = @nn.softmax(scores)
   let expected = 1.0F / 4.0F
   for i in 0..<probs.length() {
     if (probs[i] - expected).abs() > 1.0e-5F {
@@ -104,7 +104,7 @@ test "softmax_constant_input_returns_uniform" {
 ///|
 test "top_k_basic" {
   let scores : Array[Float] = [0.1F, 0.5F, 0.9F, 0.3F, 0.7F]
-  let top = @snn_mbt.top_k(scores, 3)
+  let top = @nn.top_k(scores, 3)
   if top.length() != 3 {
     fail("top.length() = \{top.length()}, expected 3")
   }
@@ -117,7 +117,7 @@ test "top_k_basic" {
 ///|
 test "top_k_k_larger_than_n" {
   let scores : Array[Float] = [0.5F, 0.3F]
-  let top = @snn_mbt.top_k(scores, 10)
+  let top = @nn.top_k(scores, 10)
   // Should return all indices, sorted by score desc.
   if top.length() != 2 {
     fail("top.length() = \{top.length()}, expected 2")
@@ -130,7 +130,7 @@ test "top_k_k_larger_than_n" {
 ///|
 test "top_k_k_zero_returns_empty" {
   let scores : Array[Float] = [0.5F, 0.3F]
-  let top = @snn_mbt.top_k(scores, 0)
+  let top = @nn.top_k(scores, 0)
   if top.length() != 0 {
     fail("top_k with k=0 should return empty, got \{top.length()}")
   }
@@ -140,7 +140,7 @@ test "top_k_k_zero_returns_empty" {
 test "classification_accuracy_perfect" {
   let predicted : Array[Int] = [0, 1, 2, 1, 0]
   let labels : Array[Int] = [0, 1, 2, 1, 0]
-  if @snn_mbt.classification_accuracy(predicted, labels) != 1.0F {
+  if @nn.classification_accuracy(predicted, labels) != 1.0F {
     fail("perfect accuracy should be 1.0")
   }
 }
@@ -149,7 +149,7 @@ test "classification_accuracy_perfect" {
 test "classification_accuracy_zero" {
   let predicted : Array[Int] = [0, 0, 0, 0]
   let labels : Array[Int] = [1, 1, 1, 1]
-  if @snn_mbt.classification_accuracy(predicted, labels) != 0.0F {
+  if @nn.classification_accuracy(predicted, labels) != 0.0F {
     fail("zero accuracy should be 0.0")
   }
 }
@@ -159,8 +159,8 @@ test "classification_accuracy_partial" {
   let predicted : Array[Int] = [0, 1, 2, 1, 0]
   let labels : Array[Int] = [0, 1, 2, 0, 0]
   // Matches at indices 0, 1, 2, 4 → 4/5 = 0.8.
-  if (@snn_mbt.classification_accuracy(predicted, labels) - 0.8F).abs() > 1.0e-6F {
-    fail("expected ~0.8, got \{@snn_mbt.classification_accuracy(predicted, labels)}")
+  if (@nn.classification_accuracy(predicted, labels) - 0.8F).abs() > 1.0e-6F {
+    fail("expected ~0.8, got \{@nn.classification_accuracy(predicted, labels)}")
   }
 }
 
@@ -168,7 +168,7 @@ test "classification_accuracy_partial" {
 test "classification_accuracy_empty_returns_zero" {
   let predicted : Array[Int] = []
   let labels : Array[Int] = []
-  if @snn_mbt.classification_accuracy(predicted, labels) != 0.0F {
+  if @nn.classification_accuracy(predicted, labels) != 0.0F {
     fail("empty input should return 0.0")
   }
 }
@@ -177,7 +177,7 @@ test "classification_accuracy_empty_returns_zero" {
 test "classification_accuracy_length_mismatch_returns_zero" {
   let predicted : Array[Int] = [0, 1]
   let labels : Array[Int] = [0]
-  if @snn_mbt.classification_accuracy(predicted, labels) != 0.0F {
+  if @nn.classification_accuracy(predicted, labels) != 0.0F {
     fail("length mismatch should return 0.0 (guard)")
   }
 }
@@ -185,7 +185,7 @@ test "classification_accuracy_length_mismatch_returns_zero" {
 ///|
 test "prediction_equals_argmax" {
   let scores : Array[Float] = [0.2F, 0.8F, 0.1F, 0.5F]
-  if @snn_mbt.prediction(scores) != @snn_mbt.argmax(scores) {
+  if @nn.prediction(scores) != @nn.argmax(scores) {
     fail("prediction should equal argmax")
   }
 }
@@ -194,8 +194,8 @@ test "prediction_equals_argmax" {
 test "top_k_prediction_equals_top_k" {
   let scores : Array[Float] = [0.5F, 0.3F, 0.9F, 0.1F]
   let k = 2
-  let p1 = @snn_mbt.top_k_prediction(scores, k)
-  let p2 = @snn_mbt.top_k(scores, k)
+  let p1 = @nn.top_k_prediction(scores, k)
+  let p2 = @nn.top_k(scores, k)
   if p1.length() != p2.length() {
     fail("length mismatch")
   }
