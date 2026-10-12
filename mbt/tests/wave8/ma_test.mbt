@@ -70,7 +70,7 @@ test "ma_grad_thetas: matches Tape-based demo_ma1_loss for MA(1)" {
   let theta : Float = 0.3
   let param = @timeseries.MaParam::new(1, 0.0F, [theta])
   let g_hand = @timeseries.ma_grad_thetas(y, param)
-  let g_tape = @snn_mbt.demo_ma1_loss(y, theta)
+  let g_tape = @autodiff.demo_ma1_loss(y, theta)
   if (g_hand[0] - g_tape).abs() > 1.0e-3F {
     fail("MA(1) grad: hand = \{g_hand[0]}, tape = \{g_tape}")
   }
@@ -82,7 +82,7 @@ test "ma_grad_thetas: matches finite difference for MA(1)" {
   let theta : Float = 0.3
   let param = @timeseries.MaParam::new(1, 0.0F, [theta])
   let g_hand = @timeseries.ma_grad_thetas(y, param)
-  let fd = @snn_mbt.finite_diff(
+  let fd = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.ma_loss_value(y, 0.0F, [v]) }, theta, 1.0e-3F,
   )
   if (g_hand[0] - fd).abs() > 1.0e-2F {
@@ -97,10 +97,10 @@ test "ma_grad_thetas: matches finite difference for MA(2)" {
   let param = @timeseries.MaParam::new(2, 0.0F, thetas)
   let g_hand = @timeseries.ma_grad_thetas(y, param)
   // FD for each θ independently
-  let fd_0 = @snn_mbt.finite_diff(
+  let fd_0 = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.ma_loss_value(y, 0.0F, [v, 0.2F]) }, 0.3F, 1.0e-3F,
   )
-  let fd_1 = @snn_mbt.finite_diff(
+  let fd_1 = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.ma_loss_value(y, 0.0F, [0.3F, v]) }, 0.2F, 1.0e-3F,
   )
   if (g_hand[0] - fd_0).abs() > 1.0e-2F {

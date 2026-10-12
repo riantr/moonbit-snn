@@ -3,7 +3,7 @@
 ///|
 test "demo_polynomial: df/dx = 3x² - 2 at x = 2 → 10" {
   // f(x) = x³ - 2x + 1; f'(x) = 3x² - 2; f'(2) = 12 - 2 = 10.
-  let g = @snn_mbt.demo_polynomial(2.0F)
+  let g = @autodiff.demo_polynomial(2.0F)
   if (g - 10.0F).abs() > 0.0001F {
     fail("df/dx = \{g}, expected 10.0")
   }
@@ -12,9 +12,9 @@ test "demo_polynomial: df/dx = 3x² - 2 at x = 2 → 10" {
 ///|
 test "demo_polynomial: closed-form vs finite difference at x = 1.5" {
   let x = 1.5F
-  let tape_grad = @snn_mbt.demo_polynomial(x)
+  let tape_grad = @autodiff.demo_polynomial(x)
   // Finite differences need the *value* function, not the gradient.
-  let fd_grad = @snn_mbt.finite_diff(@snn_mbt.polynomial_value, x, 1.0e-3F)
+  let fd_grad = @autodiff.finite_diff(@autodiff.polynomial_value, x, 1.0e-3F)
   if (tape_grad - fd_grad).abs() > 1.0e-3F {
     fail("tape = \{tape_grad}, fd = \{fd_grad}, mismatch")
   }
@@ -24,7 +24,7 @@ test "demo_polynomial: closed-form vs finite difference at x = 1.5" {
 test "demo_polynomial: zero gradient at critical point x = ±√(2/3)" {
   // df/dx = 3x² - 2 = 0 → x² = 2/3 → x = ±sqrt(2/3) ≈ ±0.816.
   let x_crit = @core.sqrtf(2.0F / 3.0F)
-  let g = @snn_mbt.demo_polynomial(x_crit)
+  let g = @autodiff.demo_polynomial(x_crit)
   if g.abs() > 0.0001F {
     fail("df/dx at critical = \{g}, expected ≈ 0")
   }
@@ -36,7 +36,7 @@ test "demo_rosenbrock: gradients match closed form at (1, 1)" {
   // also vanish at the minimum.
   // df/dx = -2(a-x) - 4bx(y - x²)
   // df/dy = 2b(y - x²)
-  let (gx, gy) = @snn_mbt.demo_rosenbrock(1.0F, 1.0F)
+  let (gx, gy) = @autodiff.demo_rosenbrock(1.0F, 1.0F)
   if gx.abs() > 0.0001F {
     fail("df/dx = \{gx}, expected ≈ 0 at minimum")
   }
@@ -49,11 +49,11 @@ test "demo_rosenbrock: gradients match closed form at (1, 1)" {
 test "demo_rosenbrock: closed-form vs finite difference at (0.5, 0.5)" {
   let x : Float = 0.5
   let y : Float = 0.5
-  let (gx_tape, gy_tape) = @snn_mbt.demo_rosenbrock(x, y)
+  let (gx_tape, gy_tape) = @autodiff.demo_rosenbrock(x, y)
   // Finite differences need the *value* function, not the gradient.
   let h : Float = 1.0e-3
-  let gx_fd = @snn_mbt.finite_diff(fn(v : Float) { @snn_mbt.rosenbrock_value(v, y) }, x, h)
-  let gy_fd = @snn_mbt.finite_diff(fn(v : Float) { @snn_mbt.rosenbrock_value(x, v) }, y, h)
+  let gx_fd = @autodiff.finite_diff(fn(v : Float) { @autodiff.rosenbrock_value(v, y) }, x, h)
+  let gy_fd = @autodiff.finite_diff(fn(v : Float) { @autodiff.rosenbrock_value(x, v) }, y, h)
   if (gx_tape - gx_fd).abs() > 1.0e-2F {
     fail("df/dx: tape = \{gx_tape}, fd = \{gx_fd}")
   }
@@ -68,9 +68,9 @@ test "demo_ma1_loss: matches finite difference on small series" {
   // Forward: ε[0]=1, ε[1]=2-θ, ε[2]=3-θ(2-θ), ε[3]=4-θ(3-θ(2-θ)).
   let y : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let theta : Float = 0.5
-  let tape_grad = @snn_mbt.demo_ma1_loss(y, theta)
-  let fd_grad = @snn_mbt.finite_diff(
-    fn(v : Float) { @snn_mbt.ma1_loss_value(y, v) }, theta, 1.0e-3F,
+  let tape_grad = @autodiff.demo_ma1_loss(y, theta)
+  let fd_grad = @autodiff.finite_diff(
+    fn(v : Float) { @autodiff.ma1_loss_value(y, v) }, theta, 1.0e-3F,
   )
   if (tape_grad - fd_grad).abs() > 1.0e-2F {
     fail("dloss/dθ: tape = \{tape_grad}, fd = \{fd_grad}")
@@ -83,9 +83,9 @@ test "demo_ma1_loss: gradient is non-zero and matches FD for noisy data" {
   // (within tolerance) regardless of the magnitude.
   let y : Array[Float] = [0.5F, 1.2F, 0.8F, 1.5F, 0.3F, 1.0F, 0.7F, 1.3F]
   let theta : Float = 0.3
-  let tape_grad = @snn_mbt.demo_ma1_loss(y, theta)
-  let fd_grad = @snn_mbt.finite_diff(
-    fn(v : Float) { @snn_mbt.ma1_loss_value(y, v) }, theta, 1.0e-3F,
+  let tape_grad = @autodiff.demo_ma1_loss(y, theta)
+  let fd_grad = @autodiff.finite_diff(
+    fn(v : Float) { @autodiff.ma1_loss_value(y, v) }, theta, 1.0e-3F,
   )
   if (tape_grad - fd_grad).abs() > 1.0e-2F {
     fail("dloss/dθ: tape = \{tape_grad}, fd = \{fd_grad}")
@@ -113,9 +113,9 @@ test "demo_ma1_loss: matches finite difference at MA(1) optimum" {
     y[t] = eps[t] + 0.7F * eps[t - 1]
   }
   let theta : Float = 0.7
-  let tape_grad = @snn_mbt.demo_ma1_loss(y, theta)
-  let fd_grad = @snn_mbt.finite_diff(
-    fn(v : Float) { @snn_mbt.ma1_loss_value(y, v) }, theta, 1.0e-3F,
+  let tape_grad = @autodiff.demo_ma1_loss(y, theta)
+  let fd_grad = @autodiff.finite_diff(
+    fn(v : Float) { @autodiff.ma1_loss_value(y, v) }, theta, 1.0e-3F,
   )
   if (tape_grad - fd_grad).abs() > 1.0e-2F {
     fail("dloss/dθ: tape = \{tape_grad}, fd = \{fd_grad}")
@@ -125,7 +125,7 @@ test "demo_ma1_loss: matches finite difference at MA(1) optimum" {
 ///|
 test "finite_diff: identity check (linear function)" {
   // f(x) = 3x + 1 → df/dx = 3. fd(3, h) should return ≈ 3.
-  let g = @snn_mbt.finite_diff(fn(x : Float) { 3.0F * x + 1.0F }, 0.5F, 1.0e-4F)
+  let g = @autodiff.finite_diff(fn(x : Float) { 3.0F * x + 1.0F }, 0.5F, 1.0e-4F)
   if (g - 3.0F).abs() > 0.001F {
     fail("fd(3x+1) = \{g}, expected 3.0")
   }
@@ -140,7 +140,7 @@ test "ma1_loss_value: matches manual sum for y = [1, 2, 3, 4]" {
   // ε[3] = 4 - 0.5·2.25 = 2.875
   // loss (t≥1) = 2.25 + 5.0625 + 8.265625 = 15.578125
   let y : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
-  let loss = @snn_mbt.ma1_loss_value(y, 0.5F)
+  let loss = @autodiff.ma1_loss_value(y, 0.5F)
   let expected : Float = 2.25F + 5.0625F + 8.265625F
   if (loss - expected).abs() > 0.001F {
     fail("loss = \{loss}, expected ~\{expected}")
@@ -154,7 +154,7 @@ test "demo_ma1_loss: returns finite value (no NaN/Inf) on long series" {
   for i in 0..<100 {
     y[i] = Float::from_int(i) * 0.1F
   }
-  let g = @snn_mbt.demo_ma1_loss(y, 0.5F)
+  let g = @autodiff.demo_ma1_loss(y, 0.5F)
   if g != g {
     fail("gradient is NaN")
   }

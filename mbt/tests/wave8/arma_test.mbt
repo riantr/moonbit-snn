@@ -102,10 +102,10 @@ test "arma_grad: matches finite difference for ARMA(1, 1)" {
   let param = @timeseries.ArmaParam::new(1, 1, 0.0F, [0.5F], [0.3F])
   let (g_ar, g_ma) = @timeseries.arma_grad(y, param)
   // FD for ar_coeffs[0]
-  let fd_ar = @snn_mbt.finite_diff(
+  let fd_ar = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.arma_loss_value(y, 0.0F, [v], [0.3F]) }, 0.5F, 1.0e-3F,
   )
-  let fd_ma = @snn_mbt.finite_diff(
+  let fd_ma = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.arma_loss_value(y, 0.0F, [0.5F], [v]) }, 0.3F, 1.0e-3F,
   )
   if (g_ar[0] - fd_ar).abs() > 1.0e-2F {
@@ -135,22 +135,22 @@ test "arma_grad: matches finite difference for ARMA(2, 2)" {
   let param = @timeseries.ArmaParam::new(2, 2, 0.0F, [0.4F, 0.2F], [0.25F, 0.1F])
   let (g_ar, g_ma) = @timeseries.arma_grad(y, param)
   // FD for each coefficient independently
-  let fd_ar_0 = @snn_mbt.finite_diff(
+  let fd_ar_0 = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.arma_loss_value(y, 0.0F, [v, 0.2F], [0.25F, 0.1F]) },
     0.4F,
     1.0e-3F,
   )
-  let fd_ar_1 = @snn_mbt.finite_diff(
+  let fd_ar_1 = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.arma_loss_value(y, 0.0F, [0.4F, v], [0.25F, 0.1F]) },
     0.2F,
     1.0e-3F,
   )
-  let fd_ma_0 = @snn_mbt.finite_diff(
+  let fd_ma_0 = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.arma_loss_value(y, 0.0F, [0.4F, 0.2F], [v, 0.1F]) },
     0.25F,
     1.0e-3F,
   )
-  let fd_ma_1 = @snn_mbt.finite_diff(
+  let fd_ma_1 = @autodiff.finite_diff(
     fn(v : Float) { @timeseries.arma_loss_value(y, 0.0F, [0.4F, 0.2F], [0.25F, v]) },
     0.1F,
     1.0e-3F,

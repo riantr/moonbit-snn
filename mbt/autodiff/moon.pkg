@@ -1,0 +1,20 @@
+// autodiff/ — reverse-mode automatic differentiation over a recorded tape.
+//
+// Depends on core alone. A Tape[A] holds the values and the closures that
+// produced them; primitives push an entry per operation and the backward pass
+// walks the tape in reverse accumulating adjoints. Nothing in that needs a
+// tensor type, a parameter block or an optimiser -- autodiff_prims.mbt
+// deliberately splits its operations into small bundles so a caller only pays
+// for the generic machinery it uses.
+//
+// It sits below nn/ rather than beside it, which is the point: nn/'s layers
+// hand-write their backward passes (conv2d_backward.mbt, linear_backward.mbt)
+// because those are analytic and much cheaper than a tape. This package is for
+// the cases where an analytic gradient is not worth deriving by hand.
+//
+// causal/ depends on this one: do_calculus and counterfactual_reasoning
+// differentiate through an intervention graph, and autodiff_tape is how they do
+// it without writing the chain rule out for every estimator.
+import {
+  "riantr/snn_mbt/core",
+}

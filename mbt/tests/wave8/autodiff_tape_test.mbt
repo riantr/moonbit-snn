@@ -2,7 +2,7 @@
 
 ///|
 test "Tape: variable stored at correct memory slot" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
   let x0 = tape.variable(2.0F)
   let x1 = tape.variable(5.0F)
   // x0 should be at memory[0], x1 at memory[1].
@@ -23,8 +23,8 @@ test "Tape: variable stored at correct memory slot" {
 ///|
 test "Tape::diff_backward: linear example from textbook" {
   // f(x0, x1) = -x0 + x0 * x1; expected grads [4, 2, 1, 1, 1].
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { add, neg, mul, .. } = prims
   let x0 = tape.variable(2.0F)
   let x1 = tape.variable(5.0F)
@@ -48,8 +48,8 @@ test "Tape::diff_backward: linear example from textbook" {
 
 ///|
 test "Tape::diff_backward: f(x) = x^2 at x = 3 → df/dx = 6" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { mul, .. } = prims
   let x = tape.variable(3.0F)
   let x_sq = mul(x, x)
@@ -64,8 +64,8 @@ test "Tape::diff_backward: f(x) = x^2 at x = 3 → df/dx = 6" {
 
 ///|
 test "Tape::diff_backward: f(x) = exp(x) at x = 0 → df/dx = 1" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.MathPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.MathPrims::on(tape)
   let { exp, .. } = prims
   let x = tape.variable(0.0F)
   let y = exp(x)
@@ -80,8 +80,8 @@ test "Tape::diff_backward: f(x) = exp(x) at x = 0 → df/dx = 1" {
 
 ///|
 test "Tape::diff_backward: f(x) = ln(x) at x = 2 → df/dx = 0.5" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.MathPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.MathPrims::on(tape)
   let { ln, .. } = prims
   let x = tape.variable(2.0F)
   let y = ln(x)
@@ -96,8 +96,8 @@ test "Tape::diff_backward: f(x) = ln(x) at x = 2 → df/dx = 0.5" {
 
 ///|
 test "Tape::diff_backward: f(x) = tanh(x) at x = 0 → df/dx = 1" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.MathPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.MathPrims::on(tape)
   let { tanh, .. } = prims
   let x = tape.variable(0.0F)
   let y = tanh(x)
@@ -112,8 +112,8 @@ test "Tape::diff_backward: f(x) = tanh(x) at x = 0 → df/dx = 1" {
 
 ///|
 test "Tape::diff_backward: f(x) = sigmoid(x) at x = 0 → df/dx = 0.25" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.MathPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.MathPrims::on(tape)
   let { sigmoid, .. } = prims
   let x = tape.variable(0.0F)
   let y = sigmoid(x)
@@ -129,8 +129,8 @@ test "Tape::diff_backward: f(x) = sigmoid(x) at x = 0 → df/dx = 0.25" {
 ///|
 test "Tape::diff_backward: chain rule (a+b)*c" {
   // f(a, b, c) = (a + b) * c. df/da = c, df/db = c, df/dc = a + b.
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { add, mul, .. } = prims
   let a = tape.variable(2.0F)
   let b = tape.variable(3.0F)
@@ -155,11 +155,11 @@ test "Tape::diff_backward: chain rule (a+b)*c" {
 ///|
 test "Tape::diff_backward: constants don't receive gradient" {
   // f(x) = x + 3. The gradient w.r.t. x should be 1; 3 is constant.
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { add, .. } = prims
   let x = tape.variable(5.0F)
-  let y = add(x, @snn_mbt.constant(3.0F))
+  let y = add(x, @autodiff.constant(3.0F))
   ignore(y)
   let mem = tape.eval()
   let grads = tape.diff_backward(mem)
@@ -173,10 +173,10 @@ test "Tape::diff_backward: constants don't receive gradient" {
 ///|
 test "Tape::diff_backward: division gradient" {
   // f(x) = 6 / x. df/dx = -6 / x^2 = -6/9 = -0.666... at x = 3.
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { div, .. } = prims
-  let six = @snn_mbt.constant(6.0F)
+  let six = @autodiff.constant(6.0F)
   let x = tape.variable(3.0F)
   let y = div(six, x)
   ignore(y)
@@ -192,8 +192,8 @@ test "Tape::diff_backward: division gradient" {
 ///|
 test "Tape::diff_forward: linear example w.r.t. x0" {
   // Same f = -x0 + x0*x1. df/dx0 = -1 + x1 = -1 + 5 = 4 at x0=2, x1=5.
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { add, neg, mul, .. } = prims
   let x0 = tape.variable(2.0F)
   let x1 = tape.variable(5.0F)
@@ -212,8 +212,8 @@ test "Tape::diff_forward: linear example w.r.t. x0" {
 ///|
 test "Tape::diff_forward: linear example w.r.t. x1" {
   // df/dx1 = 0 + x0 = 2.
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { add, neg, mul, .. } = prims
   let x0 = tape.variable(2.0F)
   let x1 = tape.variable(5.0F)
@@ -230,7 +230,7 @@ test "Tape::diff_forward: linear example w.r.t. x1" {
 
 ///|
 test "Tape::eval: empty tape returns empty mem" {
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
   let mem = tape.eval()
   assert_eq(mem.length(), 0)
 }
@@ -238,11 +238,11 @@ test "Tape::eval: empty tape returns empty mem" {
 ///|
 test "constant: literal value not in memory" {
   // A constant doesn't take up a memory slot.
-  let tape : @snn_mbt.Tape[Float] = @snn_mbt.Tape::new()
-  let prims = @snn_mbt.BasicPrims::on(tape)
+  let tape : @autodiff.Tape[Float] = @autodiff.Tape::new()
+  let prims = @autodiff.BasicPrims::on(tape)
   let { add, .. } = prims
   let x = tape.variable(2.0F)
-  let y = add(x, @snn_mbt.constant(3.0F))
+  let y = add(x, @autodiff.constant(3.0F))
   ignore(y)
   let mem = tape.eval()
   // x0=2, x1=5; constants don't get a slot.

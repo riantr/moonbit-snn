@@ -20,4 +20,5 @@ import {
   "riantr/snn_mbt/attention",
   "riantr/snn_mbt/timeseries",
   "riantr/snn_mbt/meta",
+  "riantr/snn_mbt/autodiff",
 }

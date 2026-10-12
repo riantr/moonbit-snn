@@ -19,7 +19,7 @@ import {
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/activ",
   "riantr/snn_mbt/neuron",
-  "riantr/snn_mbt/synapse", "riantr/snn_mbt/nn", "riantr/snn_mbt/rl", "riantr/snn_mbt/gnn", "riantr/snn_mbt/stimulus", "riantr/snn_mbt/timeseries",} for "test"
+  "riantr/snn_mbt/synapse", "riantr/snn_mbt/nn", "riantr/snn_mbt/rl", "riantr/snn_mbt/gnn", "riantr/snn_mbt/stimulus", "riantr/snn_mbt/timeseries", "riantr/snn_mbt/autodiff",} for "test"
 
 import {
   "riantr/moonbit_image",
