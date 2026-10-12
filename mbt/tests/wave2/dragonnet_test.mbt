@@ -23,8 +23,8 @@ fn dn_fixture(
   n : Int,
   dim : Int,
   seed : UInt64,
-) -> (@snn_mbt.DragonNet, Array[Float], Array[Float], Array[Float]) {
-  let net = @snn_mbt.DragonNet::new(dim, width=6, half=4, seed=seed, std=0.2F)
+) -> (@causal.DragonNet, Array[Float], Array[Float], Array[Float]) {
+  let net = @causal.DragonNet::new(dim, width=6, half=4, seed=seed, std=0.2F)
   let rng = @core.Xoshiro::new(seed + 7UL)
   let x : Array[Float] = @core.rand_f32(rng, n * dim)
   let t : Array[Float] = @core.rand_f32(rng, n)
@@ -35,22 +35,22 @@ fn dn_fixture(
 ///|
 /// Total objective at `ratio`, without the L2 penalty.
 fn dn_loss(
-  net : @snn_mbt.DragonNet,
+  net : @causal.DragonNet,
   x : Array[Float],
   y : Array[Float],
   t : Array[Float],
   n : Int,
   ratio : Float,
 ) -> Float {
-  let out = @snn_mbt.dragonnet_forward(net, x, n)
-  @snn_mbt.dragonnet_loss(out, y, t, n, ratio)
+  let out = @causal.dragonnet_forward(net, x, n)
+  @causal.dragonnet_loss(out, y, t, n, ratio)
 }
 
 ///|
 /// The full objective `dragonnet_backward` is meant to differentiate: the
 /// data loss plus the same L2 penalty that `dragonnet_l2_penalty` reports.
 fn dn_objective(
-  net : @snn_mbt.DragonNet,
+  net : @causal.DragonNet,
   x : Array[Float],
   y : Array[Float],
   t : Array[Float],
@@ -59,13 +59,13 @@ fn dn_objective(
   l2 : Float,
 ) -> Float {
   dn_loss(net, x, y, t, n, ratio) +
-  @snn_mbt.dragonnet_l2_penalty(net, l2)
+  @causal.dragonnet_l2_penalty(net, l2)
 }
 
 ///|
 /// Full parameter gradient, flattened in `dragonnet_flatten` order.
 fn dn_grad_flat(
-  net : @snn_mbt.DragonNet,
+  net : @causal.DragonNet,
   x : Array[Float],
   y : Array[Float],
   t : Array[Float],
@@ -73,16 +73,16 @@ fn dn_grad_flat(
   ratio : Float,
   l2 : Float,
 ) -> Array[Float] {
-  let out = @snn_mbt.dragonnet_forward(net, x, n)
-  let (d0, d1, dt, de) = @snn_mbt.dragonnet_loss_grads(out, y, t, n, ratio)
-  let g = @snn_mbt.dragonnet_backward(net, x, out, d0, d1, dt, de, n, l2)
-  @snn_mbt.dragonnet_grad_flatten(g)
+  let out = @causal.dragonnet_forward(net, x, n)
+  let (d0, d1, dt, de) = @causal.dragonnet_loss_grads(out, y, t, n, ratio)
+  let g = @causal.dragonnet_backward(net, x, out, d0, d1, dt, de, n, l2)
+  @causal.dragonnet_grad_flatten(g)
 }
 
 ///|
 /// The gradient's epsilon entry, which lives at the end of the flat vector.
-fn dn_eps_index(net : @snn_mbt.DragonNet) -> Int {
-  @snn_mbt.dragonnet_param_count(net) - 1
+fn dn_eps_index(net : @causal.DragonNet) -> Int {
+  @causal.dragonnet_param_count(net) - 1
 }
 
 ///|
@@ -137,7 +137,7 @@ fn dn_excess(fd : Float, an : Float) -> Float {
 /// coordinates, not a mean: one wrong coordinate hidden by 200 right ones is
 /// still a bug.
 fn dn_fd_sweep(
-  net : @snn_mbt.DragonNet,
+  net : @causal.DragonNet,
   x : Array[Float],
   y : Array[Float],
   t : Array[Float],
@@ -147,7 +147,7 @@ fn dn_fd_sweep(
   h : Float,
 ) -> (Float, Int, Float, Float) {
   let g = dn_grad_flat(net, x, y, t, n, ratio, l2)
-  let base = @snn_mbt.dragonnet_flatten(net)
+  let base = @causal.dragonnet_flatten(net)
   let mut worst = -1.0e30F
   let mut worst_k = -1
   let mut worst_fd = 0.0F
@@ -159,10 +159,10 @@ fn dn_fd_sweep(
     let dnw = base.copy()
     dnw[k] = base[k] - h
     let l_up = dn_objective(
-      @snn_mbt.dragonnet_unflatten(net, up), x, y, t, n, ratio, l2,
+      @causal.dragonnet_unflatten(net, up), x, y, t, n, ratio, l2,
     )
     let l_dn = dn_objective(
-      @snn_mbt.dragonnet_unflatten(net, dnw), x, y, t, n, ratio, l2,
+      @causal.dragonnet_unflatten(net, dnw), x, y, t, n, ratio, l2,
     )
     let fd = (l_up - l_dn) / (2.0F * h)
     let e = dn_excess(fd, g[k])
@@ -181,13 +181,13 @@ fn dn_fd_sweep(
 test "flatten/unflatten round-trips and reports the right count" {
   let n = 4
   let (net, _x, _y, _t) = dn_fixture(n, 3, 13UL)
-  let flat = @snn_mbt.dragonnet_flatten(net)
-  let cnt = @snn_mbt.dragonnet_param_count(net)
+  let flat = @causal.dragonnet_flatten(net)
+  let cnt = @causal.dragonnet_param_count(net)
   if flat.length() != cnt {
     fail("flatten length \{flat.length()} != param_count \{cnt}")
   }
-  let back = @snn_mbt.dragonnet_flatten(
-    @snn_mbt.dragonnet_unflatten(net, flat),
+  let back = @causal.dragonnet_flatten(
+    @causal.dragonnet_unflatten(net, flat),
   )
   for i in 0..<cnt {
     if flat[i] != back[i] {
@@ -205,7 +205,7 @@ test "flatten/unflatten round-trips and reports the right count" {
 /// `DragonNet` is `pub(all)`, so the test can read each layer's own arrays and
 /// check them against its slice of the flat vector.
 fn dn_layer_params(
-  net : @snn_mbt.DragonNet,
+  net : @causal.DragonNet,
 ) -> Array[@nn.LinearParam] {
   [
     net.enc1,
@@ -229,22 +229,22 @@ fn dn_layer_params(
 /// control ended up blinding `t_head` instead.
 test "layer offsets tile the flat vector exactly, bias then weight" {
   let (net, _x, _y, _t) = dn_fixture(5, 4, 19UL)
-  let flat = @snn_mbt.dragonnet_flatten(net)
-  let cnt = @snn_mbt.dragonnet_param_count(net)
+  let flat = @causal.dragonnet_flatten(net)
+  let cnt = @causal.dragonnet_param_count(net)
   let layers = dn_layer_params(net)
-  if @snn_mbt.dragonnet_layer_offset(net, 0) != 0 {
+  if @causal.dragonnet_layer_offset(net, 0) != 0 {
     fail("layer 0 must start at 0")
   }
   // Layers must tile the vector with no gap and no overlap.
   let mut cursor = 0
   for layer in 0..<10 {
-    let lo = @snn_mbt.dragonnet_layer_offset(net, layer)
+    let lo = @causal.dragonnet_layer_offset(net, layer)
     if lo != cursor {
       fail(
         "layer \{layer}: offset \{lo} but the previous layer ended at \{cursor}",
       )
     }
-    let hi = @snn_mbt.dragonnet_layer_offset(net, layer + 1)
+    let hi = @causal.dragonnet_layer_offset(net, layer + 1)
     let p = layers[layer]
     if hi - lo != p.bias.length() + p.weight.length() {
       fail(
@@ -270,7 +270,7 @@ test "layer offsets tile the flat vector exactly, bias then weight" {
     cursor = hi
   }
   // epsilon is the LAST element, not one past the end
-  let eps = @snn_mbt.dragonnet_layer_offset(net, 10)
+  let eps = @causal.dragonnet_layer_offset(net, 10)
   if eps != cnt - 1 {
     fail("epsilon offset is \{eps}, expected \{cnt - 1} (count \{cnt})")
   }
@@ -412,13 +412,13 @@ test "negative control: a doubled epsilon gradient IS detected" {
     fail("fixture gives a zero epsilon gradient, so the control is vacuous")
   }
   let h = 2.0e-3F
-  let base = @snn_mbt.dragonnet_flatten(net)
+  let base = @causal.dragonnet_flatten(net)
   let up = base.copy()
   up[ei] = base[ei] + h
   let dnw = base.copy()
   dnw[ei] = base[ei] - h
-  let fd = (dn_objective(@snn_mbt.dragonnet_unflatten(net, up), x, y, t, n, 1.0F, 0.0F) -
-    dn_objective(@snn_mbt.dragonnet_unflatten(net, dnw), x, y, t, n, 1.0F, 0.0F)) /
+  let fd = (dn_objective(@causal.dragonnet_unflatten(net, up), x, y, t, n, 1.0F, 0.0F) -
+    dn_objective(@causal.dragonnet_unflatten(net, dnw), x, y, t, n, 1.0F, 0.0F)) /
     (2.0F * h)
   if dn_rel(fd, good) > 2.0e-2F {
     fail("control: the honest gradient already disagrees: fd=\{fd} vs \{good}")
@@ -437,13 +437,13 @@ test "negative control: a sign-flipped epsilon gradient IS detected" {
   let g = dn_grad_flat(net, x, y, t, n, 1.0F, 0.0F)
   let ei = dn_eps_index(net)
   let h = 2.0e-3F
-  let base = @snn_mbt.dragonnet_flatten(net)
+  let base = @causal.dragonnet_flatten(net)
   let up = base.copy()
   up[ei] = base[ei] + h
   let dnw = base.copy()
   dnw[ei] = base[ei] - h
-  let fd = (dn_objective(@snn_mbt.dragonnet_unflatten(net, up), x, y, t, n, 1.0F, 0.0F) -
-    dn_objective(@snn_mbt.dragonnet_unflatten(net, dnw), x, y, t, n, 1.0F, 0.0F)) /
+  let fd = (dn_objective(@causal.dragonnet_unflatten(net, up), x, y, t, n, 1.0F, 0.0F) -
+    dn_objective(@causal.dragonnet_unflatten(net, dnw), x, y, t, n, 1.0F, 0.0F)) /
     (2.0F * h)
   if dn_rel(fd, -g[ei]) < 5.0e-2F {
     fail("control: a sign flip on d_epsilon was NOT detected")
@@ -479,7 +479,7 @@ fn dn_semisynth(
 /// Train full-batch for a fixed number of Adam steps and report
 /// `(first_loss, last_loss, ate_estimate)`.
 fn dn_train(
-  net : @snn_mbt.DragonNet,
+  net : @causal.DragonNet,
   x : Array[Float],
   y : Array[Float],
   t : Array[Float],
@@ -490,13 +490,13 @@ fn dn_train(
 ) -> (Float, Float, Float) {
   let first = dn_objective(net, x, y, t, n, ratio, l2)
   let mut cur = net
-  let mut opt = @snn_mbt.DragonNetAdam::new(cur)
+  let mut opt = @causal.DragonNetAdam::new(cur)
   let mut i = 0
   while i < steps {
-    let out = @snn_mbt.dragonnet_forward(cur, x, n)
-    let (d0, d1, dt, de) = @snn_mbt.dragonnet_loss_grads(out, y, t, n, ratio)
-    let g = @snn_mbt.dragonnet_backward(cur, x, out, d0, d1, dt, de, n, l2)
-    let (cur2, opt2) = @snn_mbt.dragonnet_adam_step(
+    let out = @causal.dragonnet_forward(cur, x, n)
+    let (d0, d1, dt, de) = @causal.dragonnet_loss_grads(out, y, t, n, ratio)
+    let g = @causal.dragonnet_backward(cur, x, out, d0, d1, dt, de, n, l2)
+    let (cur2, opt2) = @causal.dragonnet_adam_step(
       cur, g, opt, 0.01F, 0.9F, 0.999F, 1.0e-8F,
     )
     cur = cur2
@@ -504,7 +504,7 @@ fn dn_train(
     i = i + 1
   }
   let last = dn_objective(cur, x, y, t, n, ratio, l2)
-  let out = @snn_mbt.dragonnet_forward(cur, x, n)
+  let out = @causal.dragonnet_forward(cur, x, n)
   let mut s1 = 0.0F
   let mut s0 = 0.0F
   for k in 0..<n {
@@ -521,7 +521,7 @@ test "training reduces the objective and recovers the ATE" {
   let dim = 4
   let ate = 2.0F
   let (x, y, t) = dn_semisynth(n, dim, ate, 97UL)
-  let net = @snn_mbt.DragonNet::new(dim, width=16, half=8, seed=5UL, std=0.1F)
+  let net = @causal.DragonNet::new(dim, width=16, half=8, seed=5UL, std=0.1F)
   let (first, last, est) = dn_train(net, x, y, t, n, 150, 1.0F, 0.01F)
   if !(last < first) {
     fail("objective did not decrease: \{first} -> \{last}")
@@ -558,7 +558,7 @@ test "control: with the outcomes shuffled there is no effect to find" {
   for i in 0..<n {
     y_shuf[i] = y[n - 1 - i]
   }
-  let net = @snn_mbt.DragonNet::new(dim, width=16, half=8, seed=5UL, std=0.1F)
+  let net = @causal.DragonNet::new(dim, width=16, half=8, seed=5UL, std=0.1F)
   let (_f, _l, est) = dn_train(net, x, y_shuf, t, n, 150, 1.0F, 0.01F)
   let mag = if est < 0.0F { -est } else { est }
   if mag > 1.0F {
@@ -573,8 +573,8 @@ test "the concat has the layout the Keras model returns" {
   let n = 3
   let width = 6
   let (net, x, _y, _t) = dn_fixture(n, 4, 61UL)
-  let out = @snn_mbt.dragonnet_forward(net, x, n)
-  let c = @snn_mbt.dragonnet_concat(out, n, width)
+  let out = @causal.dragonnet_forward(net, x, n)
+  let c = @causal.dragonnet_concat(out, n, width)
   let cols = 4 + width
   if c.length() != n * cols {
     fail("concat length \{c.length()} != \{n * cols}")
@@ -601,12 +601,12 @@ test "the paper's 200-wide configuration builds, runs and stays finite" {
   let dim = 3
   // Built directly, not via dn_fixture: that one is deliberately narrow, and
   // reusing it here checked the fixture's width rather than the default.
-  let net = @snn_mbt.DragonNet::new(dim, seed=71UL)
+  let net = @causal.DragonNet::new(dim, seed=71UL)
   let rng = @core.Xoshiro::new(78UL)
   let x : Array[Float] = @core.rand_f32(rng, n * dim)
   let t : Array[Float] = @core.rand_f32(rng, n)
   let y : Array[Float] = @core.rand_f32(rng, n)
-  let out = @snn_mbt.dragonnet_forward(net, x, n)
+  let out = @causal.dragonnet_forward(net, x, n)
   if out.phi.length() != n * 200 {
     fail("phi width is \{out.phi.length() / n}, expected 200")
   }

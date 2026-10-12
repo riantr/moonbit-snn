@@ -1,0 +1,19 @@
+// capsule/ — Capsule networks: capsules, dynamic routing, CapsNet.
+//
+// Depends on core and nn. The whole architecture is four files: the primitive
+// (a capsule is a vector plus a presence probability), the routing algorithm
+// that decides which capsules agree, the convolutional primary capsule that
+// replaces pooling, and the full CapsNet that wires them together.
+//
+// dynamic_routing.mbt is separate from capsule.mbt because it is the part worth
+// reusing: routing-by-agreement is a capsule-agnostic mechanism, and the
+// agreement update is the only place in the package that iterates.
+//
+// embedding_net.mbt deliberately does not live here despite the adjacent name.
+// It is a metric-learning embedding trained with a contrastive loss, not a
+// capsule model; it stays in the root until someone splits the metric-learning
+// side out properly.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+}

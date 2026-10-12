@@ -1,0 +1,26 @@
+// causal/ — causal inference: SCMs, do-calculus and effect estimation.
+//
+// The question this package answers is "what would have happened if", which
+// needs three things the rest of the tree does not provide: a structural causal
+// model to intervene on, the do-operator to express the intervention, and a way
+// to differentiate a counterfactual through all of it.
+//
+// linear_gaussian_scm.mbt is the substrate -- a linear Gaussian SEM with
+// solvable covariances -- and do_calculus, counterfactual_reasoning and
+// dragonnet all sit on it. It is used by exactly those two and nothing else,
+// which is why it belongs here rather than in core/.
+//
+// autodiff/ is the other half. An effect estimator is an expectation over a
+// reparameterised sample, so its gradient goes through the sampling as well as
+// the model; autodiff_tape is what lets do_calculus differentiate an
+// intervention without a hand-derived chain rule per estimator.
+//
+// `sim.mbt` stays in the root -- it is the simulator the SCM is fitted against,
+// which is infrastructure rather than causal inference.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/optim",
+  "riantr/snn_mbt/autodiff",
+}

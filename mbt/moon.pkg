@@ -21,4 +21,6 @@ import {
   "riantr/snn_mbt/timeseries",
   "riantr/snn_mbt/meta",
   "riantr/snn_mbt/autodiff",
+  "riantr/snn_mbt/causal",
+  "riantr/snn_mbt/capsule",
 }

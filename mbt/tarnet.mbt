@@ -717,14 +717,14 @@ pub fn tarnet_block_forward_full(
 ///|
 /// Gradients of one block, in the same order as `tarnet_flatten`.
 pub(all) struct TarnetBlockGrad {
-  pw1 : DnLayerGrad
+  pw1 : @causal.DnLayerGrad
   ln1_g : Array[Float]
   ln1_b : Array[Float]
-  dw : DnLayerGrad
+  dw : @causal.DnLayerGrad
   prelu : Float
   ln2_g : Array[Float]
   ln2_b : Array[Float]
-  pw2 : DnLayerGrad
+  pw2 : @causal.DnLayerGrad
   se : CtseGrad
 }
 
@@ -776,8 +776,8 @@ pub fn tarnet_block_backward(
   }
   // `dn_l2` returns the `(d_weight, d_bias)` tuple as a whole; destructuring
   // it with `_` is not accepted here.
-  let pw1g = dn_l2(dw1, db1, b.pw1, l2)
-  let pw2g = dn_l2(dw2, db2, b.pw2, l2)
+  let pw1g = @causal.dn_l2(dw1, db1, b.pw1, l2)
+  let pw2g = @causal.dn_l2(dw2, db2, b.pw2, l2)
   let _ = t
   (
     d_total,
