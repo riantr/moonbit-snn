@@ -13,7 +13,7 @@ fn stb_zeros(n : Int) -> Array[Float] {
 
 ///|
 test "SpikingTransformerBlock::new: shapes + default d_ff = 4·d_model" {
-  let block = @snn_mbt.SpikingTransformerBlock::new(4, 2, 1.0F, 1UL)
+  let block = @attention.SpikingTransformerBlock::new(4, 2, 1.0F, 1UL)
   assert_eq(block.d_model, 4)
   assert_eq(block.num_heads, 2)
   assert_eq(block.d_ff, 16)
@@ -26,9 +26,9 @@ test "SpikingTransformerBlock::new: shapes + default d_ff = 4·d_model" {
 test "spiking_transformer_block_forward: output shape = input shape" {
   let seq_len = 3
   let d_model = 4
-  let block = @snn_mbt.SpikingTransformerBlock::new(d_model, 2, 1.5F, 1UL)
+  let block = @attention.SpikingTransformerBlock::new(d_model, 2, 1.5F, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
-  let (out, cache) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (out, cache) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
   assert_eq(out.length(), seq_len * d_model)
   assert_eq(cache.seq_len, seq_len)
   assert_eq(cache.x_norm1.length(), seq_len * d_model)
@@ -38,11 +38,11 @@ test "spiking_transformer_block_forward: output shape = input shape" {
 
 ///|
 test "spiking_transformer_block_forward: deterministic same-seed" {
-  let block_a = @snn_mbt.SpikingTransformerBlock::new(4, 2, 1.0F, 7UL)
-  let block_b = @snn_mbt.SpikingTransformerBlock::new(4, 2, 1.0F, 7UL)
+  let block_a = @attention.SpikingTransformerBlock::new(4, 2, 1.0F, 7UL)
+  let block_b = @attention.SpikingTransformerBlock::new(4, 2, 1.0F, 7UL)
   let x : Array[Float] = Array::make(8, 0.5F)
-  let (out_a, _) = @snn_mbt.spiking_transformer_block_forward(x, block_a, stb_zeros(0))
-  let (out_b, _) = @snn_mbt.spiking_transformer_block_forward(x, block_b, stb_zeros(0))
+  let (out_a, _) = @attention.spiking_transformer_block_forward(x, block_a, stb_zeros(0))
+  let (out_b, _) = @attention.spiking_transformer_block_forward(x, block_b, stb_zeros(0))
   for i in 0..<out_a.length() {
     if out_a[i] != out_b[i] {
       fail("diff at \{i}: \{out_a[i]} vs \{out_b[i]}")
@@ -54,11 +54,11 @@ test "spiking_transformer_block_forward: deterministic same-seed" {
 test "spiking_transformer_block_backward: shapes + zero d_output → zero" {
   let seq_len = 3
   let d_model = 4
-  let block = @snn_mbt.SpikingTransformerBlock::new(d_model, 2, 1.0F, 1UL)
+  let block = @attention.SpikingTransformerBlock::new(d_model, 2, 1.0F, 1UL)
   let x : Array[Float] = Array::make(seq_len * d_model, 0.5F)
-  let (_out, cache) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (_out, cache) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
   let zero : Array[Float] = Array::make(seq_len * d_model, 0.0F)
-  let (d_x, grads) = @snn_mbt.spiking_transformer_block_backward(cache, zero, block)
+  let (d_x, grads) = @attention.spiking_transformer_block_backward(cache, zero, block)
   assert_eq(d_x.length(), seq_len * d_model)
   for i in 0..<d_x.length() {
     if d_x[i] != 0.0F {
@@ -101,19 +101,19 @@ test "spiking_transformer_block_backward: shapes + zero d_output → zero" {
 ///|
 test "spiking_transformer_block_backward: gradient check vs numerical" {
   let d_model = 2
-  let block = @snn_mbt.SpikingTransformerBlock::new(d_model, 1, 1.0F, 3UL, d_ff=4)
+  let block = @attention.SpikingTransformerBlock::new(d_model, 1, 1.0F, 3UL, d_ff=4)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let d_output : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F]
-  let (_out, cache) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
-  let (_d_x, grads) = @snn_mbt.spiking_transformer_block_backward(cache, d_output, block)
+  let (_out, cache) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (_d_x, grads) = @attention.spiking_transformer_block_backward(cache, d_output, block)
 
   // Perturb ffn_w2[0] and check analytical vs numerical.
   let eps = 0.001F
   let orig = block.ffn_w2.weight[0]
   block.ffn_w2.weight[0] = orig + eps
-  let (out_plus, _) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (out_plus, _) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
   block.ffn_w2.weight[0] = orig - eps
-  let (out_minus, _) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (out_minus, _) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
   block.ffn_w2.weight[0] = orig
   let mut loss_plus = 0.0F
   let mut loss_minus = 0.0F
@@ -132,18 +132,18 @@ test "spiking_transformer_block_backward: gradient check vs numerical" {
 test "spiking_transformer_block_backward: gradient check on sa.w_q[0]" {
   // Same setup; perturb spiking-attention w_q[0].
   let d_model = 2
-  let block = @snn_mbt.SpikingTransformerBlock::new(d_model, 1, 1.0F, 3UL, d_ff=4)
+  let block = @attention.SpikingTransformerBlock::new(d_model, 1, 1.0F, 3UL, d_ff=4)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let d_output : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F]
-  let (_out, cache) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
-  let (_d_x, grads) = @snn_mbt.spiking_transformer_block_backward(cache, d_output, block)
+  let (_out, cache) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (_d_x, grads) = @attention.spiking_transformer_block_backward(cache, d_output, block)
 
   let eps = 0.001F
   let orig = block.sa.w_q.weight[0]
   block.sa.w_q.weight[0] = orig + eps
-  let (out_plus, _) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (out_plus, _) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
   block.sa.w_q.weight[0] = orig - eps
-  let (out_minus, _) = @snn_mbt.spiking_transformer_block_forward(x, block, stb_zeros(0))
+  let (out_minus, _) = @attention.spiking_transformer_block_forward(x, block, stb_zeros(0))
   block.sa.w_q.weight[0] = orig
   let mut loss_plus = 0.0F
   let mut loss_minus = 0.0F

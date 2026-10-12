@@ -1,0 +1,30 @@
+// attention/ — attention mechanisms and the transformer blocks built on them.
+//
+// Sits on nn. Everything here is dense matrix arithmetic over a sequence:
+// Q/K/V projections, scaled dot-product, softmax over the key axis, position
+// encodings, the T5 relative-position bias, and the Pre-Norm block that stacks
+// them.
+//
+// Two families live side by side because they share almost all of that.
+// transformer_block is the ordinary one. sattention and spiking_attention
+// replace softmax with fast_sigmoid_forward from surrogate.mbt (Zenke & Ganguli
+// 2018) so a spike-emitting cell stays differentiable, and
+// spiking_transformer_block is the Pre-Norm stack wired to those. Splitting
+// spiking attention from vanilla would leave the two blocks with near-identical
+// forward and backward passes and nothing but a different activation between
+// them.
+//
+// `surrogate.mbt` itself stays in the root package. It is not attention -- it
+// is the backward pass for a Heaviside spike, generally -- and srnn_demo.mbt
+// needs it for a model that has nothing to do with attention here. The five
+// call sites here reach it as `@snn_mbt.fast_sigmoid_forward` and
+// `@snn_mbt.fast_sigmoid_surrogate`.
+//
+// rl/ is imported by patch_embedding.mbt, which builds its patch projection
+// with a small MLP rather than a matrix multiply.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/rl",
+}

@@ -2,8 +2,8 @@
 //
 // Like TransformerBlock but uses `SpikingMultiHeadAttention` (v0.26.0) instead
 // of standard `MultiHeadAttention`. The softmax along the key axis is
-// replaced by `fast_sigmoid_forward`, and the backward uses the
-// `fast_sigmoid_surrogate` (v0.22.0) for BPTT-compatible gradients.
+// replaced by `@activ.fast_sigmoid_forward`, and the backward uses the
+// `@activ.fast_sigmoid_surrogate` (v0.22.0) for BPTT-compatible gradients.
 //
 //   x2 = x  +  SpikingMultiHeadAttention( LN1(x) )    # spiking self-attention path
 //   y  = x2 +  FFN( LN2(x2) )                 # feed-forward path

@@ -17,4 +17,5 @@ import {
   "riantr/snn_mbt/gnn",
   "riantr/snn_mbt/generative",
   "riantr/snn_mbt/stimulus",
+  "riantr/snn_mbt/attention",
 }

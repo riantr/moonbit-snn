@@ -14,7 +14,7 @@ fn sa_zeros(n : Int) -> Array[Float] {
 
 ///|
 test "SpikingMultiHeadAttention: shape + d_k = d_model / num_heads" {
-  let sa = @snn_mbt.SpikingMultiHeadAttention::new(8, 2, 1.0F, 1UL)
+  let sa = @attention.SpikingMultiHeadAttention::new(8, 2, 1.0F, 1UL)
   assert_eq(sa.d_model, 8)
   assert_eq(sa.num_heads, 2)
   assert_eq(sa.d_k, 4)
@@ -22,14 +22,14 @@ test "SpikingMultiHeadAttention: shape + d_k = d_model / num_heads" {
 
 ///|
 test "SpikingSelfAttention: num_heads=1 convenience" {
-  let sa = @snn_mbt.spiking_self_attention_new(8, 1.0F, 7UL)
+  let sa = @attention.spiking_self_attention_new(8, 1.0F, 7UL)
   assert_eq(sa.num_heads, 1)
   assert_eq(sa.d_k, 8)  // d_k == d_model for single-head
 }
 
 ///|
 test "SpikingCrossAttention::new: shape" {
-  let sa = @snn_mbt.SpikingCrossAttention::new(4, 2, 1.0F, 1UL)
+  let sa = @attention.SpikingCrossAttention::new(4, 2, 1.0F, 1UL)
   assert_eq(sa.d_model, 4)
   assert_eq(sa.num_heads, 2)
   assert_eq(sa.d_k, 2)
@@ -38,12 +38,12 @@ test "SpikingCrossAttention::new: shape" {
 
 ///|
 test "spiking_cross_attention_forward: output shape = (seq_len_q, d_model)" {
-  let sa = @snn_mbt.SpikingCrossAttention::new(4, 2, 1.0F, 1UL)
+  let sa = @attention.SpikingCrossAttention::new(4, 2, 1.0F, 1UL)
   let seq_len_q = 3
   let seq_len_kv = 5  // Different from seq_len_q (cross-attention).
   let x_q : Array[Float] = Array::make(seq_len_q * 4, 0.5F)
   let x_kv : Array[Float] = Array::make(seq_len_kv * 4, 0.3F)
-  let (out, cache) = @snn_mbt.spiking_cross_attention_forward(x_q, x_kv, sa, sa_zeros(0))
+  let (out, cache) = @attention.spiking_cross_attention_forward(x_q, x_kv, sa, sa_zeros(0))
   // Output shape uses seq_len_q, not seq_len_kv.
   assert_eq(out.length(), seq_len_q * 4)
   // Cache shape sanity.
@@ -58,8 +58,8 @@ test "spiking_cross_attention_forward: output shape = (seq_len_q, d_model)" {
 test "spiking_cross_attention_forward: degenerates to multi-head self when x_q == x_kv" {
   let d_model = 4
   let num_heads = 2
-  let sa_mh = @snn_mbt.SpikingMultiHeadAttention::new(d_model, num_heads, 1.0F, 1UL)
-  let sa_cr = @snn_mbt.SpikingCrossAttention::new(d_model, num_heads, 1.0F, 1UL)
+  let sa_mh = @attention.SpikingMultiHeadAttention::new(d_model, num_heads, 1.0F, 1UL)
+  let sa_cr = @attention.SpikingCrossAttention::new(d_model, num_heads, 1.0F, 1UL)
   // Copy weights from self to cross so they produce identical output
   // when given the same input as both x_q and x_kv.
   let n_w = sa_cr.w_q.weight.length()
@@ -76,8 +76,8 @@ test "spiking_cross_attention_forward: degenerates to multi-head self when x_q =
     sa_cr.w_o.bias[i] = sa_mh.w_o.bias[i]
   }
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F, 0.9F, 1.0F, 1.1F, 1.2F]
-  let (out_mh, _) = @snn_mbt.spiking_multi_head_attention_forward(x, sa_mh, sa_zeros(0))
-  let (out_cr, _) = @snn_mbt.spiking_cross_attention_forward(x, x, sa_cr, sa_zeros(0))
+  let (out_mh, _) = @attention.spiking_multi_head_attention_forward(x, sa_mh, sa_zeros(0))
+  let (out_cr, _) = @attention.spiking_cross_attention_forward(x, x, sa_cr, sa_zeros(0))
   for i in 0..<out_mh.length() {
     if !sa_eps(out_mh[i], out_cr[i], 0.0001F) {
       fail("at \{i}: multi-head = \{out_mh[i]}, cross-degenerate = \{out_cr[i]}")
@@ -90,14 +90,14 @@ test "spiking_cross_attention_backward: shapes + zero d_output → zero" {
   let seq_len_q = 3
   let seq_len_kv = 5
   let d_model = 4
-  let sa = @snn_mbt.SpikingCrossAttention::new(d_model, 2, 1.0F, 1UL)
+  let sa = @attention.SpikingCrossAttention::new(d_model, 2, 1.0F, 1UL)
   let x_q : Array[Float] = Array::make(seq_len_q * d_model, 0.5F)
   let x_kv : Array[Float] = Array::make(seq_len_kv * d_model, 0.5F)
-  let (_out, cache) = @snn_mbt.spiking_cross_attention_forward(
+  let (_out, cache) = @attention.spiking_cross_attention_forward(
     x_q, x_kv, sa, sa_zeros(0),
   )
   let zero : Array[Float] = Array::make(seq_len_q * d_model, 0.0F)
-  let (d_x_q, d_x_kv, grads) = @snn_mbt.spiking_cross_attention_backward(
+  let (d_x_q, d_x_kv, grads) = @attention.spiking_cross_attention_backward(
     cache, zero, sa,
   )
   assert_eq(d_x_q.length(), seq_len_q * d_model)
@@ -123,14 +123,14 @@ test "spiking_cross_attention_backward: shapes + zero d_output → zero" {
 ///|
 test "spiking_cross_attention_backward: gradient check vs numerical" {
   let d_model = 2
-  let sa = @snn_mbt.SpikingCrossAttention::new(d_model, 1, 1.0F, 3UL)
+  let sa = @attention.SpikingCrossAttention::new(d_model, 1, 1.0F, 3UL)
   let x_q : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F]
   let x_kv : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F, 0.9F, 1.0F]
   let d_output : Array[Float] = [0.5F, 0.6F, 0.7F, 0.8F]
-  let (_out, cache) = @snn_mbt.spiking_cross_attention_forward(
+  let (_out, cache) = @attention.spiking_cross_attention_forward(
     x_q, x_kv, sa, sa_zeros(0),
   )
-  let (_d_x_q, _d_x_kv, grads) = @snn_mbt.spiking_cross_attention_backward(
+  let (_d_x_q, _d_x_kv, grads) = @attention.spiking_cross_attention_backward(
     cache, d_output, sa,
   )
 
@@ -138,9 +138,9 @@ test "spiking_cross_attention_backward: gradient check vs numerical" {
   let eps = 0.001F
   let orig = sa.w_o.weight[0]
   sa.w_o.weight[0] = orig + eps
-  let (out_plus, _) = @snn_mbt.spiking_cross_attention_forward(x_q, x_kv, sa, sa_zeros(0))
+  let (out_plus, _) = @attention.spiking_cross_attention_forward(x_q, x_kv, sa, sa_zeros(0))
   sa.w_o.weight[0] = orig - eps
-  let (out_minus, _) = @snn_mbt.spiking_cross_attention_forward(x_q, x_kv, sa, sa_zeros(0))
+  let (out_minus, _) = @attention.spiking_cross_attention_forward(x_q, x_kv, sa, sa_zeros(0))
   sa.w_o.weight[0] = orig
   let mut loss_plus = 0.0F
   let mut loss_minus = 0.0F
@@ -160,10 +160,10 @@ test "spiking_cross_attention_backward: gradient check vs numerical" {
 ///|
 test "SAttention: all three variants coexist under sattention.mbt module" {
   // Compile-time check that all three types can be constructed.
-  let _ = @snn_mbt.SpikingMultiHeadAttention::new(4, 2, 1.0F, 1UL)
-  let _ = @snn_mbt.spiking_self_attention_new(4, 1.0F, 1UL)
-  let _ = @snn_mbt.SpikingCrossAttention::new(4, 2, 1.0F, 1UL)
+  let _ = @attention.SpikingMultiHeadAttention::new(4, 2, 1.0F, 1UL)
+  let _ = @attention.spiking_self_attention_new(4, 1.0F, 1UL)
+  let _ = @attention.SpikingCrossAttention::new(4, 2, 1.0F, 1UL)
   // Backward-compat SpikingAttention still works.
-  let sa = @snn_mbt.SpikingAttention::new(4, 2, 1.0F, 1UL)
+  let sa = @attention.SpikingAttention::new(4, 2, 1.0F, 1UL)
   assert_eq(sa.num_heads, 2)
 }

@@ -9,8 +9,8 @@
 //   - SpikingCrossAttention (cross-attention: separate Q and K/V inputs)
 //
 // All three replace softmax along the key axis with
-// `fast_sigmoid_forward` from `surrogate.mbt` (v0.22.0) and use
-// `fast_sigmoid_surrogate` as the backward gradient.
+// `@activ.fast_sigmoid_forward` from `surrogate.mbt` (v0.22.0) and use
+// `@activ.fast_sigmoid_surrogate` as the backward gradient.
 //
 // Backward-compat: the v0.24.0 name `SpikingAttention` survives as an empty
 // carrier for the associated constructor in `spiking_attention.mbt`. That shim
@@ -146,7 +146,7 @@ pub fn spiking_multi_head_attention_forward(
     }
   }
 
-  // Spiking attention weights via fast_sigmoid_forward (NO softmax).
+  // Spiking attention weights via @activ.fast_sigmoid_forward (NO softmax).
   let weights : Array[Float] = Array::make(
     num_heads * seq_len * seq_len, 0.0F,
   )
@@ -155,7 +155,7 @@ pub fn spiking_multi_head_attention_forward(
     for s in 0..<seq_len {
       let s_row = score_off + s * seq_len
       for t in 0..<seq_len {
-        weights[s_row + t] = fast_sigmoid_forward(scores[s_row + t], beta)
+        weights[s_row + t] = @activ.fast_sigmoid_forward(scores[s_row + t], beta)
       }
     }
   }
@@ -247,7 +247,7 @@ pub fn spiking_multi_head_attention_backward(
     for s in 0..<seq_len {
       let s_row = score_off + s * seq_len
       for t in 0..<seq_len {
-        let sigma_prime = fast_sigmoid_surrogate(scores_at(cache.scores, score_off + s * seq_len + t), beta)
+        let sigma_prime = @activ.fast_sigmoid_surrogate(scores_at(cache.scores, score_off + s * seq_len + t), beta)
         d_scores[s_row + t] = d_weights[s_row + t] * sigma_prime
       }
     }
@@ -419,7 +419,7 @@ pub fn spiking_cross_attention_forward(
     }
   }
 
-  // Spiking weights via fast_sigmoid_forward.
+  // Spiking weights via @activ.fast_sigmoid_forward.
   let weights : Array[Float] = Array::make(
     num_heads * seq_len_q * seq_len_kv, 0.0F,
   )
@@ -428,7 +428,7 @@ pub fn spiking_cross_attention_forward(
     for s in 0..<seq_len_q {
       let s_row = score_off + s * seq_len_kv
       for t in 0..<seq_len_kv {
-        weights[s_row + t] = fast_sigmoid_forward(scores[s_row + t], beta)
+        weights[s_row + t] = @activ.fast_sigmoid_forward(scores[s_row + t], beta)
       }
     }
   }
@@ -525,7 +525,7 @@ pub fn spiking_cross_attention_backward(
     for s in 0..<seq_len_q {
       let s_row = score_off + s * seq_len_kv
       for t in 0..<seq_len_kv {
-        let sigma_prime = fast_sigmoid_surrogate(
+        let sigma_prime = @activ.fast_sigmoid_surrogate(
           scores_at(cache.scores, score_off + s * seq_len_kv + t), beta,
         )
         d_scores[s_row + t] = d_weights[s_row + t] * sigma_prime

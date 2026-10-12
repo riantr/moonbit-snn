@@ -21,8 +21,8 @@ fn sa_zeros_dep(n : Int) -> Array[Float] {
 ///|
 test "DEPRECATED shim: SpikingAttention::new wires to SpikingMultiHeadAttention::new" {
   // Two parallel constructions should be identical structs.
-  let sa_shim = @snn_mbt.SpikingAttention::new(8, 2, 1.0F, 1UL)
-  let sa_new = @snn_mbt.SpikingMultiHeadAttention::new(8, 2, 1.0F, 1UL)
+  let sa_shim = @attention.SpikingAttention::new(8, 2, 1.0F, 1UL)
+  let sa_new = @attention.SpikingMultiHeadAttention::new(8, 2, 1.0F, 1UL)
   assert_eq(sa_shim.d_model, sa_new.d_model)
   assert_eq(sa_shim.num_heads, sa_new.num_heads)
   assert_eq(sa_shim.d_k, sa_new.d_k)
@@ -30,10 +30,10 @@ test "DEPRECATED shim: SpikingAttention::new wires to SpikingMultiHeadAttention:
 
 ///|
 test "DEPRECATED shim: spiking_attention_forward ≡ spiking_multi_head_attention_forward" {
-  let sa = @snn_mbt.SpikingAttention::new(4, 2, 1.0F, 42UL)
+  let sa = @attention.SpikingAttention::new(4, 2, 1.0F, 42UL)
   let x : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F]
-  let (out_shim, _) = @snn_mbt.spiking_attention_forward(x, sa, sa_zeros_dep(0))
-  let (out_new, _) = @snn_mbt.spiking_multi_head_attention_forward(x, sa, sa_zeros_dep(0))
+  let (out_shim, _) = @attention.spiking_attention_forward(x, sa, sa_zeros_dep(0))
+  let (out_new, _) = @attention.spiking_multi_head_attention_forward(x, sa, sa_zeros_dep(0))
   for i in 0..<out_shim.length() {
     if !sa_eps_dep(out_shim[i], out_new[i], 0.0001F) {
       fail("shim vs new mismatch at \{i}: \{out_shim[i]} vs \{out_new[i]}")

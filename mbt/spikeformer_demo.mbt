@@ -16,7 +16,7 @@
 //   Loss: cross-entropy on (logits, target).
 //
 // Reuses existing modules:
-//   v0.22.0 surrogate (fast_sigmoid_forward / _surrogate inside
+//   v0.22.0 surrogate (@activ.fast_sigmoid_forward / _surrogate inside
 //                       SpikingMultiHeadAttention from v0.26.0)
 //   v0.26.0 SpikingMultiHeadAttention
 //   v0.24.1 SpikingTransformerBlock
@@ -165,7 +165,7 @@ pub struct MiniSpikeFormer {
   pos_weight : Array[Float]
   pos_d_model : Int
   // Spiking transformer block.
-  block : SpikingTransformerBlock
+  block : @attention.SpikingTransformerBlock
   // Classifier head: Linear(d_model, n_classes).
   cls_w : Array[Float]
   cls_b : Array[Float]
@@ -187,7 +187,7 @@ pub struct MiniSpikeFormerCache {
   // Target class index.
   target : Int
   // Block cache for backward.
-  block_cache : SpikingTransformerBlockCache
+  block_cache : @attention.SpikingTransformerBlockCache
 }
 
 ///|
@@ -225,7 +225,7 @@ pub fn MiniSpikeFormer::new(
     pos_weight[i] = Float::from_double(z) * std_pos
   }
   // Spiking transformer block.
-  let block = SpikingTransformerBlock::new(d_model, n_heads, beta, seed + 50UL, d_ff=2 * d_model)
+  let block = @attention.SpikingTransformerBlock::new(d_model, n_heads, beta, seed + 50UL, d_ff=2 * d_model)
   // Classifier head Linear(d_model, n_classes): Xavier-normal.
   let std_cls = @core.sqrtf(2.0F / Float::from_int(d_model + n_classes))
   let cls_w : Array[Float] = Array::make(d_model * n_classes, 0.0F)
@@ -300,7 +300,7 @@ pub fn mini_spike_former_forward(
       x_flat[s * d_model + i] = pre_block[s * d_model + i]
     }
   }
-  let (block_out_flat, block_cache) = spiking_transformer_block_forward(
+  let (block_out_flat, block_cache) = @attention.spiking_transformer_block_forward(
     x_flat, msf.block, Array::make(0, 0.0F),
   )
 
@@ -346,7 +346,7 @@ pub fn mini_spike_former_backward(
   Array[Float],  // d_patch_b (d_model)
   Array[Float],  // d_class_token (d_model)
   Array[Float],  // d_pos_weight ((n_patches + 1) * d_model)
-  SpikingTransformerBlockGrad,  // block grads
+  @attention.SpikingTransformerBlockGrad,  // block grads
   Array[Float],  // d_cls_w (d_model * n_classes)
   Array[Float],  // d_cls_b (n_classes)
 ) {
@@ -383,7 +383,7 @@ pub fn mini_spike_former_backward(
   for i in 0..<d_model {
     d_block_out[i] = d_class_out[i]
   }
-  let (d_pre_block, block_grads) = spiking_transformer_block_backward(
+  let (d_pre_block, block_grads) = @attention.spiking_transformer_block_backward(
     cache.block_cache, d_block_out, msf.block,
   )
 

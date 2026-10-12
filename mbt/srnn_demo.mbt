@@ -19,7 +19,7 @@
 //   d_s[t] += W_rec^T @ d_v[t+1]             # recurrent gradient
 //
 // Reuses:
-//   v0.22.0 surrogate (fast_sigmoid_surrogate for the backward)
+//   v0.22.0 surrogate (@activ.fast_sigmoid_surrogate for the backward)
 //   v0.13.2 cross_entropy_loss (forward + backward via softmax)
 
 // ---- Synthetic dataset ----
@@ -299,7 +299,7 @@ pub fn srnn_backward(
   let d_v : Array[Float] = Array::make(n_steps * n_hidden, 0.0F)
   for h in 0..<n_hidden {
     d_v[(n_steps - 1) * n_hidden + h] = d_s[(n_steps - 1) * n_hidden + h] *
-      fast_sigmoid_surrogate(cache.v[(n_steps - 1) * n_hidden + h] - v_thresh, beta)
+      @activ.fast_sigmoid_surrogate(cache.v[(n_steps - 1) * n_hidden + h] - v_thresh, beta)
   }
   // Backward through time.
   let mut t = n_steps - 2

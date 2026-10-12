@@ -10,7 +10,7 @@ fn pe_eps(a : Float, b : Float, eps : Float) -> Bool {
 test "sinusoidal_position_encoding: shape + boundary values" {
   let max_len = 10
   let d_model = 8
-  let pe = @snn_mbt.sinusoidal_position_encoding(max_len, d_model)
+  let pe = @attention.sinusoidal_position_encoding(max_len, d_model)
   assert_eq(pe.length(), max_len * d_model)
   // PE[0, *] : sin(0) = 0 for even j, cos(0) = 1 for odd j.
   for j in 0..<d_model {
@@ -29,7 +29,7 @@ test "sinusoidal_position_encoding: shape + boundary values" {
 
 ///|
 test "sinusoidal_position_encoding: parity (even=sin, odd=cos) + same-pos same-value" {
-  let pe = @snn_mbt.sinusoidal_position_encoding(5, 6)
+  let pe = @attention.sinusoidal_position_encoding(5, 6)
   // For pos=1, j=0 → sin(1/10000^(0/6)) = sin(1) ≈ 0.8415
   // For pos=1, j=1 → cos(1) ≈ 0.5403
   let v00 = pe[1 * 6 + 0]
@@ -41,7 +41,7 @@ test "sinusoidal_position_encoding: parity (even=sin, odd=cos) + same-pos same-v
     fail("PE[1, 1] = \{v01}, expected cos(1) ≈ 0.5403")
   }
   // PE is deterministic (no RNG state)
-  let pe2 = @snn_mbt.sinusoidal_position_encoding(5, 6)
+  let pe2 = @attention.sinusoidal_position_encoding(5, 6)
   for i in 0..<pe.length() {
     if pe[i] != pe2[i] {
       fail("non-deterministic at \{i}: \{pe[i]} vs \{pe2[i]}")
@@ -52,7 +52,7 @@ test "sinusoidal_position_encoding: parity (even=sin, odd=cos) + same-pos same-v
 ///|
 test "sinusoidal_position_encoding: distinct rows for distinct positions" {
   // Two different positions should produce different rows.
-  let pe = @snn_mbt.sinusoidal_position_encoding(4, 4)
+  let pe = @attention.sinusoidal_position_encoding(4, 4)
   let mut differ = false
   for j in 0..<4 {
     if pe[0 * 4 + j] != pe[1 * 4 + j] {
@@ -67,8 +67,8 @@ test "sinusoidal_position_encoding: distinct rows for distinct positions" {
 
 ///|
 test "PositionalEmbedding::new: shape + non-zero init + deterministic seed" {
-  let pe_a = @snn_mbt.PositionalEmbedding::new(8, 4, 42UL)
-  let pe_b = @snn_mbt.PositionalEmbedding::new(8, 4, 42UL)
+  let pe_a = @attention.PositionalEmbedding::new(8, 4, 42UL)
+  let pe_b = @attention.PositionalEmbedding::new(8, 4, 42UL)
   assert_eq(pe_a.weight.length(), 32)
   assert_eq(pe_a.max_len, 8)
   assert_eq(pe_a.d_model, 4)
@@ -92,9 +92,9 @@ test "PositionalEmbedding::new: shape + non-zero init + deterministic seed" {
 
 ///|
 test "positional_embedding_forward: slices correctly + backward" {
-  let pe = @snn_mbt.PositionalEmbedding::new(10, 4, 1UL)
+  let pe = @attention.PositionalEmbedding::new(10, 4, 1UL)
   let seq_len = 3
-  let out = @snn_mbt.positional_embedding_forward(pe, seq_len)
+  let out = @attention.positional_embedding_forward(pe, seq_len)
   assert_eq(out.length(), seq_len * 4)
   // Forward slice matches the first seq_len rows of pe.weight.
   for i in 0..<(seq_len * 4) {
@@ -104,7 +104,7 @@ test "positional_embedding_forward: slices correctly + backward" {
   }
   // Backward: only active positions get gradient
   let d_output : Array[Float] = Array::make(seq_len * 4, 0.7F)
-  let d_weight = @snn_mbt.positional_embedding_backward(pe, d_output, seq_len)
+  let d_weight = @attention.positional_embedding_backward(pe, d_output, seq_len)
   assert_eq(d_weight.length(), 10 * 4)
   for s in 0..<3 {
     for j in 0..<4 {
