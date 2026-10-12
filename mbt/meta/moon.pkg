@@ -1,0 +1,27 @@
+// meta/ — learning to learn: MAML, FOMAML, Reptile, and neural ODEs.
+//
+// The three gradient-based learners are one file each because the algorithms
+// differ, but they are not separable: MAML and FOMAML share the inner/outer
+// loop (5 references maml -> task_sampler), Reptile is MAML without the second
+// derivative (3 references reptile -> maml) and samples the same task
+// distributions (4 references reptile -> task_sampler). Splitting them would
+// mean three packages each importing the others.
+//
+// neural_ode_agent, ode_func, ode_solver and ode_adjoint ride along because
+// the agent is the only consumer and it needs the adjoint integrator to
+// backpropagate through a fixed-step ODE solve.
+//
+// optim/ is imported because MAML's inner loop is a real optimiser step, not
+// just a gradient: the adapted weights come from taking a few Adam or SGD
+// steps on the task's own data, which is what makes it MAML rather than
+// gradient descent on the meta-gradient alone. FOMAML and Reptile inherit that
+// inner loop.
+//
+// Depends on core and nn; the parameter containers come from nn/.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/rl",
+  "riantr/snn_mbt/optim",
+}
