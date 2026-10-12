@@ -188,7 +188,7 @@ test "log-Mel FFT matches a direct DFT, in magnitude and in phase" {
   while i < n {
     let e1 = f_re[i] - d_re[i]
     let e2 = f_im[i] - d_im[i]
-    let m = @snn_mbt.sqrtf(e1 * e1 + e2 * e2)
+    let m = @core.sqrtf(e1 * e1 + e2 * e2)
     if m > worst_re {
       worst_re = m
       worst_k = i

@@ -275,7 +275,7 @@ pub fn arima_forecast_with_variance(
   let lower : Array[Float] = Array::make(h, 0.0F)
   let upper : Array[Float] = Array::make(h, 0.0F)
   for k in 0..<h {
-    let sigma = sqrtf(variance_seq[k])
+    let sigma = @core.sqrtf(variance_seq[k])
     lower[k] = forecast[k] - 1.96F * sigma
     upper[k] = forecast[k] + 1.96F * sigma
   }

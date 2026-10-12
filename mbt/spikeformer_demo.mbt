@@ -203,7 +203,7 @@ pub fn MiniSpikeFormer::new(
   let patch_dim = 16
   let n_patches = 49
   // Patch embedding Linear(16, d_model): Xavier-normal.
-  let std_pe = sqrtf(2.0F / Float::from_int(patch_dim + d_model))
+  let std_pe = @core.sqrtf(2.0F / Float::from_int(patch_dim + d_model))
   let patch_w : Array[Float] = Array::make(patch_dim * d_model, 0.0F)
   for i in 0..<(patch_dim * d_model) {
     let (z, _) = @neuron.box_muller(rng)
@@ -218,7 +218,7 @@ pub fn MiniSpikeFormer::new(
   }
   // Positional embedding: Xavier-normal.
   let n_pos = n_patches + 1
-  let std_pos = sqrtf(2.0F / Float::from_int(1 + d_model))
+  let std_pos = @core.sqrtf(2.0F / Float::from_int(1 + d_model))
   let pos_weight : Array[Float] = Array::make(n_pos * d_model, 0.0F)
   for i in 0..<(n_pos * d_model) {
     let (z, _) = @neuron.box_muller(rng)
@@ -227,7 +227,7 @@ pub fn MiniSpikeFormer::new(
   // Spiking transformer block.
   let block = SpikingTransformerBlock::new(d_model, n_heads, beta, seed + 50UL, d_ff=2 * d_model)
   // Classifier head Linear(d_model, n_classes): Xavier-normal.
-  let std_cls = sqrtf(2.0F / Float::from_int(d_model + n_classes))
+  let std_cls = @core.sqrtf(2.0F / Float::from_int(d_model + n_classes))
   let cls_w : Array[Float] = Array::make(d_model * n_classes, 0.0F)
   for i in 0..<(d_model * n_classes) {
     let (z, _) = @neuron.box_muller(rng)

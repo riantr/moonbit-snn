@@ -79,7 +79,7 @@ pub fn adamw_update_arrays(
     let v_hat = new_v_w[i] / bc2
     // Decoupled weight decay: applied additively to the *update*, not
     // to the gradient (this is what distinguishes AdamW from Adam+L2).
-    let update = m_hat / (sqrtf(v_hat) + eps) + weight_decay * weight[i]
+    let update = m_hat / (@core.sqrtf(v_hat) + eps) + weight_decay * weight[i]
     w2[i] = weight[i] - lr * update
   }
   let b2 : Array[Float] = Array::make(bias.length(), 0.0F)
@@ -91,7 +91,7 @@ pub fn adamw_update_arrays(
     new_v_b[i] = beta2 * state.v_b[i] + (1.0F - beta2) * g * g
     let m_hat = new_m_b[i] / bc1
     let v_hat = new_v_b[i] / bc2
-    let update = m_hat / (sqrtf(v_hat) + eps) + weight_decay * bias[i]
+    let update = m_hat / (@core.sqrtf(v_hat) + eps) + weight_decay * bias[i]
     b2[i] = bias[i] - lr * update
   }
   (

@@ -39,7 +39,7 @@ pub fn GraphLinear::new(
   out_dim : Int,
   seed : UInt64,
 ) -> GraphLinear {
-  let std = sqrtf(2.0F / Float::from_int(in_dim))
+  let std = @core.sqrtf(2.0F / Float::from_int(in_dim))
   let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )

@@ -59,12 +59,12 @@ pub fn GTrXLSACActor::new(
   seed : UInt64,
 ) -> GTrXLSACActor {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std1 = sqrtf(2.0F / Float::from_int(state_dim))
+  let std1 = @core.sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(d_model, state_dim, std1, rng1)
   let mlp_b1 : Array[Float] = Array::make(d_model, 0.0F)
   let block = GTrXLBlock::new(d_model, d_ff, seed + 4UL)
   let rng2 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
-  let std2 = sqrtf(2.0F / Float::from_int(d_model))
+  let std2 = @core.sqrtf(2.0F / Float::from_int(d_model))
   let mlp_w_mean = xavier_normal(action_dim, d_model, std2, rng2)
   let mlp_b_mean : Array[Float] = Array::make(action_dim, 0.0F)
   let rng3 = @core.Xoshiro::from_state(seed + 12UL, seed + 13UL, seed + 14UL, seed + 15UL)

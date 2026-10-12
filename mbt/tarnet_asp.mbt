@@ -171,7 +171,7 @@ pub fn asp_forward(
       mean = mean * inv_t
       // `var` is a MoonBit keyword, hence `variance` rather than `var`
       let variance = sq * inv_t - mean * mean
-      let sd = sqrtf(variance + ASP_STD_FLOOR)
+      let sd = @core.sqrtf(variance + ASP_STD_FLOOR)
       for ti in 0..<t {
         let i0 = base + ti
         let i1 = (b * 3 * c + c + ch) * t + ti
@@ -287,7 +287,7 @@ pub fn asp_forward(
       let v = if raw < ASP_VAR_FLOOR { ASP_VAR_FLOOR } else { raw }
       var_out[b * c + ch] = v
       out[b * 2 * c + ch] = mu[b * c + ch]
-      out[b * 2 * c + c + ch] = sqrtf(v)
+      out[b * 2 * c + c + ch] = @core.sqrtf(v)
     }
   }
   (out, { x, ctx, pre, hidden, alpha, mu, var_out })
@@ -434,7 +434,7 @@ pub fn asp_backward(
       // var -> sigma. Inside the clamp_min dead zone this is exactly zero.
       let v = cache.var_out[i]
       if v > ASP_VAR_FLOOR {
-        let sig = sqrtf(v)
+        let sig = @core.sqrtf(v)
         let g_var = g_sig * 0.5F / sig
         d_second[i] = g_var
         // var = second - mu^2
@@ -593,7 +593,7 @@ pub fn asp_backward(
         mean = mean + cache.x[base + ti]
       }
       mean = mean * inv_t
-      let sd = sqrtf(tn_ctx_var(cache.x, base, t, mean) + ASP_STD_FLOOR)
+      let sd = @core.sqrtf(tn_ctx_var(cache.x, base, t, mean) + ASP_STD_FLOOR)
       let g_var = d_std[i] * 0.5F / sd
       let g_mean = -2.0F * mean * g_var
       for ti in 0..<t {

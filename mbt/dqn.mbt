@@ -27,7 +27,7 @@ pub fn LinearQNet::new(
   n_actions : Int,
   seed : UInt64,
 ) -> LinearQNet {
-  let std = sqrtf(0.1F / Float::from_int(n_states))
+  let std = @core.sqrtf(0.1F / Float::from_int(n_states))
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w : Array[Array[Float]] = Array::make(n_actions, [])
   for i in 0..<n_actions {

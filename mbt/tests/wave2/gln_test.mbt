@@ -83,7 +83,7 @@ test "gLN: one mean and one std per SAMPLE, over the (c, t) plane jointly" {
   let mean1 = 105.5F
   // biased variance of 0..11 = 11.9166667
   let var0 = 11.916666666666666F
-  let inv0 = 1.0F / @snn_mbt.sqrtf(var0 + p.eps)
+  let inv0 = 1.0F / @core.sqrtf(var0 + p.eps)
   i = 0
   while i < ct {
     let want0 = (Float::from_int(i) - mean0) * inv0

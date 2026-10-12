@@ -79,7 +79,7 @@ pub fn gp_grad_norm(grad : Array[Float]) -> Float {
   for i in 0..<n {
     sum = sum + grad[i] * grad[i]
   }
-  sqrtf(sum)
+  @core.sqrtf(sum)
 }
 
 ///|

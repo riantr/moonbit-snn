@@ -181,10 +181,10 @@ pub fn ts_ensemble_evaluate(
   }
   let n_f = Float::from_int(h)
   (
-    sqrtf(sum_sq_arima / n_f),
-    sqrtf(sum_sq_lstm / n_f),
-    sqrtf(sum_sq_gru / n_f),
-    sqrtf(sum_sq_ensemble / n_f),
+    @core.sqrtf(sum_sq_arima / n_f),
+    @core.sqrtf(sum_sq_lstm / n_f),
+    @core.sqrtf(sum_sq_gru / n_f),
+    @core.sqrtf(sum_sq_ensemble / n_f),
   )
 }
 

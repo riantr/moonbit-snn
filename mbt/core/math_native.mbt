@@ -44,3 +44,14 @@ pub extern "C" fn logf(x : Float) -> Float = "logf"
 /// `erff` function. Used by sparse-GELU activation (`x * Φ(x)`) and
 /// other cumulative-Gaussian activations.
 pub extern "C" fn erff(x : Float) -> Float = "erff"
+///|
+/// Float32 sqrt via libm.
+///
+/// This was defined in `optimizer_adam.mbt`. Nothing about a square root
+/// is specific to an optimizer, and leaving it there meant 65 files --
+/// layer_norm and batch_norm among them -- had to import an optimizer
+/// package to normalise a tensor. During the sub-package split that
+/// turned a cosmetic misplacement into a blocker: nn/ would have had to
+/// depend on optim/ to call sqrt.
+pub extern "C" fn sqrtf(x : Float) -> Float = "sqrtf"
+

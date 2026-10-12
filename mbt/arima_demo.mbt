@@ -248,7 +248,7 @@ pub fn arima_rmse(actual : Array[Float], predicted : Array[Float]) -> Float {
     let diff = actual[i] - predicted[i]
     sum_sq = sum_sq + diff * diff
   }
-  sqrtf(sum_sq / Float::from_int(n))
+  @core.sqrtf(sum_sq / Float::from_int(n))
 }
 
 ///|

@@ -116,7 +116,7 @@ pub fn LinearSoftmaxPolicy::new(
   n_actions : Int,
   seed : UInt64,
 ) -> LinearSoftmaxPolicy {
-  let std = sqrtf(1.0F / Float::from_int(n_states))
+  let std = @core.sqrtf(1.0F / Float::from_int(n_states))
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w = xavier_normal(n_actions, n_states, std, rng)
   { n_states, n_actions, w }

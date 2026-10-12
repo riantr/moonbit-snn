@@ -105,7 +105,7 @@ pub fn adafactor_update_2d(
     for j in 0..<cols {
       let v_hat = state.v_row[i] * state.v_col[j] / (mean_v_row + eps)
       weight[i * cols + j] = weight[i * cols + j] -
-        lr * d_weight[i * cols + j] / sqrtf(v_hat + eps)
+        lr * d_weight[i * cols + j] / @core.sqrtf(v_hat + eps)
     }
   }
 }
@@ -128,7 +128,7 @@ pub fn adafactor_update_1d(
   for i in 0..<n {
     let g = d_bias[i]
     state.v[i] = beta2 * state.v[i] + one_minus * g * g
-    bias[i] = bias[i] - lr * g / sqrtf(state.v[i] + eps)
+    bias[i] = bias[i] - lr * g / @core.sqrtf(state.v[i] + eps)
   }
 }
 

@@ -55,7 +55,7 @@ pub fn CapsuleNetwork::new(
   let conv_w : Array[Array[Float]] = Array::make(
     ch, Array::make(conv_in, 0.0F),
   )
-  let std_c = sqrtf(2.0F / Float::from_int(conv_in))
+  let std_c = @core.sqrtf(2.0F / Float::from_int(conv_in))
   let rng_c = @core.Xoshiro::from_state(
     seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL,
   )
@@ -77,7 +77,7 @@ pub fn CapsuleNetwork::new(
   let route_w : Array[Array[Float]] = Array::make(
     n_classes, Array::make(rdim, 0.0F),
   )
-  let std_r = sqrtf(2.0F / Float::from_int(rdim))
+  let std_r = @core.sqrtf(2.0F / Float::from_int(rdim))
   let rng_r = @core.Xoshiro::from_state(
     seed + 21UL, seed + 22UL, seed + 23UL, seed + 24UL,
   )
@@ -145,7 +145,7 @@ pub fn capsule_network_probs(
     for d in 0..<net.capsule_dim {
       sq = sq + caps[base + d] * caps[base + d]
     }
-    out[k] = sqrtf(sq)
+    out[k] = @core.sqrtf(sq)
   }
   out
 }

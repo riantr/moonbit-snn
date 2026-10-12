@@ -172,12 +172,6 @@ pub fn pow_beta(beta : Float, t : Int) -> Float {
 }
 
 ///|
-/// Float32 sqrt via libm. We already have `math_sqrt_f32` exposed in
-// `math_native.mbt`; reuse it. If unavailable, fall back to a Newton
-// iteration (see below).
-pub extern "C" fn sqrtf(x : Float) -> Float = "sqrtf"
-
-///|
 fn sqrt_f32(x : Float) -> Float {
-  sqrtf(x)
+  @core.sqrtf(x)
 }

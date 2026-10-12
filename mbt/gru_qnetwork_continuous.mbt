@@ -41,12 +41,12 @@ pub fn GRUQNetworkContinuous::new(
 ) -> GRUQNetworkContinuous {
   let in_dim = state_dim + action_dim
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std1 = sqrtf(2.0F / Float::from_int(in_dim))
+  let std1 = @core.sqrtf(2.0F / Float::from_int(in_dim))
   let mlp_w1 = xavier_normal(hidden, in_dim, std1, rng1)
   let mlp_b1 : Array[Float] = Array::make(hidden, 0.0F)
   let gru = GruCellParam::new(hidden, hidden, seed + 4UL)
   let rng2 = @core.Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
-  let std2 = sqrtf(2.0F / Float::from_int(hidden))
+  let std2 = @core.sqrtf(2.0F / Float::from_int(hidden))
   let mlp_w2 = xavier_normal(1, hidden, std2, rng2)
   { state_dim, action_dim, hidden, mlp_w1, mlp_b1, gru, mlp_w2, mlp_b2: 0.0F }
 }

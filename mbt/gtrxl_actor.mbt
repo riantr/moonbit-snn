@@ -57,12 +57,12 @@ pub fn GTrXLDeterministicPolicy::new(
   seed : UInt64,
 ) -> GTrXLDeterministicPolicy {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let mlp_w1_std = sqrtf(2.0F / Float::from_int(state_dim))
+  let mlp_w1_std = @core.sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(d_model, state_dim, mlp_w1_std, rng1)
   let mlp_b1 : Array[Float] = Array::make(d_model, 0.0F)
   let block = GTrXLBlock::new(d_model, d_ff, seed + 4UL)
   let rng2 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
-  let mlp_w2_std = sqrtf(2.0F / Float::from_int(d_model))
+  let mlp_w2_std = @core.sqrtf(2.0F / Float::from_int(d_model))
   let mlp_w2 = xavier_normal(action_dim, d_model, mlp_w2_std, rng2)
   let mlp_b2 : Array[Float] = Array::make(action_dim, 0.0F)
   {

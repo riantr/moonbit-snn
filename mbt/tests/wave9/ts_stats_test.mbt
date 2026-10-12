@@ -46,7 +46,7 @@ test "ts_var: constant series has zero variance" {
 test "ts_std: matches sqrt(var)" {
   let x : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F, 5.0F]
   let s = @snn_mbt.ts_std(x)
-  let expected = @snn_mbt.sqrtf(2.0F)
+  let expected = @core.sqrtf(2.0F)
   if (s - expected).abs() > 0.0001F {
     fail("ts_std = \{s}, expected ~\{expected}")
   }

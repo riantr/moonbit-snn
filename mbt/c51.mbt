@@ -74,7 +74,7 @@ pub fn C51Net::new(
   v_max : Float,
   seed : UInt64,
 ) -> C51Net {
-  let std = sqrtf(1.0F / Float::from_int(n_states * n_atoms))
+  let std = @core.sqrtf(1.0F / Float::from_int(n_states * n_atoms))
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w = xavier_normal_3d(n_actions, n_states, n_atoms, std, rng)
   let b : Array[Array[Float]] = Array::make(n_actions, [])

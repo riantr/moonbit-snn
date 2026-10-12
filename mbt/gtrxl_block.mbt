@@ -70,7 +70,7 @@ pub fn GTrXLBlock::new(
   seed : UInt64,
 ) -> GTrXLBlock {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std1 = sqrtf(2.0F / Float::from_int(d_model))
+  let std1 = @core.sqrtf(2.0F / Float::from_int(d_model))
   let ffn_w1 = xavier_normal(d_ff, d_model, std1, rng1)
   let ffn_b1 : Array[Float] = Array::make(d_ff, 0.0F)
   let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)

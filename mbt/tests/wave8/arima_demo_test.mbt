@@ -136,7 +136,7 @@ test "arima_rmse: matches manual sqrt(mean((a-p)²))" {
   let actual : Array[Float] = [1.0F, 2.0F, 3.0F]
   let predicted : Array[Float] = [2.0F, 4.0F, 6.0F]
   // errors: [-1, -2, -3] → squared: [1, 4, 9] → mean: 14/3 → sqrt
-  let expected = @snn_mbt.sqrtf((1.0F + 4.0F + 9.0F) / 3.0F)
+  let expected = @core.sqrtf((1.0F + 4.0F + 9.0F) / 3.0F)
   let rmse = @snn_mbt.arima_rmse(actual, predicted)
   if (rmse - expected).abs() > 1.0e-4F {
     fail("rmse = \{rmse}, expected ~\{expected}")

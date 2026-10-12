@@ -251,7 +251,7 @@ pub fn pna_std_w(
       let e2 = sq[off + k] * inv
       let variance = e2 - m * m
       if variance > 0.0F {
-        out[off + k] = sqrtf(variance)
+        out[off + k] = @core.sqrtf(variance)
       }
     }
   }

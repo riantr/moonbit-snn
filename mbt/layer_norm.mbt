@@ -119,7 +119,7 @@ pub fn layer_norm_forward(
     }
     let m = sum / chw_f
     let v = sum_sq / chw_f - m * m
-    let inv = 1.0F / sqrtf(v + ln.eps)
+    let inv = 1.0F / @core.sqrtf(v + ln.eps)
     mean[ni] = m
     inv_std[ni] = inv
     // Per-element output.
@@ -299,7 +299,7 @@ pub fn gln_forward(
     }
     // biased variance, matching torch.pow(x - mean, 2).mean(...)
     let variance = v / Float::from_int(ct)
-    let inv = 1.0F / sqrtf(variance + gln.eps)
+    let inv = 1.0F / @core.sqrtf(variance + gln.eps)
     inv_std[b] = inv
     for ch in 0..<c {
       let g = gln.gamma[ch]

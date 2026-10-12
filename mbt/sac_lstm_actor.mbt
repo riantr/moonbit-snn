@@ -39,12 +39,12 @@ pub fn LSTMSACActor::new(
   seed : UInt64,
 ) -> LSTMSACActor {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std1 = sqrtf(2.0F / Float::from_int(state_dim))
+  let std1 = @core.sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(lstm_hidden, state_dim, std1, rng1)
   let mlp_b1 : Array[Float] = Array::make(lstm_hidden, 0.0F)
   let lstm = LstmCellParam::new(lstm_hidden, lstm_hidden, seed + 4UL)
   let rng2 = @core.Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
-  let std2 = sqrtf(2.0F / Float::from_int(lstm_hidden))
+  let std2 = @core.sqrtf(2.0F / Float::from_int(lstm_hidden))
   let mlp_w_mean = xavier_normal(action_dim, lstm_hidden, std2, rng2)
   let mlp_b_mean : Array[Float] = Array::make(action_dim, 0.0F)
   let rng3 = @core.Xoshiro::from_state(seed + 9UL, seed + 10UL, seed + 11UL, seed + 12UL)

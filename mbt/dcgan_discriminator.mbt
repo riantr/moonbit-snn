@@ -62,7 +62,7 @@ pub fn DCGANDiscriminator::new(
   let rng_fc = @core.Xoshiro::from_state(
     seed + 44UL, seed + 45UL, seed + 46UL, seed + 47UL,
   )
-  let std_fc = sqrtf(2.0F / Float::from_int(feat_dim))
+  let std_fc = @core.sqrtf(2.0F / Float::from_int(feat_dim))
   let fc_w = xavier_normal(1, feat_dim, std_fc, rng_fc)
   { c_in, c_base, h, w, conv1_w, conv1_b, conv2_w, conv2_b, conv3_w, conv3_b, fc_w, fc_b: 0.0F }
 }
@@ -77,7 +77,7 @@ fn conv4x4_weights(
 ) -> Array[Array[Float]] {
   let in_dim = c_in * 16
   let rows : Array[Array[Float]] = Array::make(c_out, Array::make(in_dim, 0.0F))
-  let std = sqrtf(2.0F / Float::from_int(in_dim))
+  let std = @core.sqrtf(2.0F / Float::from_int(in_dim))
   let rng = @core.Xoshiro::new(seed)
   for o in 0..<c_out {
     for i in 0..<in_dim {
@@ -163,7 +163,7 @@ pub fn spectral_norm_power_iteration(
   for c in 0..<cols {
     vnorm = vnorm + v[c] * v[c]
   }
-  vnorm = sqrtf(vnorm)
+  vnorm = @core.sqrtf(vnorm)
   if vnorm < 1.0e-12F {
     return 0.0F
   }
@@ -180,7 +180,7 @@ pub fn spectral_norm_power_iteration(
   for r in 0..<rows {
     un = un + unorm[r] * unorm[r]
   }
-  un = sqrtf(un)
+  un = @core.sqrtf(un)
   if un < 1.0e-12F {
     return 0.0F
   }

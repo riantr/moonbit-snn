@@ -67,8 +67,8 @@ test "adagrad_update_arrays / sparse-feature style: large initial step, smaller 
     )
     w = w_new[0]
     s = s_new
-    let drop = g * lr / @snn_mbt.sqrtf(Float::from_int(step))
-    let actual_drop = g * lr / (@snn_mbt.sqrtf(s_new.v_w[0]) + 0.00000001F)
+    let drop = g * lr / @core.sqrtf(Float::from_int(step))
+    let actual_drop = g * lr / (@core.sqrtf(s_new.v_w[0]) + 0.00000001F)
     if (drop - actual_drop).abs() > 0.001F {
       fail("step \{step}: expected drop ~\{drop}, got \{actual_drop}")
     }

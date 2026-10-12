@@ -47,7 +47,7 @@ pub fn GruCellParam::new(
   seed : UInt64,
 ) -> GruCellParam {
   let in_dim = d_h + d_x
-  let std = sqrtf(2.0F / Float::from_int(d_h + in_dim))
+  let std = @core.sqrtf(2.0F / Float::from_int(d_h + in_dim))
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let wz = xavier_normal(d_h, in_dim, std, rng)
   let wr = xavier_normal(d_h, in_dim, std, rng)

@@ -69,7 +69,7 @@ pub fn DCGANGenerator::new(
   let rng0 = @core.Xoshiro::from_state(
     seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL,
   )
-  let std0 = sqrtf(2.0F / Float::from_int(latent_dim))
+  let std0 = @core.sqrtf(2.0F / Float::from_int(latent_dim))
   let fc_w = xavier_normal(proj_dim, latent_dim, std0, rng0)
   let fc_b : Array[Float] = Array::make(proj_dim, 0.0F)
   // Conv 1: c_base -> c_base*2, applied at 8x8.
@@ -100,7 +100,7 @@ fn xavier_normal_conv(
   // a matvec-style inner product.
   let in_dim = c_in * k * k
   let rows : Array[Array[Float]] = Array::make(c_out, Array::make(in_dim, 0.0F))
-  let std = sqrtf(2.0F / Float::from_int(in_dim))
+  let std = @core.sqrtf(2.0F / Float::from_int(in_dim))
   let rng = @core.Xoshiro::new(20261004UL + c_out.to_uint64() * 31UL + c_in.to_uint64())
   for o in 0..<c_out {
     for i in 0..<in_dim {
@@ -200,7 +200,7 @@ fn batchnorm_channel(
       variance = variance + d * d
     }
     variance = variance / n
-    let std = sqrtf(variance + eps)
+    let std = @core.sqrtf(variance + eps)
     for i in 0..<plane {
       out[off + i] = gamma[ch] * (x[off + i] - mean) / std + beta[ch]
     }

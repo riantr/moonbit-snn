@@ -44,7 +44,7 @@ pub fn ts_var(x : Array[Float]) -> Float {
 ///|
 /// 1D standard deviation (sqrt of population variance).
 pub fn ts_std(x : Array[Float]) -> Float {
-  sqrtf(ts_var(x))
+  @core.sqrtf(ts_var(x))
 }
 
 ///|

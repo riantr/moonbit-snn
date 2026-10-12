@@ -56,7 +56,7 @@ pub fn ViT::new(
   let rng_cls = @core.Xoshiro::from_state(
     seed + 100UL, seed + 101UL, seed + 102UL, seed + 103UL,
   )
-  let std_cls = sqrtf(2.0F / Float::from_int(d_model))
+  let std_cls = @core.sqrtf(2.0F / Float::from_int(d_model))
   for i in 0..<d_model {
     cls_token[i] = std_cls * (@core.next_f32(rng_cls) * 2.0F - 1.0F)
   }
@@ -67,7 +67,7 @@ pub fn ViT::new(
   let rng_pos = @core.Xoshiro::from_state(
     seed + 200UL, seed + 201UL, seed + 202UL, seed + 203UL,
   )
-  let std_pos = sqrtf(2.0F / Float::from_int(d_model))
+  let std_pos = @core.sqrtf(2.0F / Float::from_int(d_model))
   for i in 0..<(seq_len * d_model) {
     pos_embed[i] = std_pos * (@core.next_f32(rng_pos) * 2.0F - 1.0F)
   }
@@ -82,7 +82,7 @@ pub fn ViT::new(
   let rng_head = @core.Xoshiro::from_state(
     seed + 300UL, seed + 301UL, seed + 302UL, seed + 303UL,
   )
-  let std_head = sqrtf(2.0F / Float::from_int(d_model))
+  let std_head = @core.sqrtf(2.0F / Float::from_int(d_model))
   let head_w = xavier_normal(num_classes, d_model, std_head, rng_head)
   let head_b : Array[Float] = Array::make(num_classes, 0.0F)
   { patch_embed, cls_token, pos_embed, blocks, head_w, head_b, num_classes, d_model, n_patches }

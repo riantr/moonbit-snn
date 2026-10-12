@@ -72,11 +72,11 @@ pub fn VAEEncoder::new(
   seed : UInt64,
 ) -> VAEEncoder {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std_in = sqrtf(2.0F / Float::from_int(x_dim))
+  let std_in = @core.sqrtf(2.0F / Float::from_int(x_dim))
   let in_w = xavier_normal(hidden_dim, x_dim, std_in, rng1)
   let in_b : Array[Float] = Array::make(hidden_dim, 0.0F)
   let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
-  let std_mu = sqrtf(2.0F / Float::from_int(hidden_dim))
+  let std_mu = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
   let mu_w = xavier_normal(latent_dim, hidden_dim, std_mu, rng2)
   let mu_b : Array[Float] = Array::make(latent_dim, 0.0F)
   let rng3 = @core.Xoshiro::from_state(seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL)
@@ -94,11 +94,11 @@ pub fn VAEDecoder::new(
   seed : UInt64,
 ) -> VAEDecoder {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std_in = sqrtf(2.0F / Float::from_int(latent_dim))
+  let std_in = @core.sqrtf(2.0F / Float::from_int(latent_dim))
   let in_w = xavier_normal(hidden_dim, latent_dim, std_in, rng1)
   let in_b : Array[Float] = Array::make(hidden_dim, 0.0F)
   let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
-  let std_out = sqrtf(2.0F / Float::from_int(hidden_dim))
+  let std_out = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
   let out_w = xavier_normal(x_dim, hidden_dim, std_out, rng2)
   let out_b : Array[Float] = Array::make(x_dim, 0.0F)
   { latent_dim, hidden_dim, x_dim, in_w, in_b, out_w, out_b }

@@ -57,7 +57,7 @@ pub fn PrimaryCapsule::new(
   let in_dim = c_in * kernel * kernel
   let out_dim = c_out * capsule_dim
   let rows : Array[Array[Float]] = Array::make(out_dim, Array::make(in_dim, 0.0F))
-  let std = sqrtf(2.0F / Float::from_int(in_dim))
+  let std = @core.sqrtf(2.0F / Float::from_int(in_dim))
   let rng = @core.Xoshiro::from_state(
     seed + 10UL, seed + 11UL, seed + 12UL, seed + 13UL,
   )

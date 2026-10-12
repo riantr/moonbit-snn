@@ -98,8 +98,8 @@ fn build_schedule(
     alphas[t] = a
     ab = ab * a
     alpha_bars[t] = ab
-    sqrt_alpha_bars[t] = sqrtf(ab)
-    sqrt_one_minus_alpha_bars[t] = sqrtf(1.0F - ab)
+    sqrt_alpha_bars[t] = @core.sqrtf(ab)
+    sqrt_one_minus_alpha_bars[t] = @core.sqrtf(1.0F - ab)
   }
   { num_steps, betas, alphas, alpha_bars, sqrt_alpha_bars, sqrt_one_minus_alpha_bars }
 }

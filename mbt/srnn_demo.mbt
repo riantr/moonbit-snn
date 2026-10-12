@@ -118,9 +118,9 @@ pub fn SRNN::new(
   seed : UInt64,
 ) -> SRNN {
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std_in = sqrtf(1.0F / Float::from_int(n_in))
-  let std_rec = sqrtf(1.0F / Float::from_int(n_hidden))
-  let std_out = sqrtf(1.0F / Float::from_int(n_hidden))
+  let std_in = @core.sqrtf(1.0F / Float::from_int(n_in))
+  let std_rec = @core.sqrtf(1.0F / Float::from_int(n_hidden))
+  let std_out = @core.sqrtf(1.0F / Float::from_int(n_hidden))
   let w_in : Array[Float] = Array::make(n_in * n_hidden, 0.0F)
   let w_rec : Array[Float] = Array::make(n_hidden * n_hidden, 0.0F)
   let w_out : Array[Float] = Array::make(n_hidden * n_classes, 0.0F)

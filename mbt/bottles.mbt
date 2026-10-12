@@ -24,7 +24,7 @@
 /// N(0, sqrt(2 / fan_in)) using a xoshiro RNG and Float32 Box-Muller.
 pub fn he_init(rng : @core.Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
-  let std = sqrtf(2.0F / Float::from_int(fan_in))
+  let std = @core.sqrtf(2.0F / Float::from_int(fan_in))
   let mut i = 0
   while i + 1 < n {
     // Box-Muller on Float32 (consume 2 uniforms -> 2 normals).
@@ -34,8 +34,8 @@ pub fn he_init(rng : @core.Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
       v
     }
     let u2 = @core.next_f32(rng)
-    let z1 = sqrtf(-2.0F * @core.logf(u1)) * cosf(2.0F * 3.14159265F * u2)
-    let z2 = sqrtf(-2.0F * @core.logf(u1)) * sin_f32(2.0F * 3.14159265F * u2)
+    let z1 = @core.sqrtf(-2.0F * @core.logf(u1)) * cosf(2.0F * 3.14159265F * u2)
+    let z2 = @core.sqrtf(-2.0F * @core.logf(u1)) * sin_f32(2.0F * 3.14159265F * u2)
     out[i] = z1 * std
     out[i + 1] = z2 * std
     i = i + 2
@@ -48,7 +48,7 @@ pub fn he_init(rng : @core.Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
       v
     }
     let u2 = @core.next_f32(rng)
-    let z1 = sqrtf(-2.0F * @core.logf(u1)) * cosf(2.0F * 3.14159265F * u2)
+    let z1 = @core.sqrtf(-2.0F * @core.logf(u1)) * cosf(2.0F * 3.14159265F * u2)
     out[i] = z1 * std
   }
   out

@@ -51,14 +51,14 @@ pub fn LSTMForecaster::new(
   seed : UInt64,
 ) -> LSTMForecaster {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std_in = sqrtf(2.0F / Float::from_int(input_dim))
+  let std_in = @core.sqrtf(2.0F / Float::from_int(input_dim))
   let in_w = xavier_normal(hidden_dim, input_dim, std_in, rng1)
   let in_b : Array[Float] = Array::make(hidden_dim, 0.0F)
   let lstm = LstmCellParam::new(hidden_dim, hidden_dim, seed + 4UL)
   let rng2 = @core.Xoshiro::from_state(
     seed + 8UL, seed + 9UL, seed + 10UL, seed + 11UL,
   )
-  let std_out = sqrtf(2.0F / Float::from_int(hidden_dim))
+  let std_out = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
   let out_w = xavier_normal(output_dim, hidden_dim, std_out, rng2)
   let out_b : Array[Float] = Array::make(output_dim, 0.0F)
   {

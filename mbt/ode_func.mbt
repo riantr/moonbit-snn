@@ -43,11 +43,11 @@ pub fn ODEFunc::new(
   seed : UInt64,
 ) -> ODEFunc {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std1 = sqrtf(2.0F / Float::from_int(state_dim))
+  let std1 = @core.sqrtf(2.0F / Float::from_int(state_dim))
   let w1 = xavier_normal(hidden_dim, state_dim, std1, rng1)
   let b1 : Array[Float] = Array::make(hidden_dim, 0.0F)
   let rng2 = @core.Xoshiro::from_state(seed + 4UL, seed + 5UL, seed + 6UL, seed + 7UL)
-  let std2 = sqrtf(2.0F / Float::from_int(hidden_dim))
+  let std2 = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
   let w2 = xavier_normal(state_dim, hidden_dim, std2, rng2)
   let b2 : Array[Float] = Array::make(state_dim, 0.0F)
   { state_dim, hidden_dim, w1, b1, w2, b2 }

@@ -66,7 +66,7 @@ pub fn PositionalEmbedding::new(
   seed : UInt64,
 ) -> PositionalEmbedding {
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let std = sqrtf(2.0F / Float::from_int(1 + d_model))
+  let std = @core.sqrtf(2.0F / Float::from_int(1 + d_model))
   let weight : Array[Float] = Array::make(max_len * d_model, 0.0F)
   let mut i = 0
   while i < max_len * d_model {

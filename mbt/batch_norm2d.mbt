@@ -166,7 +166,7 @@ pub fn batch_norm2d_forward(
     // Population variance: E[x^2] - (E[x])^2.
     let v = sum_sq / Float::from_int(nhw) - m * m
     mean[ci] = m
-    inv_std[ci] = 1.0F / sqrtf(v + bn.eps)
+    inv_std[ci] = 1.0F / @core.sqrtf(v + bn.eps)
     // Update running stats in-place (if training).
     if bn.training {
       // running_mean <- (1 - momentum) * running_mean + momentum * mean
@@ -180,7 +180,7 @@ pub fn batch_norm2d_forward(
     // Write per-element output + x_centered.
     let ms = use_mean[ci]
     let inv = if use_running {
-      1.0F / sqrtf(use_var[ci] + bn.eps)
+      1.0F / @core.sqrtf(use_var[ci] + bn.eps)
     } else {
       inv_std[ci]
     }

@@ -38,7 +38,7 @@ test "layer_norm_forward / per-sample mean ~ 0 and std ~ 1" {
     }
     let m = sum / 4.0F
     let v = sum_sq / 4.0F - m * m
-    let s = @snn_mbt.sqrtf(v)
+    let s = @core.sqrtf(v)
     if m.abs() > 0.01F {
       fail("sample \{ni} mean should be ~0, got \{m}")
     }

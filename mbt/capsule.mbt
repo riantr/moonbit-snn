@@ -60,7 +60,7 @@ pub fn capsule_squash(v : Array[Float]) -> Capsule {
   for i in 0..<n {
     nsum = nsum + out[i] * out[i]
   }
-  { dim: n, v: out, prob: sqrtf(nsum) }
+  { dim: n, v: out, prob: @core.sqrtf(nsum) }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn capsule_norm(v : Array[Float]) -> Float {
   for i in 0..<n {
     sum = sum + v[i] * v[i]
   }
-  sqrtf(sum)
+  @core.sqrtf(sum)
 }
 
 ///|
@@ -140,7 +140,7 @@ pub fn capsule_margin_loss(
       let v = caps[base + i]
       sq = sq + v * v
     }
-    let len = sqrtf(sq)
+    let len = @core.sqrtf(sq)
     if k == target {
       // Present class: push the length above m_pos.
       let diff = m_pos - len

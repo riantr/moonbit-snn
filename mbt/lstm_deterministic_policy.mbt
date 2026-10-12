@@ -54,12 +54,12 @@ pub fn LSTMDeterministicPolicy::new(
   seed : UInt64,
 ) -> LSTMDeterministicPolicy {
   let rng1 = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
-  let mlp_w1_std = sqrtf(2.0F / Float::from_int(state_dim))
+  let mlp_w1_std = @core.sqrtf(2.0F / Float::from_int(state_dim))
   let mlp_w1 = xavier_normal(lstm_hidden, state_dim, mlp_w1_std, rng1)
   let mlp_b1 : Array[Float] = Array::make(lstm_hidden, 0.0F)
   let lstm = LstmCellParam::new(lstm_hidden, lstm_hidden, seed + 4UL)
   let rng2 = @core.Xoshiro::from_state(seed + 5UL, seed + 6UL, seed + 7UL, seed + 8UL)
-  let mlp_w2_std = sqrtf(2.0F / Float::from_int(lstm_hidden))
+  let mlp_w2_std = @core.sqrtf(2.0F / Float::from_int(lstm_hidden))
   let mlp_w2 = xavier_normal(action_dim, lstm_hidden, mlp_w2_std, rng2)
   let mlp_b2 : Array[Float] = Array::make(action_dim, 0.0F)
   {

@@ -93,7 +93,7 @@ pub fn xavier_normal_init(
   fan_out : Int,
 ) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
-  let std = sqrtf(2.0F / Float::from_int(fan_in + fan_out))
+  let std = @core.sqrtf(2.0F / Float::from_int(fan_in + fan_out))
   let mut i = 0
   while i < n {
     let (z1, _) = @neuron.box_muller(rng)
@@ -153,7 +153,7 @@ pub fn multi_head_attention_forward(
   let d_model = mha.d_model
   let num_heads = mha.num_heads
   let d_k = mha.d_k
-  let scale = 1.0F / sqrtf(Float::from_int(d_k))
+  let scale = 1.0F / @core.sqrtf(Float::from_int(d_k))
 
   // 1) Q / K / V projections (each shape seq_len × d_model).
   let q = linear_forward(x, seq_len, mha.w_q)

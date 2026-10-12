@@ -47,14 +47,14 @@ pub fn rmsprop_update_arrays(
   for i in 0..<weight.length() {
     let g = d_weight[i]
     new_v_w[i] = alpha * state.v_w[i] + (1.0F - alpha) * g * g
-    w2[i] = weight[i] - lr * g / (sqrtf(new_v_w[i]) + eps)
+    w2[i] = weight[i] - lr * g / (@core.sqrtf(new_v_w[i]) + eps)
   }
   let b2 : Array[Float] = Array::make(bias.length(), 0.0F)
   let new_v_b : Array[Float] = Array::make(bias.length(), 0.0F)
   for i in 0..<bias.length() {
     let g = d_bias[i]
     new_v_b[i] = alpha * state.v_b[i] + (1.0F - alpha) * g * g
-    b2[i] = bias[i] - lr * g / (sqrtf(new_v_b[i]) + eps)
+    b2[i] = bias[i] - lr * g / (@core.sqrtf(new_v_b[i]) + eps)
   }
   (w2, b2, { v_w: new_v_w, v_b: new_v_b })
 }

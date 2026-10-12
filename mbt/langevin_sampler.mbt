@@ -64,7 +64,7 @@ pub fn langevin_step(
 ) -> Array[Float] {
   let n = x.length()
   let grad = langevin_gradient(net, x, eps)
-  let stddev = sqrtf(step_size)
+  let stddev = @core.sqrtf(step_size)
   let noise : Array[Float] = Array::make(n, 0.0F)
   let pairs = n / 2
   let mut i = 0

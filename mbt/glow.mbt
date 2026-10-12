@@ -55,7 +55,7 @@ pub fn actnorm_init_from_data(
       let d = data[i * layer.dim + k] - mean
       variance = variance + d * d
     }
-    let std = sqrtf(variance / Float::from_int(n))
+    let std = @core.sqrtf(variance / Float::from_int(n))
     let safe_std = if std < 1.0e-6F { 1.0e-6F } else { std }
     scale[k] = 1.0F / safe_std
     bias[k] = -mean / safe_std

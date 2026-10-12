@@ -119,7 +119,7 @@ pub fn spiking_multi_head_attention_forward(
   let d_model = sa.d_model
   let num_heads = sa.num_heads
   let d_k = sa.d_k
-  let scale = 1.0F / sqrtf(Float::from_int(d_k))
+  let scale = 1.0F / @core.sqrtf(Float::from_int(d_k))
   let beta = sa.beta
 
   let q = linear_forward(x, seq_len, sa.w_q)
@@ -387,7 +387,7 @@ pub fn spiking_cross_attention_forward(
   let d_model = sa.d_model
   let num_heads = sa.num_heads
   let d_k = sa.d_k
-  let scale = 1.0F / sqrtf(Float::from_int(d_k))
+  let scale = 1.0F / @core.sqrtf(Float::from_int(d_k))
   let beta = sa.beta
 
   let q = linear_forward(x_q, seq_len_q, sa.w_q)

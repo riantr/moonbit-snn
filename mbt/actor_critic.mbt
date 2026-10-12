@@ -21,7 +21,7 @@ pub struct LinearValueNet {
 
 ///|
 pub fn LinearValueNet::new(n_states : Int, seed : UInt64) -> LinearValueNet {
-  let std = sqrtf(0.1F / Float::from_int(n_states))
+  let std = @core.sqrtf(0.1F / Float::from_int(n_states))
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w : Array[Float] = Array::make(n_states, 0.0F)
   for i in 0..<n_states {

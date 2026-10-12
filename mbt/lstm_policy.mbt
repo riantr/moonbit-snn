@@ -106,7 +106,7 @@ pub fn LstmPolicy::new(
   let d_x = 2 + n_cells
   let cell = LstmCellParam::new(d_x, d_h, seed)
   let n_actions = 2
-  let std = sqrtf(1.0F / Float::from_int(d_h))
+  let std = @core.sqrtf(1.0F / Float::from_int(d_h))
   let rng = @core.Xoshiro::from_state(seed + 1UL, seed + 2UL, seed + 3UL, seed + 4UL)
   let w_out = xavier_normal(n_actions, d_h, std, rng)
   let b_out : Array[Float] = Array::make(n_actions, 0.0F)

@@ -101,9 +101,9 @@ pub fn ddpm_sample_step(
   let sa_bar_prev = if t == 0 { 1.0F } else { ddpm.schedule.alpha_bars[t - 1] }
   let beta_t = ddpm.schedule.betas[t]
   // mean = (1/sqrt(alpha_t)) * (x_t - (1 - alpha_t)/sqrt(1 - alpha_bar_t) * eps)
-  let coef = (1.0F - sa) / sqrtf(1.0F - sa_bar)
+  let coef = (1.0F - sa) / @core.sqrtf(1.0F - sa_bar)
   let mean : Array[Float] = Array::make(n, 0.0F)
-  let inv_sqrt_alpha = 1.0F / sqrtf(sa)
+  let inv_sqrt_alpha = 1.0F / @core.sqrtf(sa)
   for i in 0..<n {
     mean[i] = inv_sqrt_alpha * (xt[i] - coef * eps[i])
   }
@@ -111,7 +111,7 @@ pub fn ddpm_sample_step(
   let sigma_sq = if t == 0 { 0.0F } else {
     (1.0F - sa_bar_prev) / (1.0F - sa_bar) * beta_t
   }
-  let sigma = sqrtf(sigma_sq)
+  let sigma = @core.sqrtf(sigma_sq)
   let out : Array[Float] = Array::make(n, 0.0F)
   if t == 0 {
     for i in 0..<n {

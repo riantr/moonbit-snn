@@ -46,7 +46,7 @@ pub fn LstmQNet::new(
   seed : UInt64,
 ) -> LstmQNet {
   let cell = LstmCellParam::new(d_x, d_h, seed)
-  let std = sqrtf(1.0F / Float::from_int(d_h))
+  let std = @core.sqrtf(1.0F / Float::from_int(d_h))
   let rng = @core.Xoshiro::from_state(seed + 11UL, seed + 12UL, seed + 13UL, seed + 14UL)
   let w_out = xavier_normal(n_actions, d_h, std, rng)
   let b_out : Array[Float] = Array::make(n_actions, 0.0F)

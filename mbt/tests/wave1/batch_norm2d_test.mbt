@@ -56,7 +56,7 @@ test "batch_norm2d_forward / per-channel mean ~ 0 and std ~ 1 after normalisatio
     }
     let m = sum / Float::from_int(count)
     let v = sum_sq / Float::from_int(count) - m * m
-    let s = @snn_mbt.sqrtf(v)
+    let s = @core.sqrtf(v)
     if m.abs() > 0.01F {
       fail("channel \{ci} mean should be ~0, got \{m}")
     }
@@ -409,7 +409,7 @@ test "batch_norm2d_backward / inference mode: the cache must record what the for
   }
   // And the closed form, checked on one coordinate rather than trusted.
   let k0 = 0
-  let inv_run = 1.0F / @snn_mbt.sqrtf(bn2.running_var[k0] + bn2.eps)
+  let inv_run = 1.0F / @core.sqrtf(bn2.running_var[k0] + bn2.eps)
   let ci = k0
   let chw = c * h * w
   let idx = 2 * chw + ci * h * w + 1 * w + 1

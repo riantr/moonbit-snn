@@ -326,7 +326,7 @@ fn tn_fft_magnitude(x : Array[Float]) -> Array[Float] {
   let out : Array[Float] = Array::make(bins, 0.0F)
   let mut i = 0
   while i < bins {
-    out[i] = sqrtf(re[i] * re[i] + im[i] * im[i])
+    out[i] = @core.sqrtf(re[i] * re[i] + im[i] * im[i])
     i = i + 1
   }
   out

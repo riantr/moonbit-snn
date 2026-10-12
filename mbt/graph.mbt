@@ -294,7 +294,7 @@ pub fn normalise_adjacency(g : Graph) -> Graph {
   let inv_sqrt : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
     if deg[i] > 0 {
-      inv_sqrt[i] = 1.0F / sqrtf(Float::from_int(deg[i]))
+      inv_sqrt[i] = 1.0F / @core.sqrtf(Float::from_int(deg[i]))
     }
   }
   let w : Array[Float] = Array::make(with_loops.n_edges, 0.0F)

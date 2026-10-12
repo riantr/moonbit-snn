@@ -72,7 +72,7 @@ pub fn scm_intervened_sample(
   let x : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
     let (z1, _) = @neuron.box_muller(rng)
-    x[i] = sqrtf(mscm.sigma_sq[i]) * Float::from_double(z1)
+    x[i] = @core.sqrtf(mscm.sigma_sq[i]) * Float::from_double(z1)
   }
   // Forward substitution in topological order.
   for k in 0..<n {

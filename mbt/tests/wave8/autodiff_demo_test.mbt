@@ -23,7 +23,7 @@ test "demo_polynomial: closed-form vs finite difference at x = 1.5" {
 ///|
 test "demo_polynomial: zero gradient at critical point x = ±√(2/3)" {
   // df/dx = 3x² - 2 = 0 → x² = 2/3 → x = ±sqrt(2/3) ≈ ±0.816.
-  let x_crit = @snn_mbt.sqrtf(2.0F / 3.0F)
+  let x_crit = @core.sqrtf(2.0F / 3.0F)
   let g = @snn_mbt.demo_polynomial(x_crit)
   if g.abs() > 0.0001F {
     fail("df/dx at critical = \{g}, expected ≈ 0")
