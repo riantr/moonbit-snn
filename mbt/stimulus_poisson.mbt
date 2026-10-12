@@ -147,7 +147,7 @@ pub fn ornstein_uhlenbeck_step(
   dt : Float,
 ) -> Float {
   // Box-Muller: one N(0, 1) sample.
-  let (z1, _) = @neuron.box_muller(rng)
+  let (z1, _) = @core.box_muller(rng)
   let next = x + theta * (mu - x) * dt + sigma * z1.to_float() * Float::sqrt(dt)
   if next > 0.0F {
     next

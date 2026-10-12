@@ -248,6 +248,6 @@ pub fn sample_meta_batch(
 ///|
 /// Helper: standard normal noise via Box-Muller (mean 0, std 1).
 fn gaussian_noise(r : @core.Xoshiro) -> Float {
-  let (z1, _) = @neuron.box_muller(r)
+  let (z1, _) = @core.box_muller(r)
   Float::from_double(z1)
 }

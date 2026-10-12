@@ -130,7 +130,7 @@ pub fn IZ::new(n : Int, param : IZParameter, rng : @core.Xoshiro) -> IZ {
   // [Optional: bit-exact Julia init — uncomment to enable]
   // let mut k = 0
   // while k < n {
-  //   let (z1, z2) = box_muller(rng)
+  //   let (z1, z2) = @core.box_muller(rng)
   //   let g = Float::from_double(1.5 * z1 + 4.0) * 10.0F
   //   ge[k] = if g > 0.0F { g } else { 0.0F }
   //   let g2 = Float::from_double(12.0 * z2 + 20.0) * 10.0F
@@ -244,10 +244,10 @@ pub fn sample_julia_initial_ge_gi(
   let ge : Array[Float] = Array::make(n, 0.0F)
   let gi : Array[Float] = Array::make(n, 0.0F)
   for k in 0..<n {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     let g1 = Float::from_double(1.5 * z1 + 4.0) * 10.0F
     ge[k] = if g1 > 0.0F { g1 } else { 0.0F }
-    let (z2, _) = box_muller(rng)
+    let (z2, _) = @core.box_muller(rng)
     let g2 = Float::from_double(12.0 * z2 + 20.0) * 10.0F
     gi[k] = if g2 > 0.0F { g2 } else { 0.0F }
   }
@@ -285,20 +285,6 @@ pub fn IZ::init_with_postspike(
   let gi : Array[Float] = Array::make(n, 0.0F)
   let tabs : Array[Int] = Array::make(n, 0)
   { param, n, v, u, fire, i, ge, gi, tabs, tabs_const: postspike.tabs_const }
-}
-
-///|
-/// Box-Muller transform: produce a pair of N(0, 1) Float64 from
-/// two uniform Float64 draws. Matches Julia's `randn()` which uses
-/// the same algorithm.
-pub fn box_muller(rng : @core.Xoshiro) -> (Double, Double) {
-  let u1 = @core.next_f64(rng)
-  // Avoid log(0)
-  let u1_safe = if u1 < 1.0e-15 { 1.0e-15 } else { u1 }
-  let u2 = @core.next_f64(rng)
-  let r = (-2.0 * @math.ln(u1_safe)).sqrt()
-  let theta = 2.0 * 3.141592653589793 * u2
-  (r * @math.cos(theta), r * @math.sin(theta))
 }
 
 ///|

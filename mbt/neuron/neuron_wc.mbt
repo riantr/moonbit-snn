@@ -45,7 +45,7 @@ pub fn WilsonCowan::new(n : Int, rng : @core.Xoshiro) -> WilsonCowan {
   let x : Array[Float] = Array::make(n, 0.0F)
   let r : Array[Float] = Array::make(n, 0.0F)
   for k in 0..<n {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     x[k] = 0.5F * Float::from_double(z1)
     r[k] = @core.tanhf(x[k])
   }

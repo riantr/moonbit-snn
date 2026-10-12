@@ -95,7 +95,7 @@ fn main {
     // `model.syn.S.W .+= randn(size(...))` perturbation).
     let mut j = 0
     while j < ee.matrix.vals.length() {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       let new_w = ee.matrix.vals[j] + Float::from_double(z1) * 0.5F
       // Clamp at 0.5 (matches Julia's `clamp.(..., 0.5, Inf)`).
       ee.matrix.vals[j] = if new_w < 0.5F { 0.5F } else { new_w }

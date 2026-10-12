@@ -133,7 +133,7 @@ pub fn PrioritizedBuffer::sample(
     return (indices, states, actions, rewards, next_states, dones, is_weights)
   }
   for k in 0..<batch_size {
-    let (u_raw, _) = @neuron.box_muller(rng)
+    let (u_raw, _) = @core.box_muller(rng)
     let u = if u_raw < 0.0 { -u_raw } else { u_raw }
     // Map [0, 1) → cumulative priority range.
     let target = Float::from_double(u) * self.total_priority

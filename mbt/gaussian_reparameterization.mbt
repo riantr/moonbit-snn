@@ -57,7 +57,7 @@ pub fn gaussian_reparameterize_with_rng(
   let dim = mu.length()
   let eps : Array[Float] = Array::make(dim, 0.0F)
   for i in 0..<dim {
-    let (z1, _) = @neuron.box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     eps[i] = Float::from_double(z1)
   }
   gaussian_reparameterize(mu, log_var, eps)

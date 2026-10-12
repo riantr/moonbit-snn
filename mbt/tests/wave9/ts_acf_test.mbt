@@ -74,7 +74,7 @@ test "ts_pacf: recovers AR(1) coefficient from a synthetic series" {
   let series_data : Array[Float] = Array::make(2000, 0.0F)
   // Burn-in: first 200 samples discarded later.
   for i in 1..<2000 {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let eps = Float::from_double(z)
     series_data[i] = phi_true * series_data[i - 1] + eps
   }

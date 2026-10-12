@@ -126,7 +126,7 @@ pub fn PoissonLayerStimulus::new(
         connectivity[idx] = true
         weights[idx] = if use_normal {
           // Box-Muller: draw N(0, 1), scale to N(μ, σ).
-          let (z, _) = @neuron.box_muller(rng)
+          let (z, _) = @core.box_muller(rng)
           mu + Float::from_double(z) * sigma
         } else {
           mu

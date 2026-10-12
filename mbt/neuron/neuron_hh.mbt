@@ -84,7 +84,7 @@ pub fn HH::new(n : Int, param : HHParameter, rng : @core.Xoshiro) -> HH {
   // ge, gi = 0 (zeroed for stability — see IZ note)
   let v = Array::make(n, param.el)
   for k in 0..<n {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     v[k] = param.el + 5.0F * (Float::from_double(z1) - 1.0F)
   }
   let m = Array::make(n, 0.0F)
@@ -97,7 +97,7 @@ pub fn HH::new(n : Int, param : HHParameter, rng : @core.Xoshiro) -> HH {
   // Bit-exact: also consume the 2 Box-Muller draws for ge/gi init,
   // matching Julia's RNG state, but discard them (we use 0).
   for _k in 0..<n {
-    let (_, _) = box_muller(rng)
+    let (_, _) = @core.box_muller(rng)
   }
   { param, n, v, m, n_gate, h, fire, i, ge, gi }
 }

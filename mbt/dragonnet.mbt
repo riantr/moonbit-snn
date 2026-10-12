@@ -77,7 +77,7 @@ pub(all) struct DragonNet {
 fn dn_linear(rng : @core.Xoshiro, in_f : Int, out_f : Int, std : Float) -> @nn.LinearParam {
   let w : Array[Float] = Array::make(out_f * in_f, 0.0F)
   for i in 0..<(out_f * in_f) {
-    let (z1, z2) = @neuron.box_muller(rng)
+    let (z1, z2) = @core.box_muller(rng)
     let z = if z1 != 0.0 { z1 } else { z2 }
     w[i] = Float::from_double(z) * std
   }
@@ -103,7 +103,7 @@ pub fn DragonNet::new(
 ) -> DragonNet {
   let rng = @core.Xoshiro::new(seed)
   let eps : Float = Float::from_double({
-    let (z1, z2) = @neuron.box_muller(rng)
+    let (z1, z2) = @core.box_muller(rng)
     if z1 != 0.0 { z1 } else { z2 }
   }) * std
   {

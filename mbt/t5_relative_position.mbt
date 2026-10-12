@@ -45,7 +45,7 @@ pub fn T5RelativePosition::new(
   let weight : Array[Float] = Array::make(num_heads * n_buckets, 0.0F)
   let mut i = 0
   while i < num_heads * n_buckets {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     weight[i] = Float::from_double(z) * std
     i = i + 1
   }

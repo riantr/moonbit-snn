@@ -127,7 +127,7 @@ test "spiking_synapse — explicit dense matrix via from_dense" {
   for i in 0..<pre.n {
     let row : Array[Float] = Array::make(post.n, 0.0F)
     for j in 0..<post.n {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       row[j] = 0.5F * Float::from_double(z1).abs()
     }
     ignore(dense.set(i, row))

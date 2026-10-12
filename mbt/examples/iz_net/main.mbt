@@ -47,11 +47,11 @@ fn main {
   for _ in 0..<1000 {
     // Inject Gaussian noise: 5x scale for E, 2x scale for I.
     for k in 0..<ne {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       e_pop.i[k] = 5.0F * Float::from_double(z1)
     }
     for k in 0..<ni {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       i_pop.i[k] = 2.0F * Float::from_double(z1)
     }
     // 1ms = 8 steps at dt=0.125F

@@ -34,7 +34,7 @@ pub fn tn_randn(n : Int, std : Float, rng : @core.Xoshiro) -> Array[Float] {
   let out : Array[Float] = Array::make(n, 0.0F)
   let mut i = 0
   while i < n {
-    let (z1, z2) = @neuron.box_muller(rng)
+    let (z1, z2) = @core.box_muller(rng)
     let z = if z1 != 0.0 { z1 } else { z2 }
     out[i] = Float::from_double(z) * std
     i = i + 1

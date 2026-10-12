@@ -56,7 +56,7 @@ fn main {
     @snn_mbt.stimulate_current_array(stim_exc)
     // Now apply inh by ADDING to current i (not overwriting).
     // Use box_muller to sample and add.
-    let (z1, _) = @neuron.box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     pop.i[0] = pop.i[0] + (-50.0F) + 250.0F * Float::from_double(z1)
     let prev_fire = pop.fire[0]
     @neuron.adex_step_synapses(pop, dt)

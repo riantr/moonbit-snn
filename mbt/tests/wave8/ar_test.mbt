@@ -120,7 +120,7 @@ test "ar_fit_yule_walker: recovers phi = 0.7 from synthetic AR(1)" {
   let y : Array[Float] = Array::make(n, 0.0F)
   y[0] = 0.0F
   for t in 1..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let eps = Float::from_double(z) * 0.5F // noise
     y[t] = 0.7F * y[t - 1] + eps
   }
@@ -138,7 +138,7 @@ test "ar_fit_ols: recovers phi = 0.7 from synthetic AR(1)" {
   let y : Array[Float] = Array::make(n, 0.0F)
   y[0] = 0.0F
   for t in 1..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let eps = Float::from_double(z) * 0.5F
     y[t] = 0.7F * y[t - 1] + eps
   }
@@ -161,7 +161,7 @@ test "ar_fit_ols: recovers AR(2) phi_1, phi_2 from synthetic series" {
   y[0] = 0.0F
   y[1] = 0.0F
   for t in 2..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let eps = Float::from_double(z) * 0.5F
     y[t] = 0.5F * y[t - 1] + 0.3F * y[t - 2] + eps
   }

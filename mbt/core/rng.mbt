@@ -151,3 +151,23 @@ pub fn rand_f64(r : Xoshiro, n : Int) -> Array[Double] {
   }
   out
 }
+///|
+/// Box-Muller transform: produce a pair of N(0, 1) Float64 from
+/// two uniform Float64 draws. Matches Julia's `randn()` which uses
+/// the same algorithm.
+///
+/// This was declared in `neuron_iz.mbt`. Drawing a Gaussian has nothing
+/// to do with an Izhikevich neuron, and 95 call sites across the tree --
+/// ARIMA, BiLSTM, C51, DCGAN, DDPM -- were reaching through
+/// `@core.box_muller` for it, which made the nn package import the
+/// neuron package purely to sample noise.
+pub fn box_muller(rng : Xoshiro) -> (Double, Double) {
+  let u1 = next_f64(rng)
+  // Avoid log(0)
+  let u1_safe = if u1 < 1.0e-15 { 1.0e-15 } else { u1 }
+  let u2 = next_f64(rng)
+  let r = (-2.0 * @math.ln(u1_safe)).sqrt()
+  let theta = 2.0 * 3.141592653589793 * u2
+  (r * @math.cos(theta), r * @math.sin(theta))
+}
+

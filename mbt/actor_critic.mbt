@@ -25,7 +25,7 @@ pub fn LinearValueNet::new(n_states : Int, seed : UInt64) -> LinearValueNet {
   let rng = @core.Xoshiro::from_state(seed, seed + 1UL, seed + 2UL, seed + 3UL)
   let w : Array[Float] = Array::make(n_states, 0.0F)
   for i in 0..<n_states {
-    let (z1, _) = @neuron.box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     w[i] = Float::from_double(z1) * std
   }
   { n_states, w }

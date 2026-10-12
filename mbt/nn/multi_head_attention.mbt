@@ -115,7 +115,7 @@ pub fn xavier_normal_init(
   let std = @core.sqrtf(2.0F / Float::from_int(fan_in + fan_out))
   let mut i = 0
   while i < n {
-    let (z1, _) = @neuron.box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     out[i] = Float::from_double(z1) * std
     i = i + 1
   }

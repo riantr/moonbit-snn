@@ -139,7 +139,7 @@ pub fn q_sample_pair(
   let mut i = 0
   while i < pairs * 2 {
     // Box-Muller gives two standard normals at a time (as Double).
-    let (z1d, z2d) = @neuron.box_muller(rng)
+    let (z1d, z2d) = @core.box_muller(rng)
     noise[i] = Float::from_double(z1d)
     if i + 1 < n {
       noise[i + 1] = Float::from_double(z2d)
@@ -148,7 +148,7 @@ pub fn q_sample_pair(
   }
   // If n is odd, draw one extra.
   if n % 2 == 1 {
-    let (z1d, _) = @neuron.box_muller(rng)
+    let (z1d, _) = @core.box_muller(rng)
     noise[n - 1] = Float::from_double(z1d)
   }
   let xt = q_sample(x0, noise, t, sched)

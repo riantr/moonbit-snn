@@ -66,7 +66,7 @@ test "arma_residual_loss: zero for ARMA(1, 1) generated data" {
   let n = 30
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     eps[i] = Float::from_double(z)
   }
   let y : Array[Float] = Array::make(n, 0.0F)
@@ -91,7 +91,7 @@ test "arma_grad: matches finite difference for ARMA(1, 1)" {
   let n = 50
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     eps[i] = Float::from_double(z)
   }
   let y : Array[Float] = Array::make(n, 0.0F)
@@ -122,7 +122,7 @@ test "arma_grad: matches finite difference for ARMA(2, 2)" {
   let n = 60
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     eps[i] = Float::from_double(z)
   }
   let y : Array[Float] = Array::make(n, 0.0F)
@@ -176,7 +176,7 @@ test "arma_fit: gradient descent recovers ARMA(1, 1) coefficients" {
   let n = 500
   let eps : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     eps[i] = Float::from_double(z)
   }
   let y : Array[Float] = Array::make(n, 0.0F)

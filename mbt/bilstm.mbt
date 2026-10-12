@@ -302,7 +302,7 @@ pub fn bilstm_identity_dataset(
   for t in 0..<seq_len {
     let x : Array[Float] = Array::make(d_x, 0.0F)
     for i in 0..<d_x {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       x[i] = Float::from_double(z1)
     }
     xs[t] = x

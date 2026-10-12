@@ -121,7 +121,7 @@ pub fn ddpm_sample_step(
     let pairs = n / 2
     let mut i = 0
     while i < pairs * 2 {
-      let (z1d, z2d) = @neuron.box_muller(rng)
+      let (z1d, z2d) = @core.box_muller(rng)
       let z1 = Float::from_double(z1d)
       let z2 = Float::from_double(z2d)
       out[i] = mean[i] + sigma * z1
@@ -131,7 +131,7 @@ pub fn ddpm_sample_step(
       i = i + 2
     }
     if n % 2 == 1 {
-      let (z1d, _) = @neuron.box_muller(rng)
+      let (z1d, _) = @core.box_muller(rng)
       let z1 = Float::from_double(z1d)
       out[n - 1] = mean[n - 1] + sigma * z1
     }
@@ -150,7 +150,7 @@ pub fn ddpm_sample(
   let pairs = n / 2
   let mut i = 0
   while i < pairs * 2 {
-    let (z1d, z2d) = @neuron.box_muller(rng)
+    let (z1d, z2d) = @core.box_muller(rng)
     xt[i] = Float::from_double(z1d)
     if i + 1 < n {
       xt[i + 1] = Float::from_double(z2d)
@@ -158,7 +158,7 @@ pub fn ddpm_sample(
     i = i + 2
   }
   if n % 2 == 1 {
-    let (z1d, _) = @neuron.box_muller(rng)
+    let (z1d, _) = @core.box_muller(rng)
     xt[n - 1] = Float::from_double(z1d)
   }
   let mut t = ddpm.schedule.num_steps - 1

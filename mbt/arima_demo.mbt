@@ -50,11 +50,11 @@ pub fn arima_synthesize(
   }
   let eps : Array[Float] = Array::make(n, 0.0F)
   // Initial eps[0] = z[0] = noise sample (no pre-sample data).
-  let (z0, _) = @neuron.box_muller(rng)
+  let (z0, _) = @core.box_muller(rng)
   eps[0] = Float::from_double(z0)
   z[0] = eps[0]
   for t in 1..<n {
-    let (zt, _) = @neuron.box_muller(rng)
+    let (zt, _) = @core.box_muller(rng)
     let mut e = Float::from_double(zt)
     // AR part
     for i in 0..<p {

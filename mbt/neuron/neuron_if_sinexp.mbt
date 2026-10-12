@@ -102,7 +102,7 @@ pub fn IFSinExp::new(
   let fire_t_delta : Array[Int] = Array::make(n, 0)
   // Random initial voltages via Box-Muller (small noise).
   for k in 0..<n {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     v[k] = param.el + Float::from_double(z1) * 2.0F
   }
   let _ = i

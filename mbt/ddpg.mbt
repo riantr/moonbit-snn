@@ -59,7 +59,7 @@ pub fn DeterministicPolicy::new(
   for h in 0..<hidden {
     let row : Array[Float] = Array::make(state_dim, 0.0F)
     for s in 0..<state_dim {
-      let (z, _) = @neuron.box_muller(rng)
+      let (z, _) = @core.box_muller(rng)
       row[s] = Float::from_double(z) * bound_w1
     }
     ignore(w1.set(h, row))
@@ -69,7 +69,7 @@ pub fn DeterministicPolicy::new(
   for a in 0..<action_dim {
     let row : Array[Float] = Array::make(hidden, 0.0F)
     for h in 0..<hidden {
-      let (z, _) = @neuron.box_muller(rng)
+      let (z, _) = @core.box_muller(rng)
       row[h] = Float::from_double(z) * bound_w2
     }
     ignore(w2.set(a, row))
@@ -177,14 +177,14 @@ pub fn QNetworkContinuous::new(
   for h in 0..<hidden {
     let row : Array[Float] = Array::make(in_dim, 0.0F)
     for k in 0..<in_dim {
-      let (z, _) = @neuron.box_muller(rng)
+      let (z, _) = @core.box_muller(rng)
       row[k] = Float::from_double(z) * bound_w1
     }
     ignore(w1.set(h, row))
   }
   let w2 : Array[Float] = Array::make(hidden, 0.0F)
   for h in 0..<hidden {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     w2[h] = Float::from_double(z) * bound_w2
   }
   let b2 : Float = 0.0F
@@ -323,7 +323,7 @@ pub fn ddpg_select_action(
   let action = ddpg_select_action_eval(ddpg, state)
   let noisy : Array[Float] = Array::make(ddpg.actor.action_dim, 0.0F)
   for a in 0..<ddpg.actor.action_dim {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let noise = Float::from_double(z) * ddpg.exploration_noise
     let mut v = action[a] + noise
     if v < ddpg.actor.action_low {
@@ -420,7 +420,7 @@ pub fn train_ddpg(
   for ep in 0..<n_episodes {
     let mut state = Array::make(env_state_dim, 0.0F)
     for k in 0..<env_state_dim {
-      let (z, _) = @neuron.box_muller(rng)
+      let (z, _) = @core.box_muller(rng)
       state[k] = Float::from_double(z) * 0.5F
     }
     let mut done = false

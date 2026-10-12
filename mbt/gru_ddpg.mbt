@@ -107,7 +107,7 @@ pub fn ddpg_gru_select_action(
   let n = action.length()
   let noisy : Array[Float] = Array::make(n, 0.0F)
   for i in 0..<n {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let noise = Float::from_double(z) * noise_std
     let mut v = action[i] + noise
     if v < agent.actor.action_low {

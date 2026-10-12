@@ -206,7 +206,7 @@ pub fn SpikingSynapse::random_with_delays(
   syn.delays.clear()
   let mut k = 0
   while k < n {
-    let (z1, _) = @neuron.box_muller(rng)
+    let (z1, _) = @core.box_muller(rng)
     let d = d_mean + d_std * Float::from_double(z1)
     let clamped = if d < 0.0F { 0.0F } else { d }
     syn.delays.push(clamped)

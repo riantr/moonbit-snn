@@ -215,7 +215,7 @@ pub fn PrioritizedReplayBuffer::sample(
   // First pass: sample one leaf per segment, collect p_i.
   for k in 0..<batch_size {
     // Draw u ~ Uniform(0, 1) via box_muller (cheap, good enough).
-    let (u, _) = @neuron.box_muller(rng)
+    let (u, _) = @core.box_muller(rng)
     let u_pos = if u < 0.0 { -u } else { u }
     let u_norm = Float::from_double(u_pos)
     let s_lo = Float::from_int(k) * seg

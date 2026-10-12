@@ -212,7 +212,7 @@ pub fn lstm_identity_dataset(
     let x : Array[Float] = Array::make(d_x, 0.0F)
     let g : Array[Float] = Array::make(d_x, 0.0F)
     for i in 0..<d_x {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       x[i] = Float::from_double(z1)
       // target[t] = xs[(t-1) mod seq_len] (cyclic shift)
       let prev = if t > 0 { xs[t - 1] } else { x }

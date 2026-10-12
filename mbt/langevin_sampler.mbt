@@ -69,7 +69,7 @@ pub fn langevin_step(
   let pairs = n / 2
   let mut i = 0
   while i < pairs * 2 {
-    let (z1d, z2d) = @neuron.box_muller(rng)
+    let (z1d, z2d) = @core.box_muller(rng)
     noise[i] = Float::from_double(z1d)
     if i + 1 < n {
       noise[i + 1] = Float::from_double(z2d)
@@ -77,7 +77,7 @@ pub fn langevin_step(
     i = i + 2
   }
   if n % 2 == 1 {
-    let (z1d, _) = @neuron.box_muller(rng)
+    let (z1d, _) = @core.box_muller(rng)
     noise[n - 1] = Float::from_double(z1d)
   }
   let out : Array[Float] = Array::make(n, 0.0F)

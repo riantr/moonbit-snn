@@ -128,7 +128,7 @@ pub fn SparseMatrixCSR::random_with_rule(
     // keep the signed distribution. Callers that want strictly
     // positive weights can pass `mu` large enough.
     for j in 0..<cols {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       let w = mu + sigma * Float::from_double(z1)
       row[j] = w
     }

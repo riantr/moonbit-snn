@@ -206,14 +206,14 @@ pub fn MiniSpikeFormer::new(
   let std_pe = @core.sqrtf(2.0F / Float::from_int(patch_dim + d_model))
   let patch_w : Array[Float] = Array::make(patch_dim * d_model, 0.0F)
   for i in 0..<(patch_dim * d_model) {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     patch_w[i] = Float::from_double(z) * std_pe
   }
   let patch_b : Array[Float] = Array::make(d_model, 0.0F)
   // Class token: small random init.
   let class_token : Array[Float] = Array::make(d_model, 0.0F)
   for i in 0..<d_model {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     class_token[i] = Float::from_double(z) * 0.1F
   }
   // Positional embedding: Xavier-normal.
@@ -221,7 +221,7 @@ pub fn MiniSpikeFormer::new(
   let std_pos = @core.sqrtf(2.0F / Float::from_int(1 + d_model))
   let pos_weight : Array[Float] = Array::make(n_pos * d_model, 0.0F)
   for i in 0..<(n_pos * d_model) {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     pos_weight[i] = Float::from_double(z) * std_pos
   }
   // Spiking transformer block.
@@ -230,7 +230,7 @@ pub fn MiniSpikeFormer::new(
   let std_cls = @core.sqrtf(2.0F / Float::from_int(d_model + n_classes))
   let cls_w : Array[Float] = Array::make(d_model * n_classes, 0.0F)
   for i in 0..<(d_model * n_classes) {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     cls_w[i] = Float::from_double(z) * std_cls
   }
   let cls_b : Array[Float] = Array::make(n_classes, 0.0F)

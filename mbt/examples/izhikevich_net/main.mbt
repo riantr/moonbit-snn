@@ -54,11 +54,11 @@ fn main {
     let _ = step
     // 5randn(Ne) on E, 2randn(Ni) on I (Box-Muller).
     for j in 0..<n_e {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       e.i[j] = 5.0F * Float::from_double(z1)
     }
     for j in 0..<n_i {
-      let (z1, _) = @neuron.box_muller(rng)
+      let (z1, _) = @core.box_muller(rng)
       i.i[j] = 2.0F * Float::from_double(z1)
     }
     // Propagate spikes + integrate.

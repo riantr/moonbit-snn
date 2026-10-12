@@ -92,7 +92,7 @@ pub fn ContinuousReplayBuffer::sample(
   let next_states : Array[Float] = Array::make(batch_size * self.state_dim, 0.0F)
   let dones : Array[Float] = Array::make(batch_size, 0.0F)
   for k in 0..<batch_size {
-    let (z, _) = @neuron.box_muller(rng)
+    let (z, _) = @core.box_muller(rng)
     let u_pos = if z < 0.0 { -z } else { z }
     let idx = Float::from_double(u_pos * Double::from_int(self.size)).to_int()
     let safe = if idx < 0 {

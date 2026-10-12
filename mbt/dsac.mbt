@@ -47,16 +47,16 @@ pub fn LinearGaussianQNet::new(
     let row_mu : Array[Float] = []
     let row_s : Array[Float] = []
     for s in 0..<n_states {
-      let (u, _) = @neuron.box_muller(rng)
+      let (u, _) = @core.box_muller(rng)
       let jitter_mu = Float::from_double(u) * bound
-      let (u2, _) = @neuron.box_muller(rng)
+      let (u2, _) = @core.box_muller(rng)
       let jitter_s = Float::from_double(u2) * 0.01F
       row_mu.push(jitter_mu)
       row_s.push(jitter_s)
     }
     w_mu.push(row_mu)
     w_sigma.push(row_s)
-    let (u, _) = @neuron.box_muller(rng)
+    let (u, _) = @core.box_muller(rng)
     b_mu.push(Float::from_double(u) * 0.01F)
     b_sigma.push(0.0F) // log-space initial 0 → σ = 1
   }
@@ -134,7 +134,7 @@ pub fn dsac_soft_target(
     expected = expected + pi[i] * (q_min_mu - alpha * log_pi)
   }
   // Stochastic perturbation: a small Gaussian sample drawn per call.
-  let (z, _) = @neuron.box_muller(rng)
+  let (z, _) = @core.box_muller(rng)
   let eps = Float::from_double(z) * 0.1F
   reward + gamma * expected + eps
 }

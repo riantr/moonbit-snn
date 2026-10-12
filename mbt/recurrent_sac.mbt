@@ -176,7 +176,7 @@ pub fn recurrent_sac_rollout_episode(
   max_steps : Int,
   rng : @core.Xoshiro,
 ) -> RecurrentSacEpisode {
-  let (u_raw, _) = @neuron.box_muller(rng)
+  let (u_raw, _) = @core.box_muller(rng)
   let side = if u_raw > 0.0 { 1 } else { 0 }
   let env : CorridorEnv = CorridorEnv::{
     n_cells: env_n_cells,
