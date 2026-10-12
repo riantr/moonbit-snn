@@ -8,8 +8,8 @@
 fn main {
   let n = 1
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HHParameter::new()
-  let pop = @snn_mbt.HH::new(n, param, rng)
+  let param = @neuron.HHParameter::new()
+  let pop = @neuron.HH::new(n, param, rng)
 
   // 10 pA injection
   pop.i[0] = 10.0F
@@ -29,11 +29,11 @@ fn main {
 }
 
 ///|
-fn run_hh(pop : @snn_mbt.HH, total_steps : Int, dt : Float) -> Int {
+fn run_hh(pop : @neuron.HH, total_steps : Int, dt : Float) -> Int {
   let mut spikes : Int = 0
   for _ in 0..<total_steps {
     let prev_fire = pop.fire[0]
-    @snn_mbt.step_hh(pop, dt)
+    @neuron.step_hh(pop, dt)
     if pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

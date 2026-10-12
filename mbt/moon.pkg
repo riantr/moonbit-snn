@@ -8,4 +8,5 @@ import {
   "riantr/moonbit_image",
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/neuron",
 }

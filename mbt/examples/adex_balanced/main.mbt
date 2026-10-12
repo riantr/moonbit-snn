@@ -23,8 +23,8 @@
 ///|
 fn main {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.AdExParameter::with_vr(-55.0F)
-  let pop = @snn_mbt.AdEx::new(1, param, rng)
+  let param = @neuron.AdExParameter::with_vr(-55.0F)
+  let pop = @neuron.AdEx::new(1, param, rng)
 
   // Excitatory Poisson: ~1 Hz × 1000 neurons = 1000 events/s.
   // With μ=5 nS, ~5000 nS/s conductance. Approximate as a constant
@@ -56,12 +56,12 @@ fn main {
     @snn_mbt.stimulate_current_array(stim_exc)
     // Now apply inh by ADDING to current i (not overwriting).
     // Use box_muller to sample and add.
-    let (z1, _) = @snn_mbt.box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     pop.i[0] = pop.i[0] + (-50.0F) + 250.0F * Float::from_double(z1)
     let prev_fire = pop.fire[0]
-    @snn_mbt.adex_step_synapses(pop, dt)
-    @snn_mbt.adex_synaptic_current(pop)
-    @snn_mbt.step_adex(pop, dt)
+    @neuron.adex_step_synapses(pop, dt)
+    @neuron.adex_synaptic_current(pop)
+    @neuron.step_adex(pop, dt)
     if pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

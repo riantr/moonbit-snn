@@ -23,17 +23,17 @@ fn main {
   let dt = 0.125F
 
   // E population: AdExSinExp with LKD defaults + tonic drive 350 pA.
-  let e_param = @snn_mbt.AdExSinExpParameter::lkd_adex()
-  let e_pop = @snn_mbt.AdExSinExp::new(ne, e_param, rng)
+  let e_param = @neuron.AdExSinExpParameter::lkd_adex()
+  let e_pop = @neuron.AdExSinExp::new(ne, e_param, rng)
   for k in 0..<ne { e_pop.i[k] = 350.0F }
   // I population: same AdExSinExp but with El=-62mV (PV-like).
-  let i_param : @snn_mbt.AdExSinExpParameter = { ..@snn_mbt.AdExSinExpParameter::lkd_adex(), el: -62.0F }
-  let i_pop = @snn_mbt.AdExSinExp::new(ni, i_param, rng)
+  let i_param : @neuron.AdExSinExpParameter = { ..@neuron.AdExSinExpParameter::lkd_adex(), el: -62.0F }
+  let i_pop = @neuron.AdExSinExp::new(ni, i_param, rng)
   for k in 0..<ni { i_pop.i[k] = 250.0F }
 
   // Pre-population: IF (used as input spike source for the manual loop).
-  let e_pre = @snn_mbt.IF::new(ne, @snn_mbt.IFParameter::new(), rng)
-  let i_pre = @snn_mbt.IF::new(ni, @snn_mbt.IFParameter::new(), rng)
+  let e_pre = @neuron.IF::new(ne, @neuron.IFParameter::new(), rng)
+  let i_pre = @neuron.IF::new(ni, @neuron.IFParameter::new(), rng)
 
   // Connectivity (random Bernoulli, p=0.2; weights as in LKD).
   // EE connections: E_pre → E (μ=2.76 nS).
@@ -50,8 +50,8 @@ fn main {
   let i_stim = @snn_mbt.PoissonStimulusIF::new(i_pre, "ge", 0.0025F, rng)
 
   // Monitors for spike counting.
-  let fm_e = @snn_mbt.MonitorAdExSinExp::new_fire(e_pop, 0)
-  let fm_i = @snn_mbt.MonitorAdExSinExp::new_fire(i_pop, 0)
+  let fm_e = @neuron.MonitorAdExSinExp::new_fire(e_pop, 0)
+  let fm_i = @neuron.MonitorAdExSinExp::new_fire(i_pop, 0)
 
   // Manual sim loop (1s, dt=0.125ms → 8000 steps).
   let duration_ms = 1000.0F
@@ -71,15 +71,15 @@ fn main {
     @snn_mbt.route_pre_to_post(e_pre, i_pop, ie_w, true, false)
     @snn_mbt.route_pre_to_post(i_pre, i_pop, ii_w, false, true)
     // 3. Integrate AdExSinExp posts.
-    @snn_mbt.adex_sinexp_step_synapses(e_pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(e_pop)
-    @snn_mbt.step_adex_sinexp(e_pop, dt)
-    @snn_mbt.adex_sinexp_step_synapses(i_pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(i_pop)
-    @snn_mbt.step_adex_sinexp(i_pop, dt)
+    @neuron.adex_sinexp_step_synapses(e_pop, dt)
+    @neuron.adex_sinexp_synaptic_current(e_pop)
+    @neuron.step_adex_sinexp(e_pop, dt)
+    @neuron.adex_sinexp_step_synapses(i_pop, dt)
+    @neuron.adex_sinexp_synaptic_current(i_pop)
+    @neuron.step_adex_sinexp(i_pop, dt)
     // 4. Record monitor.
-    @snn_mbt.record_one_sinexp(fm_e, t_now)
-    @snn_mbt.record_one_sinexp(fm_i, t_now)
+    @neuron.record_one_sinexp(fm_e, t_now)
+    @neuron.record_one_sinexp(fm_i, t_now)
   }
 
   let e_hz = @snn_mbt.monitor_firing_rate(fm_e.data)

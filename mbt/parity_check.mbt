@@ -78,8 +78,8 @@ pub fn parity_hash_if_trajectory(
   seed : UInt64,
 ) -> Int {
   let rng = @core.Xoshiro::new(seed)
-  let param = IFParameter::new()
-  let pop = IF::new(1, param, rng)
+  let param = @neuron.IFParameter::new()
+  let pop = @neuron.IF::new(1, param, rng)
   // Set tonic current to all neurons.
   for i in 0..<pop.n {
     pop.i[i] = i_drive
@@ -87,7 +87,7 @@ pub fn parity_hash_if_trajectory(
   // Snapshot v + fire flag at every step.
   let snap : Array[Float] = []
   for _ in 0..<n_steps {
-    step_neuron(pop, dt)
+    @neuron.step_neuron(pop, dt)
     snap.push(pop.v[0])
     if pop.fire[0] {
       snap.push(1.0F)

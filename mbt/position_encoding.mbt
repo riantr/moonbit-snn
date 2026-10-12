@@ -70,7 +70,7 @@ pub fn PositionalEmbedding::new(
   let weight : Array[Float] = Array::make(max_len * d_model, 0.0F)
   let mut i = 0
   while i < max_len * d_model {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     weight[i] = Float::from_double(z1) * std
     i = i + 1
   }

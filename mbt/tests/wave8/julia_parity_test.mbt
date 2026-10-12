@@ -133,7 +133,7 @@ test "single_if_constant_current_matches_closed_form" {
   let current = 30.0F
   let v_eq = el + r * current
   let one_minus_alpha = 1.0F - alpha
-  let p = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), @core.Xoshiro::default())
+  let p = @neuron.IF::new(1, @neuron.IFParameter::new(), @core.Xoshiro::default())
   p.v[0] = el
   p.i[0] = current
   let n_steps = 100
@@ -153,9 +153,9 @@ test "single_if_constant_current_matches_closed_form" {
     p.gaba[0] = 0.0F
     p.gsyn_e[0] = 0.0F
     p.gsyn_i[0] = 0.0F
-    @snn_mbt.step_synapses(p, dt)
-    @snn_mbt.synaptic_current(p)
-    @snn_mbt.step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
     actual.push(p.v[0])
   }
   let r = @snn_mbt.compare_float_traces("single_if_30pA", actual, expected, 0.05F, 4096)
@@ -180,7 +180,7 @@ test "single_if_higher_current_matches_closed_form" {
   let current = 100.0F
   let v_eq = el + r * current
   let one_minus_alpha = 1.0F - alpha
-  let p = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), @core.Xoshiro::default())
+  let p = @neuron.IF::new(1, @neuron.IFParameter::new(), @core.Xoshiro::default())
   p.v[0] = el
   p.i[0] = current
   let n_steps = 200
@@ -200,9 +200,9 @@ test "single_if_higher_current_matches_closed_form" {
     p.gaba[0] = 0.0F
     p.gsyn_e[0] = 0.0F
     p.gsyn_i[0] = 0.0F
-    @snn_mbt.step_synapses(p, dt)
-    @snn_mbt.synaptic_current(p)
-    @snn_mbt.step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
     actual.push(p.v[0])
   }
   let r = @snn_mbt.compare_float_traces("single_if_100pA", actual, expected, 0.1F, 8192)

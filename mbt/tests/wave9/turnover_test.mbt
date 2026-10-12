@@ -49,8 +49,8 @@ test "ActivityDependentTurnover::new custom fraction" {
 ///|
 test "Turnover::new initial state" {
   let rng = @core.Xoshiro::default()
-  let pre_pop = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(4, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 2, 1, 1.0F)
@@ -76,8 +76,8 @@ test "Turnover::new initial state" {
 test "turnover_plasticity — τ=0 disables periodic gate" {
   // τ=0 → never fires (matches Julia default). No-op path.
   let rng = @core.Xoshiro::default()
-  let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 2, 2, 1.0F)
@@ -100,8 +100,8 @@ test "turnover_plasticity — τ=0 disables periodic gate" {
 test "turnover_plasticity — period_steps fires" {
   // τ = 0.5ms / dt = 0.125ms → period=4. Steps 0, 4, 8 fire.
   let rng = @core.Xoshiro::default()
-  let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 2, 2, 1.0F)
@@ -131,8 +131,8 @@ test "turnover_plasticity — period_steps fires" {
 test "turnover_plasticity — ActivityDependent pre/post trace decay" {
   // Verify the activity-trace update runs without firing.
   let rng = @core.Xoshiro::default()
-  let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 2, 2, 1.0F)
@@ -155,8 +155,8 @@ test "turnover_plasticity — ActivityDependent pre/post trace decay" {
 test "synaptic_turnover — no candidates when p_values > threshold" {
   // Set p_values[0] = 1.0 and threshold = 0.5 → 1.0 > 0.5 → skip.
   let rng = @core.Xoshiro::default()
-  let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 2, 2, 1.0F)
@@ -173,8 +173,8 @@ test "synaptic_turnover — rewires when p_values < threshold" {
   // Set p_values[0] = 0.0, p_values[1] = 1.0, threshold = 0.5.
   // Only s=0 is below threshold → rewire.
   let rng = @core.Xoshiro::default()
-  let pre_pop = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 1.0F)

@@ -81,8 +81,8 @@ test "PoissonLayer::with_conn: full parameter set" {
 ///|
 test "PoissonLayerStimulus::new: weight/connectivity shapes" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(4, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(4, if_param, rng)
   let param = @snn_mbt.PoissonLayer::with_n(2.0F, 3)
   let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
   if s.fire.length() != 3 {
@@ -103,8 +103,8 @@ test "PoissonLayerStimulus::new: weight/connectivity shapes" {
 test "PoissonLayerStimulus::new: Fixed weights = μ" {
   // Fixed: weights must all equal mu where connected (no σ contribution).
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(5, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(5, if_param, rng)
   let param = @snn_mbt.PoissonLayer::with_conn(
     2.0F, 4, [true, true, true, true], 3.0F, 1.0F, 1.0F, "Fixed", "Fixed",
   )
@@ -123,8 +123,8 @@ test "PoissonLayerStimulus::new: Fixed weights = μ" {
 ///|
 test "PoissonLayerStimulus::new: Normal weights have mean ≈ μ" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(10, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(10, if_param, rng)
   let active : Array[Bool] = {
     let a : Array[Bool] = []
     for _ in 0..<20 {
@@ -159,8 +159,8 @@ test "PoissonLayerStimulus::new: Normal weights have mean ≈ μ" {
 ///|
 test "stimulate_layer: zero rate → no fire, no conductance change" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(3, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(3, if_param, rng)
   let param = @snn_mbt.PoissonLayer::with_n(0.0F, 5)
   let s = @snn_mbt.PoissonLayerStimulus::new(param, post, "ge", rng)
   @snn_mbt.stimulate_layer(s, 0.0F, 0.125F)
@@ -179,8 +179,8 @@ test "stimulate_layer: zero rate → no fire, no conductance change" {
 ///|
 test "stimulate_layer: inactive source → no fire" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(2, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(2, if_param, rng)
   let active : Array[Bool] = [false, true]
   // 10 kHz on source 1 (high enough to fire ~every step at dt=0.125ms).
   // Rate is in internal units: 10000 Hz × hz_unit = 10000 × 0.001 = 10.0
@@ -204,8 +204,8 @@ test "stimulate_layer: inactive source → no fire" {
 ///|
 test "stimulate_layer: high rate fires, weight accumulates on post" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(1, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(1, if_param, rng)
   // 1 kHz → rate_internal = 1.0, lambda = 1.0 × 0.125 = 0.125 spikes/step.
   // Over 1000 steps (~125 ms) expect ~125 fires × weight 2.0 = ~250.
   let param = @snn_mbt.PoissonLayer::with_conn(
@@ -241,8 +241,8 @@ test "stimulate_layer: high rate fires, weight accumulates on post" {
 ///|
 test "stimulate_layer: writes to gaba for :gi sym" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let post = @snn_mbt.IF::new(2, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let post = @neuron.IF::new(2, if_param, rng)
   // 1 kHz on 2 sources → ~12.5% fire rate each.
   let param = @snn_mbt.PoissonLayer::with_conn(
     1000.0F * @core.hz, 2, [true, true], 1.5F, 0.0F, 1.0F, "Fixed", "Fixed",

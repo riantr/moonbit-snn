@@ -2,7 +2,7 @@
 
 ///|
 test "MorrisLecarParameter defaults" {
-  let p = @snn_mbt.MorrisLecarParameter::new()
+  let p = @neuron.MorrisLecarParameter::new()
   assert_eq(p.cm, 6.69F)
   assert_eq(p.el, -50.0F)
   assert_eq(p.ek, -70.0F)
@@ -22,9 +22,9 @@ test "MorrisLecarParameter defaults" {
 
 ///|
 test "MorrisLecar::new initial state" {
-  let param = @snn_mbt.MorrisLecarParameter::new()
+  let param = @neuron.MorrisLecarParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.MorrisLecar::new(3, param, rng)
+  let p = @neuron.MorrisLecar::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.v[k], -52.14F)
     assert_eq(p.w[k], 0.2F)
@@ -36,11 +36,11 @@ test "MorrisLecar::new initial state" {
 
 ///|
 test "MorrisLecar one step is stable" {
-  let param = @snn_mbt.MorrisLecarParameter::new()
+  let param = @neuron.MorrisLecarParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.MorrisLecar::new(1, param, rng)
+  let p = @neuron.MorrisLecar::new(1, param, rng)
   p.i[0] = 100.0F
-  @snn_mbt.step_ml(p, 0.125F)
+  @neuron.step_ml(p, 0.125F)
   // Just check v changed and didn't blow up
   if p.v[0] == -52.14F {
     fail("v did not change after one step")

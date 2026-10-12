@@ -24,9 +24,9 @@ fn main {
   let dt = 0.125F
 
   // IF parameters with tonic drive to overcome El→Vt gap.
-  let param = @snn_mbt.IFParameter::new()
-  let e_pop = @snn_mbt.IF::new(ne, param, rng)
-  let i_pop = @snn_mbt.IF::new(ni, param, rng)
+  let param = @neuron.IFParameter::new()
+  let e_pop = @neuron.IF::new(ne, param, rng)
+  let i_pop = @neuron.IF::new(ni, param, rng)
   for k in 0..<ne { e_pop.i[k] = 350.0F }
   for k in 0..<ni { i_pop.i[k] = 250.0F }
 

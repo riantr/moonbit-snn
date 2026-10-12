@@ -2,7 +2,7 @@
 
 ///|
 test "IFCANAHParameter::new defaults match Julia" {
-  let p = @snn_mbt.IFCANAHParameter::new()
+  let p = @neuron.IFCANAHParameter::new()
   assert_eq(p.area, 5.0e-4F)
   assert_eq(p.c, 1.0F)
   assert_eq(p.vt, -50.0F)
@@ -27,7 +27,7 @@ test "IFCANAHParameter::new defaults match Julia" {
 
 ///|
 test "IFCANAHP::new — shapes and zero-initialised state" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=4)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=4)
   assert_eq(p.n, 4)
   assert_eq(p.v.length(), 4)
   assert_eq(p.fire.length(), 4)
@@ -48,9 +48,9 @@ test "IFCANAHP::new — shapes and zero-initialised state" {
 
 ///|
 test "update_neuron_ifcanahp — Ca drive toward Ca0" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(p.ca.set(0, 1.0F)) // start high
-  @snn_mbt.update_neuron_ifcanahp(p, p.param, 0.125F)
+  @neuron.update_neuron_ifcanahp(p, p.param, 0.125F)
   // ca_new = (Ca0 - ca) / τCa = (0.1 - 1.0) / 100 = -0.009
   // (NOT euler decay; Julia's exact form)
   assert_eq(p.ca[0] < 0.0F && p.ca[0] > -0.01F, true)
@@ -58,9 +58,9 @@ test "update_neuron_ifcanahp — Ca drive toward Ca0" {
 
 ///|
 test "update_neuron_ifcanahp — CAN/AHP gating from Ca" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(p.ca.set(0, 1.0F)) // Ca above Ca0=0.1
-  @snn_mbt.update_neuron_ifcanahp(p, p.param, 0.125F)
+  @neuron.update_neuron_ifcanahp(p, p.param, 0.125F)
   // ca_new = (Ca0 - 1.0) / τCa = (0.1 - 1.0) / 100 = -0.009
   // p_can = (1-0)*(α_can*ca_new + β_can) - β_can
   //       = (0.03125*(-0.009) + 0.025) - 0.025 = -0.00028125
@@ -75,7 +75,7 @@ test "update_neuron_ifcanahp — CAN/AHP gating from Ca" {
 
 ///|
 test "update_neuron_ifcanahp — membrane update with leak" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(p.i.set(0, 1000.0F)) // strong tonic current
   // Leak current: I_L = gl * area * (v - VL)
   //             = 50000 * 5e-4 * (-65 - -70) = 25 * 5 = 125
@@ -90,7 +90,7 @@ test "update_neuron_ifcanahp — membrane update with leak" {
   // model needs dt=1ms or smaller τ_abs to be stable.
   // Test only that the calculation produces finite values.
   ignore(p.i.set(0, 50.0F)) // smaller
-  @snn_mbt.update_neuron_ifcanahp(p, p.param, 0.001F) // dt = 1us — small
+  @neuron.update_neuron_ifcanahp(p, p.param, 0.001F) // dt = 1us — small
   // v should not be NaN
   let finite = p.v[0] == p.v[0] // NaN != NaN
   assert_eq(finite, true)
@@ -98,9 +98,9 @@ test "update_neuron_ifcanahp — membrane update with leak" {
 
 ///|
 test "update_spike_ifcanahp — fire and reset" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(p.v.set(0, -49.0F)) // above Vt=-50
-  @snn_mbt.update_spike_ifcanahp(p, p.param, 0.125F)
+  @neuron.update_spike_ifcanahp(p, p.param, 0.125F)
   assert_eq(p.fire[0], true)
   assert_eq(p.v[0], -65.0F)
   // Ca bump: ca was 0, now 0.2
@@ -111,9 +111,9 @@ test "update_spike_ifcanahp — fire and reset" {
 
 ///|
 test "update_spike_ifcanahp — no fire when v <= Vt" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(p.v.set(0, -55.0F))
-  @snn_mbt.update_spike_ifcanahp(p, p.param, 0.125F)
+  @neuron.update_spike_ifcanahp(p, p.param, 0.125F)
   assert_eq(p.fire[0], false)
   assert_eq(p.v[0], -55.0F)
   assert_eq(p.tabs[0], 0.0F)
@@ -124,13 +124,13 @@ test "update_spike_ifcanahp — no fire when v <= Vt" {
 
 ///|
 test "integrate_ifcanahp — full step is finite" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=2)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=2)
   ignore(p.i.set(0, 100.0F))
   ignore(p.i.set(1, 50.0F))
   // 100 steps at dt=1us (very small to keep stable)
   let mut step : Int = 0
   while step < 100 {
-    @snn_mbt.integrate_ifcanahp(p, p.param, 0.001F)
+    @neuron.integrate_ifcanahp(p, p.param, 0.001F)
     step = step + 1
   }
   // All values must be finite
@@ -142,10 +142,10 @@ test "integrate_ifcanahp — full step is finite" {
 
 ///|
 test "integrate_ifcanahp — CAN/AHP off (default g_can=0, g_ahp=0)" {
-  let p : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let p : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(p.i.set(0, 100.0F))
   let v_before = p.v[0]
-  @snn_mbt.integrate_ifcanahp(p, p.param, 0.001F)
+  @neuron.integrate_ifcanahp(p, p.param, 0.001F)
   // Even with g_can=g_ahp=0, leak + tonic I should change v
   let _ = v_before
   assert_eq(p.v[0] != -65.0F, true)
@@ -155,7 +155,7 @@ test "integrate_ifcanahp — CAN/AHP off (default g_can=0, g_ahp=0)" {
 test "ifcanahp_example_smoke — 100 neurons, 100ms sim produces finite state" {
   // Replicates the scenario in examples/if_canahp/main.mbt.
   let n = 100
-  let pop : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=n)
+  let pop : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=n)
   for k in 0..<n {
     ignore(pop.i.set(k, 50.0F))
   }
@@ -176,12 +176,12 @@ test "ifcanahp_example_stable_dt — smaller dt keeps v bounded" {
   // With smaller dt, default params + I=50 keeps v in a reasonable range
   // (matches Julia's requirement to use dt=1us or smaller for default
   // CAN/AHP LIF parameters).
-  let pop : @snn_mbt.IFCANAHP = @snn_mbt.IFCANAHP::new(n=1)
+  let pop : @neuron.IFCANAHP = @neuron.IFCANAHP::new(n=1)
   ignore(pop.i.set(0, 50.0F))
   let dt = 0.001F
   let mut step : Int = 0
   while step < 1000 {
-    @snn_mbt.integrate_ifcanahp(pop, pop.param, dt)
+    @neuron.integrate_ifcanahp(pop, pop.param, dt)
     step = step + 1
   }
   // v should still be finite (not NaN, not Inf).

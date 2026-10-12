@@ -12,7 +12,7 @@
 
 ///|
 test "ExtendedIFParameter::new defaults match Julia" {
-  let p = @snn_mbt.ExtendedIFParameter::new()
+  let p = @neuron.ExtendedIFParameter::new()
   assert_eq(p.cm, 250.0F)
   assert_eq(p.vt, -40.0F)
   assert_eq(p.vr, -65.0F)
@@ -28,7 +28,7 @@ test "ExtendedIFParameter::new defaults match Julia" {
 
 ///|
 test "ExtendedIFParameter::custom preserves all 11 fields" {
-  let p = @snn_mbt.ExtendedIFParameter::custom(
+  let p = @neuron.ExtendedIFParameter::custom(
     cm=100.0F, vt=-45.0F, vr=-60.0F, el=-65.0F, gl=20.0F,
     tau_e=3.0F, tau_i=10.0F, e_i=-80.0F, e_e=5.0F,
     tau_abs=2.0F, alpha=0.5F,
@@ -40,7 +40,7 @@ test "ExtendedIFParameter::custom preserves all 11 fields" {
 
 ///|
 test "ExtendedIF::new — shapes and zero-initialised state" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=10)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=10)
   assert_eq(p.n, 10)
   assert_eq(p.v.length(), 10)
   assert_eq(p.g_exc.length(), 10)
@@ -63,11 +63,11 @@ test "ExtendedIF::new — shapes and zero-initialised state" {
 
 ///|
 test "update_synapses_extended_if — 3-buffer exponential decay" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=4)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=4)
   ignore(p.g_exc.set(0, 1.0F))
   ignore(p.g_pv.set(1, 1.0F))
   ignore(p.g_sst.set(2, 1.0F))
-  @snn_mbt.update_synapses_extended_if(p, p.param, 0.1F)
+  @neuron.update_synapses_extended_if(p, p.param, 0.1F)
   // g_exc[0] after 0.1ms with τe=6: 1.0 + 0.1 * (-1.0/6) = 0.98333...
   assert_eq(p.g_exc[0] > 0.98F && p.g_exc[0] < 0.99F, true)
   // g_pv[1] after 0.1ms with τi=20: 1.0 + 0.1 * (-1.0/20) = 0.995
@@ -81,13 +81,13 @@ test "update_synapses_extended_if — 3-buffer exponential decay" {
 
 ///|
 test "update_neuron_extended_if — tonic current drives v up" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=2)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=2)
   ignore(p.i.set(0, 1000.0F))
   // dt = 0.125ms, Cm = 250
   // dv = (gl*(El-v) + 0 + 0 + 0 + I) / Cm = (10*(-70-(-65)) + 1000) / 250
   //    = (10*-5 + 1000) / 250 = 950/250 = 3.8
   // v_new = -65 + 0.125 * 3.8 = -65 + 0.475 = -64.525
-  @snn_mbt.update_neuron_extended_if(p, p.param, 0.125F)
+  @neuron.update_neuron_extended_if(p, p.param, 0.125F)
   // First step: v should rise from vr=-65 toward Vt=-40 due to I=1000
   assert_eq(p.v[0] > -65.0F, true)
   assert_eq(p.v[0] < -60.0F, true)
@@ -99,9 +99,9 @@ test "update_neuron_extended_if — tonic current drives v up" {
 
 ///|
 test "update_neuron_extended_if — fire and reset when v > Vt" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=1)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=1)
   ignore(p.v.set(0, -39.0F))
-  @snn_mbt.update_neuron_extended_if(p, p.param, 0.125F)
+  @neuron.update_neuron_extended_if(p, p.param, 0.125F)
   // v starts at -39 > Vt=-40, fire=true, reset to Vr=-65
   assert_eq(p.fire[0], true)
   assert_eq(p.v[0], -65.0F)
@@ -111,13 +111,13 @@ test "update_neuron_extended_if — fire and reset when v > Vt" {
 
 ///|
 test "update_neuron_extended_if — refractory countdown skips step" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=1)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=1)
   ignore(p.v.set(0, -39.0F))
   // first step fires
-  @snn_mbt.update_neuron_extended_if(p, p.param, 0.125F)
+  @neuron.update_neuron_extended_if(p, p.param, 0.125F)
   assert_eq(p.fire[0], true)
   // second step: tabs=39 > 0, fire=false, v stays at -65
-  @snn_mbt.update_neuron_extended_if(p, p.param, 0.125F)
+  @neuron.update_neuron_extended_if(p, p.param, 0.125F)
   assert_eq(p.fire[0], false)
   assert_eq(p.v[0], -65.0F)
   assert_eq(p.tabs[0], 39.0F)
@@ -125,9 +125,9 @@ test "update_neuron_extended_if — refractory countdown skips step" {
 
 ///|
 test "update_neuron_extended_if — α-gating (dendritic interaction)" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=1)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=1)
   // Reset α to non-zero + set conductances
-  let param = @snn_mbt.ExtendedIFParameter::custom(
+  let param = @neuron.ExtendedIFParameter::custom(
     cm=250.0F, vt=-40.0F, vr=-65.0F, el=-70.0F, gl=10.0F,
     tau_e=6.0F, tau_i=20.0F, e_i=-75.0F, e_e=0.0F,
     tau_abs=5.0F, alpha=1.0F,
@@ -136,7 +136,7 @@ test "update_neuron_extended_if — α-gating (dendritic interaction)" {
   ignore(p2.g_exc.set(0, 5.0F))
   ignore(p2.g_sst.set(0, 4.0F))
   ignore(p2.i.set(0, 0.0F))
-  @snn_mbt.update_neuron_extended_if(p2, param, 0.125F)
+  @neuron.update_neuron_extended_if(p2, param, 0.125F)
   // dv = (10*(-70-(-65)) + 5*(0-(-65)) + 0 + 4*(-75-(-65))
   //       - 1*5*4*(0-(-65)) + 0) / 250
   //    = (10*-5 + 5*65 + 4*-10 + 1300) / 250
@@ -162,10 +162,10 @@ test "update_neuron_extended_if — α-gating (dendritic interaction)" {
 
 ///|
 test "integrate_extended_if — runs both phases end-to-end" {
-  let p : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=2)
+  let p : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=2)
   ignore(p.g_exc.set(0, 10.0F))
   ignore(p.i.set(0, 500.0F))
-  @snn_mbt.integrate_extended_if(p, p.param, 0.125F)
+  @neuron.integrate_extended_if(p, p.param, 0.125F)
   // After integrate: synapses decayed + neuron updated
   // g_exc[0]: 10 + 0.125*(-10/6) = 10 - 0.2083 = 9.79
   assert_eq(p.g_exc[0] > 9.7F && p.g_exc[0] < 9.9F, true)

@@ -13,7 +13,7 @@
 /// `recs` is a list of (key, snapshot) pairs; the simplest monitor
 /// stores an Array[Float] per (key, neuron) pair.
 pub struct Monitor {
-  pop : IF
+  pop : @neuron.IF
   sym : String
   // For :fire, this is one Float per (record_step, neuron).
   // For :v, same.
@@ -30,7 +30,7 @@ pub struct Monitor {
 
 ///|
 /// Initialise a monitor for the `v` variable of a specific neuron.
-pub fn Monitor::new_v(pop : IF, neuron : Int) -> Monitor {
+pub fn Monitor::new_v(pop : @neuron.IF, neuron : Int) -> Monitor {
   { pop, sym: "v", data: [], times: [], neuron, rec_step: 1, step_count: 0 }
 }
 
@@ -39,7 +39,7 @@ pub fn Monitor::new_v(pop : IF, neuron : Int) -> Monitor {
 /// `sr_hz` is the sample rate in Hz (internal units: Hz = 0.001,
 /// so 1 kHz = 1.0F in internal units). With dt=0.125F ms,
 /// `sr_hz=1.0F` (1 kHz) gives rec_step = 8.
-pub fn Monitor::new_v_sr(pop : IF, neuron : Int, sr_hz : Float) -> Monitor {
+pub fn Monitor::new_v_sr(pop : @neuron.IF, neuron : Int, sr_hz : Float) -> Monitor {
   // rec_step = 1 / (sr * dt_sim) in simulation steps.
   // sr is in internal Hz units (1 kHz = 1.0F), dt_sim = 0.125F ms.
   // For 1 kHz: 1 / (1.0 * 0.125) = 8.
@@ -52,7 +52,7 @@ pub fn Monitor::new_v_sr(pop : IF, neuron : Int, sr_hz : Float) -> Monitor {
 
 ///|
 /// Initialise a monitor for the `fire` variable of a specific neuron.
-pub fn Monitor::new_fire(pop : IF, neuron : Int) -> Monitor {
+pub fn Monitor::new_fire(pop : @neuron.IF, neuron : Int) -> Monitor {
   { pop, sym: "fire", data: [], times: [], neuron, rec_step: 1, step_count: 0 }
 }
 
@@ -77,7 +77,7 @@ pub fn record_one(m : Monitor, t : Float) -> Unit {
 ///|
 /// A simple model container: one population + a list of connections.
 pub(all) struct Model {
-  pops : Array[IF]
+  pops : Array[@neuron.IF]
   conns : Array[SpikingSynapse]
   monitors : Array[Monitor]
 }
@@ -106,9 +106,9 @@ pub fn step_model(model : Model, time : @core.Time) -> Unit {
   // 2. integrate! : step each population
   let dt = time.dt
   for p in model.pops {
-    step_synapses(p, dt)
-    synaptic_current(p)
-    step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
   }
   // 3. record!
   for m in model.monitors {
@@ -134,7 +134,7 @@ pub fn sim_for(model : Model, duration : Float) -> Unit {
 ///|
 /// A model containing AdEx populations.
 pub(all) struct AdExModel {
-  pops : Array[AdEx]
+  pops : Array[@neuron.AdEx]
   conns : Array[SpikingSynapseAdEx]
   monitors : Array[MonitorAdEx]
 }
@@ -142,7 +142,7 @@ pub(all) struct AdExModel {
 ///|
 /// A monitor for an AdEx population.
 pub struct MonitorAdEx {
-  pop : AdEx
+  pop : @neuron.AdEx
   sym : String
   data : Array[Float]
   times : Array[Float]
@@ -150,7 +150,7 @@ pub struct MonitorAdEx {
 }
 
 ///|
-pub fn MonitorAdEx::new_v(pop : AdEx, neuron : Int) -> MonitorAdEx {
+pub fn MonitorAdEx::new_v(pop : @neuron.AdEx, neuron : Int) -> MonitorAdEx {
   { pop, sym: "v", data: [], times: [], neuron }
 }
 
@@ -176,14 +176,14 @@ pub fn record_one_adex(m : MonitorAdEx, t : Float) -> Unit {
 /// SNN distinguishes :he from :ge via different rise-time constants,
 /// but our simplified DoubleExp model uses the same path for both.
 pub struct SpikingSynapseAdEx {
-  pre : AdEx
-  post : AdEx
+  pre : @neuron.AdEx
+  post : @neuron.AdEx
   sym : String
   matrix : SparseMatrixCSR
 }
 
 ///|
-pub fn SpikingSynapseAdEx::new(pre : AdEx, post : AdEx, sym : String) -> SpikingSynapseAdEx {
+pub fn SpikingSynapseAdEx::new(pre : @neuron.AdEx, post : @neuron.AdEx, sym : String) -> SpikingSynapseAdEx {
   let matrix = SparseMatrixCSR::empty(pre.n, post.n)
   { pre, post, sym, matrix }
 }
@@ -193,8 +193,8 @@ pub fn SpikingSynapseAdEx::new(pre : AdEx, post : AdEx, sym : String) -> Spiking
 /// `mu`/`sigma` control the Normal weight distribution;
 /// `p` is the per-edge Bernoulli connection probability.
 pub fn SpikingSynapseAdEx::random(
-  pre : AdEx,
-  post : AdEx,
+  pre : @neuron.AdEx,
+  post : @neuron.AdEx,
   sym : String,
   mu : Float,
   sigma : Float,
@@ -208,8 +208,8 @@ pub fn SpikingSynapseAdEx::random(
 ///|
 /// Build a SpikingSynapseAdEx with an explicit connection rule.
 pub fn SpikingSynapseAdEx::random_with_rule(
-  pre : AdEx,
-  post : AdEx,
+  pre : @neuron.AdEx,
+  post : @neuron.AdEx,
   sym : String,
   mu : Float,
   sigma : Float,
@@ -247,9 +247,9 @@ pub fn step_adex_model(model : AdExModel, time : @core.Time) -> Unit {
   }
   let dt = time.dt
   for p in model.pops {
-    adex_step_synapses(p, dt)
-    adex_synaptic_current(p)
-    step_adex(p, dt)
+    @neuron.adex_step_synapses(p, dt)
+    @neuron.adex_synaptic_current(p)
+    @neuron.step_adex(p, dt)
   }
   for m in model.monitors {
     record_one_adex(m, time.t[0])

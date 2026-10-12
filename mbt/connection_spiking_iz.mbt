@@ -17,14 +17,14 @@
 /// determining E/I, but we keep the exc/inc split for clarity and
 /// to match our existing convention.)
 pub struct SpikingSynapseIZ {
-  pre : IZ
-  post : IZ
+  pre : @neuron.IZ
+  post : @neuron.IZ
   sym : String
   matrix : SparseMatrixCSR
 }
 
 ///|
-pub fn SpikingSynapseIZ::new(pre : IZ, post : IZ, sym : String) -> SpikingSynapseIZ {
+pub fn SpikingSynapseIZ::new(pre : @neuron.IZ, post : @neuron.IZ, sym : String) -> SpikingSynapseIZ {
   let matrix = SparseMatrixCSR::empty(pre.n, post.n)
   { pre, post, sym, matrix }
 }
@@ -32,8 +32,8 @@ pub fn SpikingSynapseIZ::new(pre : IZ, post : IZ, sym : String) -> SpikingSynaps
 ///|
 /// Build a SpikingSynapseIZ with random CSR connectivity.
 pub fn SpikingSynapseIZ::random(
-  pre : IZ,
-  post : IZ,
+  pre : @neuron.IZ,
+  post : @neuron.IZ,
   sym : String,
   mu : Float,
   sigma : Float,

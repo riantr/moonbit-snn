@@ -17,7 +17,7 @@
 
 ///|
 test "IFParameter::new: defaults match Julia + custom via IFParameter::custom" {
-  let p = @snn_mbt.IFParameter::new()
+  let p = @neuron.IFParameter::new()
   // Julia: hasproperty(p, :Vt), :Vr, :El, :τm. MoonBit fields: vt, vr, el, tm.
   if p.vt != -50.0F {
     fail("Vt (vt) = \{p.vt}, expected -50.0")
@@ -32,7 +32,7 @@ test "IFParameter::new: defaults match Julia + custom via IFParameter::custom" {
     fail("τm (tm) = \{p.tm}, expected 15.0")
   }
   // Custom values via the IFParameter::custom constructor.
-  let p2 = @snn_mbt.IFParameter::custom(20.0F, -45.0F, -65.0F, -60.0F, 1.0F)
+  let p2 = @neuron.IFParameter::custom(20.0F, -45.0F, -65.0F, -60.0F, 1.0F)
   if p2.vt != -45.0F {
     fail("custom Vt = \{p2.vt}, expected -45")
   }
@@ -46,7 +46,7 @@ test "IFParameter::new: defaults match Julia + custom via IFParameter::custom" {
 
 ///|
 test "AdExParameter::new: defaults match Julia" {
-  let p = @snn_mbt.AdExParameter::new()
+  let p = @neuron.AdExParameter::new()
   // Julia: p.C ≈ 281pF, p.gl ≈ 40nS, p.Vt ≈ -50mV, p.b ≈ 80.5pA.
   if (p.c - 281.0F).abs() > 0.1F {
     fail("C (c) = \{p.c}, expected ≈ 281.0")
@@ -64,7 +64,7 @@ test "AdExParameter::new: defaults match Julia" {
 
 ///|
 test "AdExParameter::with_vr: custom Vr" {
-  let p = @snn_mbt.AdExParameter::with_vr(-65.0F)
+  let p = @neuron.AdExParameter::with_vr(-65.0F)
   if p.vr != -65.0F {
     fail("custom Vr = \{p.vr}, expected -65")
   }
@@ -76,7 +76,7 @@ test "AdExParameter::with_vr: custom Vr" {
 
 ///|
 test "IZParameter::new / rs / fs: defaults match Julia" {
-  let p = @snn_mbt.IZParameter::new()
+  let p = @neuron.IZParameter::new()
   // Julia: hasproperty(p, :a), :b, :c, :d. MoonBit fields: a, b, c, d.
   if p.a != 0.01F {
     fail("a = \{p.a}, expected 0.01")
@@ -92,8 +92,8 @@ test "IZParameter::new / rs / fs: defaults match Julia" {
   }
   // IZParameter::rs and fs return different parameter sets; verify
   // they're not the same as new().
-  let rs = @snn_mbt.IZParameter::rs()
-  let fs = @snn_mbt.IZParameter::fs()
+  let rs = @neuron.IZParameter::rs()
+  let fs = @neuron.IZParameter::fs()
   if rs.a == p.a && rs.b == p.b && rs.c == p.c {
     fail("rs should differ from new() defaults")
   }
@@ -104,7 +104,7 @@ test "IZParameter::new / rs / fs: defaults match Julia" {
 
 ///|
 test "MorrisLecarParameter::new: defaults match Julia" {
-  let p = @snn_mbt.MorrisLecarParameter::new()
+  let p = @neuron.MorrisLecarParameter::new()
   // Julia: hasproperty(p, :Cm), :El, :gCa, :gK. MoonBit: cm, el, gca, gk.
   if p.cm != 6.69F {
     fail("Cm (cm) = \{p.cm}, expected 6.69")
@@ -122,7 +122,7 @@ test "MorrisLecarParameter::new: defaults match Julia" {
 
 ///|
 test "HetRecParameter::new: defaults match Julia" {
-  let p = @snn_mbt.HetRecParameter::new()
+  let p = @neuron.HetRecParameter::new()
   // Julia: p.Nd=2, p.τm=20ms, p.τrate=100ms, p.steepness=1.0, p.τabs=5ms.
   if p.nd != 2 {
     fail("Nd (nd) = \{p.nd}, expected 2")
@@ -143,7 +143,7 @@ test "HetRecParameter::new: defaults match Julia" {
 
 ///|
 test "PostSpike::new: defaults match Julia" {
-  let sp = @snn_mbt.PostSpike::new()
+  let sp = @neuron.PostSpike::new()
   // Julia PostSpike has At, τA, τabs fields. MoonBit IF PostSpike
   // has tabs_const (τabs). Tripod uses AdExPostSpike with all three
   // fields; verify the IF PostSpike has the τabs field.
@@ -156,7 +156,7 @@ test "PostSpike::new: defaults match Julia" {
 test "AdExPostSpike (Tripod variant): all PostSpike fields present" {
   // The Tripod population uses AdExPostSpike which has the
   // Julia PostSpike fields: At, τA, plus AP_membrane, τabs, up.
-  let sp = @snn_mbt.AdExPostSpike::new()
+  let sp = @neuron.AdExPostSpike::new()
   if sp.at != 0.0F {
     fail("At (at) = \{sp.at}, expected 0.0")
   }
@@ -174,9 +174,9 @@ test "IF has DoubleExpSynapse-style scalar time constants" {
   // on the IF struct (DoubleExpSynapse-style). SingleExpSynapse is
   // the default IF constructor behaviour. Verify the time constants
   // exist with their Julia defaults.
-  let p = @snn_mbt.IFParameter::new()
+  let p = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.IF::new(2, p, rng)
+  let pop = @neuron.IF::new(2, p, rng)
   if pop.tre != 1.0F {
     fail("tre (τr of excitatory) = \{pop.tre}, expected 1.0")
   }

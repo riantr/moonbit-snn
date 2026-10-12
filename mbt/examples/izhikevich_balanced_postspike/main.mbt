@@ -21,14 +21,14 @@ fn main {
 
   // Excitatory population: 100 RS IZ neurons with refractory.
   let n_e = 100
-  let e_pop = @snn_mbt.IZ::init_with_postspike(
-    n_e, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let e_pop = @neuron.IZ::init_with_postspike(
+    n_e, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
 
   // Inhibitory population: 25 FS IZ neurons with refractory.
   let n_i = 25
-  let i_pop = @snn_mbt.IZ::init_with_postspike(
-    n_i, @snn_mbt.IZParameter::fs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let i_pop = @neuron.IZ::init_with_postspike(
+    n_i, @neuron.IZParameter::fs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
 
   println("izhikevich_balanced_postspike.mbt: E/I IZ (100E + 25I) + 1 kHz Poisson")
@@ -63,8 +63,8 @@ fn main {
         i_pop.gi[j] = i_pop.gi[j] + 0.5F
       }
     }
-    @snn_mbt.step_iz_with_postspike(e_pop, dt)
-    @snn_mbt.step_iz_with_postspike(i_pop, dt)
+    @neuron.step_iz_with_postspike(e_pop, dt)
+    @neuron.step_iz_with_postspike(i_pop, dt)
     // Cross-talk: when an I neuron fires, send weak inhibitory to E.
     for j in 0..<n_i {
       if i_pop.fire[j] {

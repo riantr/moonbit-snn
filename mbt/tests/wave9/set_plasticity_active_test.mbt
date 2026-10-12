@@ -41,8 +41,8 @@ test "stdp_step respects vars.active=false" {
   // Verify the active-gate at the top of stdp_step: with active=false,
   // weights should not change.
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   // Snapshot weight.

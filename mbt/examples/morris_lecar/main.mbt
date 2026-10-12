@@ -7,8 +7,8 @@
 fn main {
   let n = 1
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.MorrisLecarParameter::new()
-  let pop = @snn_mbt.MorrisLecar::new(n, param, rng)
+  let param = @neuron.MorrisLecarParameter::new()
+  let pop = @neuron.MorrisLecar::new(n, param, rng)
 
   // 100 pA injection
   pop.i[0] = 100.0F
@@ -24,11 +24,11 @@ fn main {
 }
 
 ///|
-fn run_ml(pop : @snn_mbt.MorrisLecar, total_steps : Int, dt : Float) -> Int {
+fn run_ml(pop : @neuron.MorrisLecar, total_steps : Int, dt : Float) -> Int {
   let mut spikes : Int = 0
   for _ in 0..<total_steps {
     let prev_fire = pop.fire[0]
-    @snn_mbt.step_ml(pop, dt)
+    @neuron.step_ml(pop, dt)
     if pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

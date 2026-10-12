@@ -12,10 +12,10 @@
 ///|
 test "CompartmentSynapseBall::random: matrix shape and target" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(5, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(3, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(5, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(3, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseBall::random(pre, post, "ge", "soma", 1.0F, 0.0F, 0.5F, rng)
   if c.matrix.nnz() == 0 {
     fail("expected non-zero connections (p=0.5, 5 pre × 3 post)")
@@ -31,10 +31,10 @@ test "CompartmentSynapseBall::random: matrix shape and target" {
 ///|
 test "CompartmentSynapseBall: pre-fire onto :soma → glu_s accumulates" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(2, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(2, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseBall::random(pre, post, "ge", "soma", 2.0F, 0.0F, 1.0F, rng)
   // Force pre[0] to fire.
   pre.fire[0] = true
@@ -62,10 +62,10 @@ test "CompartmentSynapseBall: pre-fire onto :soma → glu_s accumulates" {
 ///|
 test "CompartmentSynapseBall: target=:d routes to glu_d not glu_s" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(2, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(2, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseBall::random(pre, post, "ge", "d", 1.5F, 0.0F, 1.0F, rng)
   pre.fire[0] = true
   @snn_mbt.forward_compartment_ball(c, 0.0F)
@@ -83,10 +83,10 @@ test "CompartmentSynapseBall: target=:d routes to glu_d not glu_s" {
 ///|
 test "CompartmentSynapseBall: :gi sym routes to gaba buffers" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(2, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(2, soma_param, rng)
   let c_s = @snn_mbt.CompartmentSynapseBall::random(pre, post, "gi", "soma", 1.0F, 0.0F, 1.0F, rng)
   let c_d = @snn_mbt.CompartmentSynapseBall::random(pre, post, "gi", "d", 2.0F, 0.0F, 1.0F, rng)
   pre.fire[0] = true
@@ -107,10 +107,10 @@ test "CompartmentSynapseBall: :gi sym routes to gaba buffers" {
 ///|
 test "CompartmentSynapseBall: non-firing pre → no conductance change" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(2, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(3, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(2, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(3, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseBall::random(pre, post, "ge", "soma", 1.0F, 0.0F, 1.0F, rng)
   // pre does not fire
   @snn_mbt.forward_compartment_ball(c, 0.0F)
@@ -127,10 +127,10 @@ test "CompartmentSynapseBall: non-firing pre → no conductance change" {
 ///|
 test "CompartmentSynapseBall: pending queue delays delivery" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(1, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseBall::random(pre, post, "ge", "soma", 5.0F, 0.0F, 1.0F, rng)
   // Inject a 5ms delay on the single connection.
   c.set_delays([5.0F])
@@ -155,10 +155,10 @@ test "CompartmentSynapseBall: pending queue delays delivery" {
 ///|
 test "CompartmentSynapseTripod: target=:d2 routes to glu_d2" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.Tripod::new(2, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.Tripod::new(2, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseTripod::random(pre, post, "ge", "d2", 2.5F, 0.0F, 1.0F, rng)
   pre.fire[0] = true
   @snn_mbt.forward_compartment_tripod(c, 0.0F)
@@ -177,10 +177,10 @@ test "CompartmentSynapseTripod: target=:d2 routes to glu_d2" {
 ///|
 test "CompartmentSynapseTripod: target=:soma routes to glu_s" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.Tripod::new(1, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.Tripod::new(1, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseTripod::random(pre, post, "ge", "soma", 1.0F, 0.0F, 1.0F, rng)
   pre.fire[0] = true
   @snn_mbt.forward_compartment_tripod(c, 0.0F)
@@ -195,10 +195,10 @@ test "CompartmentSynapseTripod: target=:soma routes to glu_s" {
 ///|
 test "CompartmentSynapseTripod: :gi sym writes to gaba_d1" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.Tripod::new(1, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.Tripod::new(1, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseTripod::random(pre, post, "gi", "d1", 3.0F, 0.0F, 1.0F, rng)
   pre.fire[0] = true
   @snn_mbt.forward_compartment_tripod(c, 0.0F)
@@ -213,10 +213,10 @@ test "CompartmentSynapseTripod: :gi sym writes to gaba_d1" {
 ///|
 test "CompartmentSynapseTripod: pending queue delays delivery" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.Tripod::new(1, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.Tripod::new(1, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseTripod::random(pre, post, "ge", "d1", 4.0F, 0.0F, 1.0F, rng)
   c.set_delays([3.0F])
   pre.fire[0] = true
@@ -234,10 +234,10 @@ test "CompartmentSynapseTripod: pending queue delays delivery" {
 ///|
 test "CompartmentSynapseBall: rho scaling applied to weights" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let post = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let post = @neuron.BallAndStick::new(1, soma_param, rng)
   let c = @snn_mbt.CompartmentSynapseBall::random(pre, post, "ge", "soma", 2.0F, 0.0F, 1.0F, rng)
   // Set rho to 0.5 → weight scaled by 0.5
   c.rho.push(0.5F)

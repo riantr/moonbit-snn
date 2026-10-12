@@ -22,11 +22,11 @@ fn main {
   let ni = 4
 
   // AdEx excitatory population with default params.
-  let e_param = @snn_mbt.AdExParameter::new()
-  let e_pop = @snn_mbt.AdEx::new(ne, e_param, rng)
+  let e_param = @neuron.AdExParameter::new()
+  let e_pop = @neuron.AdEx::new(ne, e_param, rng)
   // IF inhibitory population.
-  let i_param = @snn_mbt.IFParameter::new()
-  let i_pop = @snn_mbt.IF::new(ni, i_param, rng)
+  let i_param = @neuron.IFParameter::new()
+  let i_pop = @neuron.IF::new(ni, i_param, rng)
 
   // Set up AdEx→AdEx synapses via SpikingSynapseAdEx.
   let ee = @snn_mbt.SpikingSynapseAdEx::random(e_pop, e_pop, "ge", 1.0F, 0.0F, 0.2F, rng)
@@ -52,9 +52,9 @@ fn main {
     // Forward AdEx→AdEx synapses.
     @snn_mbt.forward_adex_synapse(ee)
     // Step AdEx.
-    @snn_mbt.adex_step_synapses(e_pop, dt)
-    @snn_mbt.adex_synaptic_current(e_pop)
-    @snn_mbt.step_adex(e_pop, dt)
+    @neuron.adex_step_synapses(e_pop, dt)
+    @neuron.adex_synaptic_current(e_pop)
+    @neuron.step_adex(e_pop, dt)
     // AdEx→IF coupling: copy AdEx fire flags into IF's glu array.
     for k in 0..<ne {
       if e_pop.fire[k] {
@@ -62,9 +62,9 @@ fn main {
       }
     }
     // Step IF (now with AdEx→IF input).
-    @snn_mbt.step_synapses(i_pop, dt)
-    @snn_mbt.synaptic_current(i_pop)
-    @snn_mbt.step_neuron(i_pop, dt)
+    @neuron.step_synapses(i_pop, dt)
+    @neuron.synaptic_current(i_pop)
+    @neuron.step_neuron(i_pop, dt)
     // Reset IF glu/gaba for next step.
     for k in 0..<ni {
       i_pop.glu[k] = 0.0F

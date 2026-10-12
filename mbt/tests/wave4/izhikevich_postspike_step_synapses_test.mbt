@@ -7,18 +7,18 @@
 test "postspike step+synapses / tab countdown through combined loop" {
   // Pattern: synapse-step then neuron-step. Verify tabs decrement each
   // full iteration.
-  let pop = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(3),
+  let pop = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(3),
   )
   // First neuron-step fires (v=35 > 30).
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if pop.tabs[0] != 3 { fail("tabs after fire expected 3, got \{pop.tabs[0]}") }
   // Run combined loop for 5 iterations; tabs should reach 0 by iter 4
   // (decrement 3->2->1->0 across 3 synapse-step calls).
   for iter in 0..<5 {
     let _ = iter
-    @snn_mbt.step_iz_synapses_postspike(pop, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+    @neuron.step_iz_synapses_postspike(pop, 0.125F)
+    @neuron.step_iz_with_postspike(pop, 0.125F)
   }
   // After 5 combined iterations (5 synapse-step calls + 5 neuron-step
   // calls in addition to the initial neuron-step that set tabs=3),
@@ -34,17 +34,17 @@ test "postspike step+synapses / ge decays during refractory" {
   // When tabs > 0, step_iz_with_postspike skips the membrane update
   // but still decays synapses. So ge continues to shrink during
   // refractory even though v/u don't move.
-  let pop = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(4),
+  let pop = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(4),
   )
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=4
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=4
   // Inject ge explicitly.
   pop.ge[0] = 10.0F
   let v_ref = pop.v[0]
   let u_ref = pop.u[0]
   // 3 more neuron-steps (during refractory); tabs goes 4->3->2->1.
   for _ in 0..<3 {
-    @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+    @neuron.step_iz_with_postspike(pop, 0.125F)
     // Re-inject ge so we can see decay each step.
     pop.ge[0] = 10.0F
   }
@@ -56,7 +56,7 @@ test "postspike step+synapses / ge decays during refractory" {
     fail("tabs expected 1 after 3 refractory steps, got \{pop.tabs[0]}")
   }
   // Final synapse-step should let tabs reach 0.
-  @snn_mbt.step_iz_synapses_postspike(pop, 0.125F)
+  @neuron.step_iz_synapses_postspike(pop, 0.125F)
   if pop.tabs[0] != 0 {
     fail("tabs expected 0 after 4th refractory decay, got \{pop.tabs[0]}")
   }
@@ -66,13 +66,13 @@ test "postspike step+synapses / ge decays during refractory" {
 test "postspike step+synapses / multi-neuron heterogeneous refractory" {
   // 3 neurons with different tabs_const values. Build each in its own
   // population; verify each fires at the expected rate.
-  let postspike_a = @snn_mbt.IZPostSpike::custom(2)
-  let pop_a = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, postspike_a,
+  let postspike_a = @neuron.IZPostSpike::custom(2)
+  let pop_a = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), -65.0F, -13.0F, postspike_a,
   )
-  let postspike_b = @snn_mbt.IZPostSpike::custom(4)
-  let pop_b = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, postspike_b,
+  let postspike_b = @neuron.IZPostSpike::custom(4)
+  let pop_b = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), -65.0F, -13.0F, postspike_b,
   )
   // Strong tonic drive to force firing.
   pop_a.i[0] = 30.0F
@@ -81,12 +81,12 @@ test "postspike step+synapses / multi-neuron heterogeneous refractory" {
   let mut count_a = 0
   let mut count_b = 0
   for _ in 0..<n_steps {
-    @snn_mbt.step_iz_synapses_postspike(pop_a, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop_a, 0.125F)
+    @neuron.step_iz_synapses_postspike(pop_a, 0.125F)
+    @neuron.step_iz_with_postspike(pop_a, 0.125F)
     pop_a.i[0] = 30.0F
     if pop_a.fire[0] { count_a = count_a + 1 }
-    @snn_mbt.step_iz_synapses_postspike(pop_b, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop_b, 0.125F)
+    @neuron.step_iz_synapses_postspike(pop_b, 0.125F)
+    @neuron.step_iz_with_postspike(pop_b, 0.125F)
     pop_b.i[0] = 30.0F
     if pop_b.fire[0] { count_b = count_b + 1 }
   }
@@ -106,15 +106,15 @@ test "postspike step+synapses / multi-neuron heterogeneous refractory" {
 test "postspike step+synapses / injection between decay and step" {
   // Pattern: decay -> inject -> step. Verify the injected ge
   // contributes to the next membrane update (causes a fire).
-  let pop = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(0),
+  let pop = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(0),
   )
   // Sub-threshold drive.
   pop.i[0] = 1.0F
   // Run 10 steps; should not fire.
   for _ in 0..<10 {
-    @snn_mbt.step_iz_synapses_postspike(pop, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+    @neuron.step_iz_synapses_postspike(pop, 0.125F)
+    @neuron.step_iz_with_postspike(pop, 0.125F)
     pop.i[0] = 1.0F
     pop.ge[0] = 0.0F
     let _ = 0
@@ -123,7 +123,7 @@ test "postspike step+synapses / injection between decay and step" {
   // Now inject strong ge and step again. The neuron should fire
   // (v crosses 30 via ge contribution, gets reset to c=-65).
   pop.ge[0] = 100.0F
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if !pop.fire[0] {
     fail("strong ge should have driven neuron to fire")
   }
@@ -141,23 +141,23 @@ test "postspike step+synapses / injection between decay and step" {
 test "postspike step+synapses / 100-step round-trip is deterministic" {
   // Two parallel populations with same seed, run combined
   // decay+update loop for 100 steps. Verify trajectories are bit-exact.
-  let pop_a = @snn_mbt.IZ::init_with_postspike(
-    2, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(3),
+  let pop_a = @neuron.IZ::init_with_postspike(
+    2, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(3),
   )
-  let pop_b = @snn_mbt.IZ::init_with_postspike(
-    2, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(3),
+  let pop_b = @neuron.IZ::init_with_postspike(
+    2, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(3),
   )
   pop_a.i[0] = 6.0F
   pop_a.i[1] = 10.0F
   pop_b.i[0] = 6.0F
   pop_b.i[1] = 10.0F
   for _ in 0..<100 {
-    @snn_mbt.step_iz_synapses_postspike(pop_a, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop_a, 0.125F)
+    @neuron.step_iz_synapses_postspike(pop_a, 0.125F)
+    @neuron.step_iz_with_postspike(pop_a, 0.125F)
     pop_a.i[0] = 6.0F
     pop_a.i[1] = 10.0F
-    @snn_mbt.step_iz_synapses_postspike(pop_b, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop_b, 0.125F)
+    @neuron.step_iz_synapses_postspike(pop_b, 0.125F)
+    @neuron.step_iz_with_postspike(pop_b, 0.125F)
     pop_b.i[0] = 6.0F
     pop_b.i[1] = 10.0F
     let _ = 0

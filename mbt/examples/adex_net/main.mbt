@@ -24,8 +24,8 @@
 fn main {
   let rng = @core.Xoshiro::default()
   let ne = 8
-  let param = @snn_mbt.AdExParameter::new()
-  let e_pop = @snn_mbt.AdEx::new(ne, param, rng)
+  let param = @neuron.AdExParameter::new()
+  let e_pop = @neuron.AdEx::new(ne, param, rng)
 
   // Tonic drive: 1000 pA per cell. With AdEx R=0.025, R*I = 25 mV
   // which exceeds the leak at vt=-50 (about 20 mV), so cells fire.

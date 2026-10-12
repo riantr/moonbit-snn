@@ -16,9 +16,9 @@
 ///|
 fn main {
   let n = 1
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let e_pop = @neuron.IF::new(n, param, rng)
 
   // 50Hz * 300 = 15000 Hz
   let rate = 50.0F * 300.0F
@@ -51,10 +51,10 @@ fn main {
     @snn_mbt.stimulate_if(sE, time.t[0], dt)
     @snn_mbt.stimulate_if(sI, time.t[0], dt)
     // Integrate
-    @snn_mbt.step_synapses(e_pop, dt)
-    @snn_mbt.synaptic_current(e_pop)
+    @neuron.step_synapses(e_pop, dt)
+    @neuron.synaptic_current(e_pop)
     let prev_fire = e_pop.fire[0]
-    @snn_mbt.step_neuron(e_pop, dt)
+    @neuron.step_neuron(e_pop, dt)
     if e_pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

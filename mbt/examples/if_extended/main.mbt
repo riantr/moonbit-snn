@@ -16,18 +16,18 @@ fn main {
   let n_e : Int = 20
   let n_pv : Int = 5
   let n_sst : Int = 5
-  let p_e : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(n=n_e)
-  let p_pv : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(
+  let p_e : @neuron.ExtendedIF = @neuron.ExtendedIF::new(n=n_e)
+  let p_pv : @neuron.ExtendedIF = @neuron.ExtendedIF::new(
     n=n_pv,
-    param=@snn_mbt.ExtendedIFParameter::custom(
+    param=@neuron.ExtendedIFParameter::custom(
       cm=200.0F, vt=-50.0F, vr=-60.0F, el=-70.0F, gl=10.0F,
       tau_e=3.0F, tau_i=15.0F, e_i=-75.0F, e_e=0.0F,
       tau_abs=3.0F, alpha=0.0F,
     ),
   )
-  let p_sst : @snn_mbt.ExtendedIF = @snn_mbt.ExtendedIF::new(
+  let p_sst : @neuron.ExtendedIF = @neuron.ExtendedIF::new(
     n=n_sst,
-    param=@snn_mbt.ExtendedIFParameter::custom(
+    param=@neuron.ExtendedIFParameter::custom(
       cm=180.0F, vt=-45.0F, vr=-55.0F, el=-65.0F, gl=12.0F,
       tau_e=6.0F, tau_i=30.0F, e_i=-75.0F, e_e=0.0F,
       tau_abs=4.0F, alpha=0.5F,
@@ -52,9 +52,9 @@ fn main {
   let mut step : Int = 0
   let mut spike_count : Int = 0
   while step < 800 {
-    @snn_mbt.integrate_extended_if(p_e, p_e.param, dt)
-    @snn_mbt.integrate_extended_if(p_pv, p_pv.param, dt)
-    @snn_mbt.integrate_extended_if(p_sst, p_sst.param, dt)
+    @neuron.integrate_extended_if(p_e, p_e.param, dt)
+    @neuron.integrate_extended_if(p_pv, p_pv.param, dt)
+    @neuron.integrate_extended_if(p_sst, p_sst.param, dt)
     // count spikes (fire=true on this step)
     let mut k : Int = 0
     while k < n_e {

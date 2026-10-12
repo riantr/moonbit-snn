@@ -187,10 +187,10 @@ pub fn dueling_eps_greedy_action(
     let q = dueling_q_forward(q_net, x)
     return dueling_q_argmax(q)
   }
-  let (u, _) = box_muller(rng)
+  let (u, _) = @neuron.box_muller(rng)
   let u_pos = if u < 0.0 { -u } else { u }
   if Float::from_double(u_pos) < epsilon {
-    let (u2, _) = box_muller(rng)
+    let (u2, _) = @neuron.box_muller(rng)
     let n_a = q_net.n_actions
     let idx_raw = if u2 < 0.0 { -u2 } else { u2 }
     let idx = Float::from_double(idx_raw * Double::from_int(n_a)).to_int()

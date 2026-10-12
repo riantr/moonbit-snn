@@ -21,7 +21,7 @@
 /// compartment buffer.
 pub struct PoissonLayerStimulusTripod {
   param : PoissonLayer
-  post : TripodHet
+  post : @neuron.TripodHet
   weights : Array[Float]        // row-major [post.N, param.n_sources]
   connectivity : Array[Bool]   // row-major [post.N, param.n_sources]
   target_compartment : String  // "soma" | "d1" | "d2"
@@ -35,7 +35,7 @@ pub struct PoissonLayerStimulusTripod {
 /// connection exists, weight ~ Normal(μ, σ) (Fixed if dist=="Fixed").
 pub fn PoissonLayerStimulusTripod::new(
   param : PoissonLayer,
-  post : TripodHet,
+  post : @neuron.TripodHet,
   target_compartment : String,
   target_kind : String,
   mu : Float,

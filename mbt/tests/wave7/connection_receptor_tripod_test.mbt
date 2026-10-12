@@ -4,11 +4,11 @@
 ///|
 test "ReceptorSynapseTripod::new: shapes and initial state" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(3, pre_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(2, base)
-  let post = @snn_mbt.TripodHet::new(2, param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(3, pre_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(2, base)
+  let post = @neuron.TripodHet::new(2, param, rng)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
@@ -38,11 +38,11 @@ test "ReceptorSynapseTripod::new: shapes and initial state" {
 ///|
 test "ReceptorSynapseTripod: AMPA target receptor → glu_d1 buffer" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(2, base)
-  let post = @snn_mbt.TripodHet::new(2, param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(2, base)
+  let post = @neuron.TripodHet::new(2, param, rng)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
@@ -73,11 +73,11 @@ test "ReceptorSynapseTripod: AMPA target receptor → glu_d1 buffer" {
 ///|
 test "ReceptorSynapseTripod: GABAa target → gaba_d1 buffer" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(2, base)
-  let post = @snn_mbt.TripodHet::new(2, param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(2, base)
+  let post = @neuron.TripodHet::new(2, param, rng)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
@@ -104,11 +104,11 @@ test "ReceptorSynapseTripod: GABAa target → gaba_d1 buffer" {
 ///|
 test "ReceptorSynapseTripod: soma compartment routing" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
-  let post = @snn_mbt.TripodHet::new(1, param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(1, base)
+  let post = @neuron.TripodHet::new(1, param, rng)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")
@@ -132,11 +132,11 @@ test "ReceptorSynapseTripod: soma compartment routing" {
 ///|
 test "step_receptors_tripod_synapse: 2-state ODE consumes buffer, populates ge_out" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, pre_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
-  let post = @snn_mbt.TripodHet::new(1, param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, pre_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(1, base)
+  let post = @neuron.TripodHet::new(1, param, rng)
   // Set v_s near threshold so AMPA current is meaningful.
   post.v_s[0] = -30.0F
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
@@ -177,11 +177,11 @@ test "step_receptors_tripod_synapse: 2-state ODE consumes buffer, populates ge_o
 ///|
 test "ReceptorSynapseTripod: non-firing pre → no conductance change" {
   let rng = @core.Xoshiro::default()
-  let pre_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(2, pre_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
-  let post = @snn_mbt.TripodHet::new(1, param, rng)
+  let pre_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(2, pre_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(1, base)
+  let post = @neuron.TripodHet::new(1, param, rng)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 4.8F, 29.0F, 0.27F, "gaba")

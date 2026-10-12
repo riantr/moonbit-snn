@@ -5,8 +5,8 @@
 test "IZ::init_with — custom v/u arrays honoured" {
   let v_init : Array[Float] = [-50.0F, -60.0F, -70.0F]
   let u_init : Array[Float] = [10.0F, 20.0F, 30.0F]
-  let p = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::init_with(3, p, v_init, u_init)
+  let p = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::init_with(3, p, v_init, u_init)
   if pop.v[0] != -50.0F { fail("v[0] expected -50") }
   if pop.v[1] != -60.0F { fail("v[1] expected -60") }
   if pop.v[2] != -70.0F { fail("v[2] expected -70") }
@@ -20,8 +20,8 @@ test "IZ::init_with — custom v/u arrays honoured" {
 test "IZ::init_with — fire / i / ge / gi zero-initialised" {
   let v_init : Array[Float] = [-60.0F, -60.0F]
   let u_init : Array[Float] = [0.0F, 0.0F]
-  let p = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::init_with(2, p, v_init, u_init)
+  let p = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::init_with(2, p, v_init, u_init)
   if pop.fire[0] || pop.fire[1] { fail("fire should start false") }
   if pop.i[0] != 0.0F || pop.i[1] != 0.0F { fail("i should be 0") }
   if pop.ge[0] != 0.0F || pop.ge[1] != 0.0F { fail("ge should be 0") }
@@ -30,8 +30,8 @@ test "IZ::init_with — fire / i / ge / gi zero-initialised" {
 
 ///|
 test "IZ::init_uniform — uniform v_init and u_init" {
-  let p = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::init_uniform(5, p, -65.0F, -13.0F)
+  let p = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::init_uniform(5, p, -65.0F, -13.0F)
   let mut k = 0
   while k < 5 {
     if pop.v[k] != -65.0F { fail("v[\{k}] expected -65") }
@@ -45,12 +45,12 @@ test "IZ::init_with — step_iz advances v from initial state" {
   // Start at v=-50 (above the default -65); u = b * v = 0.2 * -50 = -10.
   let v_init : Array[Float] = [-50.0F]
   let u_init : Array[Float] = [-10.0F]
-  let p = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::init_with(1, p, v_init, u_init)
+  let p = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::init_with(1, p, v_init, u_init)
   let v_before = pop.v[0]
   // Inject current i=10 pA, then step.
   pop.i[0] = 10.0F
-  @snn_mbt.step_iz(pop, 0.125F)
+  @neuron.step_iz(pop, 0.125F)
   // v should evolve; if it crossed the 30mV threshold, fire.
   if pop.v[0] == v_before && !pop.fire[0] {
     fail("v did not change after step")
@@ -63,11 +63,11 @@ test "IZ::init_with — restart-from-state preserves simulation continuity" {
   // population with init_with(saved v, u). The second population should
   // evolve identically to the first from step 51 onward.
   let rng1 = @core.Xoshiro::new(123UL)
-  let p1 = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), rng1)
+  let p1 = @neuron.IZ::new(2, @neuron.IZParameter::rs(), rng1)
   p1.i[0] = 5.0F
   p1.i[1] = 5.0F
   for _ in 0..<50 {
-    @snn_mbt.step_iz(p1, 0.125F)
+    @neuron.step_iz(p1, 0.125F)
   }
   let v_snapshot : Array[Float] = []
   let u_snapshot : Array[Float] = []
@@ -80,7 +80,7 @@ test "IZ::init_with — restart-from-state preserves simulation continuity" {
   // Continue p1 for another 50 steps.
   let v1_after : Array[Float] = []
   for _ in 0..<50 {
-    @snn_mbt.step_iz(p1, 0.125F)
+    @neuron.step_iz(p1, 0.125F)
   }
   let mut k1 = 0
   while k1 < 2 {
@@ -94,7 +94,7 @@ test "IZ::init_with — restart-from-state preserves simulation continuity" {
   // Drain rng2 to match p1's RNG state after 50 steps (skip rng consumption).
   let _ = rng2
   // We can't easily drain rng, but we can verify init_with sets v/u correctly.
-  let pop2 = @snn_mbt.IZ::init_with(2, @snn_mbt.IZParameter::rs(), v_snapshot, u_snapshot)
+  let pop2 = @neuron.IZ::init_with(2, @neuron.IZParameter::rs(), v_snapshot, u_snapshot)
   if (pop2.v[0] - v_snapshot[0]).abs() > 1.0e-6 {
     fail("init_with v[0] mismatch")
   }

@@ -2,9 +2,9 @@
 
 ///|
 test "AnyPop sim — IF only" {
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IF::new(3, param, rng)
+  let p = @neuron.IF::new(3, param, rng)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(p)]
   @snn_mbt.sim_any_pops_for(pops, 10.0F, 0.125F)
   // Just verify it ran (80 steps of v decay)
@@ -16,17 +16,17 @@ test "AnyPop sim — IF only" {
 
 ///|
 test "AnyPop sim — heterogeneous 5 populations" {
-  let if_param = @snn_mbt.IFParameter::new()
-  let adex_param = @snn_mbt.AdExParameter::new()
-  let iz_param = @snn_mbt.IZParameter::rs()
-  let ml_param = @snn_mbt.MorrisLecarParameter::new()
-  let hh_param = @snn_mbt.HHParameter::new()
+  let if_param = @neuron.IFParameter::new()
+  let adex_param = @neuron.AdExParameter::new()
+  let iz_param = @neuron.IZParameter::rs()
+  let ml_param = @neuron.MorrisLecarParameter::new()
+  let hh_param = @neuron.HHParameter::new()
   let rng = @core.Xoshiro::default()
-  let if_pop = @snn_mbt.IF::new(2, if_param, rng)
-  let adex_pop = @snn_mbt.AdEx::new(1, adex_param, rng)
-  let iz_pop = @snn_mbt.IZ::new(1, iz_param, rng)
-  let ml_pop = @snn_mbt.MorrisLecar::new(1, ml_param, rng)
-  let hh_pop = @snn_mbt.HH::new(1, hh_param, rng)
+  let if_pop = @neuron.IF::new(2, if_param, rng)
+  let adex_pop = @neuron.AdEx::new(1, adex_param, rng)
+  let iz_pop = @neuron.IZ::new(1, iz_param, rng)
+  let ml_pop = @neuron.MorrisLecar::new(1, ml_param, rng)
+  let hh_pop = @neuron.HH::new(1, hh_param, rng)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(if_pop), AdEx_(adex_pop), IZ_(iz_pop),
                                ML_(ml_pop), HH_(hh_pop)]
   @snn_mbt.sim_any_pops_for(pops, 10.0F, 0.125F)
@@ -51,8 +51,8 @@ test "AnyPop sim — heterogeneous 5 populations" {
 ///|
 test "AnyPop n_neurons" {
   let rng = @core.Xoshiro::default()
-  let if_pop = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng)
-  let ml_pop = @snn_mbt.MorrisLecar::new(3, @snn_mbt.MorrisLecarParameter::new(), rng)
+  let if_pop = @neuron.IF::new(5, @neuron.IFParameter::new(), rng)
+  let ml_pop = @neuron.MorrisLecar::new(3, @neuron.MorrisLecarParameter::new(), rng)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(if_pop), ML_(ml_pop)]
   assert_eq(@snn_mbt.n_total(pops), 8)
 }

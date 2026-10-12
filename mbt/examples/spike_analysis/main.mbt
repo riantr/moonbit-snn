@@ -18,9 +18,9 @@ fn main {
   let dt = 0.125F
 
   // 20 IF neurons with El=-49mV (highly excitable — 1 mV below vt=-50mV)
-  let if_param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -60.0F, -49.0F, 1.0F)
+  let if_param = @neuron.IFParameter::custom(20.0F, -50.0F, -60.0F, -49.0F, 1.0F)
   let n = 20
-  let pop = @snn_mbt.IF::new(n, if_param, rng)
+  let pop = @neuron.IF::new(n, if_param, rng)
 
   // Sparse self-recurrent excitatory connectivity (p=0.2, μ=0.5 nS).
   let ee = @snn_mbt.SpikingSynapse::random(pop, pop, "ge", 0.5F, 0.0F, 0.2F, rng)

@@ -17,8 +17,8 @@
 ///|
 fn main {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HHParameter::new()
-  let pop = @snn_mbt.HH::new(1, param, rng)
+  let param = @neuron.HHParameter::new()
+  let pop = @neuron.HH::new(1, param, rng)
 
   // 10 µA/cm² current (default HH unit, internally normalised to 10.0F).
   let stim = @snn_mbt.CurrentStimulusArray::new(pop.i, pop.n, 10.0F, rng)
@@ -35,7 +35,7 @@ fn main {
     // Track rising-edge of fire flag.
     let prev_fire = pop.fire[0]
     // Step HH.
-    @snn_mbt.step_hh(pop, dt)
+    @neuron.step_hh(pop, dt)
     if pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

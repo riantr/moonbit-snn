@@ -77,7 +77,7 @@ pub struct SpikeTimeStimulus {
 /// post-synaptic IF population. `spiketimes` should be in ms and
 /// ascending; `neurons` are pre-synaptic indices in [0, N).
 pub fn SpikeTimeStimulus::new(
-  e_pop : IF,
+  e_pop : @neuron.IF,
   sym : String,
   spiketimes : Array[Float],
   neurons : Array[Int],

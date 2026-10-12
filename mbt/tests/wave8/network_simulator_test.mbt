@@ -19,8 +19,8 @@ test "network_summary_empty_model" {
 test "network_summary_with_2_if_pops" {
   let rng1 = @core.Xoshiro::new(1UL)
   let rng2 = @core.Xoshiro::new(2UL)
-  let p1 = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng1)
-  let p2 = @snn_mbt.IF::new(7, @snn_mbt.IFParameter::new(), rng2)
+  let p1 = @neuron.IF::new(5, @neuron.IFParameter::new(), rng1)
+  let p2 = @neuron.IF::new(7, @neuron.IFParameter::new(), rng2)
   let pops : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
   let model = @snn_mbt.compose(pops, [])
   let s = @snn_mbt.network_summary(model)
@@ -34,10 +34,10 @@ test "merge_heterogeneous_concatenates_topology" {
   let rng2 = @core.Xoshiro::new(2UL)
   let rng3 = @core.Xoshiro::new(3UL)
   let rng4 = @core.Xoshiro::new(4UL)
-  let p1 = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng1)
-  let p2 = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng2)
-  let p3 = @snn_mbt.IF::new(5, @snn_mbt.IFParameter::new(), rng3)
-  let p4 = @snn_mbt.IF::new(6, @snn_mbt.IFParameter::new(), rng4)
+  let p1 = @neuron.IF::new(3, @neuron.IFParameter::new(), rng1)
+  let p2 = @neuron.IF::new(4, @neuron.IFParameter::new(), rng2)
+  let p3 = @neuron.IF::new(5, @neuron.IFParameter::new(), rng3)
+  let p4 = @neuron.IF::new(6, @neuron.IFParameter::new(), rng4)
   let pops_a : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
   let pops_b : Array[@snn_mbt.AnyPop] = [IF_(p3), IF_(p4)]
   let model_a = @snn_mbt.compose(pops_a, [])
@@ -51,10 +51,10 @@ test "merge_heterogeneous_concatenates_topology" {
 ///|
 test "merge_heterogeneous_concatenates_monitors" {
   let rng = @core.Xoshiro::new(1UL)
-  let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
+  let p = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)
   let model_a = @snn_mbt.compose([IF_(p)], [], monitors=[mon])
-  let p2 = @snn_mbt.IF::new(4, @snn_mbt.IFParameter::new(), rng)
+  let p2 = @neuron.IF::new(4, @neuron.IFParameter::new(), rng)
   let model_b = @snn_mbt.compose([IF_(p2)], [])
   let merged = @snn_mbt.merge_heterogeneous(model_a, model_b)
   let s = @snn_mbt.network_summary(merged)
@@ -77,7 +77,7 @@ test "reset_heterogeneous_full_clears_time" {
 ///|
 test "reset_heterogeneous_full_clears_monitors" {
   let rng = @core.Xoshiro::new(1UL)
-  let p = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
+  let p = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   // Attach a Poisson stimulus that injects spikes.
   let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)
@@ -104,7 +104,7 @@ test "heterogeneous_sim_for_with_log_advances_time" {
 ///|
 test "heterogeneous_sim_for_with_log_logs_when_monitors_active" {
   let rng = @core.Xoshiro::new(7UL)
-  let p = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let p = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let stim = @snn_mbt.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
   let mon = @snn_mbt.Monitor::new_fire(p, 0)
   let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])

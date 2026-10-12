@@ -80,12 +80,32 @@ def decl_line_starts(src):
     comment sits above nearly every definition, so every code segment arrives
     with a leading newline. Matching offsets back onto the original string keeps
     the lossless-split gate intact — nothing here rewrites anything.
+
+    A `struct`/`enum` body is included too, even though its members are
+    indented: those members are being declared, not referenced, and prefixing
+    them breaks the declaration. `pub enum DendriticTreeType { BallAndStick }`
+    became `@neuron.BallAndStick` without this.
     """
     starts = []
     off = 0
+    # 缩进超过它的成员都算声明成员；记录当前进入的构造器深度。
+    member_indent = None
     for line in src.split("\n"):
-        if _DEF_LINE.match(line):
+        m = _DEF_LINE.match(line)
+        if m:
+            kw = m.group(0).strip().split()[-1] if m.group(0) else ''
             starts.append(off)
+            ind = len(line) - len(line.lstrip())
+            if kw in ('struct', 'enum', 'trait'):
+                member_indent = ind + 1
+            else:
+                member_indent = None
+        elif member_indent is not None and line.strip():
+            ind = len(line) - len(line.lstrip())
+            if ind >= member_indent:
+                starts.append(off)
+            else:
+                member_indent = None
         off += len(line) + 1
     return starts
 
@@ -369,6 +389,10 @@ def _split_decl(text):
     rest = "" if nl < 0 else text[nl + 1:]
     m = _DECL_SPLIT.match(line)
     if not m:
+        # A bare member line: an enum variant or a struct field, indented with
+        # no declaration keyword. The whole line is being declared, so none of
+        # it may be rewritten -- including any type it annotates, since that
+        # type is written at the same site.
         return line, rest
     tail = line[m.end():]
     nm = re.match(r'\s*(?:"C"\s+)?[A-Za-z_][\w]*(?:::)?', tail)
@@ -501,6 +525,30 @@ def load_own_symbols(src):
             if m:
                 bucket.add(m.group(1))
                 break
+    # Enum variants declared here are local to this file, in every sense that
+    # matters for rewriting: `enum DendriticTreeType { BallAndStick }` then
+    # `if ds.length() == 1 { BallAndStick }` is a construction of this file's
+    # own variant, and prefixing it would point at a same-named type in another
+    # package. `struct Tripod` elsewhere is a different symbol entirely.
+    lines = src.split("\n")
+    in_enum = None
+    for i, line in enumerate(lines):
+        m = re.match(r'^(?:pub(?:\([a-z]+\))?\s+)?enum\s+([A-Za-z_][\w]*)',
+                     line)
+        if m:
+            in_enum = (len(line) - len(line.lstrip())) + 1
+            types.add(m.group(1))
+            continue
+        if in_enum is not None:
+            if not line.strip():
+                continue
+            ind = len(line) - len(line.lstrip())
+            if ind < in_enum:
+                in_enum = None
+                continue
+            vm = re.match(r'^\s*([A-Z][\w]*)\s*(\(|,|//|$)', line)
+            if vm:
+                types.add(vm.group(1))
     return types | free_fns | values
 
 

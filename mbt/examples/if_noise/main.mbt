@@ -18,8 +18,8 @@
 ///|
 fn main {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.IFParameter::new()
-  let pop = @snn_mbt.IF::new(1, param, rng)
+  let param = @neuron.IFParameter::new()
+  let pop = @neuron.IF::new(1, param, rng)
 
   // 400 pA base + N(0, 100) pA noise — drives v near threshold.
   let stim = @snn_mbt.CurrentStimulusIF::new(pop, 400.0F, rng, noise_sigma=100.0F)

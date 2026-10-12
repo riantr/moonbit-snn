@@ -126,7 +126,7 @@ pub fn sac_gru_actor_step(
   }
   let mut log_prob = 0.0F
   for i in 0..<policy.action_dim {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     let eps = Float::from_double(z1)
     let std_dev = @core.expf(log_std[i])
     let a_raw = mean_tanh[i] + std_dev * eps

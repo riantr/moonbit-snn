@@ -62,7 +62,7 @@ pub fn dcgan_sample_latent(
   let pairs = latent_dim / 2
   let mut i = 0
   while i < pairs * 2 {
-    let (z1d, z2d) = box_muller(rng)
+    let (z1d, z2d) = @neuron.box_muller(rng)
     z[i] = Float::from_double(z1d)
     if i + 1 < latent_dim {
       z[i + 1] = Float::from_double(z2d)
@@ -70,7 +70,7 @@ pub fn dcgan_sample_latent(
     i = i + 2
   }
   if latent_dim % 2 == 1 {
-    let (z1d, _) = box_muller(rng)
+    let (z1d, _) = @neuron.box_muller(rng)
     z[latent_dim - 1] = Float::from_double(z1d)
   }
   z

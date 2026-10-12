@@ -45,9 +45,9 @@ test "MarkramSTPEntryTimestep::new: fields populated, vars initialised" {
 test "markram_stp_step_timestep: no-spike continuous decay toward baseline" {
   // With no firing, u should drift toward U (0.5) and x toward 1.
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(2, if_param, rng)
-  let post = @snn_mbt.IF::new(2, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(2, if_param, rng)
+  let post = @neuron.IF::new(2, if_param, rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 1.0F)
@@ -80,9 +80,9 @@ test "markram_stp_step_timestep: spike bump before continuous update" {
   // Pre-spike: u[j] += U*(1 - u[j]); x[j] += -u[j]*x[j] FIRST.
   // Then continuous Euler.
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, if_param, rng)
-  let post = @snn_mbt.IF::new(1, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, if_param, rng)
+  let post = @neuron.IF::new(1, if_param, rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.SpikingSynapse::init_rho(syn)
@@ -114,9 +114,9 @@ test "markram_stp_step_timestep: spike bump before continuous update" {
 ///|
 test "markram_stp_step_timestep: rho broadcast to all outgoing connections" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, if_param, rng)
-  let post = @snn_mbt.IF::new(3, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, if_param, rng)
+  let post = @neuron.IF::new(3, if_param, rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 1.0F)
@@ -142,9 +142,9 @@ test "markram_stp_step_timestep: rho broadcast to all outgoing connections" {
 ///|
 test "markram_stp_step_timestep: rho stays in (0, 1) bounds over time" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(4, if_param, rng)
-  let post = @snn_mbt.IF::new(4, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(4, if_param, rng)
+  let post = @neuron.IF::new(4, if_param, rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   for j in 1..<=4 {
     for i in 1..<=4 {
@@ -181,9 +181,9 @@ test "markram_stp_step_timestep: weights stay finite over many steps" {
   // Mirrors Julia's `with_plasticity.jl` MarkramSTPParameterTimestep
   // testset: after many random steps, all vals stay finite.
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(4, if_param, rng)
-  let post = @snn_mbt.IF::new(4, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(4, if_param, rng)
+  let post = @neuron.IF::new(4, if_param, rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   for j in 1..<=4 {
     for i in 1..<=4 {
@@ -212,9 +212,9 @@ test "markram_stp_step_timestep: weights stay finite over many steps" {
 ///|
 test "markram_stp_step_timestep: inactive flag disables rule" {
   let rng = @core.Xoshiro::default()
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, if_param, rng)
-  let post = @snn_mbt.IF::new(1, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, if_param, rng)
+  let post = @neuron.IF::new(1, if_param, rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.SpikingSynapse::init_rho(syn)

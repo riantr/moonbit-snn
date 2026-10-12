@@ -65,7 +65,7 @@ pub fn normalizing_flow_sample(
 ) -> Array[Float] {
   let z : Array[Float] = Array::make(model.dim, 0.0F)
   for i in 0..<model.dim {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     z[i] = Float::from_double(z1)
   }
   let (x, _) = normalizing_flow_forward(model, z)

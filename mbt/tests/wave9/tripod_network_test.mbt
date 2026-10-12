@@ -5,19 +5,19 @@
 // compartment synapses.
 
 ///|
-fn build_tripod_network_test() -> (@snn_mbt.Tripod, @snn_mbt.IF, @snn_mbt.IF, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.IstdpRateEntry, @snn_mbt.IstdpPotentialEntry) {
+fn build_tripod_network_test() -> (@neuron.Tripod, @neuron.IF, @neuron.IF, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.CompartmentSynapseTripod, @snn_mbt.IstdpRateEntry, @snn_mbt.IstdpPotentialEntry) {
   let rng = @core.Xoshiro::new(123UL)
   let ne = 20
   let ni1 = 5
   let ni2 = 5
   // E = Tripod.
-  let e_param = @snn_mbt.AdExParameter::new()
-  let e_pop = @snn_mbt.Tripod::new(ne, e_param, rng)
+  let e_param = @neuron.AdExParameter::new()
+  let e_pop = @neuron.Tripod::new(ne, e_param, rng)
   // I1, I2 = IF.
-  let i1_param = @snn_mbt.IFParameter::custom(7.0F, -50.0F, -60.0F, -55.0F, 1.0F)
-  let i1_pop = @snn_mbt.IF::new(ni1, i1_param, rng)
-  let i2_param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -60.0F, -55.0F, 1.0F)
-  let i2_pop = @snn_mbt.IF::new(ni2, i2_param, rng)
+  let i1_param = @neuron.IFParameter::custom(7.0F, -50.0F, -60.0F, -55.0F, 1.0F)
+  let i1_pop = @neuron.IF::new(ni1, i1_param, rng)
+  let i2_param = @neuron.IFParameter::custom(20.0F, -50.0F, -60.0F, -55.0F, 1.0F)
+  let i2_pop = @neuron.IF::new(ni2, i2_param, rng)
   // Tonic drive to keep I populations active.
   for k in 0..<ni1 { i1_pop.i[k] = 250.0F }
   for k in 0..<ni2 { i2_pop.i[k] = 250.0F }
@@ -45,13 +45,13 @@ test "tripod_network_smoke_runs_without_crash" {
     let _ = step
     @snn_mbt.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
     @snn_mbt.forward_compartment_tripod(i2_to_e, Float::from_int(step) * dt)
-    @snn_mbt.step_synapses(i1_pop, dt)
-    @snn_mbt.synaptic_current(i1_pop)
-    @snn_mbt.step_neuron(i1_pop, dt)
-    @snn_mbt.step_synapses(i2_pop, dt)
-    @snn_mbt.synaptic_current(i2_pop)
-    @snn_mbt.step_neuron(i2_pop, dt)
-    @snn_mbt.step_tripod(e_pop, dt)
+    @neuron.step_synapses(i1_pop, dt)
+    @neuron.synaptic_current(i1_pop)
+    @neuron.step_neuron(i1_pop, dt)
+    @neuron.step_synapses(i2_pop, dt)
+    @neuron.synaptic_current(i2_pop)
+    @neuron.step_neuron(i2_pop, dt)
+    @neuron.step_tripod(e_pop, dt)
     @snn_mbt.istdp_rate_step(
       i1_to_e.matrix.vals, i1_pop.fire, e_pop.fire,
       i1_to_e.matrix.colptr, i1_to_e.matrix.rowptr,
@@ -87,12 +87,12 @@ test "tripod_network_i_populations_active_under_tonic_drive" {
   let mut i1_spikes = 0
   let mut i2_spikes = 0
   for _ in 0..<total_steps {
-    @snn_mbt.step_synapses(i1_pop, dt)
-    @snn_mbt.synaptic_current(i1_pop)
-    @snn_mbt.step_neuron(i1_pop, dt)
-    @snn_mbt.step_synapses(i2_pop, dt)
-    @snn_mbt.synaptic_current(i2_pop)
-    @snn_mbt.step_neuron(i2_pop, dt)
+    @neuron.step_synapses(i1_pop, dt)
+    @neuron.synaptic_current(i1_pop)
+    @neuron.step_neuron(i1_pop, dt)
+    @neuron.step_synapses(i2_pop, dt)
+    @neuron.synaptic_current(i2_pop)
+    @neuron.step_neuron(i2_pop, dt)
     for k in 0..<i1_pop.n { if i1_pop.fire[k] { i1_spikes = i1_spikes + 1 } }
     for k in 0..<i2_pop.n { if i2_pop.fire[k] { i2_spikes = i2_spikes + 1 } }
   }
@@ -112,10 +112,10 @@ test "tripod_network_istdp_rate_step_modifies_weights" {
   let mut total_abs_delta = 0.0F
   for step in 0..<400 {
     @snn_mbt.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
-    @snn_mbt.step_synapses(i1_pop, dt)
-    @snn_mbt.synaptic_current(i1_pop)
-    @snn_mbt.step_neuron(i1_pop, dt)
-    @snn_mbt.step_tripod(e_pop, dt)
+    @neuron.step_synapses(i1_pop, dt)
+    @neuron.synaptic_current(i1_pop)
+    @neuron.step_neuron(i1_pop, dt)
+    @neuron.step_tripod(e_pop, dt)
     @snn_mbt.istdp_rate_step(
       i1_to_e.matrix.vals, i1_pop.fire, e_pop.fire,
       i1_to_e.matrix.colptr, i1_to_e.matrix.rowptr,

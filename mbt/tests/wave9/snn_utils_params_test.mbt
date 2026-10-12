@@ -135,7 +135,7 @@ test "LKD2014 fields used to build IF + AdEx parameters" {
   // IFParameter::custom + AdExParameter::new constructors.
   let lkd = @snn_mbt.LKD2014::new()
   // PV inhibitory IF.
-  let pv_if = @snn_mbt.IFParameter::custom(
+  let pv_if = @neuron.IFParameter::custom(
     lkd.pv_tm, lkd.pv_vt, lkd.pv_vr, lkd.pv_el, 0.06F,
   )
   if (pv_if.tm - 20.0F).abs() > 1.0e-6F {
@@ -143,7 +143,7 @@ test "LKD2014 fields used to build IF + AdEx parameters" {
   }
   // AdEx excitatory (just verify the constructor accepts the
   // values; full AdEx port uses different params).
-  let _ = @snn_mbt.AdExParameter::new()
+  let _ = @neuron.AdExParameter::new()
 }
 
 ///|

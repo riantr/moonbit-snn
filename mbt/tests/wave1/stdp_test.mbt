@@ -104,8 +104,8 @@ test "compose with stdp applies plasticity automatically" {
   // 2x2 IF net with identity EE synapse. Force-fire pre/post pair
   // at t=0 -> step the model for a few ms and verify weight changed.
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
@@ -494,8 +494,8 @@ test "compose dispatches STDPMexicanHat entry automatically" {
   // 2x2 IF net, identity EE synapse, force-fire pre+post pair.
   // STDPMexicanHat entry should be auto-applied by step_heterogeneous.
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)
@@ -529,8 +529,8 @@ test "compose dispatches STDPAntiSymmetric entry automatically" {
   // 2x2 IF net, identity EE synapse, force-fire pre+post pair.
   // STDPAntiSymmetric auto-applied.
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let ee = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(ee, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(ee, 2, 2, 1.0F)

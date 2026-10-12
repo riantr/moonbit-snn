@@ -13,9 +13,9 @@
 
 ///|
 test "AdExSinExp — tonic drive produces no NaN state" {
-  let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
+  let param = @neuron.AdExSinExpParameter::lkd_adex()
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
+  let pop = @neuron.AdExSinExp::new(10, param, rng)
   // Tonic drive above firing threshold.
   let mut k = 0
   while k < 10 {
@@ -26,9 +26,9 @@ test "AdExSinExp — tonic drive produces no NaN state" {
   let n_steps = 800  // 100ms
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.adex_sinexp_step_synapses(pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(pop)
-    @snn_mbt.step_adex_sinexp(pop, dt)
+    @neuron.adex_sinexp_step_synapses(pop, dt)
+    @neuron.adex_sinexp_synaptic_current(pop)
+    @neuron.step_adex_sinexp(pop, dt)
     t = t + 1
   }
   // NaN checks.
@@ -46,9 +46,9 @@ test "AdExSinExp — tonic drive produces no NaN state" {
 
 ///|
 test "AdExSinExp — voltages stay in physiological range" {
-  let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
+  let param = @neuron.AdExSinExpParameter::lkd_adex()
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
+  let pop = @neuron.AdExSinExp::new(10, param, rng)
   let mut k = 0
   while k < 10 {
     pop.i[k] = 400.0F
@@ -58,9 +58,9 @@ test "AdExSinExp — voltages stay in physiological range" {
   let n_steps = 800
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.adex_sinexp_step_synapses(pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(pop)
-    @snn_mbt.step_adex_sinexp(pop, dt)
+    @neuron.adex_sinexp_step_synapses(pop, dt)
+    @neuron.adex_sinexp_synaptic_current(pop)
+    @neuron.step_adex_sinexp(pop, dt)
     t = t + 1
   }
   let mut i = 0
@@ -76,9 +76,9 @@ test "AdExSinExp — voltages stay in physiological range" {
 test "AdExSinExp — fires at least once under tonic drive" {
   // With 400pA tonic drive (above firing threshold), some neurons
   // should fire within 100ms.
-  let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
+  let param = @neuron.AdExSinExpParameter::lkd_adex()
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
+  let pop = @neuron.AdExSinExp::new(10, param, rng)
   let mut k = 0
   while k < 10 {
     pop.i[k] = 400.0F
@@ -89,9 +89,9 @@ test "AdExSinExp — fires at least once under tonic drive" {
   let mut total_fires = 0
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.adex_sinexp_step_synapses(pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(pop)
-    @snn_mbt.step_adex_sinexp(pop, dt)
+    @neuron.adex_sinexp_step_synapses(pop, dt)
+    @neuron.adex_sinexp_synaptic_current(pop)
+    @neuron.step_adex_sinexp(pop, dt)
     let mut i = 0
     while i < 10 {
       if pop.fire[i] {
@@ -112,9 +112,9 @@ test "AdExSinExp — firing rate bounded (no runaway)" {
   // 1 / t_abs ≈ 1000 Hz, but realistically 100-200 Hz under tonic).
   // We allow up to 300 Hz to leave plenty of headroom for different
   // tonic settings.
-  let param = @snn_mbt.AdExSinExpParameter::lkd_adex()
+  let param = @neuron.AdExSinExpParameter::lkd_adex()
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.AdExSinExp::new(10, param, rng)
+  let pop = @neuron.AdExSinExp::new(10, param, rng)
   let mut k = 0
   while k < 10 {
     pop.i[k] = 400.0F
@@ -125,9 +125,9 @@ test "AdExSinExp — firing rate bounded (no runaway)" {
   let mut total_fires = 0
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.adex_sinexp_step_synapses(pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(pop)
-    @snn_mbt.step_adex_sinexp(pop, dt)
+    @neuron.adex_sinexp_step_synapses(pop, dt)
+    @neuron.adex_sinexp_synaptic_current(pop)
+    @neuron.step_adex_sinexp(pop, dt)
     let mut i = 0
     while i < 10 {
       if pop.fire[i] {

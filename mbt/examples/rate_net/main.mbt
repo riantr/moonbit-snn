@@ -22,7 +22,7 @@
 fn main {
   let rng = @core.Xoshiro::default()
   let n = 100
-  let g = @snn_mbt.WilsonCowan::new(n, rng)
+  let g = @neuron.WilsonCowan::new(n, rng)
   // All-to-all self-connection with μ=1.2, p=1.0. The
   // RateSynapse constructor applies Julia's sqrt(N) normalisation
   // so the network stays bounded.
@@ -46,7 +46,7 @@ fn main {
     // 1. forward (rate → synaptic g)
     @snn_mbt.forward_rate_synapse(gg)
     // 2. integrate
-    @snn_mbt.step_wc(g, dt)
+    @neuron.step_wc(g, dt)
     // Sample r every 10 steps.
     if step % 10 == 0 {
       for i in 0..<track_idx.length() {

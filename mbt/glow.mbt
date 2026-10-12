@@ -149,7 +149,7 @@ pub fn OneByOneConv::new(dim : Int, seed : UInt64) -> OneByOneConv {
 ///|
 /// Helper: standard normal via Box-Muller.
 fn gaussian_noise_via_box_muller(r : @core.Xoshiro) -> Float {
-  let (z1, _) = box_muller(r)
+  let (z1, _) = @neuron.box_muller(r)
   Float::from_double(z1)
 }
 

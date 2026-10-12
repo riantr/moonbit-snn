@@ -30,9 +30,9 @@ fn main {
   let dt = 0.125F
 
   // Build the post-synaptic IF population (El = -49 mV per Julia test).
-  let if_param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -60.0F, -49.0F, 1.0F)
+  let if_param = @neuron.IFParameter::custom(20.0F, -50.0F, -60.0F, -49.0F, 1.0F)
   let n_post = 200
-  let post = @snn_mbt.IF::new(n_post, if_param, rng)
+  let post = @neuron.IF::new(n_post, if_param, rng)
 
   // BalancedParameter matching Julia test (kIE=2.0, β=0.1, τ=100ms,
   // r0=2kHz, wIE=2.0, same_input=true).
@@ -63,9 +63,9 @@ fn main {
   for step in 0..<steps {
     let _ = step
     @snn_mbt.stimulate_balanced(stim, 0.0F, dt)
-    @snn_mbt.step_synapses(post, dt)
-    @snn_mbt.synaptic_current(post)
-    @snn_mbt.step_neuron(post, dt)
+    @neuron.step_synapses(post, dt)
+    @neuron.synaptic_current(post)
+    @neuron.step_neuron(post, dt)
     for j in 0..<n_post {
       if post.fire[j] {
         total_spikes = total_spikes + 1

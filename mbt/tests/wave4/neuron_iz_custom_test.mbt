@@ -2,7 +2,7 @@
 
 ///|
 test "IZParameter::custom — arbitrary (a, b, c, d) round-trip" {
-  let p = @snn_mbt.IZParameter::custom(0.05F, 0.15F, -55.0F, 5.0F)
+  let p = @neuron.IZParameter::custom(0.05F, 0.15F, -55.0F, 5.0F)
   if p.a != 0.05F { fail("a expected 0.05, got \{p.a}") }
   if p.b != 0.15F { fail("b expected 0.15, got \{p.b}") }
   if p.c != -55.0F { fail("c expected -55.0, got \{p.c}") }
@@ -16,9 +16,9 @@ test "IZParameter::custom — arbitrary (a, b, c, d) round-trip" {
 
 ///|
 test "IZParameter::custom — IZ::new accepts the custom params" {
-  let p = @snn_mbt.IZParameter::custom(0.05F, 0.15F, -55.0F, 5.0F)
+  let p = @neuron.IZParameter::custom(0.05F, 0.15F, -55.0F, 5.0F)
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.IZ::new(3, p, rng)
+  let pop = @neuron.IZ::new(3, p, rng)
   // Julia source: u[k] = b * v[k], where v[k] is initialised to -65 (not c).
   // So u[k] = b * -65 = 0.15 * -65 = -9.75.
   let expected_u : Float = 0.15F * (-65.0F)
@@ -30,8 +30,8 @@ test "IZParameter::custom — IZ::new accepts the custom params" {
 ///|
 test "IZParameter::custom — matches rs() for matching (a, b, c, d)" {
   // Both rs() and custom(0.02, 0.2, -65, 8) should give the same struct.
-  let prs = @snn_mbt.IZParameter::rs()
-  let pcu = @snn_mbt.IZParameter::custom(0.02F, 0.2F, -65.0F, 8.0F)
+  let prs = @neuron.IZParameter::rs()
+  let pcu = @neuron.IZParameter::custom(0.02F, 0.2F, -65.0F, 8.0F)
   if prs.a != pcu.a { fail("a mismatch: \{prs.a} vs \{pcu.a}") }
   if prs.b != pcu.b { fail("b mismatch: \{prs.b} vs \{pcu.b}") }
   if prs.c != pcu.c { fail("c mismatch: \{prs.c} vs \{pcu.c}") }

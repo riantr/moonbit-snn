@@ -45,9 +45,9 @@ fn main {
   let dt = 0.125F
 
   // E and I populations with custom IF parameters matching Julia.
-  let neuron_param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -60.0F, -60.0F, 0.1F)
-  let e_pop = @snn_mbt.IF::new(ne, neuron_param, rng)
-  let i_pop = @snn_mbt.IF::new(ni, neuron_param, rng)
+  let neuron_param = @neuron.IFParameter::custom(20.0F, -50.0F, -60.0F, -60.0F, 0.1F)
+  let e_pop = @neuron.IF::new(ne, neuron_param, rng)
+  let i_pop = @neuron.IF::new(ni, neuron_param, rng)
 
   // Apply 150 pA external current to both populations (phase 1).
   for k in 0..<ne {

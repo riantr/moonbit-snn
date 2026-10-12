@@ -163,7 +163,7 @@ pub fn SequenceReplayBuffer::sample_seq_batch(
     // past the end of the buffer and gets zero-padded.
     let mut start_idx = 0
     if safe_max > 0 {
-      let (z, _) = box_muller(rng)
+      let (z, _) = @neuron.box_muller(rng)
       let u_pos = if z < 0.0 {
         -z
       } else {

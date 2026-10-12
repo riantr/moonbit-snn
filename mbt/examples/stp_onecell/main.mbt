@@ -30,8 +30,8 @@ fn main {
 
   // IF as pre_pop (since SpikingSynapse requires IF). Drive
   // pre_pop.fire[0] = true each step to simulate continuous drive.
-  let pre_pop = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
-  let post_pop = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre_pop = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
+  let post_pop = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
 
   // Synapse with weight 1.0; STP needs rho[] for per-edge weighting.
   let syn = @snn_mbt.SpikingSynapse::new(pre_pop, post_pop, "ge")

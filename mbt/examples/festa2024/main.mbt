@@ -27,8 +27,8 @@ fn main {
   let dt = 0.125F
 
   // E and I1 populations.
-  let e_pop = @snn_mbt.IF::new(ne, @snn_mbt.IFParameter::new(), rng)
-  let i_pop = @snn_mbt.IF::new(ni, @snn_mbt.IFParameter::new(), rng)
+  let e_pop = @neuron.IF::new(ne, @neuron.IFParameter::new(), rng)
+  let i_pop = @neuron.IF::new(ni, @neuron.IFParameter::new(), rng)
 
   // Random connectivity (Bernoulli).
   let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",

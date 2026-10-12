@@ -24,9 +24,9 @@
 test "LIF closed-form — v(t) tracks analytical solution within 2mV" {
   // Single IF, constant input current I = 1.0.
   // R = 0.06, τm = 15.0 → V(∞) = V_rest + 1.0 * 0.06 = V_rest + 0.06.
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   // Set constant tonic current.
   p.i[0] = 1.0F
   // Start at rest (v[0] = el = -70.0).
@@ -35,9 +35,9 @@ test "LIF closed-form — v(t) tracks analytical solution within 2mV" {
   let dt = 0.125F
   let n_steps = 100
   for _ in 0..<n_steps {
-    @snn_mbt.step_synapses(p, dt)
-    @snn_mbt.synaptic_current(p)
-    @snn_mbt.step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
   }
   let t_ms = Float::from_int(n_steps) * dt
   // Analytical: V(t) = el + i * r * (1 - exp(-t / tm)).
@@ -56,9 +56,9 @@ test "LIF closed-form — v(t) tracks analytical solution within 2mV" {
 test "LIF closed-form — v(t) approaches V_rest + I*R for large t" {
   // After 1000ms (>> τm = 15ms), the membrane should be near
   // steady-state V_rest + I*R = -70 + 1*0.06 = -69.94.
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   p.i[0] = 1.0F
   p.v[0] = param.el
   let dt = 0.125F
@@ -67,9 +67,9 @@ test "LIF closed-form — v(t) approaches V_rest + I*R for large t" {
   // vt = -50, V_rest = -70, I*R = 0.06 → V never reaches -50 with i=1.0.
   let n_steps = 500  // 62.5ms = 4.17 τm — comfortably steady-state
   for _ in 0..<n_steps {
-    @snn_mbt.step_synapses(p, dt)
-    @snn_mbt.synaptic_current(p)
-    @snn_mbt.step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
   }
   let v_steady = param.el + p.i[0] * param.r
   let diff = (p.v[0] - v_steady).abs()
@@ -87,17 +87,17 @@ test "LIF closed-form — v(t) approaches V_rest + I*R for large t" {
 test "LIF closed-form — decay to rest when I=0" {
   // With I = 0, V(t) = V_rest + (V(0) - V_rest) * exp(-t/tm).
   // Starting at V(0) = -50 (well above rest), decay to V_rest = -70.
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   p.i[0] = 0.0F
   p.v[0] = -50.0F
   let dt = 0.125F
   let n_steps = 200  // 25ms = 1.67 τm
   for _ in 0..<n_steps {
-    @snn_mbt.step_synapses(p, dt)
-    @snn_mbt.synaptic_current(p)
-    @snn_mbt.step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
   }
   let t_ms = Float::from_int(n_steps) * dt
   let ratio = t_ms / param.tm
@@ -118,18 +118,18 @@ test "LIF closed-form — decay to rest when I=0" {
 test "LIF closed-form — exponential decay constant matches τm" {
   // Verify the time-constant: at t = τm, v should be at
   // (1 - e^{-1}) ≈ 63.2% of the way from rest to V∞.
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   p.i[0] = 1.0F
   p.v[0] = param.el
   let dt = 0.125F
   // τm = 15ms, step until t = 15ms = 120 steps.
   let n_steps = 120
   for _ in 0..<n_steps {
-    @snn_mbt.step_synapses(p, dt)
-    @snn_mbt.synaptic_current(p)
-    @snn_mbt.step_neuron(p, dt)
+    @neuron.step_synapses(p, dt)
+    @neuron.synaptic_current(p)
+    @neuron.step_neuron(p, dt)
   }
   // Expected: V(τm) ≈ V_rest + 0.632 * (V_steady - V_rest)
   //            = -70 + 0.632 * 0.06 = -70 + 0.0379 = -69.9621.

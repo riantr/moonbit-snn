@@ -19,13 +19,13 @@ fn main {
   let rng = @core.Xoshiro::default()
 
   // Build IF pre (1 neuron) — will be forced to fire each step.
-  let if_param = @snn_mbt.IFParameter::new()
-  let pre = @snn_mbt.IF::new(1, if_param, rng)
+  let if_param = @neuron.IFParameter::new()
+  let pre = @neuron.IF::new(1, if_param, rng)
 
   // Build BallAndStick (2 neurons) + Tripod (2 neurons).
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let ball = @snn_mbt.BallAndStick::new(2, soma_param, rng)
-  let tripod = @snn_mbt.Tripod::new(2, soma_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let ball = @neuron.BallAndStick::new(2, soma_param, rng)
+  let tripod = @neuron.Tripod::new(2, soma_param, rng)
 
   // Three compartment-targeted synapses:
   //   - IF → BallAndStick :soma (μ=2.0)

@@ -24,8 +24,8 @@ fn main {
   let dt = 0.125F
 
   // 1 BallAndStick neuron with default AdEx soma + default dendrite.
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let pop = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let pop = @neuron.BallAndStick::new(1, soma_param, rng)
 
   // Simulate for 1s.
   let total_steps : Int = (1000.0F / dt).to_int()
@@ -37,7 +37,7 @@ fn main {
     pop.i_s[0] = 1500.0F
     pop.i_d[0] = 0.0F
     // 2. Step BallAndStick (synapses → currents → Heun → spike detect).
-    @snn_mbt.step_ballandstick(pop, dt)
+    @neuron.step_ballandstick(pop, dt)
     if pop.fire[0] {
       soma_spikes = soma_spikes + 1
     }

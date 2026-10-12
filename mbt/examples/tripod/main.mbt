@@ -24,8 +24,8 @@ fn main {
   let dt = 0.125F
 
   // 1 Tripod neuron with default AdEx soma + 2 default dendrites.
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let pop = @snn_mbt.Tripod::new(1, soma_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let pop = @neuron.Tripod::new(1, soma_param, rng)
 
   // Simulate for 1s.
   let total_steps : Int = (1000.0F / dt).to_int()
@@ -36,7 +36,7 @@ fn main {
     pop.i_d1[0] = 100.0F
     pop.i_d2[0] = -50.0F  // slight hyperpolarization on d2
     // 2. Step Tripod (synapses → currents → Heun → spike detect).
-    @snn_mbt.step_tripod(pop, dt)
+    @neuron.step_tripod(pop, dt)
     if pop.fire[0] {
       soma_spikes = soma_spikes + 1
     }

@@ -22,10 +22,10 @@ fn main {
   let ne = 16
   let ni = 4
   // RS (regular spiking) for E, FS (fast spiking) for I.
-  let e_param = @snn_mbt.IZParameter::rs()
-  let e_pop = @snn_mbt.IZ::new(ne, e_param, rng)
-  let i_param = @snn_mbt.IZParameter::fs()
-  let i_pop = @snn_mbt.IZ::new(ni, i_param, rng)
+  let e_param = @neuron.IZParameter::rs()
+  let e_pop = @neuron.IZ::new(ne, e_param, rng)
+  let i_param = @neuron.IZParameter::fs()
+  let i_pop = @neuron.IZ::new(ni, i_param, rng)
 
   // Build E-E and I-E SpikingSynapses with :ge and :gi routes.
   let ee = @snn_mbt.SpikingSynapseIZ::random(e_pop, e_pop, "ge", 0.05F, 0.0F, 0.8F, rng)
@@ -47,11 +47,11 @@ fn main {
   for _ in 0..<1000 {
     // Inject Gaussian noise: 5x scale for E, 2x scale for I.
     for k in 0..<ne {
-      let (z1, _) = @snn_mbt.box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       e_pop.i[k] = 5.0F * Float::from_double(z1)
     }
     for k in 0..<ni {
-      let (z1, _) = @snn_mbt.box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       i_pop.i[k] = 2.0F * Float::from_double(z1)
     }
     // 1ms = 8 steps at dt=0.125F
@@ -60,8 +60,8 @@ fn main {
       @snn_mbt.forward_iz_synapse(ei)
       @snn_mbt.forward_iz_synapse(ie)
       @snn_mbt.forward_iz_synapse(ii)
-      @snn_mbt.step_iz(e_pop, dt)
-      @snn_mbt.step_iz(i_pop, dt)
+      @neuron.step_iz(e_pop, dt)
+      @neuron.step_iz(i_pop, dt)
     }
     // Count spikes in the last step.
     for f in e_pop.fire {

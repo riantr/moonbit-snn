@@ -26,11 +26,11 @@ fn main {
   let dt = 0.125F
 
   // Build 1 BallAndStick + 1 TripodHet.
-  let soma_param = @snn_mbt.AdExParameter::new()
-  let ball = @snn_mbt.BallAndStick::new(1, soma_param, rng)
-  let base = @snn_mbt.AdExParameter::new()
-  let trip_param = @snn_mbt.AdExParameterHet::homogeneous(1, base)
-  let tripod : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(1, trip_param, rng)
+  let soma_param = @neuron.AdExParameter::new()
+  let ball = @neuron.BallAndStick::new(1, soma_param, rng)
+  let base = @neuron.AdExParameter::new()
+  let trip_param = @neuron.AdExParameterHet::homogeneous(1, base)
+  let tripod : @neuron.TripodHet = @neuron.TripodHet::new(1, trip_param, rng)
 
   // Exc Poisson (200 Hz) on BallAndStick :d.
   let pl_ball_e = @snn_mbt.PoissonLayer::with_n(200.0F * @core.hz, 1)
@@ -75,16 +75,16 @@ fn main {
     @snn_mbt.stimulate_layer_tripod(stim_trip_i, 0.0F, dt)
     // Step BallAndStick (step_ballandstick internally handles
     // soma+dend synapse steps + synaptic current).
-    @snn_mbt.ballandstick_soma_step_synapses(ball, dt)
-    @snn_mbt.ballandstick_dend_step_synapses(ball, dt)
-    @snn_mbt.step_ballandstick(ball, dt)
+    @neuron.ballandstick_soma_step_synapses(ball, dt)
+    @neuron.ballandstick_dend_step_synapses(ball, dt)
+    @neuron.step_ballandstick(ball, dt)
     if ball.fire[0] {
       ball_spikes = ball_spikes + 1
     }
     // Step TripodHet (similarly internal).
-    @snn_mbt.tripod_het_soma_step_synapses(tripod, dt)
-    @snn_mbt.tripod_het_dend_step_synapses(tripod, dt)
-    @snn_mbt.step_tripod_het(tripod, dt)
+    @neuron.tripod_het_soma_step_synapses(tripod, dt)
+    @neuron.tripod_het_dend_step_synapses(tripod, dt)
+    @neuron.step_tripod_het(tripod, dt)
     if tripod.fire[0] {
       trip_spikes = trip_spikes + 1
     }

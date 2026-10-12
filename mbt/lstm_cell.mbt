@@ -144,7 +144,7 @@ pub fn xavier_normal(
   for i in 0..<rows {
     let row : Array[Float] = Array::make(cols, 0.0F)
     for j in 0..<cols {
-      let (z1, z2) = box_muller(rng)
+      let (z1, z2) = @neuron.box_muller(rng)
       let z = if z1 != 0.0 { z1 } else { z2 }
       row[j] = Float::from_double(z) * std
     }

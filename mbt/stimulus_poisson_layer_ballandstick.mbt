@@ -17,7 +17,7 @@
 /// targeting a BallAndStick compartment buffer.
 pub struct PoissonLayerStimulusBallAndStick {
   param : PoissonLayer
-  post : BallAndStick
+  post : @neuron.BallAndStick
   weights : Array[Float]
   connectivity : Array[Bool]
   target_compartment : String  // "soma" or "d"
@@ -30,7 +30,7 @@ pub struct PoissonLayerStimulusBallAndStick {
 /// sparse weights at construction.
 pub fn PoissonLayerStimulusBallAndStick::new(
   param : PoissonLayer,
-  post : BallAndStick,
+  post : @neuron.BallAndStick,
   target_compartment : String,
   target_kind : String,
   mu : Float,

@@ -22,7 +22,7 @@
 pub struct CurrentStimulusIF {
   mut i_base : Float
   active : Array[Bool]
-  pop : IF
+  pop : @neuron.IF
   noise_sigma : Float
   rng : @core.Xoshiro
 }
@@ -30,7 +30,7 @@ pub struct CurrentStimulusIF {
 ///|
 /// Construct a constant-current stimulus targeting an IF population.
 pub fn CurrentStimulusIF::new(
-  pop : IF,
+  pop : @neuron.IF,
   i_base : Float,
   rng : @core.Xoshiro,
   noise_sigma? : Float = 0.0F,
@@ -66,7 +66,7 @@ pub fn stimulate_current_if(s : CurrentStimulusIF) -> Unit {
     let sigma = s.noise_sigma
     let mut k = 0
     while k < n {
-      let (z1, _) = box_muller(s.rng)
+      let (z1, _) = @neuron.box_muller(s.rng)
       pop.i[k] = s.i_base + sigma * Float::from_double(z1)
       k = k + 1
     }
@@ -132,7 +132,7 @@ pub fn stimulate_current_array(s : CurrentStimulusArray) -> Unit {
     let sigma = s.noise_sigma
     let mut k = 0
     while k < s.n {
-      let (z1, _) = box_muller(s.rng)
+      let (z1, _) = @neuron.box_muller(s.rng)
       s.i[k] = s.i_base + sigma * Float::from_double(z1)
       k = k + 1
     }

@@ -25,8 +25,8 @@ fn main {
 
   // Build dense 4x4 connectivity.
   let n_conn = n_pre * n_post
-  let pre = @snn_mbt.IF::new(n_pre, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(n_post, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(n_pre, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(n_post, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   for j in 1..<=n_pre {
     for i in 1..<=n_post {

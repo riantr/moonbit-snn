@@ -13,8 +13,8 @@
 ///   for each pre neuron j that has outgoing weights:
 ///     for each (k, w) in row j: g[k] += w * rJ[j]
 pub struct RateSynapse {
-  pre : WilsonCowan
-  post : WilsonCowan
+  pre : @neuron.WilsonCowan
+  post : @neuron.WilsonCowan
   // CSR matrix: rows = pre.n, cols = post.n
   matrix : SparseMatrixCSR
   // For convenience, store references to the rate vectors so we
@@ -34,8 +34,8 @@ pub struct RateSynapse {
 /// Julia, we pass `mu_center = 0` and `σ = μ / sqrt(p*N)` so the
 /// effective weight distribution is N(0, μ²/(p*N)) * Bernoulli(p).
 pub fn RateSynapse::new(
-  pre : WilsonCowan,
-  post : WilsonCowan,
+  pre : @neuron.WilsonCowan,
+  post : @neuron.WilsonCowan,
   mu : Float,
   sigma : Float,
   p : Float,

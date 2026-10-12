@@ -12,16 +12,16 @@
 ///|
 /// Heterogeneous population wrapper.
 pub(all) enum AnyPop {
-  IF_(IF)
-  AdEx_(AdEx)
-  AdExSinExp_(AdExSinExp)
-  IZ_(IZ)
-  HH_(HH)
-  ML_(MorrisLecar)
-  Poisson_(Poisson)
-  WC_(WilsonCowan)
-  HetRec_(HetRec)
-  IFCANAHP_(IFCANAHP)
+  IF_(@neuron.IF)
+  AdEx_(@neuron.AdEx)
+  AdExSinExp_(@neuron.AdExSinExp)
+  IZ_(@neuron.IZ)
+  HH_(@neuron.HH)
+  ML_(@neuron.MorrisLecar)
+  Poisson_(@neuron.Poisson)
+  WC_(@neuron.WilsonCowan)
+  HetRec_(@neuron.HetRec)
+  IFCANAHP_(@neuron.IFCANAHP)
 }
 
 ///|
@@ -31,27 +31,27 @@ pub(all) enum AnyPop {
 pub fn integrate_any(p : AnyPop, dt : Float) -> Unit {
   match p {
     IF_(x) => {
-      step_synapses(x, dt)
-      synaptic_current(x)
-      step_neuron(x, dt)
+      @neuron.step_synapses(x, dt)
+      @neuron.synaptic_current(x)
+      @neuron.step_neuron(x, dt)
     }
     AdEx_(x) => {
-      adex_step_synapses(x, dt)
-      adex_synaptic_current(x)
-      step_adex(x, dt)
+      @neuron.adex_step_synapses(x, dt)
+      @neuron.adex_synaptic_current(x)
+      @neuron.step_adex(x, dt)
     }
     AdExSinExp_(x) => {
-      adex_sinexp_step_synapses(x, dt)
-      adex_sinexp_synaptic_current(x)
-      step_adex_sinexp(x, dt)
+      @neuron.adex_sinexp_step_synapses(x, dt)
+      @neuron.adex_sinexp_synaptic_current(x)
+      @neuron.step_adex_sinexp(x, dt)
     }
-    IZ_(x) => step_iz(x, dt)
-    HH_(x) => step_hh(x, dt)
-    ML_(x) => step_ml(x, dt)
-    Poisson_(x) => step_poisson(x, dt)
-    WC_(x) => step_wc(x, dt)
-    HetRec_(x) => step_hetrec(x, dt)
-    IFCANAHP_(x) => integrate_ifcanahp(x, x.param, dt)
+    IZ_(x) => @neuron.step_iz(x, dt)
+    HH_(x) => @neuron.step_hh(x, dt)
+    ML_(x) => @neuron.step_ml(x, dt)
+    Poisson_(x) => @neuron.step_poisson(x, dt)
+    WC_(x) => @neuron.step_wc(x, dt)
+    HetRec_(x) => @neuron.step_hetrec(x, dt)
+    IFCANAHP_(x) => @neuron.integrate_ifcanahp(x, x.param, dt)
   }
 }
 

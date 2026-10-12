@@ -22,8 +22,8 @@
 fn main {
   let rng = @core.Xoshiro::default()
   let n = 4
-  let e1 = @snn_mbt.IF::new(n, @snn_mbt.IFParameter::new(), rng)
-  let e2 = @snn_mbt.IF::new(n, @snn_mbt.IFParameter::new(), rng)
+  let e1 = @neuron.IF::new(n, @neuron.IFParameter::new(), rng)
+  let e2 = @neuron.IF::new(n, @neuron.IFParameter::new(), rng)
   // Identity synapse: E1[i] -> E2[i].
   let ee = @snn_mbt.SpikingSynapse::new(e1, e2, "ge")
   for k in 0..<n {

@@ -18,14 +18,14 @@ fn main {
 
   // Build LKD2014.PV (IF) parameters.
   // LKD2014.PV: El=-62mV, Vr=-57.47mV, Vt=-52mV, tm=20ms.
-  let pv_param = @snn_mbt.IFParameter::custom(
+  let pv_param = @neuron.IFParameter::custom(
     20.0F, // tm (ms)
     -52.0F, // vt
     -57.47F, // vr (LKD2014.PV.Vr)
     -62.0F, // el (LKD2014.PV.El)
     0.0667F, // r (matches LKD 1/15nS scaling)
   )
-  let pv_pop = @snn_mbt.IF::new(1, pv_param, rng)
+  let pv_pop = @neuron.IF::new(1, pv_param, rng)
 
   // SpikeTimeStimulus: single spike at t=1000ms onto :ge.
   let pv_stim = @snn_mbt.SpikeTimeStimulus::new(
@@ -41,9 +41,9 @@ fn main {
     // 1. Deliver scheduled spikes at this time.
     @snn_mbt.stimulate_spiketime(pv_stim, t, 1.0F)
     // 2. Step IF (synapses → synaptic current → neuron).
-    @snn_mbt.step_synapses(pv_pop, dt)
-    @snn_mbt.synaptic_current(pv_pop)
-    @snn_mbt.step_neuron(pv_pop, dt)
+    @neuron.step_synapses(pv_pop, dt)
+    @neuron.synaptic_current(pv_pop)
+    @neuron.step_neuron(pv_pop, dt)
     s = s + 1
   }
 

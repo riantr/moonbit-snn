@@ -2,9 +2,9 @@
 
 ///|
 test "BallAndStick::new — initial state" {
-  let soma_param = @snn_mbt.AdExParameter::new()
+  let soma_param = @neuron.AdExParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.BallAndStick::new(3, soma_param, rng)
+  let p = @neuron.BallAndStick::new(3, soma_param, rng)
   assert_eq(p.n, 3)
   assert_eq(p.v_s.length(), 3)
   assert_eq(p.v_d.length(), 3)
@@ -46,15 +46,15 @@ test "BallAndStick::new — initial state" {
 
 ///|
 test "BallAndStick — no input, v_s and v_d decay toward el" {
-  let soma_param = @snn_mbt.AdExParameter::new()
+  let soma_param = @neuron.AdExParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let p = @neuron.BallAndStick::new(1, soma_param, rng)
   // Start both soma and dendrite at rest.
   p.v_s[0] = soma_param.el
   p.v_d[0] = soma_param.el
   let dt = 0.125F
   for _ in 0..<2000 {
-    @snn_mbt.step_ballandstick(p, dt)
+    @neuron.step_ballandstick(p, dt)
   }
   // After 250ms with no input, v_s and v_d should be close to el.
   let vs = p.v_s[0]
@@ -72,16 +72,16 @@ test "BallAndStick — no input, v_s and v_d decay toward el" {
 
 ///|
 test "BallAndStick — soma spike fires when threshold reached" {
-  let soma_param = @snn_mbt.AdExParameter::with_vr(-60.0F)  // closer to LKD Vr
+  let soma_param = @neuron.AdExParameter::with_vr(-60.0F)  // closer to LKD Vr
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let p = @neuron.BallAndStick::new(1, soma_param, rng)
   // Drive the soma strongly with 1500 pA (default AdEx params need a lot).
   p.i_s[0] = 1500.0F
   let dt = 0.125F
   let mut fired = false
   let mut steps = 0
   while not(fired) && steps < 5000 {
-    @snn_mbt.step_ballandstick(p, dt)
+    @neuron.step_ballandstick(p, dt)
     if p.fire[0] {
       fired = true
     }
@@ -97,13 +97,13 @@ test "BallAndStick — soma spike fires when threshold reached" {
 
 ///|
 test "BallAndStick — single-exp synapse step on soma" {
-  let soma_param = @snn_mbt.AdExParameter::new()
+  let soma_param = @neuron.AdExParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let p = @neuron.BallAndStick::new(1, soma_param, rng)
   // Inject a spike into glu_s.
   p.glu_s[0] = 1.0F
   let dt = 0.125F
-  @snn_mbt.ballandstick_soma_step_synapses(p, dt)
+  @neuron.ballandstick_soma_step_synapses(p, dt)
   // glu_s consumed, ge_s > 0.
   assert_eq(p.glu_s[0], 0.0F)
   if p.ge_s[0] <= 0.0F {
@@ -117,12 +117,12 @@ test "BallAndStick — single-exp synapse step on soma" {
 
 ///|
 test "BallAndStick — single-exp synapse step on dendrite" {
-  let soma_param = @snn_mbt.AdExParameter::new()
+  let soma_param = @neuron.AdExParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.BallAndStick::new(1, soma_param, rng)
+  let p = @neuron.BallAndStick::new(1, soma_param, rng)
   p.gaba_d[0] = 1.0F
   let dt = 0.125F
-  @snn_mbt.ballandstick_dend_step_synapses(p, dt)
+  @neuron.ballandstick_dend_step_synapses(p, dt)
   assert_eq(p.gaba_d[0], 0.0F)
   let expected : Float = 1.0F - dt / p.tau_i
   if p.gi_d[0] != expected {
@@ -132,14 +132,14 @@ test "BallAndStick — single-exp synapse step on dendrite" {
 
 ///|
 test "BallAndStick — Heun integration runs without NaN" {
-  let soma_param = @snn_mbt.AdExParameter::with_vr(-60.0F)
+  let soma_param = @neuron.AdExParameter::with_vr(-60.0F)
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.BallAndStick::new(2, soma_param, rng)
+  let p = @neuron.BallAndStick::new(2, soma_param, rng)
   p.i_s[0] = 1000.0F
   p.i_s[1] = -100.0F  // hyperpolarizing
   let dt = 0.125F
   for _ in 0..<200 {
-    @snn_mbt.step_ballandstick(p, dt)
+    @neuron.step_ballandstick(p, dt)
   }
   // No NaN, no infinities.
   for k in 0..<2 {

@@ -31,14 +31,14 @@ fn main {
   // With el=-70, vt=-55, r=0.06, the required current to fire is
   // (vt - el) / r = 250 pA. Tonic 400 pA → steady-state at -46mV,
   // above Vt → fires.
-  let e_base = @snn_mbt.IFParameter::with_el(-70.0F)
-  let e_pop = @snn_mbt.IF::with_gsyn(ne, e_base, 0.73F, 0.265F, rng)
+  let e_base = @neuron.IFParameter::with_el(-70.0F)
+  let e_pop = @neuron.IF::with_gsyn(ne, e_base, 0.73F, 0.265F, rng)
 
   // ----- PV population (gsyn_e = 1.04nS, gsyn_i = 0.84nS) -----
-  let pv_pop = @snn_mbt.IF::with_gsyn(npv, e_base, 1.04F, 0.84F, rng)
+  let pv_pop = @neuron.IF::with_gsyn(npv, e_base, 1.04F, 0.84F, rng)
 
   // ----- SST population (gsyn_e = 0.56nS, gsyn_i = 0.59nS) -----
-  let sst_pop = @snn_mbt.IF::with_gsyn(nsst, e_base, 0.56F, 0.59F, rng)
+  let sst_pop = @neuron.IF::with_gsyn(nsst, e_base, 0.56F, 0.59F, rng)
 
   // Tonic drive (above firing threshold: needs >250pA for Vt=-55, El=-70).
   for k in 0..<ne { e_pop.i[k] = 400.0F }
@@ -77,15 +77,15 @@ fn main {
     @snn_mbt.forward_synapse(sst_to_e, t_now)
 
     // Integrate.
-    @snn_mbt.step_synapses(e_pop, dt)
-    @snn_mbt.synaptic_current(e_pop)
-    @snn_mbt.step_neuron(e_pop, dt)
-    @snn_mbt.step_synapses(pv_pop, dt)
-    @snn_mbt.synaptic_current(pv_pop)
-    @snn_mbt.step_neuron(pv_pop, dt)
-    @snn_mbt.step_synapses(sst_pop, dt)
-    @snn_mbt.synaptic_current(sst_pop)
-    @snn_mbt.step_neuron(sst_pop, dt)
+    @neuron.step_synapses(e_pop, dt)
+    @neuron.synaptic_current(e_pop)
+    @neuron.step_neuron(e_pop, dt)
+    @neuron.step_synapses(pv_pop, dt)
+    @neuron.synaptic_current(pv_pop)
+    @neuron.step_neuron(pv_pop, dt)
+    @neuron.step_synapses(sst_pop, dt)
+    @neuron.synaptic_current(sst_pop)
+    @neuron.step_neuron(sst_pop, dt)
 
     // Record.
     @snn_mbt.record_one(fm_e, t_now)

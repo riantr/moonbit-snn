@@ -21,8 +21,8 @@
 fn main {
   let rng = @core.Xoshiro::default()
   let n = 4
-  let e1 = @snn_mbt.IF::new(n, @snn_mbt.IFParameter::new(), rng)
-  let e2 = @snn_mbt.IF::new(n, @snn_mbt.IFParameter::new(), rng)
+  let e1 = @neuron.IF::new(n, @neuron.IFParameter::new(), rng)
+  let e2 = @neuron.IF::new(n, @neuron.IFParameter::new(), rng)
   // Identity synapse: E1[i] → E2[i].
   let ee = @snn_mbt.SpikingSynapse::new(e1, e2, "ge")
   for k in 0..<n {
@@ -50,12 +50,12 @@ fn main {
     let mut s = 0
     while s < pair_steps {
       // Step both populations.
-      @snn_mbt.step_synapses(e1, dt)
-      @snn_mbt.synaptic_current(e1)
-      @snn_mbt.step_neuron(e1, dt)
-      @snn_mbt.step_synapses(e2, dt)
-      @snn_mbt.synaptic_current(e2)
-      @snn_mbt.step_neuron(e2, dt)
+      @neuron.step_synapses(e1, dt)
+      @neuron.synaptic_current(e1)
+      @neuron.step_neuron(e1, dt)
+      @neuron.step_synapses(e2, dt)
+      @neuron.synaptic_current(e2)
+      @neuron.step_neuron(e2, dt)
       // Forward spikes through EE synapse.
       @snn_mbt.forward_synapse(ee, Float::from_int(t_step * pair_steps + s) * dt)
       // Apply STDP.

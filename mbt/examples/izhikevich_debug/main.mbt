@@ -8,8 +8,8 @@
 ///|
 fn main {
   let rng = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL)
-  let param = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::new(1, param, rng)
+  let param = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::new(1, param, rng)
 
   // 10 pA injection
   pop.i[0] = 10.0F
@@ -19,7 +19,7 @@ fn main {
   let total_steps : Int = (100.0F / dt).to_int()
   let v_trace : Array[Float] = [pop.v[0]]
   for _ in 0..<total_steps {
-    @snn_mbt.step_iz(pop, dt)
+    @neuron.step_iz(pop, dt)
     v_trace.push(pop.v[0])
   }
 

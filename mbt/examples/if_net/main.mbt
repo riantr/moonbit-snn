@@ -22,10 +22,10 @@ fn main {
   let rng = @core.Xoshiro::default()
 
   // Two IF populations with different El. Use the with_el constructor.
-  let exc_param = @snn_mbt.IFParameter::with_el(-49.0F)
-  let exc_pop = @snn_mbt.IF::new(n_exc, exc_param, rng)
-  let inh_param = @snn_mbt.IFParameter::with_el(-60.0F)
-  let inh_pop = @snn_mbt.IF::new(n_inh, inh_param, rng)
+  let exc_param = @neuron.IFParameter::with_el(-49.0F)
+  let exc_pop = @neuron.IF::new(n_exc, exc_param, rng)
+  let inh_param = @neuron.IFParameter::with_el(-60.0F)
+  let inh_pop = @neuron.IF::new(n_inh, inh_param, rng)
 
   // Four random SpikingSynapses
   let ee = @snn_mbt.SpikingSynapse::random(exc_pop, exc_pop, "ge", 0.2F, 0.0F, 0.2F, rng)

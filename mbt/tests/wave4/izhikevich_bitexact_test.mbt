@@ -18,15 +18,15 @@ test "IZ bit-exact — fixed seed, 10pA, 100ms: v[0] at key indices" {
   let rng = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
-  let param = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::new(1, param, rng)
+  let param = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::new(1, param, rng)
   pop.i[0] = 10.0F
   let dt = 0.125F
   // Initial state: v[0] = -65 + next_f32 * (vt - vr)... but our IZ
   // initialises v[0] = -65.0 (no rand) per the source comment.
   assert_eq(pop.v[0], -65.0F)
   // After 1 step (dt=0.125ms): IZ midpoint Euler step.
-  @snn_mbt.step_iz(pop, dt)
+  @neuron.step_iz(pop, dt)
   // Reference values captured from a real MoonBit run with this
   // seed and params. These guard against regressions in the
   // half-step midpoint integration or ge/gi decay order.
@@ -40,7 +40,7 @@ test "IZ bit-exact — fixed seed, 10pA, 100ms: v[0] at key indices" {
   // After 100 steps (12.5ms), capture v[0].
   let mut last_v = pop.v[0]
   for _ in 0..<99 {
-    @snn_mbt.step_iz(pop, dt)
+    @neuron.step_iz(pop, dt)
     last_v = pop.v[0]
   }
   // v[0] should be close to -65 + (10 * 0.0125 / 7) = ... roughly -63ish.
@@ -64,25 +64,25 @@ test "IZ bit-exact — two runs from same seed produce identical trace" {
   let rng1 = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
-  let param1 = @snn_mbt.IZParameter::rs()
-  let pop1 = @snn_mbt.IZ::new(1, param1, rng1)
+  let param1 = @neuron.IZParameter::rs()
+  let pop1 = @neuron.IZ::new(1, param1, rng1)
   pop1.i[0] = 10.0F
   let dt = 0.125F
   let trace1 : Array[Float] = [pop1.v[0]]
   for _ in 0..<200 {
-    @snn_mbt.step_iz(pop1, dt)
+    @neuron.step_iz(pop1, dt)
     trace1.push(pop1.v[0])
   }
 
   let rng2 = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
-  let param2 = @snn_mbt.IZParameter::rs()
-  let pop2 = @snn_mbt.IZ::new(1, param2, rng2)
+  let param2 = @neuron.IZParameter::rs()
+  let pop2 = @neuron.IZ::new(1, param2, rng2)
   pop2.i[0] = 10.0F
   let trace2 : Array[Float] = [pop2.v[0]]
   for _ in 0..<200 {
-    @snn_mbt.step_iz(pop2, dt)
+    @neuron.step_iz(pop2, dt)
     trace2.push(pop2.v[0])
   }
 
@@ -101,14 +101,14 @@ test "IZ bit-exact — single run trace summary (regression guard)" {
   let rng = @core.Xoshiro::from_state(
     0xDEADBEEFUL, 0xCAFEBABEUL, 0x1234567890ABCDEFUL, 0xFEDCBA0987654321UL,
   )
-  let param = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::new(1, param, rng)
+  let param = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::new(1, param, rng)
   pop.i[0] = 10.0F
   let dt = 0.125F
   let total_steps : Int = 100
   let trace : Array[Float] = [pop.v[0]]
   for _ in 0..<total_steps {
-    @snn_mbt.step_iz(pop, dt)
+    @neuron.step_iz(pop, dt)
     trace.push(pop.v[0])
   }
   // Compute min/max/mean.

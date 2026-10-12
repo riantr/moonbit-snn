@@ -24,8 +24,8 @@ fn main {
   let dt = 0.125F
 
   // IF population.
-  let param = @snn_mbt.IFParameter::new()
-  let pop = @snn_mbt.IF::new(n, param, rng)
+  let param = @neuron.IFParameter::new()
+  let pop = @neuron.IF::new(n, param, rng)
 
   // Two SpikingSynapses (E → E).
   let s1 = @snn_mbt.SpikingSynapse::random(pop, pop, "ge",
@@ -68,14 +68,14 @@ fn main {
   // Perturb weights (simulate ongoing plasticity).
   let mut k = 0
   while k < v1.length() {
-    let (z1, _) = @snn_mbt.box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     v1[k] = v1[k] + Float::from_double(z1) * 0.1F
     if v1[k] < 0.0F { v1[k] = 0.0F }
     k = k + 1
   }
   k = 0
   while k < v2.length() {
-    let (z1, _) = @snn_mbt.box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     v2[k] = v2[k] + Float::from_double(z1) * 0.1F
     if v2[k] < 0.0F { v2[k] = 0.0F }
     k = k + 1

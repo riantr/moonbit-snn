@@ -11,8 +11,8 @@ test "izhikevich_balanced_postspike — 1 kHz Bernoulli drive reaches ~1kHz expe
   let n_post = 50
   let total_steps = 8000  // 1 second
   let mut total_spikes = 0
-  let post = @snn_mbt.IZ::init_with_postspike(
-    n_post, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let post = @neuron.IZ::init_with_postspike(
+    n_post, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
   for _ in 0..<total_steps {
     for j in 0..<n_post {
@@ -21,7 +21,7 @@ test "izhikevich_balanced_postspike — 1 kHz Bernoulli drive reaches ~1kHz expe
         post.ge[j] = post.ge[j] + 1.0F
       }
     }
-    @snn_mbt.step_iz_with_postspike(post, dt)
+    @neuron.step_iz_with_postspike(post, dt)
     for j in 0..<n_post {
       if post.fire[j] {
         total_spikes = total_spikes + 1
@@ -43,10 +43,10 @@ test "izhikevich_balanced_postspike — refractory caps firing rate" {
   let n_post = 50
   let total_steps = 4000  // 0.5 second
   // No refractory.
-  let pop_none = @snn_mbt.IZ::new(n_post, @snn_mbt.IZParameter::rs(), rng_a)
+  let pop_none = @neuron.IZ::new(n_post, @neuron.IZParameter::rs(), rng_a)
   // With refractory.
-  let pop_refr = @snn_mbt.IZ::init_with_postspike(
-    n_post, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let pop_refr = @neuron.IZ::init_with_postspike(
+    n_post, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
   let mut fires_none : Int = 0
   let mut fires_refr : Int = 0
@@ -62,8 +62,8 @@ test "izhikevich_balanced_postspike — refractory caps firing rate" {
         pop_refr.ge[j] = pop_refr.ge[j] + 1.0F
       }
     }
-    @snn_mbt.step_iz(pop_none, dt)
-    @snn_mbt.step_iz_with_postspike(pop_refr, dt)
+    @neuron.step_iz(pop_none, dt)
+    @neuron.step_iz_with_postspike(pop_refr, dt)
     for j in 0..<n_post {
       if pop_none.fire[j] { fires_none = fires_none + 1 }
       if pop_refr.fire[j] { fires_refr = fires_refr + 1 }
@@ -81,8 +81,8 @@ test "izhikevich_balanced_postspike — fire rate is bounded by 1/(tabs_const*dt
   let dt = 0.125F
   let n_post = 100
   let total_steps = 8000  // 1 second
-  let post = @snn_mbt.IZ::init_with_postspike(
-    n_post, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let post = @neuron.IZ::init_with_postspike(
+    n_post, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
   let mut fires : Int = 0
   for _ in 0..<total_steps {
@@ -92,7 +92,7 @@ test "izhikevich_balanced_postspike — fire rate is bounded by 1/(tabs_const*dt
         post.ge[j] = post.ge[j] + 1.0F
       }
     }
-    @snn_mbt.step_iz_with_postspike(post, dt)
+    @neuron.step_iz_with_postspike(post, dt)
     for j in 0..<n_post {
       if post.fire[j] { fires = fires + 1 }
     }
@@ -111,8 +111,8 @@ fn run_balanced_postspike_benchmark() -> Int {
   let dt = 0.125F
   let n_post = 50
   let total_steps = 1000
-  let post = @snn_mbt.IZ::init_with_postspike(
-    n_post, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let post = @neuron.IZ::init_with_postspike(
+    n_post, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
   let mut fires : Int = 0
   for _ in 0..<total_steps {
@@ -122,7 +122,7 @@ fn run_balanced_postspike_benchmark() -> Int {
         post.ge[j] = post.ge[j] + 1.0F
       }
     }
-    @snn_mbt.step_iz_with_postspike(post, dt)
+    @neuron.step_iz_with_postspike(post, dt)
     for j in 0..<n_post {
       if post.fire[j] { fires = fires + 1 }
     }
@@ -144,14 +144,14 @@ test "izhikevich_balanced_postspike — refractory decrement tracks per-neuron" 
   // tabs_const=4, after a fire the neuron should remain refractory for
   // 4 steps. We can verify by counting consecutive fires from a
   // single neuron — should be ≥ tabs_const steps apart.
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(4))
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(4))
   // Inject strong current.
   pop.i[0] = 50.0F
   let mut steps_between_fires : Int = -1
   let mut last_fire_step : Int = -1
   let mut current_step : Int = 0
   for _ in 0..<200 {
-    @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+    @neuron.step_iz_with_postspike(pop, 0.125F)
     if pop.fire[0] {
       if last_fire_step >= 0 {
         steps_between_fires = current_step - last_fire_step
@@ -176,11 +176,11 @@ test "izhikevich_balanced_postspike — E/I balanced: both populations fire" {
   let dt = 0.125F
   let n_e = 50
   let n_i = 25
-  let e_pop = @snn_mbt.IZ::init_with_postspike(
-    n_e, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let e_pop = @neuron.IZ::init_with_postspike(
+    n_e, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
-  let i_pop = @snn_mbt.IZ::init_with_postspike(
-    n_i, @snn_mbt.IZParameter::fs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(4),
+  let i_pop = @neuron.IZ::init_with_postspike(
+    n_i, @neuron.IZParameter::fs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(4),
   )
   let total_steps = 4000 // 0.5 s
   let mut e_spikes = 0
@@ -198,8 +198,8 @@ test "izhikevich_balanced_postspike — E/I balanced: both populations fire" {
         i_pop.ge[j] = i_pop.ge[j] + 1.0F
       }
     }
-    @snn_mbt.step_iz_with_postspike(e_pop, dt)
-    @snn_mbt.step_iz_with_postspike(i_pop, dt)
+    @neuron.step_iz_with_postspike(e_pop, dt)
+    @neuron.step_iz_with_postspike(i_pop, dt)
     for j in 0..<n_e {
       if e_pop.fire[j] {
         e_spikes = e_spikes + 1

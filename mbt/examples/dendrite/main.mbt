@@ -23,7 +23,7 @@ fn main {
   let dt = 0.125F
 
   // 1 passive Dendrite (default params).
-  let dend = @snn_mbt.Dendrite::new(1)
+  let dend = @neuron.Dendrite::new(1)
   // Voltage state.
   let v : Array[Float] = Array::make(1, dend.el[0])  // start at rest
   let v_parent : Array[Float] = Array::make(1, -50.0F)  // depolarized soma
@@ -40,7 +40,7 @@ fn main {
     } else {
       i_ext[0] = 0.0F
     }
-    let dv = @snn_mbt.dendrite_step(dend, v, v_parent, i_ext)
+    let dv = @neuron.dendrite_step(dend, v, v_parent, i_ext)
     v[0] = v[0] + dt * dv[0]
     if v[0] > v_peak {
       v_peak = v[0]

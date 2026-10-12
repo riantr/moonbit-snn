@@ -3,7 +3,7 @@
 ///|
 test "WilsonCowan::new initialises x from Normal(0, 0.5)" {
   let rng = @core.Xoshiro::from_state(0xDEAD_BEEF_UL, 1UL, 2UL, 3UL)
-  let p = @snn_mbt.WilsonCowan::new(100, rng)
+  let p = @neuron.WilsonCowan::new(100, rng)
   assert_eq(p.n, 100)
   assert_eq(p.x.length(), 100)
   assert_eq(p.r.length(), 100)
@@ -21,7 +21,7 @@ test "WilsonCowan::new initialises x from Normal(0, 0.5)" {
 ///|
 test "step_wc: x decays toward 0 with I=0, g=0" {
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let p = @snn_mbt.WilsonCowan::new(5, rng)
+  let p = @neuron.WilsonCowan::new(5, rng)
   // Set x to +2.0, I=0, g=0. Each step: x += dt * (-x + 0 + 0)
   // = x * (1 - dt). With dt=0.125, x decays as x * 0.875 per step.
   for k in 0..<5 {
@@ -30,7 +30,7 @@ test "step_wc: x decays toward 0 with I=0, g=0" {
     p.i[k] = 0.0F
   }
   for _ in 0..<20 {
-    @snn_mbt.step_wc(p, 0.125F)
+    @neuron.step_wc(p, 0.125F)
   }
   // After 20 steps, x should be 2.0 * 0.875^20 ≈ 0.099.
   for k in 0..<5 {
@@ -43,14 +43,14 @@ test "step_wc: x decays toward 0 with I=0, g=0" {
 ///|
 test "step_wc: r = tanh(x) after integration" {
   let rng = @core.Xoshiro::from_state(5UL, 6UL, 7UL, 8UL)
-  let p = @snn_mbt.WilsonCowan::new(2, rng)
+  let p = @neuron.WilsonCowan::new(2, rng)
   p.x[0] = 0.0F
   p.x[1] = 1.0F
   p.g[0] = 0.0F
   p.g[1] = 0.0F
   p.i[0] = 0.0F
   p.i[1] = 0.0F
-  @snn_mbt.step_wc(p, 0.125F)
+  @neuron.step_wc(p, 0.125F)
   // r = tanh(x) — with x close to 0 or 1, r should be in (0, tanh(1)).
   if p.r[0] < -0.01F || p.r[0] > 0.01F {
     fail("r[0] should be ~0 with x[0]=0, got " + p.r[0].to_string())
@@ -63,8 +63,8 @@ test "step_wc: r = tanh(x) after integration" {
 ///|
 test "RateSynapse::new and forward_rate" {
   let rng = @core.Xoshiro::from_state(1UL, 1UL, 1UL, 1UL)
-  let pre = @snn_mbt.WilsonCowan::new(3, rng)
-  let post = @snn_mbt.WilsonCowan::new(2, rng)
+  let pre = @neuron.WilsonCowan::new(3, rng)
+  let post = @neuron.WilsonCowan::new(2, rng)
   // All-to-all: 3 pres × 2 posts = 6 connections.
   let s = @snn_mbt.RateSynapse::new(pre, post, 1.0F, 0.0F, 1.0F, rng)
   assert_eq(s.matrix.nnz(), 6)
@@ -92,7 +92,7 @@ test "RateSynapse::new and forward_rate" {
 ///|
 test "WC_ integrates via AnyPop enum" {
   let rng = @core.Xoshiro::from_state(0xC0FFEE_UL, 0xBAD_F00D_UL, 0UL, 0UL)
-  let wc = @snn_mbt.WilsonCowan::new(5, rng)
+  let wc = @neuron.WilsonCowan::new(5, rng)
   let pops : Array[@snn_mbt.AnyPop] = [WC_(wc)]
   let total_n = @snn_mbt.n_total(pops)
   assert_eq(total_n, 5)

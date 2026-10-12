@@ -17,15 +17,15 @@ test "InhomogeneousPoisson — long-run rate converges to r0" {
   // Run 4 seconds = 32,000 steps at dt = 0.125ms.
   // Note: fire[j] is reset at the start of each step (line 112),
   // so we need to track total fires with an external counter.
-  let param = @snn_mbt.InhomogeneousPoissonParam::new()
+  let param = @neuron.InhomogeneousPoissonParam::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
+  let p = @neuron.InhomogeneousPoisson::new(100, param, rng)
   let dt = 0.125F
   let n_steps = 32000  // 4s sim time
   let mut total_fires = 0
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.step_inhomogeneous_poisson(p, dt, rng)
+    @neuron.step_inhomogeneous_poisson(p, dt, rng)
     // After the step, p.fire[i] holds this step's per-neuron fires.
     let mut i = 0
     while i < 100 {
@@ -47,14 +47,14 @@ test "InhomogeneousPoisson — long-run rate converges to r0" {
 
 ///|
 test "InhomogeneousPoisson — no NaN states after long sim" {
-  let param = @snn_mbt.InhomogeneousPoissonParam::new()
+  let param = @neuron.InhomogeneousPoissonParam::new()
   let rng = @core.Xoshiro::new(7UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(50, param, rng)
+  let p = @neuron.InhomogeneousPoisson::new(50, param, rng)
   let dt = 0.125F
   let n_steps = 10000
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.step_inhomogeneous_poisson(p, dt, rng)
+    @neuron.step_inhomogeneous_poisson(p, dt, rng)
     t = t + 1
   }
   // NaN check.
@@ -71,17 +71,17 @@ test "InhomogeneousPoisson — no NaN states after long sim" {
 test "InhomogeneousPoisson — different seed produces different trajectory" {
   // Two simulations with different RNG seeds should have different
   // fire patterns (sanity check that the RNG is actually being used).
-  let param = @snn_mbt.InhomogeneousPoissonParam::new()
+  let param = @neuron.InhomogeneousPoissonParam::new()
   let rng1 = @core.Xoshiro::new(1UL)
   let rng2 = @core.Xoshiro::new(2UL)
-  let p1 = @snn_mbt.InhomogeneousPoisson::new(20, param, rng1)
-  let p2 = @snn_mbt.InhomogeneousPoisson::new(20, param, rng2)
+  let p1 = @neuron.InhomogeneousPoisson::new(20, param, rng1)
+  let p2 = @neuron.InhomogeneousPoisson::new(20, param, rng2)
   let dt = 0.125F
   let n_steps = 100
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.step_inhomogeneous_poisson(p1, dt, rng1)
-    @snn_mbt.step_inhomogeneous_poisson(p2, dt, rng2)
+    @neuron.step_inhomogeneous_poisson(p1, dt, rng1)
+    @neuron.step_inhomogeneous_poisson(p2, dt, rng2)
     t = t + 1
   }
   // Sum differences: count fires where p1[i] != p2[i].
@@ -109,15 +109,15 @@ test "InhomogeneousPoisson — β = 0 reduces to homogeneous Poisson" {
   // With β = 0, the noise term doesn't modulate rate (1.0 floor)
   // and the process becomes a homogeneous Poisson with rate r0.
   // Verify the empirical rate is close to r0 (1.0).
-  let param = @snn_mbt.InhomogeneousPoissonParam::custom(0.0F, 50.0F, 1.0F)
+  let param = @neuron.InhomogeneousPoissonParam::custom(0.0F, 50.0F, 1.0F)
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
+  let p = @neuron.InhomogeneousPoisson::new(100, param, rng)
   let dt = 0.125F
   let n_steps = 16000    // 2s
   let mut total_fires = 0
   let mut t = 0
   while t < n_steps {
-    @snn_mbt.step_inhomogeneous_poisson(p, dt, rng)
+    @neuron.step_inhomogeneous_poisson(p, dt, rng)
     let mut i = 0
     while i < 100 {
       if p.fire[i] {

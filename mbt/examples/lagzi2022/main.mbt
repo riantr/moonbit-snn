@@ -28,8 +28,8 @@ fn main {
 
   // Two excitatory populations (we use IF since Identity->IF routing
   // for SpikingSynapse isn't implemented yet).
-  let e1 = @snn_mbt.IF::new(ne1, @snn_mbt.IFParameter::new(), rng)
-  let e2 = @snn_mbt.IF::new(ne2, @snn_mbt.IFParameter::new(), rng)
+  let e1 = @neuron.IF::new(ne1, @neuron.IFParameter::new(), rng)
+  let e2 = @neuron.IF::new(ne2, @neuron.IFParameter::new(), rng)
 
   // Tonic drive to enable firing.
   for k in 0..<ne1 {

@@ -12,20 +12,20 @@
 //   - EmptySynapse — new test for EmptyConnection::new
 
 ///|
-fn make_if(n : Int) -> @snn_mbt.IF {
+fn make_if(n : Int) -> @neuron.IF {
   // Build a minimal IF + IFParameter + Xoshiro for tests.
   // Use the public with_el constructor (IFParameter struct is not
   // pub(all), so we can't write it as a literal here).
-  let param = @snn_mbt.IFParameter::with_el(-49.0F)
+  let param = @neuron.IFParameter::with_el(-49.0F)
   let rng = @core.Xoshiro::new(42UL)
-  @snn_mbt.IF::new(n, param, rng)
+  @neuron.IF::new(n, param, rng)
 }
 
 ///|
 test "spiking_synapse::new — (p, μ) random connections" {
   let rng = @core.Xoshiro::new(42UL)
-  let pre : @snn_mbt.IF = make_if(30)
-  let post : @snn_mbt.IF = make_if(15)
+  let pre : @neuron.IF = make_if(30)
+  let post : @neuron.IF = make_if(15)
   let s = @snn_mbt.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.0F, 0.3F, rng)
   assert_eq(s.matrix.vals.length() > 0, true)
   assert_eq(s.sym, "ge")
@@ -34,8 +34,8 @@ test "spiking_synapse::new — (p, μ) random connections" {
 ///|
 test "spiking_synapse::new — (p, μ, σ) random connections" {
   let rng = @core.Xoshiro::new(42UL)
-  let pre : @snn_mbt.IF = make_if(20)
-  let post : @snn_mbt.IF = make_if(10)
+  let pre : @neuron.IF = make_if(20)
+  let post : @neuron.IF = make_if(10)
   let s = @snn_mbt.SpikingSynapse::random(pre, post, "ge", 1.0F, 0.2F, 0.5F, rng)
   assert_eq(s.matrix.vals.length() > 0, true)
 }
@@ -57,16 +57,16 @@ test "spiking_synapse::new — identity (1-to-1) matrix has N nnz" {
 ///|
 test "spiking_synapse::new — inhibitory :gi" {
   let rng = @core.Xoshiro::new(42UL)
-  let pre : @snn_mbt.IF = make_if(10)
-  let post : @snn_mbt.IF = make_if(20)
+  let pre : @neuron.IF = make_if(10)
+  let post : @neuron.IF = make_if(20)
   let s = @snn_mbt.SpikingSynapse::random(pre, post, "gi", 2.0F, 0.0F, 0.4F, rng)
   assert_eq(s.sym, "gi")
 }
 
 ///|
 test "spiking_synapse::with_name — defaults to empty" {
-  let pre : @snn_mbt.IF = make_if(10)
-  let post : @snn_mbt.IF = make_if(10)
+  let pre : @neuron.IF = make_if(10)
+  let post : @neuron.IF = make_if(10)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   // Default name is empty string.
   assert_eq(s.name, "")
@@ -74,8 +74,8 @@ test "spiking_synapse::with_name — defaults to empty" {
 
 ///|
 test "spiking_synapse::with_name — sets custom label" {
-  let pre : @snn_mbt.IF = make_if(5)
-  let post : @snn_mbt.IF = make_if(5)
+  let pre : @neuron.IF = make_if(5)
+  let post : @neuron.IF = make_if(5)
   let s0 = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   let s = s0.with_name("my_syn")
   assert_eq(s.name, "my_syn")
@@ -89,8 +89,8 @@ test "spiking_synapse — NoLTP / NoSTP defaults" {
   // live on the plasticity adapter, e.g. MarkramSTPEntry). The
   // equivalent for "no LTP / no STP" is: rho is empty AND delays
   // is empty AND pending_* are all empty.
-  let pre : @snn_mbt.IF = make_if(10)
-  let post : @snn_mbt.IF = make_if(10)
+  let pre : @neuron.IF = make_if(10)
+  let post : @neuron.IF = make_if(10)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   assert_eq(s.rho.length(), 0)
   assert_eq(s.delays.length(), 0)
@@ -120,14 +120,14 @@ test "spiking_synapse — explicit dense matrix via from_dense" {
   // Julia test passes a Matrix{Float32} as `conn`. We emulate this
   // by building the CSR from `from_dense` and assigning it directly.
   let rng = @core.Xoshiro::new(42UL)
-  let pre : @snn_mbt.IF = make_if(8)
-  let post : @snn_mbt.IF = make_if(6)
+  let pre : @neuron.IF = make_if(8)
+  let post : @neuron.IF = make_if(6)
   // Build a dense 8×6 random-weights matrix.
   let dense : Array[Array[Float]] = Array::make(pre.n, [])
   for i in 0..<pre.n {
     let row : Array[Float] = Array::make(post.n, 0.0F)
     for j in 0..<post.n {
-      let (z1, _) = @snn_mbt.box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       row[j] = 0.5F * Float::from_double(z1).abs()
     }
     ignore(dense.set(i, row))

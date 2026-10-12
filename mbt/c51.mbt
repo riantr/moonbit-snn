@@ -39,7 +39,7 @@ fn xavier_normal_3d(
     for j in 0..<cols {
       let plane : Array[Float] = Array::make(depth, 0.0F)
       for k in 0..<depth {
-        let (z1, z2) = box_muller(rng)
+        let (z1, z2) = @neuron.box_muller(rng)
         let z = if z1 != 0.0 { z1 } else { z2 }
         plane[k] = Float::from_double(z) * std
       }

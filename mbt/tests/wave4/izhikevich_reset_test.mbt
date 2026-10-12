@@ -2,12 +2,12 @@
 
 ///|
 test "iz_reset — restores v to -65 and u to b*-65" {
-  let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(1UL))
+  let pop = @neuron.IZ::new(2, @neuron.IZParameter::rs(), @core.Xoshiro::new(1UL))
   // Run a few steps to perturb state.
   pop.i[0] = 30.0F
   pop.i[1] = 30.0F
   for _ in 0..<20 {
-    @snn_mbt.step_iz(pop, 0.125F)
+    @neuron.step_iz(pop, 0.125F)
   }
   // v and u should have moved away from initial state.
   let v_before_reset_0 = pop.v[0]
@@ -15,7 +15,7 @@ test "iz_reset — restores v to -65 and u to b*-65" {
   if v_before_reset_0 == -65.0F { fail("v[0] should have moved") }
   if u_before_reset_0 == -13.0F { fail("u[0] should have moved") }
   // Reset.
-  @snn_mbt.iz_reset(pop)
+  @neuron.iz_reset(pop)
   if pop.v[0] != -65.0F { fail("v[0] should be -65, got \{pop.v[0]}") }
   if pop.v[1] != -65.0F { fail("v[1] should be -65, got \{pop.v[1]}") }
   // u = b * -65 = 0.2 * -65 = -13.
@@ -25,13 +25,13 @@ test "iz_reset — restores v to -65 and u to b*-65" {
 
 ///|
 test "iz_reset — clears fire, ge, gi, tabs" {
-  let pop = @snn_mbt.IZ::init_with_postspike(2, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(2))
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=2, ge may have small values
+  let pop = @neuron.IZ::init_with_postspike(2, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(2))
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=2, ge may have small values
   if !pop.fire[0] { fail("step 1 expected fire") }
   // Manually set ge, gi to non-zero.
   pop.ge[0] = 5.0F
   pop.gi[1] = 3.0F
-  @snn_mbt.iz_reset(pop)
+  @neuron.iz_reset(pop)
   if pop.fire[0] || pop.fire[1] { fail("fire should be false after reset") }
   if pop.ge[0] != 0.0F { fail("ge[0] should be 0, got \{pop.ge[0]}") }
   if pop.gi[1] != 0.0F { fail("gi[1] should be 0, got \{pop.gi[1]}") }
@@ -42,10 +42,10 @@ test "iz_reset — clears fire, ge, gi, tabs" {
 
 ///|
 test "iz_reset — does NOT modify i (external input)" {
-  let pop = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(1UL))
+  let pop = @neuron.IZ::new(2, @neuron.IZParameter::rs(), @core.Xoshiro::new(1UL))
   pop.i[0] = 10.0F
   pop.i[1] = 20.0F
-  @snn_mbt.iz_reset(pop)
+  @neuron.iz_reset(pop)
   if pop.i[0] != 10.0F { fail("i[0] should be preserved, got \{pop.i[0]}") }
   if pop.i[1] != 20.0F { fail("i[1] should be preserved, got \{pop.i[1]}") }
 }
@@ -56,22 +56,22 @@ test "iz_reset — step_iz after reset produces deterministic trajectory" {
   // the other runs 20 steps + reset + 20 more steps with same seed.
   // Both should produce identical final state (since reset zeros all
   // perturbation).
-  let pop_a = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
-  let pop_b = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(8UL))
+  let pop_a = @neuron.IZ::new(2, @neuron.IZParameter::rs(), @core.Xoshiro::new(7UL))
+  let pop_b = @neuron.IZ::new(2, @neuron.IZParameter::rs(), @core.Xoshiro::new(8UL))
   pop_a.i[0] = 5.0F
   pop_b.i[0] = 5.0F
   pop_a.i[1] = 5.0F
   pop_b.i[1] = 5.0F
   for _ in 0..<20 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
   }
-  @snn_mbt.iz_reset(pop_a)
-  @snn_mbt.iz_reset(pop_b)
+  @neuron.iz_reset(pop_a)
+  @neuron.iz_reset(pop_b)
   // After reset, both populations are at rest with same i.
   for _ in 0..<20 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     // Restore i after each step.
     pop_a.i[0] = 5.0F
     pop_a.i[1] = 5.0F
@@ -90,13 +90,13 @@ test "iz_reset — step_iz after reset produces deterministic trajectory" {
 test "iz_reset — works for FS parameters (b=0.2 still)" {
   // For FS (a=0.1, b=0.2, c=-65, d=2), u should reset to b * -65 = -13
   // (same as RS since b is identical).
-  let pop = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @core.Xoshiro::new(1UL))
+  let pop = @neuron.IZ::new(1, @neuron.IZParameter::fs(), @core.Xoshiro::new(1UL))
   // Run a few steps.
   pop.i[0] = 50.0F
   for _ in 0..<30 {
-    @snn_mbt.step_iz(pop, 0.125F)
+    @neuron.step_iz(pop, 0.125F)
   }
-  @snn_mbt.iz_reset(pop)
+  @neuron.iz_reset(pop)
   if pop.v[0] != -65.0F { fail("FS v should be -65, got \{pop.v[0]}") }
   if pop.u[0] != -13.0F { fail("FS u should be -13, got \{pop.u[0]}") }
 }

@@ -7,8 +7,8 @@
 fn main {
   let n = 1
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.IZParameter::rs()
-  let pop = @snn_mbt.IZ::new(n, param, rng)
+  let param = @neuron.IZParameter::rs()
+  let pop = @neuron.IZ::new(n, param, rng)
 
   // 10 pA injection
   pop.i[0] = 10.0F
@@ -27,11 +27,11 @@ fn main {
 }
 
 ///|
-fn run_izhikevich(pop : @snn_mbt.IZ, total_steps : Int, dt : Float) -> Int {
+fn run_izhikevich(pop : @neuron.IZ, total_steps : Int, dt : Float) -> Int {
   let mut spikes : Int = 0
   for _ in 0..<total_steps {
     let prev_fire = pop.fire[0]
-    @snn_mbt.step_iz(pop, dt)
+    @neuron.step_iz(pop, dt)
     if pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

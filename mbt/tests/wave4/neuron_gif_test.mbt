@@ -2,7 +2,7 @@
 
 ///|
 test "GIFParameter::new defaults match pure LIF" {
-  let p = @snn_mbt.GIFParameter::new()
+  let p = @neuron.GIFParameter::new()
   assert_eq(p.vt, -50.0F)
   assert_eq(p.vr, -60.0F)
   assert_eq(p.el, -70.0F)
@@ -16,7 +16,7 @@ test "GIFParameter::new defaults match pure LIF" {
 
 ///|
 test "GIFParameter::adex — Brette-Gerstner 2005 defaults" {
-  let p = @snn_mbt.GIFParameter::adex()
+  let p = @neuron.GIFParameter::adex()
   assert_eq(p.c, 281.0F)
   assert_eq(p.gl, 40.0F)
   // tm = c/gl = 281/40 ≈ 7.025 (Float32 → 7.024999618530273)
@@ -33,7 +33,7 @@ test "GIFParameter::adex — Brette-Gerstner 2005 defaults" {
 
 ///|
 test "GIF::new — shapes and zero-initialised state" {
-  let p : @snn_mbt.GIF = @snn_mbt.GIF::new(n=10)
+  let p : @neuron.GIF = @neuron.GIF::new(n=10)
   assert_eq(p.n, 10)
   assert_eq(p.v.length(), 10)
   assert_eq(p.w.length(), 10)
@@ -52,9 +52,9 @@ test "GIF::new — shapes and zero-initialised state" {
 
 ///|
 test "update_neuron_gif — pure LIF (τw=0): no adaptation" {
-  let p : @snn_mbt.GIF = @snn_mbt.GIF::new(n=1, param=@snn_mbt.GIFParameter::new())
+  let p : @neuron.GIF = @neuron.GIF::new(n=1, param=@neuron.GIFParameter::new())
   ignore(p.i.set(0, 1000.0F))
-  @snn_mbt.update_neuron_gif(p, p.param, 0.125F)
+  @neuron.update_neuron_gif(p, p.param, 0.125F)
   // v rose from -60 toward Vt=-50 (positive drive, default LIF eq)
   assert_eq(p.v[0] > -60.0F, true)
   // w stays zero (τw=0 branch skipped)
@@ -63,10 +63,10 @@ test "update_neuron_gif — pure LIF (τw=0): no adaptation" {
 
 ///|
 test "update_neuron_gif — AdEx mode: adaptation w increments on fire" {
-  let p : @snn_mbt.GIF = @snn_mbt.GIF::new(n=1, param=@snn_mbt.GIFParameter::adex())
+  let p : @neuron.GIF = @neuron.GIF::new(n=1, param=@neuron.GIFParameter::adex())
   // Force a fire: set v above Vt=-50
   ignore(p.v.set(0, -45.0F))
-  @snn_mbt.update_neuron_gif(p, p.param, 0.125F)
+  @neuron.update_neuron_gif(p, p.param, 0.125F)
   // fire=true, v reset to -70.6
   assert_eq(p.fire[0], true)
   assert_eq(p.v[0], -70.6F)
@@ -81,15 +81,15 @@ test "update_neuron_gif — AdEx mode: adaptation w increments on fire" {
 
 ///|
 test "update_neuron_gif — refractory countdown" {
-  let p : @snn_mbt.GIF = @snn_mbt.GIF::new(n=1, param=@snn_mbt.GIFParameter::new())
+  let p : @neuron.GIF = @neuron.GIF::new(n=1, param=@neuron.GIFParameter::new())
   // Fire once
   ignore(p.v.set(0, -45.0F))
-  @snn_mbt.update_neuron_gif(p, p.param, 0.125F)
+  @neuron.update_neuron_gif(p, p.param, 0.125F)
   assert_eq(p.fire[0], true)
   // tabs = round(5/0.125) = 40
   assert_eq(p.tabs[0], 40.0F)
   // Next step: tabs > 0, fire=false, v stays at Vr
-  @snn_mbt.update_neuron_gif(p, p.param, 0.125F)
+  @neuron.update_neuron_gif(p, p.param, 0.125F)
   assert_eq(p.fire[0], false)
   assert_eq(p.v[0], -60.0F)
   assert_eq(p.tabs[0], 39.0F)
@@ -97,12 +97,12 @@ test "update_neuron_gif — refractory countdown" {
 
 ///|
 test "update_neuron_gif — w sub-threshold decay (AdEx mode)" {
-  let p : @snn_mbt.GIF = @snn_mbt.GIF::new(n=1, param=@snn_mbt.GIFParameter::adex())
+  let p : @neuron.GIF = @neuron.GIF::new(n=1, param=@neuron.GIFParameter::adex())
   // w starts at 10.0 (artificial initial condition)
   ignore(p.w.set(0, 10.0F))
   // v below Vt, no fire
   ignore(p.v.set(0, -65.0F))
-  @snn_mbt.update_neuron_gif(p, p.param, 0.125F)
+  @neuron.update_neuron_gif(p, p.param, 0.125F)
   // w += dt*(a*(v-el) - w)/τw = 0.125*(4*(-65 - -70.6) - 10)/144
   //    = 0.125*(22.4 - 10)/144 = 0.125*12.4/144 = 0.01076
   // w = 10 + 0.01076 = 10.01076
@@ -113,13 +113,13 @@ test "update_neuron_gif — w sub-threshold decay (AdEx mode)" {
 
 ///|
 test "integrate_gif — full step end-to-end" {
-  let p : @snn_mbt.GIF = @snn_mbt.GIF::new(n=4, param=@snn_mbt.GIFParameter::new())
+  let p : @neuron.GIF = @neuron.GIF::new(n=4, param=@neuron.GIFParameter::new())
   ignore(p.i.set(0, 800.0F))
   ignore(p.i.set(1, 400.0F))
   // 100 steps at dt=0.125ms = 12.5ms sim
   let mut step : Int = 0
   while step < 100 {
-    @snn_mbt.integrate_gif(p, p.param, 0.125F)
+    @neuron.integrate_gif(p, p.param, 0.125F)
     step = step + 1
   }
   // All values must be finite

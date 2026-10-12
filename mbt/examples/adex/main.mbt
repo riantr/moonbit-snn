@@ -11,9 +11,9 @@
 ///|
 fn main {
   let n = 1
-  let param = @snn_mbt.AdExParameter::new()
+  let param = @neuron.AdExParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.AdEx::new(n, param, rng)
+  let e_pop = @neuron.AdEx::new(n, param, rng)
 
   // 65 pA injection
   e_pop.i[0] = 65.0F

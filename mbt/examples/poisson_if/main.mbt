@@ -17,10 +17,10 @@
 ///|
 fn main {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   // E: 32 exc, I: 8 inh (32+8 = 40 total, like if_net)
-  let e_pop = @snn_mbt.IF::new(32, param, rng)
-  let i_pop = @snn_mbt.IF::new(8, param, rng)
+  let e_pop = @neuron.IF::new(32, param, rng)
+  let i_pop = @neuron.IF::new(8, param, rng)
 
   // Build sparse internal connectivity. Same parameters as if_net.jl.
   let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge", 0.27F, 0.0F, 0.05F, rng)

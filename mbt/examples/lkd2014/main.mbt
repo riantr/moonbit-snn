@@ -27,10 +27,10 @@ fn main {
   let dt = 0.125F
 
   // IF parameters (we use IF instead of AdEx; no AdExSinExpParameter).
-  let e_param = @snn_mbt.IFParameter::new()
-  let i_param = @snn_mbt.IFParameter::with_el(-62.0F)
-  let e_pop = @snn_mbt.IF::new(ne, e_param, rng)
-  let i_pop = @snn_mbt.IF::new(ni, i_param, rng)
+  let e_param = @neuron.IFParameter::new()
+  let i_param = @neuron.IFParameter::with_el(-62.0F)
+  let e_pop = @neuron.IF::new(ne, e_param, rng)
+  let i_pop = @neuron.IF::new(ni, i_param, rng)
   // Tonic current to overcome the El→Vt gap (~333 pA needed).
   for k in 0..<ne { e_pop.i[k] = 350.0F }
   for k in 0..<ni { i_pop.i[k] = 250.0F }

@@ -90,7 +90,7 @@ pub struct PoissonStimulusIF {
 /// Construct a Poisson stimulus targeting all neurons of a population.
 /// `g` is the post-synaptic receptor (`glu` for :ge, `gaba` for :gi).
 pub fn PoissonStimulusIF::new(
-  pop : IF,
+  pop : @neuron.IF,
   sym : String,
   rate : Float,
   rng : @core.Xoshiro,
@@ -147,7 +147,7 @@ pub fn ornstein_uhlenbeck_step(
   dt : Float,
 ) -> Float {
   // Box-Muller: one N(0, 1) sample.
-  let (z1, _) = box_muller(rng)
+  let (z1, _) = @neuron.box_muller(rng)
   let next = x + theta * (mu - x) * dt + sigma * z1.to_float() * Float::sqrt(dt)
   if next > 0.0F {
     next

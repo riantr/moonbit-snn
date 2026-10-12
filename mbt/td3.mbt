@@ -108,7 +108,7 @@ pub fn td3_select_action(
   let action = td3_select_action_eval(td3, state)
   let noisy : Array[Float] = Array::make(td3.actor.action_dim, 0.0F)
   for a in 0..<td3.actor.action_dim {
-    let (z, _) = box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     let noise = Float::from_double(z) * td3.exploration_noise
     let mut v = action[a] + noise
     if v < td3.actor.action_low {
@@ -138,7 +138,7 @@ fn td3_smoothed_target_action(
   let action_low = td3.actor.action_low
   let action_high = td3.actor.action_high
   for a in 0..<td3.actor.action_dim {
-    let (z, _) = box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     let noise = Float::from_double(z) * td3.target_noise_std
     let clipped_noise = if noise > clip {
       clip
@@ -395,7 +395,7 @@ pub fn train_td3(
   for ep in 0..<n_episodes {
     let mut state = Array::make(env_state_dim, 0.0F)
     for k in 0..<env_state_dim {
-      let (z, _) = box_muller(rng)
+      let (z, _) = @neuron.box_muller(rng)
       state[k] = Float::from_double(z) * 0.5F
     }
     let mut done = false

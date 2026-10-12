@@ -33,8 +33,8 @@
 ///   - 2 = GABAa (gaba, E_rev<0)
 ///   - 3 = GABAb (gaba, E_rev<0, slow)
 pub struct ReceptorSynapseTripod {
-  pre : IF
-  post : TripodHet
+  pre : @neuron.IF
+  post : @neuron.TripodHet
   matrix : SparseMatrixCSR         // sparse (pre, post) connections
   target_compartment : String       // "soma" | "d1" | "d2"
   receptors : Receptors             // 4 receptors (AMPA, NMDA, GABAa, GABAb)
@@ -53,8 +53,8 @@ pub struct ReceptorSynapseTripod {
 
 ///|
 pub fn ReceptorSynapseTripod::new(
-  pre : IF,
-  post : TripodHet,
+  pre : @neuron.IF,
+  post : @neuron.TripodHet,
   target_compartment : String,
   receptors : Receptors,
   nmda_dep : NMDAVoltageDependency,

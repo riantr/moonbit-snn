@@ -26,7 +26,7 @@ fn main {
 
   // 20 WilsonCowan rate neurons.
   let n = 20
-  let g = @snn_mbt.WilsonCowan::new(n, rng)
+  let g = @neuron.WilsonCowan::new(n, rng)
   // All-to-all self-connectivity (p=1.0) with μ=0.5. Julia's
   // RateSynapse normalises weight std by sqrt(p*N) so the network
   // stays bounded.
@@ -54,7 +54,7 @@ fn main {
     // 1. forward (rate → synaptic g)
     @snn_mbt.forward_rate_synapse(gg)
     // 2. integrate
-    @snn_mbt.step_wc(g, dt)
+    @neuron.step_wc(g, dt)
     // Track envelope
     for k in 0..<n {
       let abs_r = if g.r[k] < 0.0F { -g.r[k] } else { g.r[k] }

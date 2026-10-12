@@ -30,9 +30,9 @@ fn main {
   // Default IF parameters + tonic current drive on E so that the
   // network doesn't go silent (default El=-70, vt=-50, R=0.06
   // need ~333 pA tonic drive to reach threshold).
-  let param = @snn_mbt.IFParameter::new()
-  let e_pop = @snn_mbt.IF::new(ne, param, rng)
-  let i_pop = @snn_mbt.IF::new(ni, param, rng)
+  let param = @neuron.IFParameter::new()
+  let e_pop = @neuron.IF::new(ne, param, rng)
+  let i_pop = @neuron.IF::new(ni, param, rng)
   // Tonic 350 pA to all E neurons so they fire under background.
   for k in 0..<ne {
     e_pop.i[k] = 350.0F

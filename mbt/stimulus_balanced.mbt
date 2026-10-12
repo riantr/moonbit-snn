@@ -96,7 +96,7 @@ pub(all) struct BalancedStimulus {
 /// `:gi` receptors. `seed` controls the Xoshiro RNG used to draw uniform
 /// noise and Poisson counts.
 pub fn BalancedStimulus::new(
-  pop : IF,
+  pop : @neuron.IF,
   sym_e? : String = "ge",
   sym_i? : String = "gi",
   param? : BalancedParameter = BalancedParameter::new(),

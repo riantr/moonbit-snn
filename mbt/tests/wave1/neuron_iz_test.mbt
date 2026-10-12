@@ -2,9 +2,9 @@
 
 ///|
 test "IZ::new initialises v = -65" {
-  let param = @snn_mbt.IZParameter::new()
+  let param = @neuron.IZParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IZ::new(5, param, rng)
+  let p = @neuron.IZ::new(5, param, rng)
   for k in 0..<5 {
     assert_eq(p.v[k], -65.0F)
   }
@@ -12,9 +12,9 @@ test "IZ::new initialises v = -65" {
 
 ///|
 test "IZ::new initialises u = b * v = -13" {
-  let param = @snn_mbt.IZParameter::new()
+  let param = @neuron.IZParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IZ::new(3, param, rng)
+  let p = @neuron.IZ::new(3, param, rng)
   for k in 0..<3 {
     assert_eq(p.u[k], -13.0F) // 0.2 * -65 = -13
   }
@@ -22,7 +22,7 @@ test "IZ::new initialises u = b * v = -13" {
 
 ///|
 test "IZParameter defaults match Julia" {
-  let p = @snn_mbt.IZParameter::new()
+  let p = @neuron.IZParameter::new()
   assert_eq(p.a, 0.01F)
   assert_eq(p.b, 0.2F)
   assert_eq(p.c, -65.0F)
@@ -38,11 +38,11 @@ test "IZ: one step from rest" {
   // At v=-65, u=-13, I=0, the dv/dt formula gives a positive number
   // (since 0.04*65^2 - 5*65 = 169 - 325 = -156, plus 140 = -16, plus u=-13
   // gives -29, so v is decreasing). Verify the sign.
-  let param = @snn_mbt.IZParameter::new()
+  let param = @neuron.IZParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IZ::new(1, param, rng)
+  let p = @neuron.IZ::new(1, param, rng)
   let v_before = p.v[0]
-  @snn_mbt.step_iz(p, 0.125F)
+  @neuron.step_iz(p, 0.125F)
   // The exact v_after depends on the initial ge/gi values; just check
   // that the step ran and v changed (or hit the reset c=-65).
   if p.v[0] == v_before && !p.fire[0] {

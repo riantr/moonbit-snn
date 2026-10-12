@@ -17,8 +17,8 @@
 /// of a BallAndStick neuron. Same semantics as `SpikingSynapse`
 /// (random sparse with Bernoulli p and weight ~ Normal/Fixed).
 pub struct CompartmentSynapseBall {
-  pre : IF
-  post : BallAndStick
+  pre : @neuron.IF
+  post : @neuron.BallAndStick
   sym : String
   target : String  // "soma" or "d"
   matrix : SparseMatrixCSR
@@ -31,8 +31,8 @@ pub struct CompartmentSynapseBall {
 
 ///|
 pub fn CompartmentSynapseBall::random(
-  pre : IF,
-  post : BallAndStick,
+  pre : @neuron.IF,
+  post : @neuron.BallAndStick,
   sym : String,
   target : String,
   mu : Float,
@@ -49,8 +49,8 @@ pub fn CompartmentSynapseBall::random(
 /// CompartmentSynapseTripod — targets one compartment (:soma, :d1,
 /// or :d2) of a Tripod neuron.
 pub struct CompartmentSynapseTripod {
-  pre : IF
-  post : Tripod
+  pre : @neuron.IF
+  post : @neuron.Tripod
   sym : String
   target : String  // "soma" | "d1" | "d2"
   matrix : SparseMatrixCSR
@@ -63,8 +63,8 @@ pub struct CompartmentSynapseTripod {
 
 ///|
 pub fn CompartmentSynapseTripod::random(
-  pre : IF,
-  post : Tripod,
+  pre : @neuron.IF,
+  post : @neuron.Tripod,
   sym : String,
   target : String,
   mu : Float,

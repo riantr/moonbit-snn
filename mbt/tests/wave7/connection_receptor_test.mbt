@@ -9,16 +9,16 @@
 //   - forward_receptor_synapse routes to glu vs gaba correctly
 
 ///|
-fn make_if_for_receptor(n : Int) -> @snn_mbt.IF {
-  let param = @snn_mbt.IFParameter::with_el(-49.0F)
+fn make_if_for_receptor(n : Int) -> @neuron.IF {
+  let param = @neuron.IFParameter::with_el(-49.0F)
   let rng = @core.Xoshiro::new(42UL)
-  @snn_mbt.IF::new(n, param, rng)
+  @neuron.IF::new(n, param, rng)
 }
 
 ///|
 test "ReceptorSynapse::new — defaults: glu=[0,1], gaba=[2,3]" {
-  let pre : @snn_mbt.IF = make_if_for_receptor(10)
-  let post : @snn_mbt.IF = make_if_for_receptor(10)
+  let pre : @neuron.IF = make_if_for_receptor(10)
+  let post : @neuron.IF = make_if_for_receptor(10)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
@@ -56,8 +56,8 @@ test "ReceptorSynapse::new — defaults: glu=[0,1], gaba=[2,3]" {
 test "ReceptorSynapse — custom glu_receptors / gaba_receptors" {
   // The Julia test passes `glu_receptors = [1]` (1-based, so receptor
   // 0 in 0-based MoonBit) and `gaba_receptors = [2]` (receptor 1).
-  let pre : @snn_mbt.IF = make_if_for_receptor(5)
-  let post : @snn_mbt.IF = make_if_for_receptor(5)
+  let pre : @neuron.IF = make_if_for_receptor(5)
+  let post : @neuron.IF = make_if_for_receptor(5)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
@@ -94,8 +94,8 @@ test "ReceptorSynapse — custom glu_receptors / gaba_receptors" {
 
 ///|
 test "ReceptorSynapse::set_target_receptor — change edge target" {
-  let pre : @snn_mbt.IF = make_if_for_receptor(10)
-  let post : @snn_mbt.IF = make_if_for_receptor(10)
+  let pre : @neuron.IF = make_if_for_receptor(10)
+  let post : @neuron.IF = make_if_for_receptor(10)
   let ampa = @snn_mbt.Receptor::simple(0.0F, 0.26F, 2.0F, 0.73F, "glu")
   let nmda_rec = @snn_mbt.Receptor::nmda(0.0F, 8.0F, 35.0F, 1.31F)
   let gabaa = @snn_mbt.Receptor::simple(-70.0F, 0.1F, 15.0F, 0.38F, "gaba")
@@ -119,8 +119,8 @@ test "ReceptorSynapse::set_target_receptor — change edge target" {
 ///|
 test "forward_receptor_synapse — routes to glu buffer for AMPA" {
   // Build a 2×1 synapse: pre[0] fires, with one edge to post[0].
-  let pre : @snn_mbt.IF = make_if_for_receptor(2)
-  let post : @snn_mbt.IF = make_if_for_receptor(1)
+  let pre : @neuron.IF = make_if_for_receptor(2)
+  let post : @neuron.IF = make_if_for_receptor(1)
   // Force pre[0] to fire on next forward.
   pre.fire[0] = true
   // Build a deterministic 2×1 dense matrix.
@@ -164,8 +164,8 @@ test "forward_receptor_synapse — routes to glu buffer for AMPA" {
 ///|
 test "forward_receptor_synapse — routes to gaba buffer for GABAa" {
   // Same setup but edge targets GABAa (2) instead of AMPA (0).
-  let pre : @snn_mbt.IF = make_if_for_receptor(2)
-  let post : @snn_mbt.IF = make_if_for_receptor(1)
+  let pre : @neuron.IF = make_if_for_receptor(2)
+  let post : @neuron.IF = make_if_for_receptor(1)
   pre.fire[0] = true
   let dense : Array[Array[Float]] = [
     [1.5F],

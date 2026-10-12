@@ -3,7 +3,7 @@
 
 ///|
 test "InhomogeneousPoissonParam::new — defaults" {
-  let p = @snn_mbt.InhomogeneousPoissonParam::new()
+  let p = @neuron.InhomogeneousPoissonParam::new()
   assert_eq(p.beta, 0.0F)
   assert_eq(p.tau, 50.0F)
   assert_eq(p.r0, 1.0F)  // 1 kHz normalised = 1.0
@@ -12,7 +12,7 @@ test "InhomogeneousPoissonParam::new — defaults" {
 
 ///|
 test "InhomogeneousPoissonParam::custom — β / τ / r0" {
-  let p = @snn_mbt.InhomogeneousPoissonParam::custom(0.1F, 100.0F, 0.5F)
+  let p = @neuron.InhomogeneousPoissonParam::custom(0.1F, 100.0F, 0.5F)
   assert_eq(p.beta, 0.1F)
   assert_eq(p.tau, 100.0F)
   assert_eq(p.r0, 0.5F)  // 500 Hz normalised = 0.5
@@ -22,9 +22,9 @@ test "InhomogeneousPoissonParam::custom — β / τ / r0" {
 
 ///|
 test "InhomogeneousPoisson::new — defaults: N=100, fire all false, r=r0" {
-  let param = @snn_mbt.InhomogeneousPoissonParam::new()
+  let param = @neuron.InhomogeneousPoissonParam::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
+  let p = @neuron.InhomogeneousPoisson::new(100, param, rng)
   assert_eq(p.n, 100)
   assert_eq(p.fire.length(), 100)
   // All fire starts as false.
@@ -45,9 +45,9 @@ test "InhomogeneousPoisson::new — defaults: N=100, fire all false, r=r0" {
 
 ///|
 test "InhomogeneousPoisson::new — custom N and β" {
-  let param = @snn_mbt.InhomogeneousPoissonParam::custom(0.1F, 100.0F, 0.5F)
+  let param = @neuron.InhomogeneousPoissonParam::custom(0.1F, 100.0F, 0.5F)
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(50, param, rng)
+  let p = @neuron.InhomogeneousPoisson::new(50, param, rng)
   assert_eq(p.n, 50)
   // r initialised to r0 (= 0.5 for 500 Hz).
   assert_eq(p.r[0], 0.5F)
@@ -57,10 +57,10 @@ test "InhomogeneousPoisson::new — custom N and β" {
 ///|
 test "step_inhomogeneous_poisson — fire mask bounded by N" {
   // Julia: sum(p.fire) ≤ p.N after one integrate! step.
-  let param = @snn_mbt.InhomogeneousPoissonParam::new()
+  let param = @neuron.InhomogeneousPoissonParam::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
-  @snn_mbt.step_inhomogeneous_poisson(p, 0.125F, rng)
+  let p = @neuron.InhomogeneousPoisson::new(100, param, rng)
+  @neuron.step_inhomogeneous_poisson(p, 0.125F, rng)
   // Count fires.
   let mut n_fire = 0
   let mut i = 0
@@ -77,10 +77,10 @@ test "step_inhomogeneous_poisson — fire mask bounded by N" {
 
 ///|
 test "step_inhomogeneous_poisson — non-default β + custom N" {
-  let param = @snn_mbt.InhomogeneousPoissonParam::custom(0.1F, 100.0F, 0.5F)
+  let param = @neuron.InhomogeneousPoissonParam::custom(0.1F, 100.0F, 0.5F)
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(50, param, rng)
-  @snn_mbt.step_inhomogeneous_poisson(p, 1.0F, rng)
+  let p = @neuron.InhomogeneousPoisson::new(50, param, rng)
+  @neuron.step_inhomogeneous_poisson(p, 1.0F, rng)
   // Same invariant: n_fire ≤ N=50.
   let mut n_fire = 0
   let mut i = 0
@@ -105,12 +105,12 @@ test "step_inhomogeneous_poisson — non-default β + custom N" {
 test "step_inhomogeneous_poisson — many steps produce realistic rates" {
   // 1000 steps at dt=1ms → 1s simulated.
   // r0=1.0 (1 kHz), so expected spike count ≈ N * r0 = 100.
-  let param = @snn_mbt.InhomogeneousPoissonParam::new()
+  let param = @neuron.InhomogeneousPoissonParam::new()
   let rng = @core.Xoshiro::new(42UL)
-  let p = @snn_mbt.InhomogeneousPoisson::new(100, param, rng)
+  let p = @neuron.InhomogeneousPoisson::new(100, param, rng)
   let mut t = 0
   while t < 1000 {
-    @snn_mbt.step_inhomogeneous_poisson(p, 0.125F, rng)
+    @neuron.step_inhomogeneous_poisson(p, 0.125F, rng)
     t = t + 1
   }
   // Sum all fires.

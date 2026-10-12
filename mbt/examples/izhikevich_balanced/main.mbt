@@ -25,9 +25,9 @@ fn main {
   let rate_khz = 1.0F  // 1 kHz Poisson drive
 
   // 200 RS IZ neurons.
-  let param = @snn_mbt.IZParameter::rs()
+  let param = @neuron.IZParameter::rs()
   let n_post = 200
-  let post = @snn_mbt.IZ::new(n_post, param, rng)
+  let post = @neuron.IZ::new(n_post, param, rng)
 
   println("izhikevich_balanced.mbt: RS IZ (200) + Poisson drive (1kHz)")
   println("  N = " + n_post.to_string())
@@ -50,7 +50,7 @@ fn main {
       }
     }
     // Single step of IZ dynamics.
-    @snn_mbt.step_iz(post, dt)
+    @neuron.step_iz(post, dt)
     for j in 0..<n_post {
       if post.fire[j] {
         total_spikes = total_spikes + 1

@@ -40,8 +40,8 @@ pub fn make_random_weights(
 /// pre-neuron that fires, the row's weights are added to `post.glu`
 /// (if `exc == true`) or `post.gaba` (if `inh == true`).
 pub fn route_pre_to_post(
-  pre : IF,
-  post : AdExSinExp,
+  pre : @neuron.IF,
+  post : @neuron.AdExSinExp,
   weights : Array[Float],
   exc : Bool,
   inh : Bool,
@@ -69,10 +69,10 @@ pub fn route_pre_to_post(
 /// Run one IF integrate step (synapse decay + synaptic current +
 /// neuron update). Convenience wrapper for the three-step IF
 /// integration.
-pub fn simulate_step_if(pop : IF, dt : Float) -> Unit {
-  step_synapses(pop, dt)
-  synaptic_current(pop)
-  step_neuron(pop, dt)
+pub fn simulate_step_if(pop : @neuron.IF, dt : Float) -> Unit {
+  @neuron.step_synapses(pop, dt)
+  @neuron.synaptic_current(pop)
+  @neuron.step_neuron(pop, dt)
 }
 
 ///|

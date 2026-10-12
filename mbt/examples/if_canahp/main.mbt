@@ -19,9 +19,9 @@
 ///|
 fn main {
   let n = 100
-  let param = @snn_mbt.IFCANAHParameter::new()
+  let param = @neuron.IFCANAHParameter::new()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.IFCANAHP::new(n=n, param=param)
+  let pop = @neuron.IFCANAHP::new(n=n, param=param)
   // Drive each neuron with 50 pA / cm^2 (normalised units).
   for k in 0..<n {
     pop.i[k] = 50.0F

@@ -20,10 +20,10 @@ fn main {
   let rng = @core.Xoshiro::default()
   let ne = 10
   let ni = 3
-  let exc_param = @snn_mbt.IFParameter::with_el(-60.0F)
-  let inh_param = @snn_mbt.IFParameter::with_el(-60.0F)
-  let e_pop = @snn_mbt.IF::new(ne, exc_param, rng)
-  let i_pop = @snn_mbt.IF::new(ni, inh_param, rng)
+  let exc_param = @neuron.IFParameter::with_el(-60.0F)
+  let inh_param = @neuron.IFParameter::with_el(-60.0F)
+  let e_pop = @neuron.IF::new(ne, exc_param, rng)
+  let i_pop = @neuron.IF::new(ni, inh_param, rng)
 
   // Layer-specific connection probabilities and weights (scaled).
   // Format: (μ, p) — μ is mean synaptic weight, p is connection probability.

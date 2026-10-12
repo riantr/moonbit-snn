@@ -4,14 +4,14 @@
 ///|
 test "iz_reset_with_postspike — clears v/u/fire/ge/gi and resets tabs_const" {
   // Build with one tabs_const, run, reset with another.
-  let ps1 = @snn_mbt.IZPostSpike::custom(5)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, ps1)
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=5
+  let ps1 = @neuron.IZPostSpike::custom(5)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, ps1)
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=5
   if pop.tabs[0] != 5 { fail("expected tabs=5 after fire") }
   if pop.tabs_const != 5 { fail("expected tabs_const=5") }
   // Reset with a different postspike.
-  let ps2 = @snn_mbt.IZPostSpike::custom(2)
-  @snn_mbt.iz_reset_with_postspike(pop, ps2)
+  let ps2 = @neuron.IZPostSpike::custom(2)
+  @neuron.iz_reset_with_postspike(pop, ps2)
   if pop.tabs[0] != 0 { fail("tabs should be 0 after reset") }
   if pop.tabs_const != 2 { fail("tabs_const should be 2 after reset") }
   if pop.v[0] != -65.0F { fail("v should be -65 after reset") }
@@ -22,22 +22,22 @@ test "iz_reset_with_postspike — clears v/u/fire/ge/gi and resets tabs_const" {
 test "iz_reset_with_postspike — next fire uses new tabs_const" {
   // Start with tabs_const=5, switch to tabs_const=2, then fire. New
   // tabs should be 2 (not 5).
-  let ps1 = @snn_mbt.IZPostSpike::custom(5)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, ps1)
-  @snn_mbt.iz_reset_with_postspike(pop, @snn_mbt.IZPostSpike::custom(2))
+  let ps1 = @neuron.IZPostSpike::custom(5)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, ps1)
+  @neuron.iz_reset_with_postspike(pop, @neuron.IZPostSpike::custom(2))
   // Force a high voltage so the next step will fire.
   pop.v[0] = 35.0F
   pop.u[0] = 0.2F * 35.0F
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if !pop.fire[0] { fail("expected fire") }
   if pop.tabs[0] != 2 { fail("new tabs should be 2, got \{pop.tabs[0]}") }
 }
 
 ///|
 test "iz_reset_with_postspike — preserves i (external input)" {
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(2))
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(2))
   pop.i[0] = 12.0F
-  @snn_mbt.iz_reset_with_postspike(pop, @snn_mbt.IZPostSpike::custom(2))
+  @neuron.iz_reset_with_postspike(pop, @neuron.IZPostSpike::custom(2))
   if pop.i[0] != 12.0F { fail("i should be preserved, got \{pop.i[0]}") }
 }
 
@@ -45,15 +45,15 @@ test "iz_reset_with_postspike — preserves i (external input)" {
 test "iz_reset_with_postspike — same postspike as iz_reset clears everything" {
   // Verify iz_reset_with_postspike is equivalent to iz_reset when the
   // new postspike matches the current tabs_const.
-  let pop_a = @snn_mbt.IZ::init_with_postspike(2, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(3))
-  let pop_b = @snn_mbt.IZ::init_with_postspike(2, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(3))
+  let pop_a = @neuron.IZ::init_with_postspike(2, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(3))
+  let pop_b = @neuron.IZ::init_with_postspike(2, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(3))
   // Perturb both identically.
   for _ in 0..<10 {
-    @snn_mbt.step_iz_with_postspike(pop_a, 0.125F)
-    @snn_mbt.step_iz_with_postspike(pop_b, 0.125F)
+    @neuron.step_iz_with_postspike(pop_a, 0.125F)
+    @neuron.step_iz_with_postspike(pop_b, 0.125F)
   }
-  @snn_mbt.iz_reset(pop_a)
-  @snn_mbt.iz_reset_with_postspike(pop_b, @snn_mbt.IZPostSpike::custom(3))
+  @neuron.iz_reset(pop_a)
+  @neuron.iz_reset_with_postspike(pop_b, @neuron.IZPostSpike::custom(3))
   // Both should have identical state.
   let mut k = 0
   while k < 2 {
@@ -77,12 +77,12 @@ test "iz_reset_with_postspike — same postspike as iz_reset clears everything" 
 test "iz_reset_with_postspike — multi-neuron heterogeneous postspike" {
   // 3 neurons with one tabs_const=2 initially. Reset to a different
   // (single) tabs_const. All neurons now share that tabs_const.
-  let pop = @snn_mbt.IZ::init_with_postspike(3, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, @snn_mbt.IZPostSpike::custom(2))
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  let pop = @neuron.IZ::init_with_postspike(3, @neuron.IZParameter::rs(), 35.0F, 7.0F, @neuron.IZPostSpike::custom(2))
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if pop.tabs[0] != 2 || pop.tabs[1] != 2 || pop.tabs[2] != 2 {
     fail("expected all tabs=2 after fire")
   }
-  @snn_mbt.iz_reset_with_postspike(pop, @snn_mbt.IZPostSpike::custom(7))
+  @neuron.iz_reset_with_postspike(pop, @neuron.IZPostSpike::custom(7))
   if pop.tabs_const != 7 { fail("tabs_const should be 7") }
   let mut k = 0
   while k < 3 {
@@ -93,7 +93,7 @@ test "iz_reset_with_postspike — multi-neuron heterogeneous postspike" {
   pop.v[0] = 35.0F
   pop.v[1] = 35.0F
   pop.v[2] = 35.0F
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if pop.tabs[0] != 7 || pop.tabs[1] != 7 || pop.tabs[2] != 7 {
     fail("expected all tabs=7 after second fire")
   }

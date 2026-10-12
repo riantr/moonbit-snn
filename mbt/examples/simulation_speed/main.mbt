@@ -31,14 +31,14 @@ fn main {
   let dt = 0.125F
 
   // AdEx excitatory population with default params.
-  let e_param = @snn_mbt.AdExParameter::new()
-  let e_pop = @snn_mbt.AdEx::new(ne, e_param, rng)
+  let e_param = @neuron.AdExParameter::new()
+  let e_pop = @neuron.AdEx::new(ne, e_param, rng)
 
   // Two Poisson populations for excitatory and inhibitory inputs.
   // Rate in internal units: Hz = 0.001, so 10.2Hz = 0.0102F,
   // 3Hz = 0.003F.
-  let pois_exc = @snn_mbt.Poisson::new(n_pois, 0.0102F, rng)
-  let pois_inh = @snn_mbt.Poisson::new(n_pois, 0.003F, rng)
+  let pois_exc = @neuron.Poisson::new(n_pois, 0.0102F, rng)
+  let pois_inh = @neuron.Poisson::new(n_pois, 0.003F, rng)
 
   // Manual connectivity: for each Poisson spike, add weight to E's
   // glu (exc) or gaba (inh) buffer. All-to-all for benchmark.
@@ -52,8 +52,8 @@ fn main {
   let total_steps : Int = (1000.0F / dt).to_int()
   for _ in 0..<total_steps {
     // 1. Poisson populations fire.
-    @snn_mbt.step_poisson(pois_exc, dt)
-    @snn_mbt.step_poisson(pois_inh, dt)
+    @neuron.step_poisson(pois_exc, dt)
+    @neuron.step_poisson(pois_inh, dt)
     let mut pe_count = 0
     for k in 0..<n_pois {
       if pois_exc.fire[k] { pe_count = pe_count + 1 }
@@ -73,9 +73,9 @@ fn main {
       e_pop.gaba[k] = e_pop.gaba[k] + gaba_inj
     }
     // 3. Step AdEx (synapses → current → neuron).
-    @snn_mbt.adex_step_synapses(e_pop, dt)
-    @snn_mbt.adex_synaptic_current(e_pop)
-    @snn_mbt.step_adex(e_pop, dt)
+    @neuron.adex_step_synapses(e_pop, dt)
+    @neuron.adex_synaptic_current(e_pop)
+    @neuron.step_adex(e_pop, dt)
     // 4. Count E spikes.
     for k in 0..<ne {
       if e_pop.fire[k] { total_e_fires = total_e_fires + 1 }

@@ -9,7 +9,7 @@
 
 ///|
 test "AdExSinExpParameter::new — defaults match AdExParameter" {
-  let p = @snn_mbt.AdExSinExpParameter::new()
+  let p = @neuron.AdExSinExpParameter::new()
   assert_eq(p.c, 281.0F)
   assert_eq(p.gl, 40.0F)
   assert_eq(p.vt, -50.0F)
@@ -28,7 +28,7 @@ test "AdExSinExpParameter::new — defaults match AdExParameter" {
 
 ///|
 test "AdExSinExpParameter::lkd_adex — LKD 2014 values" {
-  let p = @snn_mbt.AdExSinExpParameter::lkd_adex()
+  let p = @neuron.AdExSinExpParameter::lkd_adex()
   assert_eq(p.c, 300.0F)
   assert_eq(p.gl, 15.0F)
   assert_eq(p.vt, -52.0F)
@@ -43,9 +43,9 @@ test "AdExSinExpParameter::lkd_adex — LKD 2014 values" {
 
 ///|
 test "AdExSinExp::new — initial state" {
-  let p = @snn_mbt.AdExSinExpParameter::new()
+  let p = @neuron.AdExSinExpParameter::new()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.AdExSinExp::new(5, p, rng)
+  let pop = @neuron.AdExSinExp::new(5, p, rng)
   assert_eq(pop.n, 5)
   assert_eq(pop.v.length(), 5)
   assert_eq(pop.w.length(), 5)
@@ -80,16 +80,16 @@ test "AdExSinExp::new — initial state" {
 
 ///|
 test "AdExSinExp — no input, v decays toward el (steady state)" {
-  let p = @snn_mbt.AdExSinExpParameter::new()
+  let p = @neuron.AdExSinExpParameter::new()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
+  let pop = @neuron.AdExSinExp::new(1, p, rng)
   // Start with v at the resting potential (skip first-step init noise).
   pop.v[0] = -70.6F
   let dt = 0.125F
   for _ in 0..<2000 {
-    @snn_mbt.adex_sinexp_step_synapses(pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(pop)
-    @snn_mbt.step_adex_sinexp(pop, dt)
+    @neuron.adex_sinexp_step_synapses(pop, dt)
+    @neuron.adex_sinexp_synaptic_current(pop)
+    @neuron.step_adex_sinexp(pop, dt)
   }
   // After 250ms with no input, v should be very close to el.
   // We don't require exact equality (w may have small contribution),
@@ -103,13 +103,13 @@ test "AdExSinExp — no input, v decays toward el (steady state)" {
 
 ///|
 test "AdExSinExp — sin-exp synapse step: glu is consumed into ge" {
-  let p = @snn_mbt.AdExSinExpParameter::new()
+  let p = @neuron.AdExSinExpParameter::new()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
+  let pop = @neuron.AdExSinExp::new(1, p, rng)
   // Inject a spike into the glu buffer (simulating a pre-synaptic spike).
   pop.glu[0] = 1.0F
   let dt = 0.125F
-  @snn_mbt.adex_sinexp_step_synapses(pop, dt)
+  @neuron.adex_sinexp_step_synapses(pop, dt)
   // glu is consumed.
   if pop.glu[0] != 0.0F {
     fail("glu[0] = \{pop.glu[0]} should be reset to 0 after step")
@@ -131,18 +131,18 @@ test "AdExSinExp — strong current drives v to threshold and fires" {
   // Use LKD-style params (tm=20ms, El=-70, Vt=-52, Vr=-60): with
   // I=350pA, v_ss = -70 + 350/15 ≈ -46.7mV, which is above Vt=-52
   // and the exponential term pushes it over 0 quickly.
-  let p = @snn_mbt.AdExSinExpParameter::lkd_adex()
+  let p = @neuron.AdExSinExpParameter::lkd_adex()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
+  let pop = @neuron.AdExSinExp::new(1, p, rng)
   pop.v[0] = p.el  // start at rest
   pop.i[0] = 350.0F  // tonic current
   let dt = 0.125F
   let mut fired = false
   let mut steps = 0
   while not(fired) && steps < 5000 {
-    @snn_mbt.adex_sinexp_step_synapses(pop, dt)
-    @snn_mbt.adex_sinexp_synaptic_current(pop)
-    @snn_mbt.step_adex_sinexp(pop, dt)
+    @neuron.adex_sinexp_step_synapses(pop, dt)
+    @neuron.adex_sinexp_synaptic_current(pop)
+    @neuron.step_adex_sinexp(pop, dt)
     if pop.fire[0] {
       fired = true
     }
@@ -158,12 +158,12 @@ test "AdExSinExp — strong current drives v to threshold and fires" {
 ///|
 test "AdExSinExp — gaba injection into inhibitory channel" {
   // Verify the gi side of the sin-exp synapse (gaba → gi with τi decay).
-  let p = @snn_mbt.AdExSinExpParameter::new()
+  let p = @neuron.AdExSinExpParameter::new()
   let rng = @core.Xoshiro::default()
-  let pop = @snn_mbt.AdExSinExp::new(1, p, rng)
+  let pop = @neuron.AdExSinExp::new(1, p, rng)
   pop.gaba[0] = 1.0F
   let dt = 0.125F
-  @snn_mbt.adex_sinexp_step_synapses(pop, dt)
+  @neuron.adex_sinexp_step_synapses(pop, dt)
   // gaba consumed; gi > 0.
   if pop.gaba[0] != 0.0F {
     fail("gaba[0] = \{pop.gaba[0]} should be 0 after step")

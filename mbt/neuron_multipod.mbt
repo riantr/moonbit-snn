@@ -34,11 +34,11 @@
 /// MultipodParameter — wraps an Array[Dendrite] for the multipod
 /// constructor. The Julia version uses Dendrite objects directly.
 pub struct MultipodParameter {
-  dendrites : Array[Dendrite]
+  dendrites : Array[@neuron.Dendrite]
 }
 
 ///|
-pub fn MultipodParameter::new(dendrites : Array[Dendrite]) -> MultipodParameter {
+pub fn MultipodParameter::new(dendrites : Array[@neuron.Dendrite]) -> MultipodParameter {
   { dendrites: dendrites }
 }
 
@@ -46,10 +46,10 @@ pub fn MultipodParameter::new(dendrites : Array[Dendrite]) -> MultipodParameter 
 /// Convenience: MultipodParameter from a single Dendrite applied
 /// `nd` times. Mirrors Julia's `Multipod(d; N, Nd)` constructor.
 pub fn MultipodParameter::uniform(
-  d : Dendrite,
+  d : @neuron.Dendrite,
   nd : Int,
 ) -> MultipodParameter {
-  let ds : Array[Dendrite] = Array::make(nd, d)
+  let ds : Array[@neuron.Dendrite] = Array::make(nd, d)
   { dendrites: ds }
 }
 
@@ -93,7 +93,7 @@ pub struct Multipod {
   // Per-neuron spike bookkeeping.
   fire : Array[Bool]
   after_spike : Array[Int]
-  postspike : PostSpike
+  postspike : @neuron.PostSpike
   // Threshold + adaptation state.
   theta : Array[Float]
   // Heun scratch buffers (length nd + 1).
@@ -108,7 +108,7 @@ pub struct Multipod {
   // NMDA voltage-dependency.
   nmda : NMDAVoltageDependency
   // Dendrite parameters.
-  dendrites : Array[Dendrite]
+  dendrites : Array[@neuron.Dendrite]
 }
 
 ///|
@@ -116,9 +116,9 @@ pub struct Multipod {
 /// list (length = nd). `n` is the number of neurons. `param` is the
 /// AdEx soma parameters (defaults to AdExParameter::new()).
 pub fn Multipod::new(
-  dendrites : Array[Dendrite],
+  dendrites : Array[@neuron.Dendrite],
   n : Int,
-  param? : AdExParameter = AdExParameter::new(),
+  param? : @neuron.AdExParameter = @neuron.AdExParameter::new(),
 ) -> Multipod {
   let nd = dendrites.length()
   let vt = param.vt
@@ -185,7 +185,7 @@ pub fn Multipod::new(
   // Spike bookkeeping.
   let fire : Array[Bool] = Array::make(n, false)
   let after_spike : Array[Int] = Array::make(n, 0)
-  let postspike = PostSpike::new()
+  let postspike = @neuron.PostSpike::new()
   let theta : Array[Float] = Array::make(n, param.vt)
   // Heun scratch.
   let dv : Array[Float] = Array::make(nd + 1, 0.0F)

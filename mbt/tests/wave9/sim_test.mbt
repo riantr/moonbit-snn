@@ -2,9 +2,9 @@
 
 ///|
 test "Monitor without sr records every step" {
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   let m = @snn_mbt.Monitor::new_v(p, 0)
   for _ in 0..<100 {
     @snn_mbt.record_one(m, 0.0F)
@@ -15,9 +15,9 @@ test "Monitor without sr records every step" {
 
 ///|
 test "Monitor with sr=1kHz records every 8th step" {
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   // 1 kHz in our internal units = 1.0F. With dt=0.125F, rec_step = 8.
   let m = @snn_mbt.Monitor::new_v_sr(p, 0, 1.0F)
   for _ in 0..<800 {
@@ -30,9 +30,9 @@ test "Monitor with sr=1kHz records every 8th step" {
 
 ///|
 test "Monitor with sr=8kHz records every step" {
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   // 8 kHz in our internal units = 8.0F. rec_step = max(1, 1) = 1.
   let m = @snn_mbt.Monitor::new_v_sr(p, 0, 8.0F)
   for _ in 0..<100 {
@@ -44,9 +44,9 @@ test "Monitor with sr=8kHz records every step" {
 
 ///|
 test "Monitor with sr=0.5kHz records every 16th step" {
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.IF::new(1, param, rng)
+  let p = @neuron.IF::new(1, param, rng)
   // 500 Hz in our internal units = 0.5F. rec_step = 1/(0.5*0.125) = 16.
   let m = @snn_mbt.Monitor::new_v_sr(p, 0, 0.5F)
   for _ in 0..<100 {

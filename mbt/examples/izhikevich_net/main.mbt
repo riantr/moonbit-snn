@@ -27,12 +27,12 @@ fn main {
 
   // Build E population with a=0.02, b=0.2, c=-65, d=8 (regular spiking).
   // IZParameter::rs() gives a=0.02, b=0.2, c=-65, d=8 exactly.
-  let param_e = @snn_mbt.IZParameter::rs()
-  let e = @snn_mbt.IZ::new(n_e, param_e, rng)
+  let param_e = @neuron.IZParameter::rs()
+  let e = @neuron.IZ::new(n_e, param_e, rng)
 
   // Build I population with a=0.1, b=0.2, c=-65, d=2 (fast spiking).
-  let param_i = @snn_mbt.IZParameter::fs()
-  let i = @snn_mbt.IZ::new(n_i, param_i, rng)
+  let param_i = @neuron.IZParameter::fs()
+  let i = @neuron.IZ::new(n_i, param_i, rng)
 
   // Build the 4 synapses with random connectivity (Julia's conn = (μ, p)).
   let ee = @snn_mbt.SpikingSynapseIZ::random(e, e, "ge", 0.5F, 0.0F, 0.8F, rng)
@@ -54,11 +54,11 @@ fn main {
     let _ = step
     // 5randn(Ne) on E, 2randn(Ni) on I (Box-Muller).
     for j in 0..<n_e {
-      let (z1, _) = @snn_mbt.box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       e.i[j] = 5.0F * Float::from_double(z1)
     }
     for j in 0..<n_i {
-      let (z1, _) = @snn_mbt.box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       i.i[j] = 2.0F * Float::from_double(z1)
     }
     // Propagate spikes + integrate.
@@ -66,8 +66,8 @@ fn main {
     @snn_mbt.forward_iz_synapse(ei)
     @snn_mbt.forward_iz_synapse(ie)
     @snn_mbt.forward_iz_synapse(ii)
-    @snn_mbt.step_iz(e, dt)
-    @snn_mbt.step_iz(i, dt)
+    @neuron.step_iz(e, dt)
+    @neuron.step_iz(i, dt)
     for j in 0..<n_e {
       if e.fire[j] {
         e_spikes = e_spikes + 1

@@ -31,8 +31,8 @@ fn main {
   // 50 HetRec neurons with default parameters (Nd=2, overlap=0.5,
   // τd ∈ Uniform(10, 100) ms, rate ∈ Uniform(0, 1) Hz, τm=20ms,
   // τrate=100ms, τabs=5ms).
-  let param = @snn_mbt.HetRecParameter::new()
-  let pop = @snn_mbt.HetRec::new(50, param, rng)
+  let param = @neuron.HetRecParameter::new()
+  let pop = @neuron.HetRec::new(50, param, rng)
 
   // 1 s sim with random Poisson-like bursts every 8 ms.
   let total_steps : Int = (1000.0F / dt).to_int()
@@ -53,8 +53,8 @@ fn main {
       }
     }
     // Refresh random cache for stochastic firing, then step.
-    @snn_mbt.hetrec_refresh_random(pop, rng)
-    @snn_mbt.step_hetrec(pop, dt)
+    @neuron.hetrec_refresh_random(pop, rng)
+    @neuron.step_hetrec(pop, dt)
     for i in 0..<pop.n {
       if pop.fire[i] {
         total_spikes = total_spikes + 1

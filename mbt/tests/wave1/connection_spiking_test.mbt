@@ -3,8 +3,8 @@
 ///|
 test "SpikingSynapse::new: delays empty by default" {
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   assert_eq(s.delays.length(), 0)
   assert_eq(s.pending_times.length(), 0)
@@ -13,8 +13,8 @@ test "SpikingSynapse::new: delays empty by default" {
 ///|
 test "SpikingSynapse::set_constant_delay: populates delays" {
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
   @snn_mbt.spiking_connect(s, 2, 2, 2.5F)
@@ -27,8 +27,8 @@ test "SpikingSynapse::set_constant_delay: populates delays" {
 ///|
 test "SpikingSynapse::random_with_delays: Normal distribution sampling" {
   let rng = @core.Xoshiro::from_state(0xDEADBEEFUL, 0xCAFEBABEUL, 0x12345678UL, 0x9ABCDEF0UL)
-  let pre = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::random_with_delays(
     pre, post, "ge", 1.0F, 0.0F, 1.0F, rng, 0.8F, 0.0F,
   )
@@ -42,8 +42,8 @@ test "SpikingSynapse::random_with_delays: Normal distribution sampling" {
 ///|
 test "SpikingSynapse::forward_synapse: no-delay fast path applies immediately" {
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
   // No delays configured; forward should apply immediately to post.glu.
@@ -56,8 +56,8 @@ test "SpikingSynapse::forward_synapse: no-delay fast path applies immediately" {
 ///|
 test "SpikingSynapse::forward_synapse with delay: schedules events" {
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
   @snn_mbt.SpikingSynapse::set_constant_delay(s, 0.8F)
@@ -75,8 +75,8 @@ test "SpikingSynapse::forward_synapse with delay: schedules events" {
 ///|
 test "SpikingSynapse::deliver_pending_synapse: delivers only past-due events" {
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(s, 1, 1, 1.5F)
   @snn_mbt.SpikingSynapse::set_constant_delay(s, 0.8F)
@@ -97,8 +97,8 @@ test "SpikingSynapse: delay_dist composition across steps" {
   // 2 pre, 1 post, identity synapse with 1.0 delay. Force-fire pre[0]
   // at t=0; expect post.glu[0] to receive the spike at t=1.0.
   let rng = @core.Xoshiro::default()
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
   let s = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(s, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(s, 2, 1, 1.0F)

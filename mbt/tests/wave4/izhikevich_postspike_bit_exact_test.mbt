@@ -4,37 +4,37 @@
 
 ///|
 test "postspike timing — tabs counts down 2,1,0 after single fire" {
-  let ps = @snn_mbt.IZPostSpike::custom(2)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, ps)
+  let ps = @neuron.IZPostSpike::custom(2)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, ps)
   // Step 1: fire, tabs → 2.
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if !pop.fire[0] { fail("step 1 expected fire") }
   if pop.tabs[0] != 2 { fail("tabs after fire expected 2, got \{pop.tabs[0]}") }
   // Step 2: refractory (tabs=2 → 1).
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if pop.tabs[0] != 1 { fail("tabs after step 2 expected 1, got \{pop.tabs[0]}") }
   // Step 3: refractory (tabs=1 → 0).
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if pop.tabs[0] != 0 { fail("tabs after step 3 expected 0, got \{pop.tabs[0]}") }
   // Step 4: refractory over; membrane updates resume.
   pop.v[0] = -65.0F  // restart from rest
   pop.u[0] = -13.0F
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   // tabs should remain 0 (no fire on step 4 since v=-65).
   if pop.tabs[0] != 0 { fail("tabs should stay 0 (no re-fire)") }
 }
 
 ///|
 test "postspike timing — tabs_const=5: 5 steps of refractory" {
-  let ps = @snn_mbt.IZPostSpike::custom(5)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, ps)
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  let ps = @neuron.IZPostSpike::custom(5)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, ps)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if pop.tabs[0] != 5 { fail("tabs expected 5") }
   // Each subsequent step decrements tabs.
   let expected : Array[Int] = [4, 3, 2, 1, 0]
   let mut step = 0
   while step < 5 {
-    @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+    @neuron.step_iz_with_postspike(pop, 0.125F)
     if pop.tabs[0] != expected[step] {
       fail("step \{step + 1} tabs expected \{expected[step]}, got \{pop.tabs[0]}")
     }
@@ -45,16 +45,16 @@ test "postspike timing — tabs_const=5: 5 steps of refractory" {
 ///|
 test "postspike timing — second fire after refractory re-extends" {
   // First fire → tabs=2 → wait 2 steps → second fire → tabs=2 again.
-  let ps = @snn_mbt.IZPostSpike::custom(2)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, ps)
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // fire #1, tabs=2
+  let ps = @neuron.IZPostSpike::custom(2)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, ps)
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // fire #1, tabs=2
   if !pop.fire[0] { fail("fire #1") }
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // tabs=1
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // tabs=0, refractory over
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // tabs=1
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // tabs=0, refractory over
   // Now force fire again.
   pop.v[0] = 35.0F
   pop.u[0] = 7.0F
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   if !pop.fire[0] { fail("fire #2") }
   if pop.tabs[0] != 2 { fail("tabs after second fire expected 2, got \{pop.tabs[0]}") }
   // V should be reset to c=-65.

@@ -2,22 +2,22 @@
 
 ///|
 test "IZPostSpike::new — default 1-step refractory" {
-  let ps = @snn_mbt.IZPostSpike::new()
+  let ps = @neuron.IZPostSpike::new()
   if ps.tabs_const != 1 { fail("default tabs_const expected 1, got \{ps.tabs_const}") }
 }
 
 ///|
 test "IZPostSpike::custom — arbitrary refractory period" {
-  let ps = @snn_mbt.IZPostSpike::custom(8)
+  let ps = @neuron.IZPostSpike::custom(8)
   if ps.tabs_const != 8 { fail("tabs_const expected 8") }
-  let ps2 = @snn_mbt.IZPostSpike::custom(0)
+  let ps2 = @neuron.IZPostSpike::custom(0)
   if ps2.tabs_const != 0 { fail("tabs_const expected 0 (no refractory)") }
 }
 
 ///|
 test "IZ::init_with_postspike — initial state honours v_init / u_init" {
-  let postspike = @snn_mbt.IZPostSpike::custom(4)
-  let pop = @snn_mbt.IZ::init_with_postspike(3, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, postspike)
+  let postspike = @neuron.IZPostSpike::custom(4)
+  let pop = @neuron.IZ::init_with_postspike(3, @neuron.IZParameter::rs(), -65.0F, -13.0F, postspike)
   if pop.n != 3 { fail("n expected 3") }
   let mut k = 0
   while k < 3 {
@@ -30,10 +30,10 @@ test "IZ::init_with_postspike — initial state honours v_init / u_init" {
 
 ///|
 test "IZ::init_with_postspike — step_iz evolves from initial state" {
-  let postspike = @snn_mbt.IZPostSpike::custom(2)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), -50.0F, -10.0F, postspike)
+  let postspike = @neuron.IZPostSpike::custom(2)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), -50.0F, -10.0F, postspike)
   pop.i[0] = 10.0F
-  @snn_mbt.step_iz(pop, 0.125F)
+  @neuron.step_iz(pop, 0.125F)
   // v should evolve; if it crossed 30 mV, fire.
   let v_before = -50.0F
   if pop.v[0] == v_before && !pop.fire[0] {
@@ -43,7 +43,7 @@ test "IZ::init_with_postspike — step_iz evolves from initial state" {
 
 ///|
 test "IZPostSpike + IZ::init_with_postspike — fire/i/ge/gi zero-init" {
-  let pop = @snn_mbt.IZ::init_with_postspike(2, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(2))
+  let pop = @neuron.IZ::init_with_postspike(2, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(2))
   if pop.fire[0] || pop.fire[1] { fail("fire should start false") }
   if pop.i[0] != 0.0F || pop.i[1] != 0.0F { fail("i should be 0") }
   if pop.ge[0] != 0.0F || pop.ge[1] != 0.0F { fail("ge should be 0") }

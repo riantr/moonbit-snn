@@ -128,19 +128,19 @@ pub fn SRNN::new(
   let b_out : Array[Float] = Array::make(n_classes, 0.0F)
   let mut i = 0
   while i < n_in * n_hidden {
-    let (z, _) = box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     w_in[i] = Float::from_double(z) * std_in
     i = i + 1
   }
   let mut j = 0
   while j < n_hidden * n_hidden {
-    let (z, _) = box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     w_rec[j] = Float::from_double(z) * std_rec
     j = j + 1
   }
   let mut k = 0
   while k < n_hidden * n_classes {
-    let (z, _) = box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     w_out[k] = Float::from_double(z) * std_out
     k = k + 1
   }

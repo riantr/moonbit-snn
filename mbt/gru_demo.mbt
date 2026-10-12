@@ -189,11 +189,11 @@ pub fn gru_identity_dataset(
     let x : Array[Float] = Array::make(d_x, 0.0F)
     let g : Array[Float] = Array::make(d_target, 0.0F)
     for i in 0..<d_x {
-      let (z1, _) = box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       x[i] = Float::from_double(z1)
     }
     for i in 0..<d_target {
-      let (z1, _) = box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       g[i] = Float::from_double(z1)
     }
     xs[t] = x

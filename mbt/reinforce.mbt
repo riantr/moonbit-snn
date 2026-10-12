@@ -163,7 +163,7 @@ pub fn policy_forward(
 /// `(action, log_prob)`. `log_prob` is clamped to -20 to avoid -inf.
 pub fn sample_categorical(probs : Array[Float], rng : @core.Xoshiro) -> (Int, Float) {
   let n = probs.length()
-  let (u_raw, _) = box_muller(rng)
+  let (u_raw, _) = @neuron.box_muller(rng)
   let u = Float::from_double(u_raw).abs()
   let mut thr = u
   if thr > 1.0F {

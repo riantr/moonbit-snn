@@ -70,7 +70,7 @@ pub fn scm_sample(
   let x : Array[Float] = Array::make(n, 0.0F)
   // Sample noise.
   for i in 0..<n {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     x[i] = sqrtf(scm.sigma_sq[i]) * Float::from_double(z1)
   }
   // Forward substitution: solve (I - B) · X = x for X.

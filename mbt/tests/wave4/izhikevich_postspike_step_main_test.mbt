@@ -6,14 +6,14 @@
 test "step_iz_with_postspike — 200-step stable, no NaN" {
   // 5 RS neurons with strong tonic drive + refractory. All voltages
   // should remain bounded (no NaN, no runaway) over 200 steps.
-  let ps = @snn_mbt.IZPostSpike::custom(2)
-  let pop = @snn_mbt.IZ::init_with_postspike(5, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, ps)
+  let ps = @neuron.IZPostSpike::custom(2)
+  let pop = @neuron.IZ::init_with_postspike(5, @neuron.IZParameter::rs(), -65.0F, -13.0F, ps)
   for _ in 0..<200 {
     // Inject 10 pA on each neuron.
     for k in 0..<5 {
       pop.i[k] = 10.0F
     }
-    @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+    @neuron.step_iz_with_postspike(pop, 0.125F)
   }
   let mut k = 0
   while k < 5 {
@@ -33,20 +33,20 @@ test "step_iz_with_postspike — fire rate bounded by refractory" {
   // Inject a strong enough tonic input so both populations fire at
   // least once. The refractory version should fire strictly fewer
   // times because each spike costs at least tabs_const=4 timesteps.
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
+  let pop_a = @neuron.IZ::new(1, @neuron.IZParameter::rs(), @core.Xoshiro::new(7UL))
   pop_a.i[0] = 30.0F  // strong tonic drive
   let mut fires_a : Int = 0
   for _ in 0..<200 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
     if pop_a.fire[0] { fires_a = fires_a + 1 }
     pop_a.i[0] = 30.0F
   }
-  let ps = @snn_mbt.IZPostSpike::custom(4)
-  let pop_b = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, ps)
+  let ps = @neuron.IZPostSpike::custom(4)
+  let pop_b = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), -65.0F, -13.0F, ps)
   pop_b.i[0] = 30.0F
   let mut fires_b : Int = 0
   for _ in 0..<200 {
-    @snn_mbt.step_iz_with_postspike(pop_b, 0.125F)
+    @neuron.step_iz_with_postspike(pop_b, 0.125F)
     if pop_b.fire[0] { fires_b = fires_b + 1 }
     pop_b.i[0] = 30.0F
   }
@@ -65,13 +65,13 @@ test "step_iz_with_postspike — fire rate bounded by refractory" {
 test "step_iz_with_postspike — 5-neuron heterogeneous initial fire" {
   // 5 neurons, all initialised at v=35 (above threshold). On step 1,
   // all should fire (none in refractory initially).
-  let pop = @snn_mbt.IZ::init_with_postspike(
+  let pop = @neuron.IZ::init_with_postspike(
     5,
-    @snn_mbt.IZParameter::rs(),
+    @neuron.IZParameter::rs(),
     35.0F, 7.0F,
-    @snn_mbt.IZPostSpike::custom(3),
+    @neuron.IZPostSpike::custom(3),
   )
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   let mut k = 0
   while k < 5 {
     if !pop.fire[k] { fail("neuron \{k} should fire on step 1") }
@@ -86,15 +86,15 @@ test "step_iz_with_postspike — u adaptation continues during refractory" {
   // evolve? Actually no — both membrane and u are part of the
   // membrane update. Verify u is FROZEN during refractory (matches
   // the design).
-  let ps = @snn_mbt.IZPostSpike::custom(2)
-  let pop = @snn_mbt.IZ::init_with_postspike(1, @snn_mbt.IZParameter::rs(), 35.0F, 7.0F, ps)
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=2
+  let ps = @neuron.IZPostSpike::custom(2)
+  let pop = @neuron.IZ::init_with_postspike(1, @neuron.IZParameter::rs(), 35.0F, 7.0F, ps)
+  @neuron.step_iz_with_postspike(pop, 0.125F)  // fire, tabs=2
   let u_after_fire = pop.u[0]
   let _ = u_after_fire
   // Steps 2, 3: in refractory. u should not change.
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   let _ = u_after_fire  // value used implicitly via u comparison below
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   // After refractory (tabs=0), membrane resumes. With v at c=-65
   // and external drive 0, u should follow du = dt * a * (b*v - u).
   // Since v=-65, u_after_fire = b * v + d ≈ -13 + 8 = -5 (after fire).
@@ -102,7 +102,7 @@ test "step_iz_with_postspike — u adaptation continues during refractory" {
   // After tabs=0, u starts evolving.
   pop.i[0] = 0.0F
   let u_before_recovery = pop.u[0]
-  @snn_mbt.step_iz_with_postspike(pop, 0.125F)
+  @neuron.step_iz_with_postspike(pop, 0.125F)
   // u should now have changed slightly (du = dt*a*(b*v - u) with v=-65).
   // Note: this test just verifies u evolves after recovery, not that
   // it was frozen during.

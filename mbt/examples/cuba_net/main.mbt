@@ -37,9 +37,9 @@ fn main {
   // We need R=0.1F (Julia: 100 * mohm = 100 * 0.001 = 0.1) and El/Vr
   // close together so the 150 pA drive (R*I = 15 mV) easily pushes v
   // past Vt from El=-60 to Vt=-50.
-  let neuron_param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -60.0F, -60.0F, 0.1F)
-  let e_pop = @snn_mbt.IF::new(ne, neuron_param, rng)
-  let i_pop = @snn_mbt.IF::new(ni, neuron_param, rng)
+  let neuron_param = @neuron.IFParameter::custom(20.0F, -50.0F, -60.0F, -60.0F, 0.1F)
+  let e_pop = @neuron.IF::new(ne, neuron_param, rng)
+  let i_pop = @neuron.IF::new(ni, neuron_param, rng)
 
   // Apply 150 pA external current to both populations.
   for k in 0..<ne {

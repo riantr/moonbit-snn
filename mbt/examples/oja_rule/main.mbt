@@ -14,7 +14,7 @@
 fn main {
   let rng = @core.Xoshiro::default()
   let n = 100
-  let g_pop = @snn_mbt.WilsonCowan::new(n, rng)
+  let g_pop = @neuron.WilsonCowan::new(n, rng)
 
   // Random rate synapses (μ=1.2, p=1.0 → all-to-all).
   let gg = @snn_mbt.RateSynapse::new(g_pop, g_pop, 1.2F, 0.0F, 1.0F, rng)
@@ -29,7 +29,7 @@ fn main {
   let steps : Int = (duration_ms / dt).to_int()
   let g_sum_initial = g_pop.r[0]
   for _ in 0..<steps {
-    @snn_mbt.step_wc(g_pop, dt)
+    @neuron.step_wc(g_pop, dt)
     gg.matrix.forward_rate(g_pop.r, g_pop.g)
   }
 

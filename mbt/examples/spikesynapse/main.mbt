@@ -31,9 +31,9 @@ fn main {
   // 1-neuron IF populations E1 and E2 with Vr=-55mV.
   // Use IFParameter::custom(tm, vt, vr, el, r) — defaults are too
   // far from -55 mV for a single strong synapse to fire.
-  let param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -55.0F, -55.0F, 1.0F)
-  let e1 = @snn_mbt.IF::new(1, param, rng)
-  let e2 = @snn_mbt.IF::new(1, param, rng)
+  let param = @neuron.IFParameter::custom(20.0F, -50.0F, -55.0F, -55.0F, 1.0F)
+  let e1 = @neuron.IF::new(1, param, rng)
+  let e2 = @neuron.IF::new(1, param, rng)
 
   // SpikingSynapse E1 → E2 with μ=1.62 nS, p=1.0, Normal(3ms, 2ms) delay
   // (mean delay 3 ms approximates Uniform(1, 5) ms; std=2 gives some
@@ -57,13 +57,13 @@ fn main {
     @snn_mbt.deliver_pending_synapse(ee, t_now)
     @snn_mbt.forward_synapse(ee, t_now)
     // Update E2's synapses (ge rises from glu) and synaptic current.
-    @snn_mbt.step_synapses(e2, dt)
-    @snn_mbt.synaptic_current(e2)
-    @snn_mbt.step_neuron(e2, dt)
+    @neuron.step_synapses(e2, dt)
+    @neuron.synaptic_current(e2)
+    @neuron.step_neuron(e2, dt)
     // Update E1 (driven by tonic current; no incoming synapses).
-    @snn_mbt.step_synapses(e1, dt)
-    @snn_mbt.synaptic_current(e1)
-    @snn_mbt.step_neuron(e1, dt)
+    @neuron.step_synapses(e1, dt)
+    @neuron.synaptic_current(e1)
+    @neuron.step_neuron(e1, dt)
 
     if e1.fire[0] {
       e1_spikes = e1_spikes + 1

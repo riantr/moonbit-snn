@@ -5,8 +5,8 @@
 test "TripodHet::new: shapes and init" {
   let rng = @core.Xoshiro::default()
   let n = 3
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
-  let p = @snn_mbt.TripodHet::new(n, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n, @neuron.AdExParameter::new())
+  let p = @neuron.TripodHet::new(n, param, rng)
   if p.n != n {
     fail("n = \{p.n}, expected \{n}")
   }
@@ -41,7 +41,7 @@ test "TripodHet::new: shapes and init" {
 test "TripodHet::new: per-neuron vt/vr values respected" {
   let rng = @core.Xoshiro::default()
   let n = 2
-  let base = @snn_mbt.AdExParameter::new()
+  let base = @neuron.AdExParameter::new()
   let vt_arr : Array[Float] = [-48.0F, -49.0F]
   let vr_arr : Array[Float] = [base.vr, base.vr]
   let el_arr : Array[Float] = [base.el, base.el]
@@ -51,7 +51,7 @@ test "TripodHet::new: per-neuron vt/vr values respected" {
   let tw_arr : Array[Float] = [base.tw, base.tw]
   let a_arr : Array[Float] = [base.a, base.a]
   let b_arr : Array[Float] = [base.b, base.b]
-  let param : @snn_mbt.AdExParameterHet = {
+  let param : @neuron.AdExParameterHet = {
     vt: vt_arr,
     vr: vr_arr,
     el: el_arr,
@@ -62,7 +62,7 @@ test "TripodHet::new: per-neuron vt/vr values respected" {
     a: a_arr,
     b: b_arr,
   }
-  let p = @snn_mbt.TripodHet::new(n, param, rng)
+  let p = @neuron.TripodHet::new(n, param, rng)
   if (p.soma_param.vt[0] - -48.0F).abs() > 1.0e-6F {
     fail("vt[0] = \{p.soma_param.vt[0]}, expected -48")
   }
@@ -75,8 +75,8 @@ test "TripodHet::new: per-neuron vt/vr values respected" {
 test "step_tripod_het: tonic drive produces spikes" {
   let rng = @core.Xoshiro::default()
   let n = 2
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
-  let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n, @neuron.AdExParameter::new())
+  let p : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
   // Use i_s via direct field mutation.
   p.i_s[0] = 1500.0F
   p.i_s[1] = 1500.0F
@@ -84,7 +84,7 @@ test "step_tripod_het: tonic drive produces spikes" {
   let mut total_spikes = 0
   for _step in 0..<1600 {
     let _ = _step
-    @snn_mbt.step_tripod_het(p, dt)
+    @neuron.step_tripod_het(p, dt)
     for k in 0..<n {
       if p.fire[k] {
         total_spikes = total_spikes + 1
@@ -100,13 +100,13 @@ test "step_tripod_het: tonic drive produces spikes" {
 test "step_tripod_het: zero drive, no spikes (passive decay)" {
   let rng = @core.Xoshiro::default()
   let n = 1
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
-  let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n, @neuron.AdExParameter::new())
+  let p : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
   let dt = 0.125F
   let mut fired = false
   for _step in 0..<1600 {
     let _ = _step
-    @snn_mbt.step_tripod_het(p, dt)
+    @neuron.step_tripod_het(p, dt)
     if p.fire[0] {
       fired = true
       break
@@ -121,7 +121,7 @@ test "step_tripod_het: zero drive, no spikes (passive decay)" {
 test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
   let rng = @core.Xoshiro::default()
   let n = 3
-  let base = @snn_mbt.AdExParameter::new()
+  let base = @neuron.AdExParameter::new()
   let vt_arr : Array[Float] = [-50.0F, -30.0F, -30.0F]
   let vr_arr : Array[Float] = [base.vr, base.vr, base.vr]
   let el_arr : Array[Float] = [base.el, base.el, base.el]
@@ -131,7 +131,7 @@ test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
   let tw_arr : Array[Float] = [base.tw, base.tw, base.tw]
   let a_arr : Array[Float] = [base.a, base.a, base.a]
   let b_arr : Array[Float] = [base.b, base.b, base.b]
-  let param : @snn_mbt.AdExParameterHet = {
+  let param : @neuron.AdExParameterHet = {
     vt: vt_arr,
     vr: vr_arr,
     el: el_arr,
@@ -142,7 +142,7 @@ test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
     a: a_arr,
     b: b_arr,
   }
-  let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let p : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
   p.i_s[0] = 1500.0F
   p.i_s[1] = 1500.0F
   p.i_s[2] = 1500.0F
@@ -150,7 +150,7 @@ test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
   let spike_counts : Array[Int] = [0, 0, 0]
   for _step in 0..<1600 {
     let _ = _step
-    @snn_mbt.step_tripod_het(p, dt)
+    @neuron.step_tripod_het(p, dt)
     for k in 0..<n {
       if p.fire[k] {
         // Spike counts are accumulated via mutating a fresh array
@@ -176,13 +176,13 @@ test "step_tripod_het: heterogeneous threshold — only low-vt neurons spike" {
 test "step_tripod_het: v_d1/v_d2 finite (no runaway) under heavy drive" {
   let rng = @core.Xoshiro::default()
   let n = 1
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
-  let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n, @neuron.AdExParameter::new())
+  let p : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
   p.i_s[0] = 5000.0F
   let dt = 0.125F
   for _step in 0..<2000 {
     let _ = _step
-    @snn_mbt.step_tripod_het(p, dt)
+    @neuron.step_tripod_het(p, dt)
     if p.v_d1[0] != p.v_d1[0] || p.v_d1[0].abs() > 1.0e6F {
       fail("v_d1[0] = \{p.v_d1[0]} is NaN or runaway")
     }
@@ -199,10 +199,10 @@ test "step_tripod_het: v_d1/v_d2 finite (no runaway) under heavy drive" {
 test "tripod_het_soma_step_synapses: glu_s → ge_s decay" {
   let rng = @core.Xoshiro::default()
   let n = 1
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n, @snn_mbt.AdExParameter::new())
-  let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n, @neuron.AdExParameter::new())
+  let p : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
   p.glu_s[0] = 5.0F
-  @snn_mbt.tripod_het_soma_step_synapses(p, 0.125F)
+  @neuron.tripod_het_soma_step_synapses(p, 0.125F)
   let expected = 5.0F - 5.0F * 0.125F / 6.0F
   if (p.ge_s[0] - expected).abs() > 1.0e-5F {
     fail("ge_s[0] = \{p.ge_s[0]}, expected \{expected}")
@@ -219,7 +219,7 @@ test "step_tripod_het: spike counter via repeat-with-reset pattern" {
   // and accumulating into a sum outside the struct.
   let rng = @core.Xoshiro::default()
   let n = 3
-  let base = @snn_mbt.AdExParameter::new()
+  let base = @neuron.AdExParameter::new()
   let vt_arr : Array[Float] = [-50.0F, -30.0F, -30.0F]
   let vr_arr : Array[Float] = [base.vr, base.vr, base.vr]
   let el_arr : Array[Float] = [base.el, base.el, base.el]
@@ -229,7 +229,7 @@ test "step_tripod_het: spike counter via repeat-with-reset pattern" {
   let tw_arr : Array[Float] = [base.tw, base.tw, base.tw]
   let a_arr : Array[Float] = [base.a, base.a, base.a]
   let b_arr : Array[Float] = [base.b, base.b, base.b]
-  let param : @snn_mbt.AdExParameterHet = {
+  let param : @neuron.AdExParameterHet = {
     vt: vt_arr,
     vr: vr_arr,
     el: el_arr,
@@ -240,7 +240,7 @@ test "step_tripod_het: spike counter via repeat-with-reset pattern" {
     a: a_arr,
     b: b_arr,
   }
-  let p : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let p : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
   p.i_s[0] = 1500.0F
   p.i_s[1] = 1500.0F
   p.i_s[2] = 1500.0F
@@ -250,7 +250,7 @@ test "step_tripod_het: spike counter via repeat-with-reset pattern" {
   let mut n2 = 0
   for _step in 0..<1600 {
     let _ = _step
-    @snn_mbt.step_tripod_het(p, dt)
+    @neuron.step_tripod_het(p, dt)
     if p.fire[0] { n0 = n0 + 1 }
     if p.fire[1] { n1 = n1 + 1 }
     if p.fire[2] { n2 = n2 + 1 }

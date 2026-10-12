@@ -47,7 +47,7 @@ pub fn lstm_ppo_collect_batch(
   let old_dist : Array[Array[Float]] = []
   let start = env_n_cells / 2
   for _ep in 0..<n_episodes {
-    let (u_raw, _) = box_muller(rng)
+    let (u_raw, _) = @neuron.box_muller(rng)
     let side = if u_raw > 0.0 { 1 } else { 0 }
     let env : CorridorEnv = CorridorEnv::{
       n_cells: env_n_cells,

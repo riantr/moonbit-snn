@@ -3,7 +3,7 @@
 
 ///|
 test "HetRecParameter::new — Julia defaults" {
-  let p = @snn_mbt.HetRecParameter::new()
+  let p = @neuron.HetRecParameter::new()
   assert_eq(p.nd, 2)
   assert_eq(p.overlap, 0.5F)
   assert_eq(p.tau_d_low, 10.0F)
@@ -19,9 +19,9 @@ test "HetRecParameter::new — Julia defaults" {
 ///|
 test "HetRec::new — array sizes match Julia HetRec layout" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::new()
+  let param = @neuron.HetRecParameter::new()
   let n = 4
-  let p = @snn_mbt.HetRec::new(n, param, rng)
+  let p = @neuron.HetRec::new(n, param, rng)
   assert_eq(p.n, n)
   assert_eq(p.v_d.length(), n * param.nd)
   assert_eq(p.v_s.length(), n)
@@ -55,9 +55,9 @@ test "HetRec::new — array sizes match Julia HetRec layout" {
 ///|
 test "HetRec::new — baseline rates uniform in [0, 1]" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::new()
+  let param = @neuron.HetRecParameter::new()
   let n = 200
-  let p = @snn_mbt.HetRec::new(n, param, rng)
+  let p = @neuron.HetRec::new(n, param, rng)
   let mut min_r : Float = 1.0F
   let mut max_r : Float = 0.0F
   for i in 0..<n {
@@ -81,9 +81,9 @@ test "HetRec::new — baseline rates uniform in [0, 1]" {
 ///|
 test "HetRec::new — dendritic time constants uniform in [10, 100] ms" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::new()
+  let param = @neuron.HetRecParameter::new()
   let n = 50
-  let p = @snn_mbt.HetRec::new(n, param, rng)
+  let p = @neuron.HetRec::new(n, param, rng)
   let total_d = n * param.nd
   for i in 0..<total_d {
     if p.tau_d[i] < 10.0F || p.tau_d[i] > 100.0F {
@@ -95,7 +95,7 @@ test "HetRec::new — dendritic time constants uniform in [10, 100] ms" {
 ///|
 test "HetRec::new — overlap=0 → only own dendrites per soma" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::{
+  let param = @neuron.HetRecParameter::{
     nd: 2,
     overlap: 0.0F,
     tau_d_low: 10.0F,
@@ -108,7 +108,7 @@ test "HetRec::new — overlap=0 → only own dendrites per soma" {
     tau_rate: 100.0F,
   }
   let n = 5
-  let p = @snn_mbt.HetRec::new(n, param, rng)
+  let p = @neuron.HetRec::new(n, param, rng)
   // With overlap=0, each soma should have exactly Nd synapses
   // (one per own dendrite).
   for i in 0..<n {
@@ -130,12 +130,12 @@ test "HetRec::new — overlap=0 → only own dendrites per soma" {
 ///|
 test "step_hetrec — zero input → v_d, v_s stay at 0, no spikes" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::new()
-  let p = @snn_mbt.HetRec::new(5, param, rng)
+  let param = @neuron.HetRecParameter::new()
+  let p = @neuron.HetRec::new(5, param, rng)
   let dt = 0.125F
   for _ in 0..<100 {
-    @snn_mbt.hetrec_refresh_random(p, rng)
-    @snn_mbt.step_hetrec(p, dt)
+    @neuron.hetrec_refresh_random(p, rng)
+    @neuron.step_hetrec(p, dt)
   }
   let n = p.n
   for i in 0..<n {
@@ -151,9 +151,9 @@ test "step_hetrec — zero input → v_d, v_s stay at 0, no spikes" {
 ///|
 test "step_hetrec — constant is_ drives v_d, then v_s via M" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::new()
+  let param = @neuron.HetRecParameter::new()
   let n = 2
-  let p = @snn_mbt.HetRec::new(n, param, rng)
+  let p = @neuron.HetRec::new(n, param, rng)
   let dt = 0.125F
   // Inject a constant current into all dendrites.
   for i in 0..<p.is_.length() {
@@ -161,8 +161,8 @@ test "step_hetrec — constant is_ drives v_d, then v_s via M" {
   }
   let mut max_abs_v_s : Float = 0.0F
   for _ in 0..<200 {
-    @snn_mbt.hetrec_refresh_random(p, rng)
-    @snn_mbt.step_hetrec(p, dt)
+    @neuron.hetrec_refresh_random(p, rng)
+    @neuron.step_hetrec(p, dt)
     for i in 0..<n {
       let abs_v = if p.v_s[i] < 0.0F { -p.v_s[i] } else { p.v_s[i] }
       if abs_v > max_abs_v_s {
@@ -202,9 +202,9 @@ test "step_hetrec — constant is_ drives v_d, then v_s via M" {
 ///|
 test "step_hetrec — long sim no NaN, mean v_s in reasonable range" {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.HetRecParameter::new()
+  let param = @neuron.HetRecParameter::new()
   let n = 30
-  let p = @snn_mbt.HetRec::new(n, param, rng)
+  let p = @neuron.HetRec::new(n, param, rng)
   let dt = 0.125F
   for step in 0..<800 {
     // Small Poisson-like drive: every 10 steps, inject a brief burst
@@ -223,8 +223,8 @@ test "step_hetrec — long sim no NaN, mean v_s in reasonable range" {
         p.is_[d] = 0.0F
       }
     }
-    @snn_mbt.hetrec_refresh_random(p, rng)
-    @snn_mbt.step_hetrec(p, dt)
+    @neuron.hetrec_refresh_random(p, rng)
+    @neuron.step_hetrec(p, dt)
   }
   // Verify no NaN/Inf.
   let mut sum_v_s : Float = 0.0F

@@ -2,7 +2,7 @@
 
 ///|
 test "IFSinExpParameter::new — default τe/τi = 6/2" {
-  let p = @snn_mbt.IFSinExpParameter::new()
+  let p = @neuron.IFSinExpParameter::new()
   if p.tau_e != 6.0F { fail("tau_e default expected 6.0, got \{p.tau_e}") }
   if p.tau_i != 2.0F { fail("tau_i default expected 2.0, got \{p.tau_i}") }
   if p.tm != 20.0F { fail("tm default expected 20.0, got \{p.tm}") }
@@ -12,7 +12,7 @@ test "IFSinExpParameter::new — default τe/τi = 6/2" {
 
 ///|
 test "IFSinExpParameter::lkd_pv — LKD 2014 PV defaults" {
-  let p = @snn_mbt.IFSinExpParameter::lkd_pv()
+  let p = @neuron.IFSinExpParameter::lkd_pv()
   if p.el != -62.0F { fail("el expected -62.0, got \{p.el}") }
   if p.vt != -52.0F { fail("vt expected -52.0, got \{p.vt}") }
   if p.vr != -57.47F { fail("vr expected -57.47, got \{p.vr}") }
@@ -24,7 +24,7 @@ test "IFSinExpParameter::lkd_pv — LKD 2014 PV defaults" {
 ///|
 test "IFSinExp::new — population size, initial state at rest" {
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.IFSinExp::new(4, @snn_mbt.IFSinExpParameter::new(), rng)
+  let pop = @neuron.IFSinExp::new(4, @neuron.IFSinExpParameter::new(), rng)
   if pop.n != 4 { fail("expected n=4") }
   // All voltages are near el (modulo small Box-Muller noise).
   let mut k = 0
@@ -40,12 +40,12 @@ test "IFSinExp::new — population size, initial state at rest" {
 ///|
 test "ifsinexp_step — single-exp ge decay (no he/hi)" {
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.IFSinExp::new(1, @snn_mbt.IFSinExpParameter::new(), rng)
+  let pop = @neuron.IFSinExp::new(1, @neuron.IFSinExpParameter::new(), rng)
   // Inject glu into neuron 0.
   pop.glu[0] = 1.0F
   pop.gaba[0] = 0.5F
   // Step with dt=0.5ms.
-  @snn_mbt.ifsinexp_step(pop, 0.5F)
+  @neuron.ifsinexp_step(pop, 0.5F)
   // Expected: ge = (glu + ge_old) + dt*(-ge/tau_e) = 1.0 + 0.5*(-1/6) = 1.0 - 0.0833 ≈ 0.9167.
   if (pop.ge[0] - 0.9166667F).abs() > 1.0e-4 {
     fail("ge[0] expected ≈0.9167, got \{pop.ge[0]}")
@@ -62,9 +62,9 @@ test "ifsinexp_step — single-exp ge decay (no he/hi)" {
 ///|
 test "ifsinexp_step — fire when v >= vt, reset to vr" {
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.IFSinExp::new(1, @snn_mbt.IFSinExpParameter::new(), rng)
+  let pop = @neuron.IFSinExp::new(1, @neuron.IFSinExpParameter::new(), rng)
   pop.v[0] = -49.0F  // above vt = -50
-  @snn_mbt.ifsinexp_step(pop, 0.1F)
+  @neuron.ifsinexp_step(pop, 0.1F)
   if !pop.fire[0] { fail("expected fire[0] = true") }
   if pop.v[0] != -60.0F { fail("expected reset to vr=-60, got \{pop.v[0]}") }
   if pop.fire_t.length() != 1 { fail("expected 1 fire event, got \{pop.fire_t.length()}") }
@@ -73,14 +73,14 @@ test "ifsinexp_step — fire when v >= vt, reset to vr" {
 ///|
 test "ifsinexp_step — refractory period" {
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.IFSinExp::new(1, @snn_mbt.IFSinExpParameter::new(), rng)
+  let pop = @neuron.IFSinExp::new(1, @neuron.IFSinExpParameter::new(), rng)
   pop.v[0] = -49.0F  // force fire
-  @snn_mbt.ifsinexp_step(pop, 0.1F)
+  @neuron.ifsinexp_step(pop, 0.1F)
   if !pop.fire[0] { fail("expected fire on first step") }
   // Now in refractory (tabs > 0). Manually set v[0] = -49 to attempt re-fire.
   let v_set : Float = -49.0F
   pop.v[0] = v_set
-  @snn_mbt.ifsinexp_step(pop, 0.1F)
+  @neuron.ifsinexp_step(pop, 0.1F)
   if pop.fire[0] { fail("expected no fire during refractory") }
   // In refractory, v should be frozen at v_set (the manually-set value),
   // NOT updated by the membrane equation.
@@ -90,7 +90,7 @@ test "ifsinexp_step — refractory period" {
 ///|
 test "ifsinexp_step — 100-step stability (ge/gi bounded)" {
   let rng = @core.Xoshiro::new(42UL)
-  let pop = @snn_mbt.IFSinExp::new(5, @snn_mbt.IFSinExpParameter::new(), rng)
+  let pop = @neuron.IFSinExp::new(5, @neuron.IFSinExpParameter::new(), rng)
   for _ in 0..<100 {
     // Random spike injection.
     for k in 0..<pop.n {
@@ -101,7 +101,7 @@ test "ifsinexp_step — 100-step stability (ge/gi bounded)" {
         pop.gaba[k] = pop.gaba[k] + 0.5F
       }
     }
-    @snn_mbt.ifsinexp_step(pop, 0.1F)
+    @neuron.ifsinexp_step(pop, 0.1F)
   }
   // All v's should be bounded (within ±50 of el=-62).
   let mut k = 0

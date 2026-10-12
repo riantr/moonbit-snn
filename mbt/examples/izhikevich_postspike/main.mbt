@@ -22,12 +22,12 @@ fn main {
 
   // Three populations: no refractory, short refractory (8 steps), long
   // refractory (20 steps). Same IZParameter, same tonic input.
-  let pop_none = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::default())
-  let pop_short = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(8),
+  let pop_none = @neuron.IZ::new(1, @neuron.IZParameter::rs(), @core.Xoshiro::default())
+  let pop_short = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(8),
   )
-  let pop_long = @snn_mbt.IZ::init_with_postspike(
-    1, @snn_mbt.IZParameter::rs(), -65.0F, -13.0F, @snn_mbt.IZPostSpike::custom(20),
+  let pop_long = @neuron.IZ::init_with_postspike(
+    1, @neuron.IZParameter::rs(), -65.0F, -13.0F, @neuron.IZPostSpike::custom(20),
   )
 
   println("izhikevich_postspike.mbt: RS IZ + postspike refractory comparison")
@@ -46,9 +46,9 @@ fn main {
     pop_none.i[0] = tonic
     pop_short.i[0] = tonic
     pop_long.i[0] = tonic
-    @snn_mbt.step_iz(pop_none, dt)
-    @snn_mbt.step_iz_with_postspike(pop_short, dt)
-    @snn_mbt.step_iz_with_postspike(pop_long, dt)
+    @neuron.step_iz(pop_none, dt)
+    @neuron.step_iz_with_postspike(pop_short, dt)
+    @neuron.step_iz_with_postspike(pop_long, dt)
     if pop_none.fire[0] { fires_none = fires_none + 1 }
     if pop_short.fire[0] { fires_short = fires_short + 1 }
     if pop_long.fire[0] { fires_long = fires_long + 1 }

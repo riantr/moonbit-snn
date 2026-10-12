@@ -13,7 +13,7 @@
 
 ///|
 test "HetRecParameter::new — defaults" {
-  let p = @snn_mbt.HetRecParameter::new()
+  let p = @neuron.HetRecParameter::new()
   // Julia defaults: Nd=2, overlap=0.5, τm=20, τabs=5, τrate=100.
   assert_eq(p.nd, 2)
   assert_eq(p.overlap, 0.5F)
@@ -24,7 +24,7 @@ test "HetRecParameter::new — defaults" {
 
 ///|
 test "HetRecParameter::custom — Nd + τm + overlap" {
-  let p = @snn_mbt.HetRecParameter::custom(4, 30.0F, 0.2F)
+  let p = @neuron.HetRecParameter::custom(4, 30.0F, 0.2F)
   // Custom: Nd=4, τm=30, overlap=0.2; other fields default.
   assert_eq(p.nd, 4)
   assert_eq(p.tau_m, 30.0F)

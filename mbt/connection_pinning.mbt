@@ -41,8 +41,8 @@
 ///   q : Array[Float]           (length post.n; P * rJ projection)
 ///   f : Array[Float]           (length post.n; post-synaptic target rate)
 pub(all) struct PINningSparseSynapse {
-  pre : WilsonCowan
-  post : WilsonCowan
+  pre : @neuron.WilsonCowan
+  post : @neuron.WilsonCowan
   matrix : SparseMatrixCSR
   // P matrix is stored as a parallel Array[Float] to matrix.vals
   // (same length, indexed by the same rowptr/colptr).
@@ -66,8 +66,8 @@ pub(all) struct PINningSparseSynapse {
 ///   alpha : Float       — initial P diagonal scale
 ///   rng : Xoshiro
 pub fn PINningSparseSynapse::new(
-  pre : WilsonCowan,
-  post : WilsonCowan,
+  pre : @neuron.WilsonCowan,
+  post : @neuron.WilsonCowan,
   mu : Float,
   p : Float,
   alpha : Float,

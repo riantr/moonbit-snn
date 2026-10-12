@@ -52,16 +52,16 @@ fn main {
 
   // ----- Build populations -----
   // E = Tripod (homogeneous AdEx soma + 2 dendrites).
-  let e_param = @snn_mbt.AdExParameter::new()
-  let e_pop = @snn_mbt.Tripod::new(ne, e_param, rng)
+  let e_param = @neuron.AdExParameter::new()
+  let e_pop = @neuron.Tripod::new(ne, e_param, rng)
 
   // I1 = IF with τm = 7ms, El = -55mV.
-  let i1_param = @snn_mbt.IFParameter::custom(7.0F, -50.0F, -60.0F, -55.0F, 1.0F)
-  let i1_pop = @snn_mbt.IF::new(ni1, i1_param, rng)
+  let i1_param = @neuron.IFParameter::custom(7.0F, -50.0F, -60.0F, -55.0F, 1.0F)
+  let i1_pop = @neuron.IF::new(ni1, i1_param, rng)
 
   // I2 = IF with τm = 20ms, El = -55mV.
-  let i2_param = @snn_mbt.IFParameter::custom(20.0F, -50.0F, -60.0F, -55.0F, 1.0F)
-  let i2_pop = @snn_mbt.IF::new(ni2, i2_param, rng)
+  let i2_param = @neuron.IFParameter::custom(20.0F, -50.0F, -60.0F, -55.0F, 1.0F)
+  let i2_pop = @neuron.IF::new(ni2, i2_param, rng)
 
   // ----- Build connections -----
   // E → I1, E → I2: would normally be SpikingSynapse(E, I, :ge) but
@@ -116,14 +116,14 @@ fn main {
     @snn_mbt.forward_compartment_tripod(i1_to_e, Float::from_int(step) * dt)
     @snn_mbt.forward_compartment_tripod(i2_to_e, Float::from_int(step) * dt)
     // 2. Step IF populations.
-    @snn_mbt.step_synapses(i1_pop, dt)
-    @snn_mbt.synaptic_current(i1_pop)
-    @snn_mbt.step_neuron(i1_pop, dt)
-    @snn_mbt.step_synapses(i2_pop, dt)
-    @snn_mbt.synaptic_current(i2_pop)
-    @snn_mbt.step_neuron(i2_pop, dt)
+    @neuron.step_synapses(i1_pop, dt)
+    @neuron.synaptic_current(i1_pop)
+    @neuron.step_neuron(i1_pop, dt)
+    @neuron.step_synapses(i2_pop, dt)
+    @neuron.synaptic_current(i2_pop)
+    @neuron.step_neuron(i2_pop, dt)
     // 3. Step Tripod (E) population.
-    @snn_mbt.step_tripod(e_pop, dt)
+    @neuron.step_tripod(e_pop, dt)
     // 4. Apply STDP! updates. Note: these go to compartment synapse
     //    weight matrices via rowptr/colptr indexing, which matches the
     //    IF→Tripod connection layout.

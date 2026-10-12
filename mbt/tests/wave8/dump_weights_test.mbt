@@ -9,10 +9,10 @@
 //   - CSV output format
 
 ///|
-fn make_if_pair(n_pre : Int, n_post : Int) -> (@snn_mbt.IF, @snn_mbt.IF) {
+fn make_if_pair(n_pre : Int, n_post : Int) -> (@neuron.IF, @neuron.IF) {
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(n_pre, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(n_post, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(n_pre, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(n_post, @neuron.IFParameter::new(), rng)
   (pre, post)
 }
 

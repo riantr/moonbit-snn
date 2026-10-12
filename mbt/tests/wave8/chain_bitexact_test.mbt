@@ -23,9 +23,9 @@
 test "chain — final voltages stay in expected range" {
   // Reproduce the chain.mbt setup with the default Xoshiro state.
   let n = 3
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
@@ -59,9 +59,9 @@ test "chain — final voltages stay in expected range" {
 test "chain — recorded step count matches sim duration" {
   // 100ms at dt=0.125ms = 800 steps + initial state = 801 records.
   let n = 3
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
@@ -90,9 +90,9 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
   // (close to threshold -50mV, indicating the neuron fired or
   // came close to firing).
   let n = 3
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))
@@ -126,9 +126,9 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
 ///|
 test "chain — no NaN values in final state" {
   let n = 3
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let e_pop = @neuron.IF::new(n, param, rng)
   e_pop.i[0] = 30.0F
   let ee = @snn_mbt.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@snn_mbt.spiking_connect(ee, 1, 2, 50.0F))

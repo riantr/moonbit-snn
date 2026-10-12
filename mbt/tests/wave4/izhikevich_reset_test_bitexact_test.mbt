@@ -11,8 +11,8 @@
 ///|
 test "iz_reset / two fresh populations with same seed are bit-exact" {
   // Same constructor + same RNG seed -> bit-exact trajectory.
-  let pop_a = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(42UL))
-  let pop_b = @snn_mbt.IZ::new(3, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(42UL))
+  let pop_a = @neuron.IZ::new(3, @neuron.IZParameter::rs(), @core.Xoshiro::new(42UL))
+  let pop_b = @neuron.IZ::new(3, @neuron.IZParameter::rs(), @core.Xoshiro::new(42UL))
   // Identical external drive.
   pop_a.i[0] = 8.0F
   pop_a.i[1] = 12.0F
@@ -22,8 +22,8 @@ test "iz_reset / two fresh populations with same seed are bit-exact" {
   pop_b.i[2] = 20.0F
   let n_steps = 30
   for k in 0..<n_steps {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     // Restore i (step_iz may modify it; same on both).
     pop_a.i[0] = 8.0F
     pop_a.i[1] = 12.0F
@@ -62,23 +62,23 @@ test "iz_reset / post-reset trajectory matches fresh-population trajectory bit-e
   // pop_b's first K1 steps, which are erased by iz_reset).
   let k1 = 20
   let k2 = 30
-  let pop_a = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(99UL))
-  let pop_b = @snn_mbt.IZ::new(2, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(99UL))
+  let pop_a = @neuron.IZ::new(2, @neuron.IZParameter::rs(), @core.Xoshiro::new(99UL))
+  let pop_b = @neuron.IZ::new(2, @neuron.IZParameter::rs(), @core.Xoshiro::new(99UL))
   pop_a.i[0] = 6.0F
   pop_a.i[1] = 10.0F
   pop_b.i[0] = 6.0F
   pop_b.i[1] = 10.0F
   // Phase 1: both run k1 steps with same i.
   for _ in 0..<k1 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 6.0F
     pop_a.i[1] = 10.0F
     pop_b.i[0] = 6.0F
     pop_b.i[1] = 10.0F
   }
   // Reset pop_b.
-  @snn_mbt.iz_reset(pop_b)
+  @neuron.iz_reset(pop_b)
   // pop_b now at -65/-13 with i=6/10 (preserved).
   // Verify bit-exactness of reset state.
   if pop_b.v[0] != -65.0F || pop_b.v[1] != -65.0F {
@@ -91,11 +91,11 @@ test "iz_reset / post-reset trajectory matches fresh-population trajectory bit-e
     fail("iz_reset should preserve i")
   }
   // Phase 2: also reset pop_a to compare from a clean slate.
-  @snn_mbt.iz_reset(pop_a)
+  @neuron.iz_reset(pop_a)
   // Both populations now have identical state: v=-65, u=-13, i=6/10.
   for _ in 0..<k2 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 6.0F
     pop_a.i[1] = 10.0F
     pop_b.i[0] = 6.0F
@@ -122,14 +122,14 @@ test "iz_reset / single neuron 50-step + reset + 50-step is bit-exact" {
   // reset + 50 steps with same i restored each step. Should be
   // bit-exact (verifies iz_reset determinism).
   let n_reset_at = 50
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
-  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::rs(), @core.Xoshiro::new(7UL))
+  let pop_a = @neuron.IZ::new(1, @neuron.IZParameter::rs(), @core.Xoshiro::new(7UL))
+  let pop_b = @neuron.IZ::new(1, @neuron.IZParameter::rs(), @core.Xoshiro::new(7UL))
   pop_a.i[0] = 7.5F
   pop_b.i[0] = 7.5F
   // Phase 1: both run 50 steps.
   for _ in 0..<n_reset_at {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 7.5F
     pop_b.i[0] = 7.5F
     let _ = 0
@@ -139,12 +139,12 @@ test "iz_reset / single neuron 50-step + reset + 50-step is bit-exact" {
     fail("pre-reset v should be bit-exact")
   }
   // Reset both.
-  @snn_mbt.iz_reset(pop_a)
-  @snn_mbt.iz_reset(pop_b)
+  @neuron.iz_reset(pop_a)
+  @neuron.iz_reset(pop_b)
   // Phase 2: both run 50 more steps.
   for _ in 0..<n_reset_at {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 7.5F
     pop_b.i[0] = 7.5F
     let _ = 0
@@ -160,27 +160,27 @@ test "iz_reset / single neuron 50-step + reset + 50-step is bit-exact" {
 ///|
 test "iz_reset / bit-exactness across FS parameters" {
   // Same test but for FS (Fast Spiking) parameters.
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @core.Xoshiro::new(11UL))
-  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::fs(), @core.Xoshiro::new(11UL))
+  let pop_a = @neuron.IZ::new(1, @neuron.IZParameter::fs(), @core.Xoshiro::new(11UL))
+  let pop_b = @neuron.IZ::new(1, @neuron.IZParameter::fs(), @core.Xoshiro::new(11UL))
   pop_a.i[0] = 25.0F
   pop_b.i[0] = 25.0F
   for _ in 0..<40 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 25.0F
     pop_b.i[0] = 25.0F
     let _ = 0
   }
-  @snn_mbt.iz_reset(pop_a)
-  @snn_mbt.iz_reset(pop_b)
+  @neuron.iz_reset(pop_a)
+  @neuron.iz_reset(pop_b)
   // Both at -65/-13 (FS b=0.2 too).
   if pop_a.v[0] != -65.0F || pop_a.u[0] != -13.0F {
     fail("FS reset state should be -65/-13")
   }
   // Re-run with same i.
   for _ in 0..<60 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 25.0F
     pop_b.i[0] = 25.0F
     let _ = 0
@@ -196,19 +196,19 @@ test "iz_reset / bit-exactness across FS parameters" {
 ///|
 test "iz_reset / bit-exactness across custom IB-like parameters" {
   // Intrinsically Bursting-like (a=0.02, b=0.2, c=-55, d=4) via custom.
-  let pop_a = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @core.Xoshiro::new(31UL))
-  let pop_b = @snn_mbt.IZ::new(1, @snn_mbt.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @core.Xoshiro::new(31UL))
+  let pop_a = @neuron.IZ::new(1, @neuron.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @core.Xoshiro::new(31UL))
+  let pop_b = @neuron.IZ::new(1, @neuron.IZParameter::custom(0.02F, 0.2F, -55.0F, 4.0F), @core.Xoshiro::new(31UL))
   pop_a.i[0] = 15.0F
   pop_b.i[0] = 15.0F
   for _ in 0..<50 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 15.0F
     pop_b.i[0] = 15.0F
     let _ = 0
   }
-  @snn_mbt.iz_reset(pop_a)
-  @snn_mbt.iz_reset(pop_b)
+  @neuron.iz_reset(pop_a)
+  @neuron.iz_reset(pop_b)
   // IB reset v=-65 (initial), u = b*-65 = -13.
   if pop_a.v[0] != -65.0F {
     fail("IB reset v should be -65, got \{pop_a.v[0]}")
@@ -217,8 +217,8 @@ test "iz_reset / bit-exactness across custom IB-like parameters" {
     fail("IB reset u should be -13, got \{pop_a.u[0]}")
   }
   for _ in 0..<60 {
-    @snn_mbt.step_iz(pop_a, 0.125F)
-    @snn_mbt.step_iz(pop_b, 0.125F)
+    @neuron.step_iz(pop_a, 0.125F)
+    @neuron.step_iz(pop_b, 0.125F)
     pop_a.i[0] = 15.0F
     pop_b.i[0] = 15.0F
     let _ = 0

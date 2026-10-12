@@ -29,10 +29,10 @@ fn main {
   let dt = 0.125F
 
   // Build 4 TripodHet neurons (scaled down from Julia's 100).
-  let base = @snn_mbt.AdExParameter::new()
+  let base = @neuron.AdExParameter::new()
   let n_post = 4
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n_post, base)
-  let post : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n_post, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n_post, base)
+  let post : @neuron.TripodHet = @neuron.TripodHet::new(n_post, param, rng)
 
   // 20 exc Poisson sources @ 20 Hz → :glu, :d1.
   let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @core.hz, 20)
@@ -62,13 +62,13 @@ fn main {
     @snn_mbt.stimulate_layer_tripod(stim_exc, 0.0F, dt)
     @snn_mbt.stimulate_layer_tripod(stim_inh, 0.0F, dt)
     // 2. step synapses on soma + dendrites (single-exp; consumes glu/gaba)
-    @snn_mbt.tripod_het_soma_step_synapses(post, dt)
-    @snn_mbt.tripod_het_dend_step_synapses(post, dt)
+    @neuron.tripod_het_soma_step_synapses(post, dt)
+    @neuron.tripod_het_dend_step_synapses(post, dt)
     // 3. synaptic currents
-    @snn_mbt.tripod_het_syn_curr_soma(post)
-    @snn_mbt.tripod_het_syn_curr_dends(post)
+    @neuron.tripod_het_syn_curr_soma(post)
+    @neuron.tripod_het_syn_curr_dends(post)
     // 4. step TripodHet
-    @snn_mbt.step_tripod_het(post, dt)
+    @neuron.step_tripod_het(post, dt)
     // 5. count spikes
     for k in 0..<n_post {
       if post.fire[k] {

@@ -1,0 +1,13 @@
+// neuron/ — neuron models and their parameters.
+//
+// Sits above core and activ; several models use a fast-sigmoid surrogate from
+// activ, and every model draws on core for its RNG and units.
+//
+// `neuron_multipod.mbt` is deliberately NOT here. It names `Receptor`,
+// `Receptors` and `SingleExpSynapse`, which are synaptic-conductance concepts,
+// so it moves with the synapse layer rather than with the cell models that do
+// not mention them.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/activ",
+}

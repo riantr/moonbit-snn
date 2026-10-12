@@ -24,7 +24,7 @@ fn main {
   let dt = 0.125F
 
   let n = 4
-  let base = @snn_mbt.AdExParameter::new()
+  let base = @neuron.AdExParameter::new()
   // Per-neuron vt: neuron 0/1 are excitable (-50), neuron 2/3 are not (-30).
   let vt_arr : Array[Float] = [-50.0F, -50.0F, -30.0F, -30.0F]
   let vr_arr : Array[Float] = [base.vr, base.vr, base.vr, base.vr]
@@ -35,7 +35,7 @@ fn main {
   let tw_arr : Array[Float] = [base.tw, base.tw, base.tw, base.tw]
   let a_arr : Array[Float] = [base.a, base.a, base.a, base.a]
   let b_arr : Array[Float] = [base.b, base.b, base.b, base.b]
-  let param : @snn_mbt.AdExParameterHet = {
+  let param : @neuron.AdExParameterHet = {
     vt: vt_arr,
     vr: vr_arr,
     el: el_arr,
@@ -46,7 +46,7 @@ fn main {
     a: a_arr,
     b: b_arr,
   }
-  let pop : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n, param, rng)
+  let pop : @neuron.TripodHet = @neuron.TripodHet::new(n, param, rng)
 
   // 1500 pA tonic drive on soma of every neuron (strong enough to fire
   // excitable low-vt neurons; not enough to overcome vt=-30 high-vt).
@@ -67,7 +67,7 @@ fn main {
   let mut n3 = 0
   for _step in 0..<steps {
     let _ = _step
-    @snn_mbt.step_tripod_het(pop, dt)
+    @neuron.step_tripod_het(pop, dt)
     if pop.fire[0] { n0 = n0 + 1 }
     if pop.fire[1] { n1 = n1 + 1 }
     if pop.fire[2] { n2 = n2 + 1 }

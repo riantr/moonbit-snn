@@ -19,8 +19,8 @@ fn main {
   let rng = @core.Xoshiro::default()
   let ne = 8
   let ni = 4
-  let e_pop = @snn_mbt.HH::new(ne, @snn_mbt.HHParameter::new(), rng)
-  let i_pop = @snn_mbt.HH::new(ni, @snn_mbt.HHParameter::new(), rng)
+  let e_pop = @neuron.HH::new(ne, @neuron.HHParameter::new(), rng)
+  let i_pop = @neuron.HH::new(ni, @neuron.HHParameter::new(), rng)
 
   // Random connectivity.
   let ee = @snn_mbt.SpikingSynapseHH::random(e_pop, e_pop, "ge", 6.0F, 0.0F, 0.5F, rng)
@@ -51,8 +51,8 @@ fn main {
     @snn_mbt.forward_hh_synapse(ie)
     @snn_mbt.forward_hh_synapse(ii)
     // Step HH (decay ge/gi, update gates, integrate v).
-    @snn_mbt.step_hh(e_pop, dt)
-    @snn_mbt.step_hh(i_pop, dt)
+    @neuron.step_hh(e_pop, dt)
+    @neuron.step_hh(i_pop, dt)
     // Track rising-edge spikes.
     for f in e_pop.fire {
       if f { total_e_spikes = total_e_spikes + 1 }

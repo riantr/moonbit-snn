@@ -85,7 +85,7 @@ fn main {
   println("")
 
   // Demonstrate that LKD2014 can be used to build an IFParameter.
-  let pv_if = @snn_mbt.IFParameter::custom(
+  let pv_if = @neuron.IFParameter::custom(
     lkd.pv_tm, lkd.pv_vt, lkd.pv_vr, lkd.pv_el, 0.06F,
   )
   println("=== LKD2014 -> IFParameter::custom ===")

@@ -2,7 +2,7 @@
 
 ///|
 test "AdExMultiTimescaleParameter::new defaults match Julia" {
-  let p = @snn_mbt.AdExMultiTimescaleParameter::new()
+  let p = @neuron.AdExMultiTimescaleParameter::new()
   assert_eq(p.tm > 7.0F && p.tm < 7.05F, true)
   assert_eq(p.vt, -50.0F)
   assert_eq(p.vr, -70.6F)
@@ -32,7 +32,7 @@ test "AdExMultiTimescaleParameter::new defaults match Julia" {
 
 ///|
 test "AdExMultiTimescale::new — shapes and zero-initialised state" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=4)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=4)
   assert_eq(p.n, 4)
   assert_eq(p.n_receptors, 2)
   assert_eq(p.v.length(), 4)
@@ -59,10 +59,10 @@ test "AdExMultiTimescale::new — shapes and zero-initialised state" {
 
 ///|
 test "update_synapses_adex_multi — 2-state ODE decay" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=2)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=2)
   // Set g[0,0] = 1, h[0,0] = 0 (no input spike)
   ignore(p.g_buf.set(0, 1.0F))
-  @snn_mbt.update_synapses_adex_multi(p, p.param, 0.1F)
+  @neuron.update_synapses_adex_multi(p, p.param, 0.1F)
   // g decays by exp(-dt/τd) when h=0; τd=6ms, dt=0.1
   // g_new = exp(-0.1/6) * (1 + 0.1*0) ≈ exp(-0.0167) * 1 ≈ 0.9835
   let g0_after = p.g_buf[0]
@@ -71,11 +71,11 @@ test "update_synapses_adex_multi — 2-state ODE decay" {
 
 ///|
 test "update_synapses_adex_multi — independent per-receptor buffers" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=2)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=2)
   // Set receptor 0 g[0,0]=1 and receptor 1 g[0,1]=2
   ignore(p.g_buf.set(0, 1.0F))
   ignore(p.g_buf.set(2, 2.0F)) // index 2 = i=0, receptor=1
-  @snn_mbt.update_synapses_adex_multi(p, p.param, 0.1F)
+  @neuron.update_synapses_adex_multi(p, p.param, 0.1F)
   // Both decay independently with their respective τd
   let g0_r0 = p.g_buf[0] // receptor 0, τd=6
   let g0_r1 = p.g_buf[2] // receptor 1, τd=2
@@ -86,39 +86,39 @@ test "update_synapses_adex_multi — independent per-receptor buffers" {
 
 ///|
 test "synaptic_current_adex_multi — glu receptor uses E_e" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=2)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=2)
   // Set g[0, 0] = 5 (exc receptor), v[0] = -70
   ignore(p.g_buf.set(0, 5.0F))
   ignore(p.v.set(0, -70.0F))
-  @snn_mbt.synaptic_current_adex_multi(p, p.param)
+  @neuron.synaptic_current_adex_multi(p, p.param)
   // syn_curr[0] = gsyn_e * g * (v - e_e) = 1.0 * 5 * (-70 - 0) = -350
   assert_eq(p.syn_curr[0], -350.0F)
 }
 
 ///|
 test "synaptic_current_adex_multi — gaba receptor uses E_i" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=2)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=2)
   // Set g[0, 1] = 4 (inh receptor, index 2)
   ignore(p.g_buf.set(2, 4.0F))
   ignore(p.v.set(0, -70.0F))
-  @snn_mbt.synaptic_current_adex_multi(p, p.param)
+  @neuron.synaptic_current_adex_multi(p, p.param)
   // syn_curr[0] = gsyn_i * g * (v - e_i) = 1.0 * 4 * (-70 - -75) = 20
   assert_eq(p.syn_curr[0], 20.0F)
 }
 
 ///|
 test "synaptic_current_adex_multi — zero g_buf stays zero" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=2)
-  @snn_mbt.synaptic_current_adex_multi(p, p.param)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=2)
+  @neuron.synaptic_current_adex_multi(p, p.param)
   assert_eq(p.syn_curr[0], 0.0F)
   assert_eq(p.syn_curr[1], 0.0F)
 }
 
 ///|
 test "update_soma_adex_multi — fire when v > theta" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=1)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=1)
   ignore(p.v.set(0, -45.0F)) // above theta=-50
-  @snn_mbt.update_soma_adex_multi(p, p.param, 0.125F)
+  @neuron.update_soma_adex_multi(p, p.param, 0.125F)
   assert_eq(p.fire[0], true)
   assert_eq(p.v[0], -70.6F)
   // tabs = round(1/0.125) = 8
@@ -134,9 +134,9 @@ test "update_soma_adex_multi — fire when v > theta" {
 
 ///|
 test "update_soma_adex_multi — no fire when v <= theta" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=1)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=1)
   ignore(p.v.set(0, -55.0F)) // below theta=-50
-  @snn_mbt.update_soma_adex_multi(p, p.param, 0.125F)
+  @neuron.update_soma_adex_multi(p, p.param, 0.125F)
   assert_eq(p.fire[0], false)
   // v updates: dv = dt/tm * (-(v-el) + R*(-w + I) - R*syn_curr)
   //        = 0.125/7.025 * (-(-55 - -70.6)) = 0.01779 * (-15.6) = -0.2775
@@ -152,11 +152,11 @@ test "update_soma_adex_multi — no fire when v <= theta" {
 
 ///|
 test "integrate_adex_multi — full step is finite" {
-  let p : @snn_mbt.AdExMultiTimescale = @snn_mbt.AdExMultiTimescale::new(n=4)
+  let p : @neuron.AdExMultiTimescale = @neuron.AdExMultiTimescale::new(n=4)
   ignore(p.i.set(0, 1000.0F))
   let mut step : Int = 0
   while step < 100 {
-    @snn_mbt.integrate_adex_multi(p, p.param, 0.125F)
+    @neuron.integrate_adex_multi(p, p.param, 0.125F)
     step = step + 1
   }
   // All values finite

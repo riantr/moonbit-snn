@@ -22,8 +22,8 @@ fn main {
   let dt = 0.125F
 
   // One IF population of 100 neurons (SpikingSynapse requires IF).
-  let param = @snn_mbt.IFParameter::new()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let param = @neuron.IFParameter::new()
+  let e_pop = @neuron.IF::new(n, param, rng)
 
   // Random Bernoulli connectivity at p=0.2 (~2000 connections).
   let ee = @snn_mbt.SpikingSynapse::random(e_pop, e_pop, "ge",
@@ -74,9 +74,9 @@ fn main {
     // 1. Forward synapse (SpikingSynapse).
     @snn_mbt.spiking_connect(ee, 0, 0, 0.0F) // no-op: actual forward via compose not used here
     // Use the existing forward + step machinery.
-    @snn_mbt.step_synapses(e_pop, dt)
-    @snn_mbt.synaptic_current(e_pop)
-    @snn_mbt.step_neuron(e_pop, dt)
+    @neuron.step_synapses(e_pop, dt)
+    @neuron.synaptic_current(e_pop)
+    @neuron.step_neuron(e_pop, dt)
     // Copy fire[i] (Bool) to fire[k] (Float) for AggregateScaling.
     let mut k = 0
     while k < n {
@@ -95,7 +95,7 @@ fn main {
     // `model.syn.S.W .+= randn(size(...))` perturbation).
     let mut j = 0
     while j < ee.matrix.vals.length() {
-      let (z1, _) = @snn_mbt.box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       let new_w = ee.matrix.vals[j] + Float::from_double(z1) * 0.5F
       // Clamp at 0.5 (matches Julia's `clamp.(..., 0.5, Inf)`).
       ee.matrix.vals[j] = if new_w < 0.5F { 0.5F } else { new_w }

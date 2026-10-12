@@ -4,12 +4,12 @@
 // with Poisson exc + inh stimulus targeting the :d1 dendrite.
 
 ///|
-fn build_tripod_current_test() -> (@snn_mbt.TripodHet, @snn_mbt.PoissonLayerStimulusTripod, @snn_mbt.PoissonLayerStimulusTripod) {
+fn build_tripod_current_test() -> (@neuron.TripodHet, @snn_mbt.PoissonLayerStimulusTripod, @snn_mbt.PoissonLayerStimulusTripod) {
   let rng = @core.Xoshiro::new(456UL)
   let n_post = 4
-  let base = @snn_mbt.AdExParameter::new()
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n_post, base)
-  let post : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n_post, param, rng)
+  let base = @neuron.AdExParameter::new()
+  let param = @neuron.AdExParameterHet::homogeneous(n_post, base)
+  let post : @neuron.TripodHet = @neuron.TripodHet::new(n_post, param, rng)
   let poisson_exc = @snn_mbt.PoissonLayer::with_n(20.0F * @core.hz, 20)
   let stim_exc = @snn_mbt.PoissonLayerStimulusTripod::new(
     poisson_exc, post, "d1", "glu", 0.1F, 0.0F, 1.0F, rng,
@@ -30,11 +30,11 @@ test "tripod_current_smoke_runs_without_crash" {
   for _ in 0..<total_steps {
     @snn_mbt.stimulate_layer_tripod(stim_exc, 0.0F, dt)
     @snn_mbt.stimulate_layer_tripod(stim_inh, 0.0F, dt)
-    @snn_mbt.tripod_het_soma_step_synapses(post, dt)
-    @snn_mbt.tripod_het_dend_step_synapses(post, dt)
-    @snn_mbt.tripod_het_syn_curr_soma(post)
-    @snn_mbt.tripod_het_syn_curr_dends(post)
-    @snn_mbt.step_tripod_het(post, dt)
+    @neuron.tripod_het_soma_step_synapses(post, dt)
+    @neuron.tripod_het_dend_step_synapses(post, dt)
+    @neuron.tripod_het_syn_curr_soma(post)
+    @neuron.tripod_het_syn_curr_dends(post)
+    @neuron.step_tripod_het(post, dt)
   }
   // Verify all v_s/v_d1/v_d2 are finite.
   let mut k = 0
@@ -59,11 +59,11 @@ test "tripod_current_produces_some_spikes" {
   for _ in 0..<total_steps {
     @snn_mbt.stimulate_layer_tripod(stim_exc, 0.0F, dt)
     @snn_mbt.stimulate_layer_tripod(stim_inh, 0.0F, dt)
-    @snn_mbt.tripod_het_soma_step_synapses(post, dt)
-    @snn_mbt.tripod_het_dend_step_synapses(post, dt)
-    @snn_mbt.tripod_het_syn_curr_soma(post)
-    @snn_mbt.tripod_het_syn_curr_dends(post)
-    @snn_mbt.step_tripod_het(post, dt)
+    @neuron.tripod_het_soma_step_synapses(post, dt)
+    @neuron.tripod_het_dend_step_synapses(post, dt)
+    @neuron.tripod_het_syn_curr_soma(post)
+    @neuron.tripod_het_syn_curr_dends(post)
+    @neuron.step_tripod_het(post, dt)
     let mut k = 0
     while k < n_post {
       if post.fire[k] {
@@ -85,11 +85,11 @@ test "tripod_current_d1_receives_exc_and_inh_inputs" {
   for _ in 0..<total_steps {
     @snn_mbt.stimulate_layer_tripod(stim_exc, 0.0F, dt)
     @snn_mbt.stimulate_layer_tripod(stim_inh, 0.0F, dt)
-    @snn_mbt.tripod_het_soma_step_synapses(post, dt)
-    @snn_mbt.tripod_het_dend_step_synapses(post, dt)
-    @snn_mbt.tripod_het_syn_curr_soma(post)
-    @snn_mbt.tripod_het_syn_curr_dends(post)
-    @snn_mbt.step_tripod_het(post, dt)
+    @neuron.tripod_het_soma_step_synapses(post, dt)
+    @neuron.tripod_het_dend_step_synapses(post, dt)
+    @neuron.tripod_het_syn_curr_soma(post)
+    @neuron.tripod_het_syn_curr_dends(post)
+    @neuron.step_tripod_het(post, dt)
   }
   let mut k = 0
   while k < post.n {

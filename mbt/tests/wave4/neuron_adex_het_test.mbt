@@ -7,8 +7,8 @@
 
 ///|
 test "AdExParameterHet::homogeneous: matches AdExParameter defaults per-ne" {
-  let p = @snn_mbt.AdExParameter::new()
-  let ph = @snn_mbt.AdExParameterHet::homogeneous(3, p)
+  let p = @neuron.AdExParameter::new()
+  let ph = @neuron.AdExParameterHet::homogeneous(3, p)
   assert_eq(ph.vt.length(), 3)
   assert_eq(ph.vr.length(), 3)
   assert_eq(ph.el.length(), 3)
@@ -34,9 +34,9 @@ test "AdExParameterHet::homogeneous: matches AdExParameter defaults per-ne" {
 ///|
 test "AdExHet::new: initial state — v spread over vr[i]..vt[i], threshold = vt[i]" {
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.AdExParameter::new()
-  let ph = @snn_mbt.AdExParameterHet::homogeneous(3, p)
-  let pop = @snn_mbt.AdExHet::new(3, ph, rng)
+  let p = @neuron.AdExParameter::new()
+  let ph = @neuron.AdExParameterHet::homogeneous(3, p)
+  let pop = @neuron.AdExHet::new(3, ph, rng)
   assert_eq(pop.n, 3)
   assert_eq(pop.v.length(), 3)
   assert_eq(pop.w.length(), 3)
@@ -58,15 +58,15 @@ test "step_adex_het: homogeneous params match AdEx scalar step" {
   // membrane potential trajectory as AdEx (with same rng seed and
   // same number of steps).
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.AdExParameter::new()
-  let ph = @snn_mbt.AdExParameterHet::homogeneous(3, p)
-  let pop_het = @snn_mbt.AdExHet::new(3, ph, rng)
+  let p = @neuron.AdExParameter::new()
+  let ph = @neuron.AdExParameterHet::homogeneous(3, p)
+  let pop_het = @neuron.AdExHet::new(3, ph, rng)
 
   // Run 100 steps with no input.
   let dt = 0.125F
   let mut k = 0
   while k < 100 {
-    @snn_mbt.step_adex_het(pop_het, dt)
+    @neuron.step_adex_het(pop_het, dt)
     k = k + 1
   }
   // After 100 steps with no current, v should drift slightly due to
@@ -83,8 +83,8 @@ test "step_adex_het: per-ne τm differences produce different v dynamics" {
   // Inject 350 pA constant current. Neuron with shorter τm should
   // reach higher v faster (faster membrane charging).
   let rng = @core.Xoshiro::default()
-  let p = @snn_mbt.AdExParameter::new()
-  let ph : @snn_mbt.AdExParameterHet = {
+  let p = @neuron.AdExParameter::new()
+  let ph : @neuron.AdExParameterHet = {
     vt: [p.vt, p.vt, p.vt],
     vr: [p.vr, p.vr, p.vr],
     el: [p.el, p.el, p.el],
@@ -95,7 +95,7 @@ test "step_adex_het: per-ne τm differences produce different v dynamics" {
     a: [p.a, p.a, p.a],
     b: [p.b, p.b, p.b],
   }
-  let pop = @snn_mbt.AdExHet::new(3, ph, rng)
+  let pop = @neuron.AdExHet::new(3, ph, rng)
   // Apply 350 pA current to all 3.
   for k in 0..<3 {
     pop.i[k] = 350.0F
@@ -104,7 +104,7 @@ test "step_adex_het: per-ne τm differences produce different v dynamics" {
   let dt = 0.125F
   let mut s = 0
   while s < 10 {
-    @snn_mbt.step_adex_het(pop, dt)
+    @neuron.step_adex_het(pop, dt)
     s = s + 1
   }
   // After 10 steps (1.25ms), the shorter-τm neuron should have

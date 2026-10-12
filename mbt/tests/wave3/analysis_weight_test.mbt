@@ -5,8 +5,8 @@ test "average_weight — empty intersection returns 0.0" {
   let pre_pop : Array[Int] = []
   let post_pop : Array[Int] = []
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
   if m != 0.0F { fail("empty intersection should return 0.0F, got \{m}") }
@@ -17,8 +17,8 @@ test "average_weight — full connectivity uniform weight" {
   let pre_pop : Array[Int] = [0, 1, 2]
   let post_pop : Array[Int] = [0, 1]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   // spiking_connect uses 1-based pre, 1-based post.
   @snn_mbt.spiking_connect(syn, 1, 1, 1.5F)
@@ -36,8 +36,8 @@ test "average_weight — partial connectivity (1 of 4 edges)" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [0]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 0.8F)
   let m = @snn_mbt.average_weight(pre_pop, post_pop, syn)
@@ -49,8 +49,8 @@ test "average_weight — mixed pre-pop excludes non-listed pre" {
   let pre_pop : Array[Int] = [0]  // only pre=0
   let post_pop : Array[Int] = [0, 1]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(3, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   // pre=0 → 1.0, 2.0; pre=1 → 5.0, 6.0; pre=2 → 10.0, 11.0
   // (mean over pre=0 only = (1+2)/2 = 1.5)
@@ -69,8 +69,8 @@ test "average_weight — pre=full, post=subset (filters post)" {
   let pre_pop : Array[Int] = [0, 1]
   let post_pop : Array[Int] = [1]  // only post=1
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 4.0F)
@@ -86,8 +86,8 @@ test "average_weight — out-of-bounds post filter returns 0.0" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [5]  // out of bounds for post.n=2
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
@@ -101,8 +101,8 @@ test "average_weight_dynamics — uniform weights, 3 timesteps" {
   let pre_pop : Array[Int] = [0, 1]
   let post_pop : Array[Int] = [0]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)  // edge 0 (pre=0, post=0)
   @snn_mbt.spiking_connect(syn, 1, 2, 0.0F)  // edge 1 (pre=0, post=1)
@@ -130,8 +130,8 @@ test "average_weight_dynamics — no matched edges returns zeros" {
   let pre_pop : Array[Int] = []
   let post_pop : Array[Int] = []
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   let record : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
   let dyn = @snn_mbt.average_weight_dynamics(pre_pop, post_pop, syn, record, 2)
@@ -145,8 +145,8 @@ test "weights_indices — full connectivity" {
   let pre_pop : Array[Int] = [0, 1]
   let post_pop : Array[Int] = [0, 1]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
@@ -161,8 +161,8 @@ test "weights_indices — partial filter (pre=0 only)" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [0, 1]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)
@@ -178,8 +178,8 @@ test "update_weight — multiplies matched edges by factor" {
   let pre_pop : Array[Int] = [0]
   let post_pop : Array[Int] = [0, 1]
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)  // edge 0
   @snn_mbt.spiking_connect(syn, 1, 2, 2.0F)  // edge 1
@@ -198,8 +198,8 @@ test "update_weight — no matched edges is no-op" {
   let pre_pop : Array[Int] = []
   let post_pop : Array[Int] = []
   let rng = @core.Xoshiro::new(42UL)
-  let pre = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
-  let post = @snn_mbt.IF::new(2, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
+  let post = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let syn = @snn_mbt.SpikingSynapse::new(pre, post, "ge")
   @snn_mbt.spiking_connect(syn, 1, 1, 1.0F)
   @snn_mbt.spiking_connect(syn, 2, 2, 4.0F)

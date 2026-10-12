@@ -33,7 +33,7 @@ pub fn LinearQNet::new(
   for i in 0..<n_actions {
     let row : Array[Float] = Array::make(n_states, 0.0F)
     for j in 0..<n_states {
-      let (z1, _) = box_muller(rng)
+      let (z1, _) = @neuron.box_muller(rng)
       row[j] = Float::from_double(z1) * std
     }
     w[i] = row
@@ -139,7 +139,7 @@ pub fn ReplayBuffer::sample(
   let next_states : Array[Int] = Array::make(batch_size, 0)
   let dones : Array[Bool] = Array::make(batch_size, false)
   for k in 0..<batch_size {
-    let (idx_raw, _) = box_muller(rng)
+    let (idx_raw, _) = @neuron.box_muller(rng)
     let idx_raw_pos = if idx_raw < 0.0 { -idx_raw } else { idx_raw }
     // Map [0, 1) → [0, self.size)
     let idx = Float::from_double(idx_raw_pos * Double::from_int(self.size)).to_int()
@@ -252,11 +252,11 @@ pub fn eps_greedy_action(
     let q = q_forward(q_net, x)
     return q_argmax(q)
   }
-  let (u, _) = box_muller(rng)
+  let (u, _) = @neuron.box_muller(rng)
   let u_pos = if u < 0.0 { -u } else { u }
   if Float::from_double(u_pos) < epsilon {
     // Uniform random.
-    let (u2, _) = box_muller(rng)
+    let (u2, _) = @neuron.box_muller(rng)
     let n_a = q_net.n_actions
     let idx_raw = if u2 < 0.0 { -u2 } else { u2 }
     let idx = Float::from_double(idx_raw * Double::from_int(n_a)).to_int()

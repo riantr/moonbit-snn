@@ -19,9 +19,9 @@
 ///|
 fn main {
   let rng = @core.Xoshiro::default()
-  let param = @snn_mbt.AdExParameter::with_vr(-50.0F)
-  let spike = @snn_mbt.AdExPostSpike::with_at(10.0F, 10.0F)
-  let pop = @snn_mbt.AdEx::new_with_spike(1, param, spike, rng)
+  let param = @neuron.AdExParameter::with_vr(-50.0F)
+  let spike = @neuron.AdExPostSpike::with_at(10.0F, 10.0F)
+  let pop = @neuron.AdEx::new_with_spike(1, param, spike, rng)
 
   // Background Poisson-like drive (current noise). The Julia example
   // uses 15 Hz Poisson × 100 presynaptic neurons → ~1500 events/s.
@@ -40,9 +40,9 @@ fn main {
   for _ in 0..<total_steps {
     @snn_mbt.stimulate_current_array(stim)
     let prev_fire = pop.fire[0]
-    @snn_mbt.adex_step_synapses(pop, dt)
-    @snn_mbt.adex_synaptic_current(pop)
-    @snn_mbt.step_adex(pop, dt)
+    @neuron.adex_step_synapses(pop, dt)
+    @neuron.adex_synaptic_current(pop)
+    @neuron.step_adex(pop, dt)
     if pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }

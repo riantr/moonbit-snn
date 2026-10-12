@@ -27,9 +27,9 @@
 ///|
 fn main {
   let n = 3
-  let param = @snn_mbt.IFParameter::new()
+  let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
-  let e_pop = @snn_mbt.IF::new(n, param, rng)
+  let e_pop = @neuron.IF::new(n, param, rng)
 
   // Inject 30 pA into the first neuron
   e_pop.i[0] = 30.0F

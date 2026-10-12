@@ -18,13 +18,13 @@ fn main {
   let dt = 0.125F
 
   // Pre: 1 IF neuron that we'll force to fire each step.
-  let pre = @snn_mbt.IF::new(1, @snn_mbt.IFParameter::new(), rng)
+  let pre = @neuron.IF::new(1, @neuron.IFParameter::new(), rng)
 
   // Post: 4 TripodHet neurons with default AdEx params.
-  let base = @snn_mbt.AdExParameter::new()
+  let base = @neuron.AdExParameter::new()
   let n_post = 4
-  let param = @snn_mbt.AdExParameterHet::homogeneous(n_post, base)
-  let post : @snn_mbt.TripodHet = @snn_mbt.TripodHet::new(n_post, param, rng)
+  let param = @neuron.AdExParameterHet::homogeneous(n_post, base)
+  let post : @neuron.TripodHet = @neuron.TripodHet::new(n_post, param, rng)
 
   // 4-receptor collection (AMPA, NMDA, GABAa, GABAb).
   // Use EyalGluDend-style params from Julia.
@@ -57,7 +57,7 @@ fn main {
     // Run 2-state ODE for all 4 receptors on :d1.
     @snn_mbt.step_receptors_tripod_synapse(cs, dt)
     // Integrate TripodHet.
-    @snn_mbt.step_tripod_het(post, dt)
+    @neuron.step_tripod_het(post, dt)
     for k in 0..<n_post {
       if post.fire[k] {
         n_spikes = n_spikes + 1

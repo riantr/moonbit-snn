@@ -25,8 +25,8 @@
 /// to scale each spike by the pre-synaptic resource availability.
 /// An empty `rho` means "no scaling" (rho defaults to 1.0F).
 pub struct SpikingSynapse {
-  pre : IF
-  post : IF
+  pre : @neuron.IF
+  post : @neuron.IF
   // Symbol: :ge or :gi
   sym : String
   // Optional human-readable label (mirrors Julia's `name` kwarg).
@@ -52,7 +52,7 @@ pub struct SpikingSynapse {
 /// Construct an empty SpikingSynapse. Add connections with `connect!`
 /// or `random_connections!`. No delays, no STP — pre spikes deliver
 /// immediately at full weight.
-pub fn SpikingSynapse::new(pre : IF, post : IF, sym : String) -> SpikingSynapse {
+pub fn SpikingSynapse::new(pre : @neuron.IF, post : @neuron.IF, sym : String) -> SpikingSynapse {
   let matrix = SparseMatrixCSR::empty(pre.n, post.n)
   {
     pre,
@@ -129,8 +129,8 @@ pub fn SpikingSynapse::set_constant_delay(c : SpikingSynapse, d : Float) -> Unit
 /// `SpikingSynapse(pre, post, sym; conn = (mu, sigma, p))`.
 /// Default rule is Bernoulli.
 pub fn SpikingSynapse::random(
-  pre : IF,
-  post : IF,
+  pre : @neuron.IF,
+  post : @neuron.IF,
   sym : String,
   mu : Float,
   sigma : Float,
@@ -157,8 +157,8 @@ pub fn SpikingSynapse::random(
 /// rule. Mirrors Julia's `SpikingSynapse(pre, post, sym; conn =
 /// (mu, sigma, p, rule=:FixedIn))`. See `ConnectRule` for the semantics.
 pub fn SpikingSynapse::random_with_rule(
-  pre : IF,
-  post : IF,
+  pre : @neuron.IF,
+  post : @neuron.IF,
   sym : String,
   mu : Float,
   sigma : Float,
@@ -191,8 +191,8 @@ pub fn SpikingSynapse::random_with_rule(
 /// If `d_std == 0.0F`, all delays are exactly `d_mean`. Delays are
 /// clamped at >= 0 ms.
 pub fn SpikingSynapse::random_with_delays(
-  pre : IF,
-  post : IF,
+  pre : @neuron.IF,
+  post : @neuron.IF,
   sym : String,
   mu : Float,
   sigma : Float,
@@ -206,7 +206,7 @@ pub fn SpikingSynapse::random_with_delays(
   syn.delays.clear()
   let mut k = 0
   while k < n {
-    let (z1, _) = box_muller(rng)
+    let (z1, _) = @neuron.box_muller(rng)
     let d = d_mean + d_std * Float::from_double(z1)
     let clamped = if d < 0.0F { 0.0F } else { d }
     syn.delays.push(clamped)

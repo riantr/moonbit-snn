@@ -153,7 +153,7 @@ test "ma_fit: gradient descent recovers MA(1) theta on strong-signal data" {
   let n = 500
   let eps : Array[Float] = Array::make(n, 0.0F)
   for t in 0..<n {
-    let (z, _) = @snn_mbt.box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     eps[t] = Float::from_double(z)
   }
   let y : Array[Float] = Array::make(n, 0.0F)
@@ -178,7 +178,7 @@ test "ma_fit: gradient descent moves θ in the right direction" {
   let n = 300
   let eps : Array[Float] = Array::make(n, 0.0F)
   for t in 0..<n {
-    let (z, _) = @snn_mbt.box_muller(rng)
+    let (z, _) = @neuron.box_muller(rng)
     eps[t] = Float::from_double(z)
   }
   let y : Array[Float] = Array::make(n, 0.0F)

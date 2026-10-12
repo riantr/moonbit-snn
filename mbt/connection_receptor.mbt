@@ -27,8 +27,8 @@
 /// which receptor it targets, the weight is added to the post's
 /// `glu` or `gaba` buffer at delivery time.
 pub(all) struct ReceptorSynapse {
-  pre : IF
-  post : IF
+  pre : @neuron.IF
+  post : @neuron.IF
   // CSR sparse matrix: rows = pre.n, cols = post.n
   matrix : SparseMatrixCSR
   // 4-receptor collection (AMPA, NMDA, GABAa, GABAb).
@@ -56,8 +56,8 @@ pub(all) struct ReceptorSynapse {
 /// (GABAa, GABAb). All edges initially target receptor 0 (AMPA).
 /// Use `set_target_receptor` to set per-edge targeting later.
 pub fn ReceptorSynapse::new(
-  pre : IF,
-  post : IF,
+  pre : @neuron.IF,
+  post : @neuron.IF,
   syn : Receptors,
   nmda_dep : NMDAVoltageDependency,
   mu : Float,

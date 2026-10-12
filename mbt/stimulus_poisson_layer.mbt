@@ -89,7 +89,7 @@ pub fn PoissonLayer::with_conn(
 /// construction time. Sym is "ge" or "gi" (which receptor to write).
 pub struct PoissonLayerStimulus {
   param : PoissonLayer
-  post : IF
+  post : @neuron.IF
   sym : String
   fire : Array[Bool]
   weights : Array[Float]
@@ -106,7 +106,7 @@ pub struct PoissonLayerStimulus {
 /// to neuron j).
 pub fn PoissonLayerStimulus::new(
   param : PoissonLayer,
-  post : IF,
+  post : @neuron.IF,
   sym : String,
   rng : @core.Xoshiro,
 ) -> PoissonLayerStimulus {
@@ -126,7 +126,7 @@ pub fn PoissonLayerStimulus::new(
         connectivity[idx] = true
         weights[idx] = if use_normal {
           // Box-Muller: draw N(0, 1), scale to N(μ, σ).
-          let (z, _) = box_muller(rng)
+          let (z, _) = @neuron.box_muller(rng)
           mu + Float::from_double(z) * sigma
         } else {
           mu

@@ -8,14 +8,14 @@
 
 ///|
 test "MultipodParameter::new — wraps array" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.MultipodParameter::new([d, d])
   assert_eq(p.dendrites.length(), 2)
 }
 
 ///|
 test "MultipodParameter::uniform — nd copies" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.MultipodParameter::uniform(d, 5)
   assert_eq(p.dendrites.length(), 5)
   // All entries share the same reference (shared Dendrite).
@@ -24,7 +24,7 @@ test "MultipodParameter::uniform — nd copies" {
 
 ///|
 test "Multipod::new nd=2 shapes" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 4)
   assert_eq(p.n, 4)
   assert_eq(p.nd, 2)
@@ -54,7 +54,7 @@ test "Multipod::new nd=2 shapes" {
 
 ///|
 test "Multipod::new nd=3 shapes" {
-  let d = @snn_mbt.Dendrite::new(3)
+  let d = @neuron.Dendrite::new(3)
   let p = @snn_mbt.Multipod::new([d, d, d], 2)
   assert_eq(p.n, 2)
   assert_eq(p.nd, 3)
@@ -68,7 +68,7 @@ test "Multipod::new nd=3 shapes" {
 
 ///|
 test "Multipod::new initial v_s in [vr, vt]" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 3)
   // Just verify that v_s[i] is finite and bounded. The actual
   // initialisation is `vr + (i % 3) * (vt - vr) / 3`, which always
@@ -91,7 +91,7 @@ test "Multipod::step nd=2 zero-input runs cleanly" {
   // v0.50.0 fixed the 1-based vs 0-based indexing bug in the receptor
   // update block (was writing to h_d[d][i][4] when storage only has
   // indices 0..3). Re-enabled runtime step test.
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 2)
   let mut step = 0
   while step < 50 {
@@ -111,7 +111,7 @@ test "Multipod::step nd=2 zero-input runs cleanly" {
 
 ///|
 test "Multipod::step nd=3 zero-input runs cleanly" {
-  let d = @snn_mbt.Dendrite::new(3)
+  let d = @neuron.Dendrite::new(3)
   let p = @snn_mbt.Multipod::new([d, d, d], 2)
   let mut step = 0
   while step < 50 {
@@ -130,7 +130,7 @@ test "Multipod::step nd=3 zero-input runs cleanly" {
 
 ///|
 test "Multipod::step integrates soma + dendrite currents without NaN" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 2)
   p.he_s[0] = 5.0F
   let mut step = 0
@@ -147,7 +147,7 @@ test "Multipod::step integrates soma + dendrite currents without NaN" {
 
 ///|
 test "Multipod::step fire flag toggles under high drive" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 2)
   p.he_s[0] = 1000.0F
   let mut step = 0
@@ -167,7 +167,7 @@ test "Multipod::step fire flag toggles under high drive" {
 
 ///|
 test "Multipod::new — w_s, he_s, hi_s, ge_s, gi_s zero" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 3)
   let mut i = 0
   while i < 3 {
@@ -187,7 +187,7 @@ test "Multipod::new — w_s, he_s, hi_s, ge_s, gi_s zero" {
 
 ///|
 test "Multipod::new — after_spike field shape + he_d/hi_d zero" {
-  let d = @snn_mbt.Dendrite::new(3)
+  let d = @neuron.Dendrite::new(3)
   let p = @snn_mbt.Multipod::new([d, d, d], 2)
   let mut d_idx = 0
   while d_idx < 3 {
@@ -205,7 +205,7 @@ test "Multipod::new — after_spike field shape + he_d/hi_d zero" {
 
 ///|
 test "Multipod::new — g_d / h_d / dv / dv_temp / cs / iv lengths" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d, d, d], 3) // nd=4
   // g_d / h_d are nested 3-level: outer length = nd (= 4).
   assert_eq(p.g_d.length(), 4)
@@ -228,7 +228,7 @@ test "Multipod::new — g_d / h_d / dv / dv_temp / cs / iv lengths" {
 test "Multipod::new — g_d[d][i][n] nested zero-init across all 3 levels" {
   // Verify that the v0.10.53 nested refactor properly zero-initialises
   // every level of g_d and h_d. With nd=2, N=3: 2 × 3 × 4 = 24 cells.
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 3)
   let mut d_idx = 0
   while d_idx < p.nd {
@@ -255,7 +255,7 @@ test "Multipod::new — g_d / h_d are independent per-dendrite slices" {
   // Verify that each dendrite's g_d slice is a separate allocation
   // (not aliased). Setting one dendrite's g_d should NOT affect
   // another dendrite's g_d.
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d, d], 2)
   // Set dendrite 0, neuron 1, receptor 0 to 100.0F.
   p.g_d[0][1][0] = 100.0F
@@ -273,7 +273,7 @@ test "Multipod::new — receptor index 3 (GABAb) accessible" {
   // Verify that the innermost receptor index [3] (GABAb) is
   // accessible on the nested g_d structure. (Old flat-array layout
   // hid bugs at the boundary indices.)
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 2)
   p.g_d[0][0][3] = 7.5F
   assert_eq(p.g_d[0][0][3], 7.5F)
@@ -284,7 +284,7 @@ test "Multipod::new — receptor index 3 (GABAb) accessible" {
 
 ///|
 test "Multipod::step preserves receptor markers" {
-  let d = @snn_mbt.Dendrite::new(2)
+  let d = @neuron.Dendrite::new(2)
   let p = @snn_mbt.Multipod::new([d, d], 2)
   // glu_receptors = [1, 2] (AMPA + NMDA), gaba_receptors = [3, 4]
   // (GABAa + GABAb). Mirrors Julia's defaults.

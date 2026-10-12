@@ -10,22 +10,22 @@
 ///|
 /// SpikingSynapse targeting an HH post-synaptic neuron.
 pub struct SpikingSynapseHH {
-  pre : HH
-  post : HH
+  pre : @neuron.HH
+  post : @neuron.HH
   sym : String
   matrix : SparseMatrixCSR
 }
 
 ///|
-pub fn SpikingSynapseHH::new(pre : HH, post : HH, sym : String) -> SpikingSynapseHH {
+pub fn SpikingSynapseHH::new(pre : @neuron.HH, post : @neuron.HH, sym : String) -> SpikingSynapseHH {
   let matrix = SparseMatrixCSR::empty(pre.n, post.n)
   { pre, post, sym, matrix }
 }
 
 ///|
 pub fn SpikingSynapseHH::random(
-  pre : HH,
-  post : HH,
+  pre : @neuron.HH,
+  post : @neuron.HH,
   sym : String,
   mu : Float,
   sigma : Float,

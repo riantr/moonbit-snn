@@ -20,7 +20,7 @@
 //   @test n_inhib < n_noinhib
 
 ///|
-fn run_e_only(e : @snn_mbt.IF, duration_ms : Float) -> Int {
+fn run_e_only(e : @neuron.IF, duration_ms : Float) -> Int {
   let fm = @snn_mbt.Monitor::new_fire(e, 0)
   let model = @snn_mbt.compose(
     [@snn_mbt.IF_(e)],
@@ -33,8 +33,8 @@ fn run_e_only(e : @snn_mbt.IF, duration_ms : Float) -> Int {
 
 ///|
 fn run_ei(
-  e : @snn_mbt.IF,
-  i : @snn_mbt.IF,
+  e : @neuron.IF,
+  i : @neuron.IF,
   ei : @snn_mbt.SpikingSynapse,
   ie : @snn_mbt.SpikingSynapse,
   duration_ms : Float,
@@ -52,17 +52,17 @@ fn run_ei(
 ///|
 fn main {
   let rng = @core.Xoshiro::default()
-  let e_param = @snn_mbt.IFParameter::with_el(-49.0F)
+  let e_param = @neuron.IFParameter::with_el(-49.0F)
 
   // E-only baseline: 30 IF neurons with El=-49mV (just below Vt=-50).
-  let e1 = @snn_mbt.IF::new(30, e_param, rng)
+  let e1 = @neuron.IF::new(30, e_param, rng)
   let n_noinhib = run_e_only(e1, 500.0F)
 
   // E/I network: same E + 10 I cells (also El=-49mV).
   // E→I :ge (μ=1.5, p=0.8) and I→E :gi (μ=3.0, p=0.8).
-  let i_param = @snn_mbt.IFParameter::with_el(-49.0F)
-  let e2 = @snn_mbt.IF::new(30, e_param, rng)
-  let i_pop = @snn_mbt.IF::new(10, i_param, rng)
+  let i_param = @neuron.IFParameter::with_el(-49.0F)
+  let e2 = @neuron.IF::new(30, e_param, rng)
+  let i_pop = @neuron.IF::new(10, i_param, rng)
   let ei = @snn_mbt.SpikingSynapse::random(e2, i_pop, "ge", 1.5F, 0.0F, 0.8F, rng)
   let ie = @snn_mbt.SpikingSynapse::random(i_pop, e2, "gaba", 3.0F, 0.0F, 0.8F, rng)
   let n_inhib = run_ei(e2, i_pop, ei, ie, 500.0F)
