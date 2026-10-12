@@ -3,7 +3,7 @@
 ///|
 test "arima_synthesize: pure AR(1) without differencing" {
   // ARIMA(1, 0, 0) with phi=0.5 → AR(1) on y directly.
-  let y = @snn_mbt.arima_synthesize(
+  let y = @timeseries.arima_synthesize(
     50, 1, 0, 0, 0.0F, [0.5F], [], 42UL,
   )
   assert_eq(y.length(), 50)
@@ -15,7 +15,7 @@ test "arima_synthesize: pure AR(1) without differencing" {
 ///|
 test "arima_synthesize: ARIMA(0, 1, 0) is a random walk" {
   // ARIMA(0, 1, 0) is a random walk: y[t] = y[t-1] + ε[t].
-  let y = @snn_mbt.arima_synthesize(
+  let y = @timeseries.arima_synthesize(
     100, 0, 1, 0, 0.0F, [], [], 7UL,
   )
   assert_eq(y.length(), 101) // d=1 adds 1 element
@@ -24,10 +24,10 @@ test "arima_synthesize: ARIMA(0, 1, 0) is a random walk" {
 ///|
 test "arima_fit: fit ARIMA(1, 1, 0) on a random walk" {
   // Generate a near-random-walk with small AR(1) drift.
-  let y = @snn_mbt.arima_synthesize(
+  let y = @timeseries.arima_synthesize(
     200, 1, 1, 0, 0.0F, [0.3F], [], 11UL,
   )
-  let fit = @snn_mbt.arima_fit(y, 1, 1, 0, 200, 0.0001F)
+  let fit = @timeseries.arima_fit(y, 1, 1, 0, 200, 0.0001F)
   assert_eq(fit.p, 1)
   assert_eq(fit.d, 1)
   assert_eq(fit.q, 0)
@@ -50,18 +50,18 @@ test "arima_fit: fit ARIMA(1, 0, 1) directly (no differencing)" {
   // (a) terminates, (b) produces finite coefficients, and (c) the
   // residual loss decreases from the initial random-coefficient
   // loss.
-  let y = @snn_mbt.arima_synthesize(
+  let y = @timeseries.arima_synthesize(
     300, 1, 0, 1, 0.0F, [0.5F], [0.3F], 13UL,
   )
   // Compute initial loss with zero coefficients (= no AR/MA model).
-  let initial_loss = @snn_mbt.arma_residual_loss(
+  let initial_loss = @timeseries.arma_residual_loss(
     y,
-    @snn_mbt.ArmaParam::new(1, 1, 0.0F, [0.0F], [0.0F]),
+    @timeseries.ArmaParam::new(1, 1, 0.0F, [0.0F], [0.0F]),
   )
-  let fit = @snn_mbt.arima_fit(y, 1, 0, 1, 300, 0.0001F)
-  let fitted_loss = @snn_mbt.arma_residual_loss(
+  let fit = @timeseries.arima_fit(y, 1, 0, 1, 300, 0.0001F)
+  let fitted_loss = @timeseries.arma_residual_loss(
     y,
-    @snn_mbt.ArmaParam::new(1, 1, 0.0F, fit.ar_coeffs, fit.ma_thetas),
+    @timeseries.ArmaParam::new(1, 1, 0.0F, fit.ar_coeffs, fit.ma_thetas),
   )
   // Fitted loss should be lower than initial (gradient descent
   // decreased the loss).
@@ -82,7 +82,7 @@ test "arima_fit: fit ARIMA(1, 0, 1) directly (no differencing)" {
 test "arima_forecast: 1-step forecast is close to next actual" {
   // Generate ARIMA(1, 0, 0) with phi=0.5. Hold out the last 10 points
   // and verify 1-step forecast on each is close to actual.
-  let full_y = @snn_mbt.arima_synthesize(
+  let full_y = @timeseries.arima_synthesize(
     200, 1, 0, 0, 0.0F, [0.5F], [], 17UL,
   )
   let n_hold = 10
@@ -91,9 +91,9 @@ test "arima_forecast: 1-step forecast is close to next actual" {
   for i in 0..<train_end {
     train[i] = full_y[i]
   }
-  let fit = @snn_mbt.arima_fit(train, 1, 0, 0, 200, 0.0001F)
+  let fit = @timeseries.arima_fit(train, 1, 0, 0, 200, 0.0001F)
   // Forecast 1 step ahead from end of train
-  let fc1 = @snn_mbt.arima_forecast(train, fit, 1)
+  let fc1 = @timeseries.arima_forecast(train, fit, 1)
   // The actual next value is full_y[train_end]
   if fc1.length() != 1 {
     fail("expected 1 forecast, got \{fc1.length()}")
@@ -108,11 +108,11 @@ test "arima_forecast: 1-step forecast is close to next actual" {
 
 ///|
 test "arima_forecast: k-step forecast length matches n_ahead" {
-  let y = @snn_mbt.arima_synthesize(
+  let y = @timeseries.arima_synthesize(
     100, 1, 0, 1, 0.0F, [0.4F], [0.3F], 19UL,
   )
-  let fit = @snn_mbt.arima_fit(y, 1, 0, 1, 100, 0.0001F)
-  let fc = @snn_mbt.arima_forecast(y, fit, 5)
+  let fit = @timeseries.arima_fit(y, 1, 0, 1, 100, 0.0001F)
+  let fc = @timeseries.arima_forecast(y, fit, 5)
   assert_eq(fc.length(), 5)
   // Forecast should be finite (not NaN / Inf).
   for i in 0..<5 {
@@ -125,7 +125,7 @@ test "arima_forecast: k-step forecast length matches n_ahead" {
 ///|
 test "arima_rmse: zero for identical arrays" {
   let a : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
-  let rmse = @snn_mbt.arima_rmse(a, a)
+  let rmse = @timeseries.arima_rmse(a, a)
   if rmse != 0.0F {
     fail("rmse of identical arrays = \{rmse}, expected 0")
   }
@@ -137,7 +137,7 @@ test "arima_rmse: matches manual sqrt(mean((a-p)²))" {
   let predicted : Array[Float] = [2.0F, 4.0F, 6.0F]
   // errors: [-1, -2, -3] → squared: [1, 4, 9] → mean: 14/3 → sqrt
   let expected = @core.sqrtf((1.0F + 4.0F + 9.0F) / 3.0F)
-  let rmse = @snn_mbt.arima_rmse(actual, predicted)
+  let rmse = @timeseries.arima_rmse(actual, predicted)
   if (rmse - expected).abs() > 1.0e-4F {
     fail("rmse = \{rmse}, expected ~\{expected}")
   }
@@ -146,7 +146,7 @@ test "arima_rmse: matches manual sqrt(mean((a-p)²))" {
 ///|
 test "arima_mae: zero for identical arrays" {
   let a : Array[Float] = [1.0F, 2.0F, 3.0F]
-  let mae = @snn_mbt.arima_mae(a, a)
+  let mae = @timeseries.arima_mae(a, a)
   if mae != 0.0F {
     fail("mae = \{mae}, expected 0")
   }
@@ -156,7 +156,7 @@ test "arima_mae: zero for identical arrays" {
 test "arima_evaluate: end-to-end forecast accuracy" {
   // Generate a long ARIMA(1, 0, 0) series, fit on first 80%, evaluate
   /// forecast on the held-out 20%.
-  let full_y = @snn_mbt.arima_synthesize(
+  let full_y = @timeseries.arima_synthesize(
     300, 1, 0, 0, 0.0F, [0.7F], [], 23UL,
   )
   let n_hold = 60
@@ -165,8 +165,8 @@ test "arima_evaluate: end-to-end forecast accuracy" {
   for i in 0..<train_end {
     train[i] = full_y[i]
   }
-  let fit = @snn_mbt.arima_fit(train, 1, 0, 0, 300, 0.0001F)
-  let fc = @snn_mbt.arima_forecast(train, fit, n_hold)
+  let fit = @timeseries.arima_fit(train, 1, 0, 0, 300, 0.0001F)
+  let fc = @timeseries.arima_forecast(train, fit, n_hold)
   // Compute MAE on the held-out portion.
   let mut sum_err = 0.0F
   for i in 0..<n_hold {

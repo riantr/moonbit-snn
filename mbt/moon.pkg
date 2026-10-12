@@ -18,4 +18,5 @@ import {
   "riantr/snn_mbt/generative",
   "riantr/snn_mbt/stimulus",
   "riantr/snn_mbt/attention",
+  "riantr/snn_mbt/timeseries",
 }

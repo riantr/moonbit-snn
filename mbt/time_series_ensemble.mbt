@@ -27,7 +27,7 @@
 /// Time-series ensemble. Holds one base forecaster per model type
 /// plus the convex combination weights.
 pub struct TimeSeriesEnsemble {
-  arima : ArimaFittedModel
+  arima : @timeseries.ArimaFittedModel
   lstm : @rl.LSTMForecaster
   gru : @rl.GRUForecaster
   // Convex combination weights (sum to 1.0).
@@ -45,7 +45,7 @@ pub struct TimeSeriesEnsemble {
 /// size used for the LSTM/GRU forecasts (since LSTM/GRU take
 /// pre-windowed inputs of length `window_size`).
 pub fn TimeSeriesEnsemble::new(
-  arima : ArimaFittedModel,
+  arima : @timeseries.ArimaFittedModel,
   lstm : @rl.LSTMForecaster,
   gru : @rl.GRUForecaster,
 ) -> TimeSeriesEnsemble {
@@ -71,7 +71,7 @@ pub fn ts_ensemble_forecast(
   ensemble : TimeSeriesEnsemble,
   h : Int,
 ) -> Array[Float] {
-  let arima_forecast = arima_fitted_forecast(ensemble.arima, h)
+  let arima_forecast = @timeseries.arima_fitted_forecast(ensemble.arima, h)
   // LSTM forecast: use zero hidden/cell init.
   let h_dim = ensemble.lstm.hidden_dim
   let lstm_h_init : Array[Float] = Array::make(h_dim, 0.0F)
@@ -133,7 +133,7 @@ pub fn ts_ensemble_evaluate(
   if h <= 0 {
     return (0.0F, 0.0F, 0.0F, 0.0F)
   }
-  let arima_pred = arima_fitted_forecast(ensemble.arima, h)
+  let arima_pred = @timeseries.arima_fitted_forecast(ensemble.arima, h)
   let (lstm_seq, _, _) = @rl.lstm_forecaster_seq_forward(
     ensemble.lstm,
     ensemble.last_input_window,

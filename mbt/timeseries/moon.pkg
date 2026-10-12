@@ -1,0 +1,27 @@
+// timeseries/ — classical statistical time-series models.
+//
+// The recurrences themselves need only core: given y and p coefficients, the
+// next value is a dot product. Estimating the coefficients needs more, and
+// that is where analysis/ comes in -- Yule-Walker solves for AR coefficients
+// via the autocovariance function, so ts_pacf, ts_diff_n, ts_cumsum and
+// ts_mean are part of the fitting path rather than an optional extra. None of
+// it touches a tensor, a parameter block or an optimiser.
+//
+// arima.mbt is the one with substance -- Yule-Walker closed-form coefficients,
+// differencing, ACF/PACF estimation -- and the other three exist to be
+// building blocks for it: AR(p) is ARMA(p, 0), MA(q) is ARMA(0, q). They stay
+// as separate files because they are separately useful, not because they are
+// separately large.
+//
+// ar_debug.mbt holds the diagnostic printouts, arima_demo.mbt the end-to-end
+// fit-and-forecast pipeline. Both are development aids rather than API, and
+// both stay here rather than in examples/ because time_series_ensemble.mbt
+// drives arima_demo directly.
+//
+// `time_series_ensemble.mbt` does not move in: it combines forecasts from
+// several of these models, so it consumes this package rather than belonging
+// to it.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/analysis",
+}

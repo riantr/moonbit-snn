@@ -4,8 +4,8 @@
 test "ar_fitted: AR(1) with phi=0.7 reproduces 0.7 * y[t-1]" {
   // y = [10, 17, 21.9, ...] — AR(1) with phi=0.7, intercept=0.
   let y : Array[Float] = [10.0F, 17.0F, 21.9F, 25.33F]
-  let param = @snn_mbt.ArParam::new(1, 0.0F, [0.7F])
-  let fitted = @snn_mbt.ar_fitted(y, param)
+  let param = @timeseries.ArParam::new(1, 0.0F, [0.7F])
+  let fitted = @timeseries.ar_fitted(y, param)
   assert_eq(fitted.length(), 3)
   // ŷ[1] = 0.7 * y[0] = 7.0
   if (fitted[0] - 7.0F).abs() > 0.001F {
@@ -21,8 +21,8 @@ test "ar_fitted: AR(1) with phi=0.7 reproduces 0.7 * y[t-1]" {
 test "ar_fitted: AR(2) with phi_1=0.5, phi_2=0.3, intercept=0" {
   // ŷ[t] = 0.5 · y[t-1] + 0.3 · y[t-2]
   let y : Array[Float] = [1.0F, 2.0F, 4.0F, 8.0F, 16.0F]
-  let param = @snn_mbt.ArParam::new(2, 0.0F, [0.5F, 0.3F])
-  let fitted = @snn_mbt.ar_fitted(y, param)
+  let param = @timeseries.ArParam::new(2, 0.0F, [0.5F, 0.3F])
+  let fitted = @timeseries.ar_fitted(y, param)
   // fitted[0] = 0.5 * y[1] + 0.3 * y[0] = 0.5 * 2 + 0.3 * 1 = 1.3
   // (source t = 2)
   if (fitted[0] - 1.3F).abs() > 0.001F {
@@ -42,8 +42,8 @@ test "ar_residuals: zero for a true AR(1) generated series" {
   for t in 1..<20 {
     y[t] = 0.7F * y[t - 1]
   }
-  let param = @snn_mbt.ArParam::new(1, 0.0F, [0.7F])
-  let eps = @snn_mbt.ar_residuals(y, param)
+  let param = @timeseries.ArParam::new(1, 0.0F, [0.7F])
+  let eps = @timeseries.ar_residuals(y, param)
   // All residuals should be 0 (since y[t] is exactly 0.7 * y[t-1]).
   let max_eps : Float = {
     let mut m = 0.0F
@@ -66,8 +66,8 @@ test "ar_residual_loss: zero for true AR process" {
   for t in 1..<50 {
     y[t] = 0.8F * y[t - 1]
   }
-  let param = @snn_mbt.ArParam::new(1, 0.0F, [0.8F])
-  if @snn_mbt.ar_residual_loss(y, param) > 0.001F {
+  let param = @timeseries.ArParam::new(1, 0.0F, [0.8F])
+  if @timeseries.ar_residual_loss(y, param) > 0.001F {
     fail("loss should be 0 for true AR(1)")
   }
 }
@@ -79,8 +79,8 @@ test "ar_grad_coeffs: zero for true AR process (residual loss at min)" {
   for t in 1..<30 {
     y[t] = 0.6F * y[t - 1]
   }
-  let param = @snn_mbt.ArParam::new(1, 0.0F, [0.6F])
-  let g = @snn_mbt.ar_grad_coeffs(y, param)
+  let param = @timeseries.ArParam::new(1, 0.0F, [0.6F])
+  let g = @timeseries.ar_grad_coeffs(y, param)
   // At the true coefficient, the gradient should be ≈ 0.
   if g[0].abs() > 0.01F {
     fail("∂loss/∂φ = \{g[0]}, expected ≈ 0 at true φ")
@@ -97,15 +97,15 @@ test "ar_grad_coeffs: sign matches expected direction off the optimum" {
   for t in 1..<50 {
     y[t] = 0.7F * y[t - 1]
   }
-  let param = @snn_mbt.ArParam::new(1, 0.0F, [0.5F]) // phi = 0.5 < true = 0.7
-  let g = @snn_mbt.ar_grad_coeffs(y, param)
+  let param = @timeseries.ArParam::new(1, 0.0F, [0.5F]) // phi = 0.5 < true = 0.7
+  let g = @timeseries.ar_grad_coeffs(y, param)
   if g[0] >= 0.0F {
     fail("∂loss/∂φ = \{g[0]}, expected negative (under-fit → push phi up)")
   }
   // If phi is too large (over-fit), gradient is positive
   // (gradient descent moves phi DOWN — toward the optimum).
-  let param2 = @snn_mbt.ArParam::new(1, 0.0F, [0.9F]) // phi = 0.9 > true
-  let g2 = @snn_mbt.ar_grad_coeffs(y, param2)
+  let param2 = @timeseries.ArParam::new(1, 0.0F, [0.9F]) // phi = 0.9 > true
+  let g2 = @timeseries.ar_grad_coeffs(y, param2)
   if g2[0] <= 0.0F {
     fail("∂loss/∂φ = \{g2[0]}, expected positive (over-fit → push phi down)")
   }
@@ -124,7 +124,7 @@ test "ar_fit_yule_walker: recovers phi = 0.7 from synthetic AR(1)" {
     let eps = Float::from_double(z) * 0.5F // noise
     y[t] = 0.7F * y[t - 1] + eps
   }
-  let param = @snn_mbt.ar_fit_yule_walker(y, 1)
+  let param = @timeseries.ar_fit_yule_walker(y, 1)
   // phi_1 should be near 0.7 (within ±0.05 for n=2000).
   if (param.coeffs[0] - 0.7F).abs() > 0.05F {
     fail("phi_1 = \{param.coeffs[0]}, expected ≈ 0.7")
@@ -142,7 +142,7 @@ test "ar_fit_ols: recovers phi = 0.7 from synthetic AR(1)" {
     let eps = Float::from_double(z) * 0.5F
     y[t] = 0.7F * y[t - 1] + eps
   }
-  let param = @snn_mbt.ar_fit_ols(y, 1)
+  let param = @timeseries.ar_fit_ols(y, 1)
   if (param.coeffs[0] - 0.7F).abs() > 0.05F {
     fail("phi_1 = \{param.coeffs[0]}, expected ≈ 0.7")
   }
@@ -165,7 +165,7 @@ test "ar_fit_ols: recovers AR(2) phi_1, phi_2 from synthetic series" {
     let eps = Float::from_double(z) * 0.5F
     y[t] = 0.5F * y[t - 1] + 0.3F * y[t - 2] + eps
   }
-  let param = @snn_mbt.ar_fit_ols(y, 2)
+  let param = @timeseries.ar_fit_ols(y, 2)
   if (param.coeffs[0] - 0.5F).abs() > 0.05F {
     fail("phi_1 = \{param.coeffs[0]}, expected ≈ 0.5")
   }
@@ -178,7 +178,7 @@ test "ar_fit_ols: recovers AR(2) phi_1, phi_2 from synthetic series" {
 test "solve_linear: trivial 2×2 system x + y = 3, 2x - y = 0 → x=1, y=2" {
   let a : Array[Array[Float]] = [[1.0F, 1.0F], [2.0F, -1.0F]]
   let b : Array[Float] = [3.0F, 0.0F]
-  let x = @snn_mbt.solve_linear(a, b)
+  let x = @timeseries.solve_linear(a, b)
   if (x[0] - 1.0F).abs() > 1.0e-4F {
     fail("x[0] = \{x[0]}, expected 1.0")
   }
@@ -196,7 +196,7 @@ test "solve_linear: 3×3 system (random coefficients)" {
     [1.0F, 0.5F, -1.0F],
   ]
   let b : Array[Float] = [1.0F, -2.0F, 0.0F]
-  let x = @snn_mbt.solve_linear(a, b)
+  let x = @timeseries.solve_linear(a, b)
   // Verify A x ≈ b
   for i in 0..<3 {
     let mut row = 0.0F
@@ -212,14 +212,14 @@ test "solve_linear: 3×3 system (random coefficients)" {
 ///|
 test "ar: empty / too-short series handled gracefully" {
   let empty : Array[Float] = []
-  let p = @snn_mbt.ArParam::new(1, 0.0F, [0.5F])
-  assert_eq(@snn_mbt.ar_fitted(empty, p).length(), 0)
-  assert_eq(@snn_mbt.ar_residuals(empty, p).length(), 0)
+  let p = @timeseries.ArParam::new(1, 0.0F, [0.5F])
+  assert_eq(@timeseries.ar_fitted(empty, p).length(), 0)
+  assert_eq(@timeseries.ar_residuals(empty, p).length(), 0)
   // Single-element series (n <= p) → no fitted/residuals
   let one : Array[Float] = [5.0F]
-  assert_eq(@snn_mbt.ar_fitted(one, p).length(), 0)
+  assert_eq(@timeseries.ar_fitted(one, p).length(), 0)
   // ar_fit_ols on too-short series returns zero-coeff param
   let too_short : Array[Float] = [1.0F, 2.0F]
-  let fitted = @snn_mbt.ar_fit_ols(too_short, 1)
+  let fitted = @timeseries.ar_fit_ols(too_short, 1)
   assert_eq(fitted.coeffs[0], 0.0F)
 }
