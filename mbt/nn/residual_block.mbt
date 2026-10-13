@@ -26,12 +26,12 @@
 ///|
 /// A basic residual block.
 pub struct ResidualBlock {
-  conv1 : @nn.Conv2dParam
-  bn1 : @nn.BatchNorm2d
-  conv2 : @nn.Conv2dParam
-  bn2 : @nn.BatchNorm2d
-  shortcut_conv : @nn.Conv2dParam?
-  shortcut_bn : @nn.BatchNorm2d?
+  conv1 : Conv2dParam
+  bn1 : BatchNorm2d
+  conv2 : Conv2dParam
+  bn2 : BatchNorm2d
+  shortcut_conv : Conv2dParam?
+  shortcut_bn : BatchNorm2d?
   stride : Int
 }
 
@@ -46,10 +46,10 @@ pub struct ResidualCache {
   // Saved post-BN1, pre-ReLU activation: needed by ReLU backward.
   bn1_out : Array[Float]
   // BN caches for the main path's two BatchNorm2d calls.
-  bn1_cache : @nn.BatchNormCache
-  bn2_cache : @nn.BatchNormCache
+  bn1_cache : BatchNormCache
+  bn2_cache : BatchNormCache
   // BN cache for the shortcut BN (if any).
-  shortcut_bn_cache : @nn.BatchNormCache?
+  shortcut_bn_cache : BatchNormCache?
   // Saved shortcut output (BN output of shortcut conv, or identity x).
   shortcut_output : Array[Float]
   // Input / intermediate shapes (for conv2 backward).
@@ -87,14 +87,14 @@ pub struct ResidualGrads {
 /// block output: c_in == c_out, stride == 1).
 pub fn ResidualBlock::identity(c : Int, seed : UInt64) -> ResidualBlock {
   let rng = @core.Xoshiro::new(seed)
-  let w1 = he_init(rng, c * c * 3 * 3, c * 3 * 3)
+  let w1 = @core.he_init(rng, c * c * 3 * 3, c * 3 * 3)
   let b1 : Array[Float] = Array::make(c, 0.0F)
-  let conv1 = @nn.Conv2dParam::new(w1, b1, c, c, 3, 3, stride=1, pad=1)
-  let bn1 = @nn.BatchNorm2d::new(c)
-  let w2 = he_init(rng, c * c * 3 * 3, c * 3 * 3)
+  let conv1 = Conv2dParam::new(w1, b1, c, c, 3, 3, stride=1, pad=1)
+  let bn1 = BatchNorm2d::new(c)
+  let w2 = @core.he_init(rng, c * c * 3 * 3, c * 3 * 3)
   let b2 : Array[Float] = Array::make(c, 0.0F)
-  let conv2 = @nn.Conv2dParam::new(w2, b2, c, c, 3, 3, stride=1, pad=1)
-  let bn2 = @nn.BatchNorm2d::new(c)
+  let conv2 = Conv2dParam::new(w2, b2, c, c, 3, 3, stride=1, pad=1)
+  let bn2 = BatchNorm2d::new(c)
   { conv1, bn1, conv2, bn2, shortcut_conv: None, shortcut_bn: None, stride: 1 }
 }
 
@@ -107,18 +107,18 @@ pub fn ResidualBlock::projection(
   seed : UInt64,
 ) -> ResidualBlock {
   let rng = @core.Xoshiro::new(seed)
-  let w1 = he_init(rng, c_out * c_in * 3 * 3, c_in * 3 * 3)
+  let w1 = @core.he_init(rng, c_out * c_in * 3 * 3, c_in * 3 * 3)
   let b1 : Array[Float] = Array::make(c_out, 0.0F)
-  let conv1 = @nn.Conv2dParam::new(w1, b1, c_out, c_in, 3, 3, stride=stride, pad=1)
-  let bn1 = @nn.BatchNorm2d::new(c_out)
-  let w2 = he_init(rng, c_out * c_out * 3 * 3, c_out * 3 * 3)
+  let conv1 = Conv2dParam::new(w1, b1, c_out, c_in, 3, 3, stride=stride, pad=1)
+  let bn1 = BatchNorm2d::new(c_out)
+  let w2 = @core.he_init(rng, c_out * c_out * 3 * 3, c_out * 3 * 3)
   let b2 : Array[Float] = Array::make(c_out, 0.0F)
-  let conv2 = @nn.Conv2dParam::new(w2, b2, c_out, c_out, 3, 3, stride=1, pad=1)
-  let bn2 = @nn.BatchNorm2d::new(c_out)
-  let ws = he_init(rng, c_out * c_in, c_in)
+  let conv2 = Conv2dParam::new(w2, b2, c_out, c_out, 3, 3, stride=1, pad=1)
+  let bn2 = BatchNorm2d::new(c_out)
+  let ws = @core.he_init(rng, c_out * c_in, c_in)
   let bs : Array[Float] = Array::make(c_out, 0.0F)
-  let shortcut_conv = @nn.Conv2dParam::new(ws, bs, c_out, c_in, 1, 1, stride=stride, pad=0)
-  let shortcut_bn = @nn.BatchNorm2d::new(c_out)
+  let shortcut_conv = Conv2dParam::new(ws, bs, c_out, c_in, 1, 1, stride=stride, pad=0)
+  let shortcut_bn = BatchNorm2d::new(c_out)
   {
     conv1, bn1, conv2, bn2,
     shortcut_conv: Some(shortcut_conv), shortcut_bn: Some(shortcut_bn),
@@ -137,24 +137,24 @@ pub fn residual_block_forward(
   w : Int,
 ) -> (Array[Float], ResidualCache) {
   // ---- Main path ----
-  let conv1_out = @nn.conv2d_forward(x, n, c, h, w, b.conv1)
+  let conv1_out = conv2d_forward(x, n, c, h, w, b.conv1)
   let h1 = (h + 2 * b.conv1.pad - b.conv1.kh) / b.conv1.stride + 1
   let w1 = (w + 2 * b.conv1.pad - b.conv1.kw) / b.conv1.stride + 1
   let c1 = b.conv1.c_out
-  let (bn1_out, bn1_cache) = @nn.batch_norm2d_forward(conv1_out, n, c1, h1, w1, b.bn1)
+  let (bn1_out, bn1_cache) = batch_norm2d_forward(conv1_out, n, c1, h1, w1, b.bn1)
   let relu1 = @activ.relu_forward(bn1_out)
-  let conv2_out = @nn.conv2d_forward(relu1, n, c1, h1, w1, b.conv2)
+  let conv2_out = conv2d_forward(relu1, n, c1, h1, w1, b.conv2)
   let h2 = (h1 + 2 * b.conv2.pad - b.conv2.kh) / b.conv2.stride + 1
   let w2 = (w1 + 2 * b.conv2.pad - b.conv2.kw) / b.conv2.stride + 1
   let c2 = b.conv2.c_out
-  let (bn2_out, bn2_cache) = @nn.batch_norm2d_forward(conv2_out, n, c2, h2, w2, b.bn2)
+  let (bn2_out, bn2_cache) = batch_norm2d_forward(conv2_out, n, c2, h2, w2, b.bn2)
   // ---- Shortcut path ----
   let (shortcut_out, sbn_cache_opt) = match (b.shortcut_conv, b.shortcut_bn) {
     (Some(scv), Some(sbn)) => {
-      let sout_pre = @nn.conv2d_forward(x, n, c, h, w, scv)
+      let sout_pre = conv2d_forward(x, n, c, h, w, scv)
       let sh_pre = (h + 2 * scv.pad - scv.kh) / scv.stride + 1
       let sw_pre = (w + 2 * scv.pad - scv.kw) / scv.stride + 1
-      let (sout, sbn_cache) = @nn.batch_norm2d_forward(
+      let (sout, sbn_cache) = batch_norm2d_forward(
         sout_pre, n, scv.c_out, sh_pre, sw_pre, sbn,
       )
       (sout, Some(sbn_cache))
@@ -196,19 +196,19 @@ pub fn residual_block_backward(
   // ReLU backward at the block output.
   let d_sum = @activ.relu_backward(cache.sum, d_output)
   let (d_bn2, d_shortcut) = @activ.add_backward(d_sum)
-  let (d_conv2_in, d_bn2_gamma, d_bn2_beta) = @nn.batch_norm2d_backward(
+  let (d_conv2_in, d_bn2_gamma, d_bn2_beta) = batch_norm2d_backward(
     d_bn2, cache.bn2_cache, b.bn2,
   )
-  let (d_relu1, d_conv2_w, d_conv2_b) = @nn.conv2d_backward(
+  let (d_relu1, d_conv2_w, d_conv2_b) = conv2d_backward(
     cache.conv2_input, d_conv2_in, cache.conv2_input_n,
     cache.conv2_input_c, cache.conv2_input_h, cache.conv2_input_w,
     b.conv2,
   )
   let d_bn1 = @activ.relu_backward(cache.bn1_out, d_relu1)
-  let (d_conv1_in, d_bn1_gamma, d_bn1_beta) = @nn.batch_norm2d_backward(
+  let (d_conv1_in, d_bn1_gamma, d_bn1_beta) = batch_norm2d_backward(
     d_bn1, cache.bn1_cache, b.bn1,
   )
-  let (d_x_main, d_conv1_w, d_conv1_b) = @nn.conv2d_backward(
+  let (d_x_main, d_conv1_w, d_conv1_b) = conv2d_backward(
     cache.x, d_conv1_in, n, c, h, w, b.conv1,
   )
   match (b.shortcut_conv, b.shortcut_bn, cache.shortcut_bn_cache) {
@@ -216,13 +216,13 @@ pub fn residual_block_backward(
       // BN backward first (operating on d_shortcut of shape
       // [n, scv.c_out, h_out, w_out]) -> returns d_shortcut_bn_in
       // of the same shape.
-      let (d_shortcut_bn_in, d_sbn_g, d_sbn_b) = @nn.batch_norm2d_backward(
+      let (d_shortcut_bn_in, d_sbn_g, d_sbn_b) = batch_norm2d_backward(
         d_shortcut, sbn_cache, sbn,
       )
       // Then conv backward (operating on d_shortcut_bn_in of shape
       // [n, scv.c_out, h_out, w_out]) -> returns d_x_shortcut of
       // shape [n, c, h, w] matching d_x_main.
-      let (d_x_shortcut, d_sc_w, d_sc_b) = @nn.conv2d_backward(
+      let (d_x_shortcut, d_sc_w, d_sc_b) = conv2d_backward(
         cache.x, d_shortcut_bn_in, n, c, h, w, scv,
       )
       let merged : Array[Float] = Array::make(d_x_main.length(), 0.0F)

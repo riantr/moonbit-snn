@@ -8,10 +8,16 @@
 // The three `stimulus_poisson_layer_*` variants are the same population source
 // wired to three different cell models (IF, BallAndStick, Tripod).
 //
+// empty_stimulus.mbt is the null object -- a stimulus that does nothing, for
+// tests and for wiring a model before its real input exists. It carries an
+// `nn.EmptyParam`, so nn/ is imported for that one type; that is the only
+// reason this manifest reaches above core/ and neuron/.
+//
 // A pre-split scan called this package dependency-free, which was wrong for the
-// reason it has now been wrong twice: the scan only sees references that are
-// still inside the root package, and neuron/ had already moved out.
+// reason it has now been wrong three times: the scan only sees references that
+// are still inside the root package, and neuron/ had already moved out.
 import {
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/neuron",
+  "riantr/snn_mbt/nn",
 }

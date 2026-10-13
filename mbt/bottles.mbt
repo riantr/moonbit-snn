@@ -20,41 +20,6 @@
 //     same weights.
 
 ///|
-/// Fill an Array[Float] of length `n` with He-init (Kaiming) draws:
-/// N(0, sqrt(2 / fan_in)) using a xoshiro RNG and Float32 Box-Muller.
-pub fn he_init(rng : @core.Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
-  let out : Array[Float] = Array::make(n, 0.0F)
-  let std = @core.sqrtf(2.0F / Float::from_int(fan_in))
-  let mut i = 0
-  while i + 1 < n {
-    // Box-Muller on Float32 (consume 2 uniforms -> 2 normals).
-    let u1 = {
-      let mut v = @core.next_f32(rng)
-      if v < 0.000001F { v = 0.000001F }
-      v
-    }
-    let u2 = @core.next_f32(rng)
-    let z1 = @core.sqrtf(-2.0F * @core.logf(u1)) * @core.cosf(2.0F * 3.14159265F * u2)
-    let z2 = @core.sqrtf(-2.0F * @core.logf(u1)) * sin_f32(2.0F * 3.14159265F * u2)
-    out[i] = z1 * std
-    out[i + 1] = z2 * std
-    i = i + 2
-  }
-  if i < n {
-    // Last one if odd length.
-    let u1 = {
-      let mut v = @core.next_f32(rng)
-      if v < 0.000001F { v = 0.000001F }
-      v
-    }
-    let u2 = @core.next_f32(rng)
-    let z1 = @core.sqrtf(-2.0F * @core.logf(u1)) * @core.cosf(2.0F * 3.14159265F * u2)
-    out[i] = z1 * std
-  }
-  out
-}
-
-///|
 fn sin_f32(x : Float) -> Float { @core.sinf(x) }
 
 // ---------------------------------------------------------------------------
@@ -80,7 +45,7 @@ pub fn MLP::new(sizes : Array[Int], seed : UInt64) -> MLP {
   for i in 0..<(sizes.length() - 1) {
     let in_f = sizes[i]
     let out_f = sizes[i + 1]
-    let weight = he_init(rng, out_f * in_f, in_f)
+    let weight = @core.he_init(rng, out_f * in_f, in_f)
     let bias : Array[Float] = Array::make(out_f, 0.0F)
     let p = @nn.LinearParam::new(weight, bias, in_f, out_f)
     layers.push(@nn.Layer::linear(p))
@@ -156,11 +121,11 @@ pub struct SimpleCNN {
 pub fn SimpleCNN::new(in_c : Int, c1 : Int, c2 : Int, seed : UInt64) -> SimpleCNN {
   let rng = @core.Xoshiro::new(seed)
   // First conv: in_c -> c1, 3x3, pad=1.
-  let w1 = he_init(rng, c1 * in_c * 3 * 3, in_c * 3 * 3)
+  let w1 = @core.he_init(rng, c1 * in_c * 3 * 3, in_c * 3 * 3)
   let b1 : Array[Float] = Array::make(c1, 0.0F)
   let conv1 = @nn.Conv2dParam::new(w1, b1, c1, in_c, 3, 3, stride=1, pad=1)
   // Second conv: c1 -> c2, 3x3, pad=1.
-  let w2 = he_init(rng, c2 * c1 * 3 * 3, c1 * 3 * 3)
+  let w2 = @core.he_init(rng, c2 * c1 * 3 * 3, c1 * 3 * 3)
   let b2 : Array[Float] = Array::make(c2, 0.0F)
   let conv2 = @nn.Conv2dParam::new(w2, b2, c2, c1, 3, 3, stride=1, pad=1)
   // Pool: 2x2 stride 2.
@@ -168,7 +133,7 @@ pub fn SimpleCNN::new(in_c : Int, c1 : Int, c2 : Int, seed : UInt64) -> SimpleCN
   // FC: c2 * 7 * 7 -> 10.
   let fc_in = c2 * 7 * 7
   let fc_out = 10
-  let fc_w = he_init(rng, fc_out * fc_in, fc_in)
+  let fc_w = @core.he_init(rng, fc_out * fc_in, fc_in)
   let fc_b : Array[Float] = Array::make(fc_out, 0.0F)
   let fc = @nn.LinearParam::new(fc_w, fc_b, fc_in, fc_out)
   let layers : Array[@nn.Layer] = [
@@ -227,25 +192,25 @@ pub struct LeNet5 {
 pub fn LeNet5::new(seed : UInt64) -> LeNet5 {
   let rng = @core.Xoshiro::new(seed)
   // C1: 1 -> 6, 5x5, stride=1, pad=0.
-  let w1 = he_init(rng, 6 * 1 * 5 * 5, 1 * 5 * 5)
+  let w1 = @core.he_init(rng, 6 * 1 * 5 * 5, 1 * 5 * 5)
   let b1 : Array[Float] = Array::make(6, 0.0F)
   let conv1 = @nn.Conv2dParam::new(w1, b1, 6, 1, 5, 5, stride=1, pad=0)
   let pool1 = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   // C3: 6 -> 16, 5x5, stride=1, pad=0.
-  let w2 = he_init(rng, 16 * 6 * 5 * 5, 6 * 5 * 5)
+  let w2 = @core.he_init(rng, 16 * 6 * 5 * 5, 6 * 5 * 5)
   let b2 : Array[Float] = Array::make(16, 0.0F)
   let conv2 = @nn.Conv2dParam::new(w2, b2, 16, 6, 5, 5, stride=1, pad=0)
   let pool2 = @activ.MaxPool2dParam::new(2, 2, stride=2, pad=0)
   // C5: 16 -> 120, 5x5, stride=1, pad=0.
-  let w3 = he_init(rng, 120 * 16 * 5 * 5, 16 * 5 * 5)
+  let w3 = @core.he_init(rng, 120 * 16 * 5 * 5, 16 * 5 * 5)
   let b3 : Array[Float] = Array::make(120, 0.0F)
   let conv3 = @nn.Conv2dParam::new(w3, b3, 120, 16, 5, 5, stride=1, pad=0)
   // F6: 120 -> 84.
-  let w4 = he_init(rng, 84 * 120, 120)
+  let w4 = @core.he_init(rng, 84 * 120, 120)
   let b4 : Array[Float] = Array::make(84, 0.0F)
   let fc1 = @nn.LinearParam::new(w4, b4, 120, 84)
   // Out: 84 -> 10.
-  let w5 = he_init(rng, 10 * 84, 84)
+  let w5 = @core.he_init(rng, 10 * 84, 84)
   let b5 : Array[Float] = Array::make(10, 0.0F)
   let fc2 = @nn.LinearParam::new(w5, b5, 84, 10)
   let layers : Array[@nn.Layer] = [

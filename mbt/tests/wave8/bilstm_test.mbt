@@ -2,7 +2,7 @@
 
 ///|
 test "bilstm_new: shapes + per-direction params" {
-  let p = @snn_mbt.BiLstmParam::new(3, 4, 7UL)
+  let p = @rl.BiLstmParam::new(3, 4, 7UL)
   assert_eq(p.d_x, 3)
   assert_eq(p.d_h, 4)
   assert_eq(p.fwd.d_x, 3)
@@ -16,7 +16,7 @@ test "bilstm_new: shapes + per-direction params" {
 
 ///|
 test "bilstm_forward: per-direction shapes" {
-  let p = @snn_mbt.BiLstmParam::new(2, 3, 11UL)
+  let p = @rl.BiLstmParam::new(2, 3, 11UL)
   let xs : Array[Array[Float]] = [
     [0.5F, -0.3F],
     [0.1F, 0.2F],
@@ -26,7 +26,7 @@ test "bilstm_forward: per-direction shapes" {
   let c0_f : Array[Float] = [0.0F, 0.0F, 0.0F]
   let h0_b : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0_b : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs_f, hs_b, cs_f, cs_b, cache) = @snn_mbt.bilstm_forward(
+  let (hs_f, hs_b, cs_f, cs_b, cache) = @rl.bilstm_forward(
     xs, h0_f, c0_f, h0_b, c0_b, p,
   )
   assert_eq(hs_f.length(), 3)
@@ -45,16 +45,16 @@ test "bilstm_forward: per-direction shapes" {
 
 ///|
 test "bilstm_forward: same-seed deterministic" {
-  let p1 = @snn_mbt.BiLstmParam::new(2, 3, 13UL)
-  let p2 = @snn_mbt.BiLstmParam::new(2, 3, 13UL)
+  let p1 = @rl.BiLstmParam::new(2, 3, 13UL)
+  let p2 = @rl.BiLstmParam::new(2, 3, 13UL)
   let xs : Array[Array[Float]] = [
     [0.5F, -0.3F],
     [0.1F, 0.2F],
   ]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs_f1, hs_b1, _, _, _) = @snn_mbt.bilstm_forward(xs, h0, c0, h0, c0, p1)
-  let (hs_f2, hs_b2, _, _, _) = @snn_mbt.bilstm_forward(xs, h0, c0, h0, c0, p2)
+  let (hs_f1, hs_b1, _, _, _) = @rl.bilstm_forward(xs, h0, c0, h0, c0, p1)
+  let (hs_f2, hs_b2, _, _, _) = @rl.bilstm_forward(xs, h0, c0, h0, c0, p2)
   for t in 0..<2 {
     for i in 0..<3 {
       assert_eq(hs_f1[t][i], hs_f2[t][i])
@@ -73,8 +73,8 @@ test "bilstm_concat: interleaves fwd then bwd" {
     [5.0F, 6.0F],
     [7.0F, 8.0F],
   ]
-  let c0 = @snn_mbt.bilstm_concat(hs_f, hs_b, 0)
-  let c1 = @snn_mbt.bilstm_concat(hs_f, hs_b, 1)
+  let c0 = @rl.bilstm_concat(hs_f, hs_b, 0)
+  let c1 = @rl.bilstm_concat(hs_f, hs_b, 1)
   assert_eq(c0.length(), 4)
   assert_eq(c1.length(), 4)
   assert_eq(c0[0], 1.0F)
@@ -89,32 +89,32 @@ test "bilstm_concat: interleaves fwd then bwd" {
 
 ///|
 test "bilstm_loss: zero on perfect match" {
-  let p = @snn_mbt.BiLstmParam::new(2, 3, 17UL)
+  let p = @rl.BiLstmParam::new(2, 3, 17UL)
   let xs : Array[Array[Float]] = [[0.5F, -0.3F], [0.1F, 0.2F]]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs_f, hs_b, _, _, _) = @snn_mbt.bilstm_forward(xs, h0, c0, h0, c0, p)
+  let (hs_f, hs_b, _, _, _) = @rl.bilstm_forward(xs, h0, c0, h0, c0, p)
   let target : Array[Array[Float]] = [
-    @snn_mbt.bilstm_concat(hs_f, hs_b, 0),
-    @snn_mbt.bilstm_concat(hs_f, hs_b, 1),
+    @rl.bilstm_concat(hs_f, hs_b, 0),
+    @rl.bilstm_concat(hs_f, hs_b, 1),
   ]
-  let loss = @snn_mbt.bilstm_sequence_loss(hs_f, hs_b, target)
+  let loss = @rl.bilstm_sequence_loss(hs_f, hs_b, target)
   assert_eq(loss, 0.0F)
 }
 
 ///|
 test "bilstm_backward: zero d_loss -> zero all grads" {
-  let p = @snn_mbt.BiLstmParam::new(2, 3, 19UL)
+  let p = @rl.BiLstmParam::new(2, 3, 19UL)
   let xs : Array[Array[Float]] = [[0.5F, -0.3F], [0.1F, 0.2F]]
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs_f, hs_b, _, _, cache) = @snn_mbt.bilstm_forward(xs, h0, c0, h0, c0, p)
+  let (hs_f, hs_b, _, _, cache) = @rl.bilstm_forward(xs, h0, c0, h0, c0, p)
   // Perfect-match target => loss = 0 => all grads = 0.
   let target : Array[Array[Float]] = [
-    @snn_mbt.bilstm_concat(hs_f, hs_b, 0),
-    @snn_mbt.bilstm_concat(hs_f, hs_b, 1),
+    @rl.bilstm_concat(hs_f, hs_b, 0),
+    @rl.bilstm_concat(hs_f, hs_b, 1),
   ]
-  let (d_xs, dh0_f, dc0_f, dh0_b, dc0_b, grad_f, grad_b) = @snn_mbt.bilstm_backward(
+  let (d_xs, dh0_f, dc0_f, dh0_b, dc0_b, grad_f, grad_b) = @rl.bilstm_backward(
     hs_f, hs_b, target, cache, h0, c0, h0, c0, p,
   )
   assert_eq(d_xs.length(), 2)
@@ -135,7 +135,7 @@ test "bilstm_backward: zero d_loss -> zero all grads" {
 
 ///|
 test "bilstm_backward: shapes" {
-  let p = @snn_mbt.BiLstmParam::new(3, 4, 23UL)
+  let p = @rl.BiLstmParam::new(3, 4, 23UL)
   let xs : Array[Array[Float]] = [
     [0.5F, -0.3F, 0.1F],
     [0.1F, 0.2F, -0.5F],
@@ -143,13 +143,13 @@ test "bilstm_backward: shapes" {
   ]
   let h0 : Array[Float] = Array::make(4, 0.0F)
   let c0 : Array[Float] = Array::make(4, 0.0F)
-  let (hs_f, hs_b, _, _, cache) = @snn_mbt.bilstm_forward(xs, h0, c0, h0, c0, p)
+  let (hs_f, hs_b, _, _, cache) = @rl.bilstm_forward(xs, h0, c0, h0, c0, p)
   let target : Array[Array[Float]] = [
     [0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F],
     [0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F],
     [0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F],
   ]
-  let (d_xs, _dh0_f, _dc0_f, _dh0_b, _dc0_b, grad_f, grad_b) = @snn_mbt.bilstm_backward(
+  let (d_xs, _dh0_f, _dc0_f, _dh0_b, _dc0_b, grad_f, grad_b) = @rl.bilstm_backward(
     hs_f, hs_b, target, cache, h0, c0, h0, c0, p,
   )
   assert_eq(d_xs.length(), 3)
@@ -168,13 +168,13 @@ test "bilstm_backward: shapes" {
 ///|
 test "bilstm_train: loss decreases on identity-shift task" {
   // d_x = d_h = 3, so target dim = 2*3 = 6 = 2*d_h.
-  let p = @snn_mbt.BiLstmParam::new(3, 3, 29UL)
-  let (xs, target) = @snn_mbt.bilstm_identity_dataset(8, 3, 3, 31UL)
+  let p = @rl.BiLstmParam::new(3, 3, 29UL)
+  let (xs, target) = @rl.bilstm_identity_dataset(8, 3, 3, 31UL)
   let h0 : Array[Float] = [0.0F, 0.0F, 0.0F]
   let c0 : Array[Float] = [0.0F, 0.0F, 0.0F]
-  let (hs_f0, hs_b0, _, _, _) = @snn_mbt.bilstm_forward(xs, h0, c0, h0, c0, p)
-  let init_loss = @snn_mbt.bilstm_sequence_loss(hs_f0, hs_b0, target)
-  let final_loss = @snn_mbt.bilstm_train_n_steps(
+  let (hs_f0, hs_b0, _, _, _) = @rl.bilstm_forward(xs, h0, c0, h0, c0, p)
+  let init_loss = @rl.bilstm_sequence_loss(hs_f0, hs_b0, target)
+  let final_loss = @rl.bilstm_train_n_steps(
     xs, target, h0, c0, h0, c0, p, 60, 0.01F, 1.0F,
   )
   if final_loss >= init_loss {
@@ -184,7 +184,7 @@ test "bilstm_train: loss decreases on identity-shift task" {
 
 ///|
 test "bilstm_identity_dataset: shapes + cyclic shift" {
-  let (xs, target) = @snn_mbt.bilstm_identity_dataset(5, 2, 2, 7UL)
+  let (xs, target) = @rl.bilstm_identity_dataset(5, 2, 2, 7UL)
   assert_eq(xs.length(), 5)
   assert_eq(target.length(), 5)
   for t in 0..<5 {

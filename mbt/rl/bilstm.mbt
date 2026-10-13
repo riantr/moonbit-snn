@@ -20,8 +20,8 @@
 pub struct BiLstmParam {
   d_x : Int
   d_h : Int
-  fwd : @rl.LstmCellParam
-  bwd : @rl.LstmCellParam
+  fwd : LstmCellParam
+  bwd : LstmCellParam
 }
 
 ///|
@@ -31,8 +31,8 @@ pub fn BiLstmParam::new(d_x : Int, d_h : Int, seed : UInt64) -> BiLstmParam {
   {
     d_x,
     d_h,
-    fwd: @rl.LstmCellParam::new(d_x, d_h, seed),
-    bwd: @rl.LstmCellParam::new(d_x, d_h, seed + 1UL),
+    fwd: LstmCellParam::new(d_x, d_h, seed),
+    bwd: LstmCellParam::new(d_x, d_h, seed + 1UL),
   }
 }
 
@@ -40,8 +40,8 @@ pub fn BiLstmParam::new(d_x : Int, d_h : Int, seed : UInt64) -> BiLstmParam {
 /// Forward cache storing per-direction per-step cell caches plus
 /// the forward outputs (used by BPTT and for loss computation).
 pub struct BiLstmCache {
-  caches_f : Array[@rl.LstmCellCache]
-  caches_b : Array[@rl.LstmCellCache]
+  caches_f : Array[LstmCellCache]
+  caches_b : Array[LstmCellCache]
   hs_f : Array[Array[Float]]
   hs_b : Array[Array[Float]]
   cs_f : Array[Array[Float]]
@@ -63,15 +63,15 @@ pub fn bilstm_forward(
   let n = xs.length()
   let hs_f : Array[Array[Float]] = []
   let cs_f : Array[Array[Float]] = []
-  let caches_f : Array[@rl.LstmCellCache] = []
+  let caches_f : Array[LstmCellCache] = []
   let hs_b : Array[Array[Float]] = []
   let cs_b : Array[Array[Float]] = []
-  let caches_b : Array[@rl.LstmCellCache] = []
+  let caches_b : Array[LstmCellCache] = []
   // Forward direction: left-to-right.
   let mut cur_h = h0_f
   let mut cur_c = c0_f
   for t in 0..<n {
-    let (h_t, cache_t) = @rl.lstm_cell_forward(xs[t], cur_h, cur_c, param.fwd)
+    let (h_t, cache_t) = lstm_cell_forward(xs[t], cur_h, cur_c, param.fwd)
     hs_f.push(h_t)
     cs_f.push(cache_t.c_t)
     caches_f.push(cache_t)
@@ -83,7 +83,7 @@ pub fn bilstm_forward(
   cur_c = c0_b
   let mut t = n - 1
   while t >= 0 {
-    let (h_t, cache_t) = @rl.lstm_cell_forward(xs[t], cur_h, cur_c, param.bwd)
+    let (h_t, cache_t) = lstm_cell_forward(xs[t], cur_h, cur_c, param.bwd)
     hs_b.push(h_t)
     cs_b.push(cache_t.c_t)
     caches_b.push(cache_t)
@@ -160,7 +160,7 @@ pub fn bilstm_backward(
   h0_b : Array[Float],
   c0_b : Array[Float],
   param : BiLstmParam,
-) -> (Array[Array[Float]], Array[Float], Array[Float], Array[Float], Array[Float], @rl.LstmCellGrad, @rl.LstmCellGrad) {
+) -> (Array[Array[Float]], Array[Float], Array[Float], Array[Float], Array[Float], LstmCellGrad, LstmCellGrad) {
   let n = hs_f.length()
   let d_h = param.d_h
   let d_x = param.d_x
@@ -171,8 +171,8 @@ pub fn bilstm_backward(
   for t in 0..<n {
     d_xs[t] = Array::make(d_x, 0.0F)
   }
-  let grad_f = @rl.LstmCellGrad::zero(param.fwd)
-  let grad_b = @rl.LstmCellGrad::zero(param.bwd)
+  let grad_f = LstmCellGrad::zero(param.fwd)
+  let grad_b = LstmCellGrad::zero(param.bwd)
   // d_loss / d_concat_h[t] = scale * (concat - target)
   // d_h_f[t] = first d_h entries; d_h_b[t] = last d_h entries.
   let d_h_f_per_t : Array[Array[Float]] = Array::make(n, [])
@@ -194,13 +194,13 @@ pub fn bilstm_backward(
   let d_c_f : Array[Float] = Array::make(d_h, 0.0F)
   for t_step in 0..<n {
     let t = n - 1 - t_step
-    let d_hs_t : Array[Float] = @rl.zero_copy(d_h_f_per_t[t])
+    let d_hs_t : Array[Float] = zero_copy(d_h_f_per_t[t])
     if t < n - 1 {
       for i in 0..<d_h {
         d_hs_t[i] = d_hs_t[i] + d_h_prev_f[i]
       }
     }
-    let (d_h_prev, d_x_t, _d_c_prev) = @rl.lstm_cell_backward(
+    let (d_h_prev, d_x_t, _d_c_prev) = lstm_cell_backward(
       cache.caches_f[t], d_hs_t, d_c_f, param.fwd, grad_f,
     )
     for i in 0..<d_h {
@@ -219,13 +219,13 @@ pub fn bilstm_backward(
   for k_step in 0..<n {
     let k = n - 1 - k_step
     let actual_t = n - 1 - k
-    let d_hs_t : Array[Float] = @rl.zero_copy(d_h_b_per_t[actual_t])
+    let d_hs_t : Array[Float] = zero_copy(d_h_b_per_t[actual_t])
     if k < n - 1 {
       for i in 0..<d_h {
         d_hs_t[i] = d_hs_t[i] + d_h_prev_b[i]
       }
     }
-    let (d_h_prev, d_x_t, _d_c_prev) = @rl.lstm_cell_backward(
+    let (d_h_prev, d_x_t, _d_c_prev) = lstm_cell_backward(
       cache.caches_b[k], d_hs_t, d_c_b, param.bwd, grad_b,
     )
     for i in 0..<d_h {
@@ -246,12 +246,12 @@ pub fn bilstm_backward(
 /// Apply SGD to both directions.
 pub fn bilstm_sgd_step(
   param : BiLstmParam,
-  grad_f : @rl.LstmCellGrad,
-  grad_b : @rl.LstmCellGrad,
+  grad_f : LstmCellGrad,
+  grad_b : LstmCellGrad,
   lr : Float,
 ) -> Unit {
-  @rl.lstm_cell_sgd_step(param.fwd, grad_f, lr)
-  @rl.lstm_cell_sgd_step(param.bwd, grad_b, lr)
+  lstm_cell_sgd_step(param.fwd, grad_f, lr)
+  lstm_cell_sgd_step(param.bwd, grad_b, lr)
 }
 
 ///|
@@ -278,8 +278,8 @@ pub fn bilstm_train_n_steps(
       hs_f, hs_b, target, cache, h0_f, c0_f, h0_b, c0_b, param,
     )
     if clip > 0.0F {
-      @rl.lstm_clip_grad(grad_f, clip)
-      @rl.lstm_clip_grad(grad_b, clip)
+      lstm_clip_grad(grad_f, clip)
+      lstm_clip_grad(grad_b, clip)
     }
     bilstm_sgd_step(param, grad_f, grad_b, lr)
     last_loss = loss

@@ -16,16 +16,16 @@
 /// Cross-entropy loss result. `mean` is a 1-element Tensor
 /// (`shape=[1]`) and `per_batch` has shape `[batch]`.
 pub struct CrossEntropyLoss {
-  mean : @nn.Tensor
-  per_batch : @nn.Tensor
+  mean : Tensor
+  per_batch : Tensor
 }
 
 ///|
 /// Compute the cross-entropy loss given log-probabilities and
 /// integer target indices.
 pub fn cross_entropy_loss(
-  log_probs : @nn.Tensor,
-  targets : @nn.Tensor,
+  log_probs : Tensor,
+  targets : Tensor,
 ) -> CrossEntropyLoss {
   if log_probs.shape.length() != 2 {
     abort("cross_entropy_loss: log_probs must be 2D [batch, n_classes]")
@@ -53,6 +53,6 @@ pub fn cross_entropy_loss(
     per_batch[b] = loss
     total = total + loss
   }
-  let mean = @nn.Tensor::from([total / Float::from_int(batch)], [1])
-  { mean, per_batch: @nn.Tensor::from(per_batch, [batch]) }
+  let mean = Tensor::from([total / Float::from_int(batch)], [1])
+  { mean, per_batch: Tensor::from(per_batch, [batch]) }
 }

@@ -171,3 +171,53 @@ pub fn box_muller(rng : Xoshiro) -> (Double, Double) {
   (r * @math.cos(theta), r * @math.sin(theta))
 }
 
+///|
+/// Fill an Array[Float] of length `n` with He-init (Kaiming) draws:
+/// N(0, sqrt(2 / fan_in)) using a xoshiro RNG and Float32 Box-Muller.
+///
+/// This was declared in bottles.mbt, whose subject is pre-made architectures --
+/// LeNet5, SimpleCNN, MLP. Initialising a weight array is not an architecture,
+/// and 38 files across nine packages reached through `@snn_mbt.he_init` to call
+/// it: residual_block, gin, message_passing, pna, set2set, the DDPM and EBM
+/// trainers, the GTrXL and LSTM agents, task_sampler, ode_func.
+///
+/// It belongs here rather than in nn/ because its only inputs are a Xoshiro
+/// and two integers -- no tensor, no parameter block, no layer. That made it
+/// reachable from every package; keeping it in a leaf file meant a
+/// sub-package could not call it at all, since none of them can import the
+/// root.
+pub fn he_init(rng : Xoshiro, n : Int, fan_in : Int) -> Array[Float] {
+  let out : Array[Float] = Array::make(n, 0.0F)
+  let std = sqrtf(2.0F / Float::from_int(fan_in))
+  let mut i = 0
+  while i + 1 < n {
+    // Box-Muller on Float32 (consume 2 uniforms -> 2 normals).
+    let u1 = {
+      let mut v = next_f32(rng)
+      if v < 0.000001F { v = 0.000001F }
+      v
+    }
+    let u2 = next_f32(rng)
+    let z1 = sqrtf(-2.0F * logf(u1)) * cosf(2.0F * 3.14159265F * u2)
+    let z2 = sqrtf(-2.0F * logf(u1)) * sin_f32(2.0F * 3.14159265F * u2)
+    out[i] = z1 * std
+    out[i + 1] = z2 * std
+    i = i + 2
+  }
+  if i < n {
+    // Last one if odd length.
+    let u1 = {
+      let mut v = next_f32(rng)
+      if v < 0.000001F { v = 0.000001F }
+      v
+    }
+    let u2 = next_f32(rng)
+    let z1 = sqrtf(-2.0F * logf(u1)) * cosf(2.0F * 3.14159265F * u2)
+    out[i] = z1 * std
+  }
+  out
+}
+
+///|
+fn sin_f32(x : Float) -> Float { sinf(x) }
+

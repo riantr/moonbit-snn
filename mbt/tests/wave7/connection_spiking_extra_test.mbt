@@ -101,13 +101,13 @@ test "spiking_synapse — NoLTP / NoSTP defaults" {
 
 ///|
 test "EmptyConnection::new — defaults to empty name" {
-  let ec = @snn_mbt.EmptyConnection::new()
+  let ec = @synapse.EmptyConnection::new()
   assert_eq(ec.name, "")
 }
 
 ///|
 test "EmptyConnection::with_name — sets custom label" {
-  let ec0 = @snn_mbt.EmptyConnection::new()
+  let ec0 = @synapse.EmptyConnection::new()
   let ec = ec0.with_name("placeholder")
   assert_eq(ec.name, "placeholder")
   // Original unchanged.

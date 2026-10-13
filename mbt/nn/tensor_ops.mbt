@@ -7,7 +7,7 @@
 /// 2D matrix multiply: `c[m, n] = sum_k a[m, k] * b[k, n]`.
 /// Inputs `a` is shape `[m, k]`, `b` is shape `[k, n]`. Returns a
 /// fresh `Tensor` of shape `[m, n]`. Naive O(m*n*k) loop.
-pub fn tensor_matmul(a : @nn.Tensor, b : @nn.Tensor) -> @nn.Tensor {
+pub fn tensor_matmul(a : Tensor, b : Tensor) -> Tensor {
   if a.shape.length() != 2 || b.shape.length() != 2 {
     abort("tensor_matmul: both inputs must be 2D")
   }
@@ -31,14 +31,14 @@ pub fn tensor_matmul(a : @nn.Tensor, b : @nn.Tensor) -> @nn.Tensor {
     }
   }
   // Through the constructor because `Tensor`'s fields are private to nn/.
-  @nn.Tensor::new(out_data, [m, n])
+  Tensor::new(out_data, [m, n])
 }
 
 ///|
 /// Softmax along the last axis of a 2D Tensor. Numerically stable:
 /// subtracts max(x) before exp.
 ///   `out[i, j] = exp(x[i, j] - max_j(x[i, j])) / sum_j exp(...)`
-pub fn tensor_softmax(x : @nn.Tensor) -> @nn.Tensor {
+pub fn tensor_softmax(x : Tensor) -> Tensor {
   if x.shape.length() != 2 {
     abort("tensor_softmax: input must be 2D")
   }
@@ -73,13 +73,13 @@ pub fn tensor_softmax(x : @nn.Tensor) -> @nn.Tensor {
       out[row_off + j] = out[row_off + j] * inv_sum
     }
   }
-  @nn.Tensor::new(out, [m, n])
+  Tensor::new(out, [m, n])
 }
 
 ///|
 /// Log-softmax along the last axis: `out[i, j] = x[i, j] - max_j(x) - log(sum_k exp(...))`.
 /// Numerically stable.
-pub fn tensor_log_softmax(x : @nn.Tensor) -> @nn.Tensor {
+pub fn tensor_log_softmax(x : Tensor) -> Tensor {
   if x.shape.length() != 2 {
     abort("tensor_log_softmax: input must be 2D")
   }
@@ -103,7 +103,7 @@ pub fn tensor_log_softmax(x : @nn.Tensor) -> @nn.Tensor {
       out[row_off + j] = x.data[row_off + j] - lse
     }
   }
-  @nn.Tensor::new(out, [m, n])
+  Tensor::new(out, [m, n])
 }
 
 ///|
