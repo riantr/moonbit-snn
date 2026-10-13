@@ -1,0 +1,48 @@
+// gpu/ — optional single-precision BLAS path for nn/'s dense layers.
+//
+// This package exists as a seam, not as a working backend. nn/linear_forward
+// is a 256 MFLOP scalar triple loop that runs at roughly 4 GFLOP/s against a
+// single core's 50-100 GFLOP/s ceiling, so it leaves about 19x on the table
+// before any device is involved. cuBLAS's `Sgemm` is the textbook fix and it
+// has the same Float32 data layout this tree already uses.
+//
+// What is NOT here, and why
+// ------------------------
+// No `extern "c"` declaration. Three reasons, in order of how hard they are to
+// work around later:
+//
+//   1. cuBLAS is not linked. The project manifest declares no `links`, and the
+//      standard MoonBit toolchain has no CUDA. Linking directly would make
+//      every build of nn/ require a GPU toolchain -- unacceptable for a
+//      simulator whose CI runs `moon check` on a runner with no card.
+//   2. The stub has to exist first. linalg_gpu solves this by compiling its
+//      .cu with nvcc into a .so and dlopening it, keeping TCC free of any CUDA
+//      dependency. That indirection is the right shape; its 937 lines are not
+//      reusable here because all of them are Double (see below).
+//   3. There is no single-precision source to reuse. moonbit_linalg_gpu wraps
+//      Dgemm, Dgemv, Ddot, Dscal, Dtrsm, Dpotrf and cusolverDnDpotrf -- grep
+//      for `cublasS` returns zero hits, and the one hand-written kernel there
+//      is a Double `fill_kernel`. This tree is 9769 Float against 97 Double,
+//      so a Float32 path is new code either way.
+//
+// The contract the implementation must honour
+// -------------------------------------------
+// liblinear_accel_sgemm returns 0 on success, ERR_LIB_NOT_LOADED (-1000) when
+// liblinear_accel.so is absent, ERR_BAD_ARG (-2000) on a shape or size
+// problem, and a cuBLAS status code otherwise. Anything other than 0 must be
+// treated as "use the CPU path" -- that is the whole fallback contract, and it
+// is why the sentinels are negative: cuBLAS itself only returns 0 or positive.
+//
+// Row-major in, row-major out. cuBLAS is column-major, so the stub does the
+// swap internally (C = A*B is B^T*A^T in column-major). Callers never see it.
+//
+// Where it plugs in
+// ----------------
+// nn/linear_forward keeps its current body. A GPU path would dispatch at the
+// top of that function once the parameter block is flattened: LinearParam
+// holds weight as a flat row-major Array[Float] already, so no marshalling is
+// needed on the way in, and the output buffer has the same shape.
+//
+// Adding this package must not change nn/ until liblinear_accel_sgemm
+// actually exists on disk. A declaration with no implementation does not fail
+// at build time -- it fails at load time, on a machine nobody is watching.
