@@ -1,0 +1,44 @@
+// infra/ — the simulator, serialisation, plotting and parity checking that
+// everything else is verified against.
+//
+// This is the top of the package graph: it imports nearly everything, because
+// running a model means touching a neuron, a connection, a stimulus and an
+// optimiser at once, and checkpointing one means naming the types all of those
+// packages own. A package that depends on nine others is not a design smell at
+// the top of a dependency tree -- it is what the top of a dependency tree looks
+// like.
+//
+// The three groups it holds:
+//
+//   Simulation   sim, compose, population, network_simulator, bimodal_kernel
+//   Persistence  serialize, import_data, dump_weights
+//   Presentation vecplot, image, spatial, spatio_temporal
+//
+// plus the parity harnesses (parity_check, julia_parity), the two data
+// structures that outlived their original callers (sum_tree,
+// prioritized_replay), the forecaster that combines timeseries/ models, and the
+// three runnable demos (scnn_demo, srnn_demo, spikeformer_demo).
+//
+// The two non-project imports are inherited from the root manifest. image.mbt
+// converts between MoonBit's `Image` value and this tree's own raster type, so
+// it needs moonbit_image to name the source side; math is what vecplot's
+// plotting maths and the parity tolerances use.
+//
+// models/ is imported by the three demos: scnn_demo trains the SimpleCNN from
+// models/, srnn_demo and spikeformer_demo reach for the reference
+// architectures. A demo of a model belongs downstream of the model.
+import {
+  "moonbitlang/core/math",
+  "riantr/moonbit_image",
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/neuron",
+  "riantr/snn_mbt/synapse",
+  "riantr/snn_mbt/stimulus",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/optim",
+  "riantr/snn_mbt/rl",
+  "riantr/snn_mbt/timeseries",
+  "riantr/snn_mbt/attention",
+  "riantr/snn_mbt/models",
+}

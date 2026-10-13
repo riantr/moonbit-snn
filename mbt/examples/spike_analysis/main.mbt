@@ -26,22 +26,22 @@ fn main {
   let ee = @synapse.SpikingSynapse::random(pop, pop, "ge", 0.5F, 0.0F, 0.2F, rng)
 
   // Fire monitors for all neurons + v monitor for neuron 0
-  let fire_monitors : Array[@snn_mbt.Monitor] = []
+  let fire_monitors : Array[@infra.Monitor] = []
   for k in 0..<n {
-    fire_monitors.push(@snn_mbt.Monitor::new_fire(pop, k))
+    fire_monitors.push(@infra.Monitor::new_fire(pop, k))
   }
-  let v_mon = @snn_mbt.Monitor::new_v(pop, 0)
-  let v_mon_sr = @snn_mbt.Monitor::new_v_sr(pop, 0, 1.0F) // 1 kHz sampling
+  let v_mon = @infra.Monitor::new_v(pop, 0)
+  let v_mon_sr = @infra.Monitor::new_v_sr(pop, 0, 1.0F) // 1 kHz sampling
 
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(pop)],
+  let model = @infra.compose(
+    [@infra.IF_(pop)],
     [ee],
     monitors=[..fire_monitors, v_mon, v_mon_sr],
   )
 
   // Simulate 500 ms — passive El=-49mV drive keeps most neurons firing.
   let duration_ms = 500.0F
-  @snn_mbt.heterogeneous_sim_for(model, duration_ms)
+  @infra.heterogeneous_sim_for(model, duration_ms)
 
   // Per-neuron analysis
   println("spike_analysis.mbt: " + n.to_string() + " IF neurons, " + duration_ms.to_string() + "ms sim")

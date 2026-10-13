@@ -2,7 +2,7 @@
 
 ///|
 test "sum_tree_new_empty" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   assert_eq(t.len(), 0)
   assert_eq(t.capacity(), 4)
   assert_eq(t.total(), 0.0F)
@@ -10,7 +10,7 @@ test "sum_tree_new_empty" {
 
 ///|
 test "sum_tree_add_basic" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   let _ = t.add(1.0F)
   let _ = t.add(2.0F)
   let _ = t.add(3.0F)
@@ -28,7 +28,7 @@ test "sum_tree_add_basic" {
 
 ///|
 test "sum_tree_add_overflow_returns_neg_one" {
-  let t = @snn_mbt.SumTree::new(2)
+  let t = @infra.SumTree::new(2)
   let _ = t.add(1.0F)
   let _ = t.add(1.0F)
   let r = t.add(1.0F)
@@ -38,7 +38,7 @@ test "sum_tree_add_overflow_returns_neg_one" {
 
 ///|
 test "sum_tree_get_leaf_round_trip" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   let _ = t.add(0.5F)
   let _ = t.add(1.5F)
   let _ = t.add(2.5F)
@@ -59,7 +59,7 @@ test "sum_tree_get_leaf_round_trip" {
 
 ///|
 test "sum_tree_set_at_updates_total" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   let _ = t.add(1.0F)
   let _ = t.add(1.0F)
   let _ = t.add(1.0F)
@@ -86,7 +86,7 @@ test "sum_tree_set_at_updates_total" {
 
 ///|
 test "sum_tree_find_prefix_returns_leaf" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   let _ = t.add(1.0F)
   let _ = t.add(2.0F)
   let _ = t.add(3.0F)
@@ -113,7 +113,7 @@ test "sum_tree_find_prefix_returns_leaf" {
 
 ///|
 test "sum_tree_find_prefix_clamps_target" {
-  let t = @snn_mbt.SumTree::new(2)
+  let t = @infra.SumTree::new(2)
   let _ = t.add(1.0F)
   let _ = t.add(1.0F)
   // Target > total should still return a valid leaf.
@@ -124,7 +124,7 @@ test "sum_tree_find_prefix_clamps_target" {
 
 ///|
 test "sum_tree_find_prefix_empty_tree" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   let (ti, p) = t.find_prefix(0.5F)
   assert_eq(ti, 0)
   assert_eq(p, 0.0F)
@@ -132,7 +132,7 @@ test "sum_tree_find_prefix_empty_tree" {
 
 ///|
 test "sum_tree_find_prefix_batch_returns_n_results" {
-  let t = @snn_mbt.SumTree::new(4)
+  let t = @infra.SumTree::new(4)
   let _ = t.add(1.0F)
   let _ = t.add(2.0F)
   let _ = t.add(3.0F)
@@ -149,7 +149,7 @@ test "sum_tree_find_prefix_batch_returns_n_results" {
 
 ///|
 test "sum_tree_capacity_one" {
-  let t = @snn_mbt.SumTree::new(1)
+  let t = @infra.SumTree::new(1)
   let _ = t.add(7.5F)
   assert_eq(t.len(), 1)
   let total = t.total()

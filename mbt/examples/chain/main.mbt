@@ -40,17 +40,17 @@ fn main {
   @synapse.spiking_connect(ee, 2, 3, 50.0F)
 
   // Build the model
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop],
     conns: [ee],
     monitors: [
-      @snn_mbt.Monitor::new_v(e_pop, 0),
-      @snn_mbt.Monitor::new_v(e_pop, 2),
+      @infra.Monitor::new_v(e_pop, 0),
+      @infra.Monitor::new_v(e_pop, 2),
     ],
   }
 
   // Simulate for 100 ms
-  @snn_mbt.sim_for(model, 100.0F * @core.ms)
+  @infra.sim_for(model, 100.0F * @core.ms)
 
   // Print final values
   println("chain.mbt: simulation done")

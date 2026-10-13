@@ -19,16 +19,16 @@ fn main {
   e_pop.i[0] = 65.0F
 
   // Build the AdEx model
-  let model : @snn_mbt.AdExModel = {
+  let model : @infra.AdExModel = {
     pops: [e_pop],
     conns: [],
     monitors: [
-      @snn_mbt.MonitorAdEx::new_v(e_pop, 0),
+      @infra.MonitorAdEx::new_v(e_pop, 0),
     ],
   }
 
   // Simulate 300 ms
-  @snn_mbt.adex_sim_for(model, 300.0F * @core.ms)
+  @infra.adex_sim_for(model, 300.0F * @core.ms)
 
   // Print final state
   println("adex_neuron.mbt: simulation done")

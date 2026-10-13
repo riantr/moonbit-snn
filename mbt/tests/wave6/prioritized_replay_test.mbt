@@ -2,7 +2,7 @@
 
 ///|
 test "per_new_is_empty" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(8, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(8, 0.6F, 0.4F, 0.01F)
   assert_eq(buf.len(), 0)
   assert_eq(buf.capacity(), 8)
   assert_eq(buf.total_priority(), 0.0F)
@@ -11,7 +11,7 @@ test "per_new_is_empty" {
 
 ///|
 test "per_push_grows_size" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(8, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(8, 0.6F, 0.4F, 0.01F)
   buf.push(0, 1, 1.0F, 1, false)
   buf.push(1, 0, 1.0F, 2, false)
   buf.push(2, 2, 1.0F, 3, true)
@@ -24,7 +24,7 @@ test "per_push_grows_size" {
 
 ///|
 test "per_push_overwrites_when_full" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
   // Fill.
   for i in 0..<4 {
     buf.push(i, 0, 0.0F, i + 1, false)
@@ -39,7 +39,7 @@ test "per_push_overwrites_when_full" {
 
 ///|
 test "per_sample_returns_batch_shapes" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(16, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(16, 0.6F, 0.4F, 0.01F)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   for i in 0..<8 {
     buf.push(i % 5, i % 4, Float::from_int(i), (i + 1) % 5, i % 3 == 0)
@@ -63,7 +63,7 @@ test "per_sample_returns_batch_shapes" {
 ///|
 test "per_sample_uniform_distribution" {
   // alpha = 0 → sampling must be uniform regardless of stored priorities.
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(8, 0.0F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(8, 0.0F, 0.4F, 0.01F)
   // Insert 4 transitions with sharply different priorities (would matter under
   // alpha > 0 but should be uniform at alpha = 0).
   buf.push(0, 0, 0.0F, 1, false)
@@ -91,7 +91,7 @@ test "per_sample_uniform_distribution" {
 test "per_sample_high_priority_more_frequent" {
   // alpha = 1.0, beta = 0: completely prioritized sampling.
   // Insert 4 transitions: index 2 with priority 100, others with priority 1.
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(8, 1.0F, 0.0F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(8, 1.0F, 0.0F, 0.01F)
   buf.push(10, 0, 0.0F, 11, false)
   buf.push(20, 1, 0.0F, 21, false)
   buf.push(30, 2, 0.0F, 31, false) // this will be bumped up
@@ -121,7 +121,7 @@ test "per_sample_high_priority_more_frequent" {
 ///|
 test "per_is_weights_in_unit_interval" {
   // IS weights must be in [w_min, 1.0] with max == 1.0.
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(8, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(8, 0.6F, 0.4F, 0.01F)
   buf.push(0, 0, 0.0F, 1, false)
   buf.push(1, 0, 0.0F, 2, false)
   buf.push(2, 0, 0.0F, 3, false)
@@ -148,7 +148,7 @@ test "per_is_weights_in_unit_interval" {
 
 ///|
 test "per_update_priorities_changes_total" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
   buf.push(0, 0, 0.0F, 1, false)
   buf.push(1, 1, 0.0F, 2, false)
   buf.push(2, 2, 0.0F, 3, false)
@@ -177,7 +177,7 @@ test "per_update_priorities_changes_total" {
 ///|
 test "per_sample_uses_overwritten_slots_after_wrap" {
   // After wrap-around, slots 0..capacity-1 hold the *latest* pushes.
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(4, 1.0F, 0.0F, 0.0F)
+  let buf = @infra.PrioritizedReplayBuffer::new(4, 1.0F, 0.0F, 0.0F)
   // Slot 0 → push state 10 with high priority.
   buf.push(10, 0, 0.0F, 11, false)
   buf.push(20, 0, 0.0F, 21, false)
@@ -198,7 +198,7 @@ test "per_sample_uses_overwritten_slots_after_wrap" {
 
 ///|
 test "per_max_priority_increases_after_bump" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
   buf.push(0, 0, 0.0F, 1, false)
   buf.push(1, 0, 0.0F, 2, false)
   buf.push(2, 0, 0.0F, 3, false)
@@ -214,7 +214,7 @@ test "per_max_priority_increases_after_bump" {
 test "per_sample_empty_buffer_does_not_panic" {
   // Sampling from an empty buffer must not crash. With total = 0 the call
   // returns the default-initialised arrays; we only require it to terminate.
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(4, 0.6F, 0.4F, 0.01F)
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let (ss, aa, rr, nss, dd, idx, w, probs) = buf.sample(4, rng)
   assert_eq(ss.length(), 4)
@@ -230,7 +230,7 @@ test "per_sample_empty_buffer_does_not_panic" {
 
 ///|
 test "per_sample_returns_finite_weights" {
-  let buf = @snn_mbt.PrioritizedReplayBuffer::new(8, 0.6F, 0.6F, 0.01F)
+  let buf = @infra.PrioritizedReplayBuffer::new(8, 0.6F, 0.6F, 0.01F)
   for i in 0..<8 {
     buf.push(i, i % 4, Float::from_int(i), (i + 1) % 8, false)
   }

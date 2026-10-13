@@ -24,11 +24,11 @@ fn main {
   // 400 pA base + N(0, 100) pA noise — drives v near threshold.
   let stim = @stimulus.CurrentStimulusIF::new(pop, 400.0F, rng, noise_sigma=100.0F)
   // Fire monitor for spike counting.
-  let fm = @snn_mbt.Monitor::new_fire(pop, 0)
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(pop)],
+  let fm = @infra.Monitor::new_fire(pop, 0)
+  let model = @infra.compose(
+    [@infra.IF_(pop)],
     [],
-    stims=[@snn_mbt.CurrentIF_(stim)],
+    stims=[@infra.CurrentIF_(stim)],
     monitors=[fm],
   )
 
@@ -36,7 +36,7 @@ fn main {
   println("  base current = 400 pA, noise sigma = 100 pA")
 
   // 2 s = 2000 ms = 16000 steps at dt=0.125F
-  @snn_mbt.heterogeneous_sim_for(model, 2000.0F * @core.ms)
+  @infra.heterogeneous_sim_for(model, 2000.0F * @core.ms)
 
   let spikes = fm.count_spikes()
   let hz = Float::from_int(spikes) * 1000.0F / 2000.0F

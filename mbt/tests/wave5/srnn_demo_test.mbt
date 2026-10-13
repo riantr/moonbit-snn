@@ -13,7 +13,7 @@ test "srnn_poisson_encode: shape + spike probability" {
   let dt = 1.0F
   let max_rate = 0.5F  // Hz (effective dt = 1ms), so input=0.5 gives p=0.25
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
-  let spikes = @snn_mbt.srnn_poisson_encode(input, n_steps, dt, max_rate, rng)
+  let spikes = @infra.srnn_poisson_encode(input, n_steps, dt, max_rate, rng)
   assert_eq(spikes.length(), n_steps * 2)
   // Each cell has p = min(1, input[i] * max_rate * dt).
   // For input[0]=0.5, max_rate=0.5: p = 0.25 → ~25 spikes in 100 timesteps.
@@ -30,7 +30,7 @@ test "srnn_poisson_encode: shape + spike probability" {
 
 ///|
 test "srnn_dataset_build: shape + label distribution" {
-  let (images, labels) = @snn_mbt.srnn_dataset_build(1UL)
+  let (images, labels) = @infra.srnn_dataset_build(1UL)
   assert_eq(images.length(), 16 * 2)
   assert_eq(labels.length(), 16)
   let mut n_c0 = 0
@@ -45,13 +45,13 @@ test "srnn_dataset_build: shape + label distribution" {
 
 ///|
 test "srnn_forward: output shape + finite loss" {
-  let s = @snn_mbt.SRNN::new(2, 4, 2, 42UL)
+  let s = @infra.SRNN::new(2, 4, 2, 42UL)
   let n_steps = 5
   let beta = 1.0F
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let input : Array[Float] = [0.5F, 0.3F]
-  let x = @snn_mbt.srnn_poisson_encode(input, n_steps, 1.0F, 50.0F, rng)
-  let (loss, cache) = @snn_mbt.srnn_forward(x, n_steps, 0, s, beta)
+  let x = @infra.srnn_poisson_encode(input, n_steps, 1.0F, 50.0F, rng)
+  let (loss, cache) = @infra.srnn_forward(x, n_steps, 0, s, beta)
   if !(loss > 0.0F && loss < 10.0F) {
     fail("loss = \{loss}, expected in (0, 10)")
   }
@@ -70,14 +70,14 @@ test "srnn_forward: output shape + finite loss" {
 
 ///|
 test "srnn_backward: grad shapes + zero loss �?zero grads" {
-  let s = @snn_mbt.SRNN::new(2, 4, 2, 42UL)
+  let s = @infra.SRNN::new(2, 4, 2, 42UL)
   let n_steps = 5
   let beta = 1.0F
   let rng = @core.Xoshiro::from_state(1UL, 2UL, 3UL, 4UL)
   let input : Array[Float] = [0.5F, 0.3F]
-  let x = @snn_mbt.srnn_poisson_encode(input, n_steps, 1.0F, 50.0F, rng)
-  let (_loss, cache) = @snn_mbt.srnn_forward(x, n_steps, 0, s, beta)
-  let (d_w_in, d_w_rec, d_w_out, d_b_in, d_b_out) = @snn_mbt.srnn_backward(cache, s)
+  let x = @infra.srnn_poisson_encode(input, n_steps, 1.0F, 50.0F, rng)
+  let (_loss, cache) = @infra.srnn_forward(x, n_steps, 0, s, beta)
+  let (d_w_in, d_w_rec, d_w_out, d_b_in, d_b_out) = @infra.srnn_backward(cache, s)
   assert_eq(d_w_in.length(), 2 * 4)
   assert_eq(d_w_rec.length(), 4 * 4)
   assert_eq(d_w_out.length(), 4 * 2)
@@ -95,21 +95,21 @@ test "srnn_backward: grad shapes + zero loss �?zero grads" {
 
 ///|
 test "srnn_train_step: loss decreases on a single sample" {
-  let (images, labels) = @snn_mbt.srnn_dataset_build(1UL)
-  let srnn = @snn_mbt.SRNN::new(2, 8, 2, 42UL)
+  let (images, labels) = @infra.srnn_dataset_build(1UL)
+  let srnn = @infra.SRNN::new(2, 8, 2, 42UL)
   let n_steps = 8
   let beta = 1.5F
   let rng = @core.Xoshiro::from_state(7UL, 8UL, 9UL, 10UL)
   let img : Array[Float] = [images[0], images[1]]
-  let (initial_loss, _) = @snn_mbt.srnn_forward(
-    @snn_mbt.srnn_poisson_encode(img, n_steps, 1.0F, 50.0F, rng), n_steps, labels[0], srnn, beta,
+  let (initial_loss, _) = @infra.srnn_forward(
+    @infra.srnn_poisson_encode(img, n_steps, 1.0F, 50.0F, rng), n_steps, labels[0], srnn, beta,
   )
   let lr = 0.01F
   // Train K=8 steps on the same sample (rng state advances naturally).
   let mut rng_step = @core.Xoshiro::from_state(7UL, 8UL, 9UL, 10UL)
   for _step in 0..<8 {
     let one_img : Array[Float] = [images[0], images[1]]
-    ignore(@snn_mbt.srnn_train_step(one_img, labels[0], n_steps, lr, beta, srnn, rng_step))
+    ignore(@infra.srnn_train_step(one_img, labels[0], n_steps, lr, beta, srnn, rng_step))
     // Advance rng state via next_f32 (each call to srnn_train_step
     // consumes some random numbers internally, so re-derive a fresh
     // rng for deterministic encoding).
@@ -118,8 +118,8 @@ test "srnn_train_step: loss decreases on a single sample" {
   }
   // Evaluate loss on the same input deterministically.
   let eval_rng = @core.Xoshiro::from_state(7UL, 8UL, 9UL, 10UL)
-  let x_eval = @snn_mbt.srnn_poisson_encode(img, n_steps, 1.0F, 50.0F, eval_rng)
-  let (final_loss, _) = @snn_mbt.srnn_forward(x_eval, n_steps, labels[0], srnn, beta)
+  let x_eval = @infra.srnn_poisson_encode(img, n_steps, 1.0F, 50.0F, eval_rng)
+  let (final_loss, _) = @infra.srnn_forward(x_eval, n_steps, labels[0], srnn, beta)
   if !(final_loss < initial_loss) {
     fail("loss did not decrease: initial = \{initial_loss}, final = \{final_loss}")
   }
@@ -127,11 +127,11 @@ test "srnn_train_step: loss decreases on a single sample" {
 
 ///|
 test "srnn_eval_loss: deterministic + finite" {
-  let (images, labels) = @snn_mbt.srnn_dataset_build(1UL)
-  let s = @snn_mbt.SRNN::new(2, 4, 2, 42UL)
+  let (images, labels) = @infra.srnn_dataset_build(1UL)
+  let s = @infra.SRNN::new(2, 4, 2, 42UL)
   let n_steps = 5
   let beta = 1.0F
-  let loss = @snn_mbt.srnn_eval_loss(images, labels, n_steps, beta, s, 99UL)
+  let loss = @infra.srnn_eval_loss(images, labels, n_steps, beta, s, 99UL)
   if !(loss > 0.0F && loss < 10.0F) {
     fail("eval_loss = \{loss}, expected in (0, 10)")
   }

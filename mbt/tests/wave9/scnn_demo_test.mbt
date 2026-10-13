@@ -2,7 +2,7 @@
 
 ///|
 test "scnn_demo / synthetic dataset has correct count + labels" {
-  let (images, labels) = @snn_mbt.synthetic_mnist_build()
+  let (images, labels) = @infra.synthetic_mnist_build()
   if images.length() != 100 { fail("should have 100 images, got \{images.length()}") }
   if labels.length() != 100 { fail("labels should have 100, got \{labels.length()}") }
   // Each label appears exactly 10 times.
@@ -26,7 +26,7 @@ test "scnn_demo / synthetic dataset has correct count + labels" {
 ///|
 test "scnn_demo / softmax_row sums to 1 and is finite" {
   let x : Array[Float] = [1.0F, 2.0F, 3.0F, 4.0F]
-  let p = @snn_mbt.softmax_row(x)
+  let p = @infra.softmax_row(x)
   if p.length() != 4 { fail("length should be 4") }
   let mut sum = 0.0F
   for v in p {
@@ -47,7 +47,7 @@ test "scnn_demo / cross-entropy is zero for perfect predictions" {
   // where target[i] = [0, 1, 0] and prob[i] = [0.001, 0.998, 0.001].
   let target : Array[Float] = [0.0F, 1.0F, 0.0F]
   let prob : Array[Float] = [0.001F, 0.998F, 0.001F]
-  let loss = @snn_mbt.cross_entropy_one(prob, target)
+  let loss = @infra.cross_entropy_one(prob, target)
   let expected = -1.0F * @core.logf(0.998F)
   if (loss - expected).abs() > 0.001F {
     fail("loss should be ~\{expected}, got \{loss}")
@@ -56,7 +56,7 @@ test "scnn_demo / cross-entropy is zero for perfect predictions" {
 
 ///|
 test "scnn_demo / single_step returns finite loss + non-zero gradients" {
-  let (loss, grad_count) = @snn_mbt.scnn_single_step()
+  let (loss, grad_count) = @infra.scnn_single_step()
   if loss != loss { fail("loss is NaN") }
   if loss <= 0.0F { fail("loss should be positive, got \{loss}") }
   if grad_count <= 0 { fail("grad_count should be positive, got \{grad_count}") }
@@ -66,7 +66,7 @@ test "scnn_demo / single_step returns finite loss + non-zero gradients" {
 test "scnn_demo / loss is reasonable (near uniform entropy at init)" {
   // Random init should give loss near ln(num_classes) = ln(10) ≈ 2.303.
   // Allow 0.5x to 2x that range.
-  let (loss, _) = @snn_mbt.scnn_single_step()
+  let (loss, _) = @infra.scnn_single_step()
   let target = 2.303F  // ln(10)
   if loss < target * 0.5F {
     fail("loss should be ~ln(10) at random init, got \{loss} (target ~\{target})")
@@ -78,14 +78,14 @@ test "scnn_demo / loss is reasonable (near uniform entropy at init)" {
 
 ///|
 test "scnn_demo / forward is deterministic across calls" {
-  if not(@snn_mbt.scnn_deterministic_forward()) {
+  if not(@infra.scnn_deterministic_forward()) {
     fail("forward should be deterministic across calls")
   }
 }
 
 ///|
 test "scnn_demo / scnn_loss_is_reasonable sanity check passes" {
-  if not(@snn_mbt.scnn_loss_is_reasonable()) {
+  if not(@infra.scnn_loss_is_reasonable()) {
     fail("loss should be positive, finite, and bounded at random init")
   }
 }
@@ -96,7 +96,7 @@ test "scnn_demo / scnn_loss_is_reasonable sanity check passes" {
 test "scnn_v2 / scnn_accuracy > 0.5 on synthetic dataset after K=20 SGD steps" {
   // With K=20 SGD steps and lr=0.05 on a small synthetic dataset,
   // expect accuracy to exceed chance (1/10 = 0.1).
-  let (_init_loss, _final_loss, init_acc, final_acc) = @snn_mbt.scnn_train_n_steps(20, 0.05F, 7UL)
+  let (_init_loss, _final_loss, init_acc, final_acc) = @infra.scnn_train_n_steps(20, 0.05F, 7UL)
   if init_acc > 0.5F {
     fail("initial accuracy too high (\{init_acc}); would mean dataset is trivial")
   }
@@ -109,7 +109,7 @@ test "scnn_v2 / scnn_accuracy > 0.5 on synthetic dataset after K=20 SGD steps" {
 
 ///|
 test "scnn_v2 / loss decreases over K=10 SGD steps" {
-  let (init_loss, final_loss, _ia, _fa) = @snn_mbt.scnn_train_n_steps(10, 0.05F, 42UL)
+  let (init_loss, final_loss, _ia, _fa) = @infra.scnn_train_n_steps(10, 0.05F, 42UL)
   if final_loss >= init_loss {
     fail("training did not reduce loss: init = \{init_loss}, final = \{final_loss}")
   }

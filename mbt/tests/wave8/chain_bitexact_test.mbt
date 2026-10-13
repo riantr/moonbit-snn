@@ -30,16 +30,16 @@ test "chain — final voltages stay in expected range" {
   let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
   ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop],
     conns: [ee],
     monitors: [
-      @snn_mbt.Monitor::new_v(e_pop, 0),
-      @snn_mbt.Monitor::new_v(e_pop, 2),
+      @infra.Monitor::new_v(e_pop, 0),
+      @infra.Monitor::new_v(e_pop, 2),
     ],
   }
   // Run 100ms at default dt (0.125ms → 800 steps).
-  @snn_mbt.sim_for(model, 100.0F * @core.ms)
+  @infra.sim_for(model, 100.0F * @core.ms)
   // Final voltages: stay in physiological range.
   let v0 = e_pop.v[0]
   let v1 = e_pop.v[1]
@@ -66,12 +66,12 @@ test "chain — recorded step count matches sim duration" {
   let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
   ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop],
     conns: [ee],
-    monitors: [@snn_mbt.Monitor::new_v(e_pop, 0)],
+    monitors: [@infra.Monitor::new_v(e_pop, 0)],
   }
-  @snn_mbt.sim_for(model, 100.0F * @core.ms)
+  @infra.sim_for(model, 100.0F * @core.ms)
   // Monitor should have one record per step (initial state + each step).
   let n_records = model.monitors[0].data.length()
   // 1 initial + 800 step records = 801.
@@ -97,12 +97,12 @@ test "chain — v[0] reaches at least -55mV during 100ms (chain activates)" {
   let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
   ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop],
     conns: [ee],
-    monitors: [@snn_mbt.Monitor::new_v(e_pop, 0)],
+    monitors: [@infra.Monitor::new_v(e_pop, 0)],
   }
-  @snn_mbt.sim_for(model, 100.0F * @core.ms)
+  @infra.sim_for(model, 100.0F * @core.ms)
   // Compute the maximum recorded v[0] across all records.
   let mut max_v = -1.0e10F
   let mut i = 0
@@ -133,12 +133,12 @@ test "chain — no NaN values in final state" {
   let ee = @synapse.SpikingSynapse::new(e_pop, e_pop, "ge")
   ignore(@synapse.spiking_connect(ee, 1, 2, 50.0F))
   ignore(@synapse.spiking_connect(ee, 2, 3, 50.0F))
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop],
     conns: [ee],
-    monitors: [@snn_mbt.Monitor::new_v(e_pop, 0)],
+    monitors: [@infra.Monitor::new_v(e_pop, 0)],
   }
-  @snn_mbt.sim_for(model, 100.0F * @core.ms)
+  @infra.sim_for(model, 100.0F * @core.ms)
   // NaN check: NaN != NaN in IEEE 754.
   if e_pop.v[0] != e_pop.v[0] {
     fail("v[0] is NaN")

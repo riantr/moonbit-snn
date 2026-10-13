@@ -2,15 +2,15 @@
 
 ///|
 test "MLP::new / sizes matches layer count" {
-  let m = @snn_mbt.MLP::new([4, 8, 3], 42UL)
+  let m = @models.MLP::new([4, 8, 3], 42UL)
   // 4->8 (Linear + ReLU) + 8->3 (Linear) = 3 layers.
   if m.layers.length() != 3 { fail("should have 3 layers, got \{m.layers.length()}") }
 }
 
 ///|
 test "MLP::new / reproducible with same seed" {
-  let m1 = @snn_mbt.MLP::new([3, 4], 1234UL)
-  let m2 = @snn_mbt.MLP::new([3, 4], 1234UL)
+  let m1 = @models.MLP::new([3, 4], 1234UL)
+  let m2 = @models.MLP::new([3, 4], 1234UL)
   match (m1.layers[0], m2.layers[0]) {
     (Linear(p1), Linear(p2)) => {
       if p1.weight.length() != p2.weight.length() { fail("weight length mismatch") }
@@ -24,8 +24,8 @@ test "MLP::new / reproducible with same seed" {
 
 ///|
 test "MLP::new / different seeds give different weights" {
-  let m1 = @snn_mbt.MLP::new([3, 4], 1UL)
-  let m2 = @snn_mbt.MLP::new([3, 4], 2UL)
+  let m1 = @models.MLP::new([3, 4], 1UL)
+  let m2 = @models.MLP::new([3, 4], 2UL)
   match (m1.layers[0], m2.layers[0]) {
     (Linear(p1), Linear(p2)) => {
       let mut any_diff = false
@@ -41,7 +41,7 @@ test "MLP::new / different seeds give different weights" {
 ///|
 test "MLP::num_params / counts weights + biases for all Linear layers" {
   // 4 -> 8 -> 3: weights 4*8 + 8*3 = 56, biases 8 + 3 = 11, total 67.
-  let m = @snn_mbt.MLP::new([4, 8, 3], 42UL)
+  let m = @models.MLP::new([4, 8, 3], 42UL)
   if m.num_params() != 67 {
     fail("num_params should be 67, got \{m.num_params()}")
   }
@@ -49,10 +49,10 @@ test "MLP::num_params / counts weights + biases for all Linear layers" {
 
 ///|
 test "MLP / forward output shape = (n, sizes[last])" {
-  let m = @snn_mbt.MLP::new([3, 5, 2], 42UL)
+  let m = @models.MLP::new([3, 5, 2], 42UL)
   let n = 4
   let input : Array[Float] = Array::make(n * 3, 0.5F)
-  let (out, _caches, total) = @snn_mbt.mlp_forward(m, input, n)
+  let (out, _caches, total) = @models.mlp_forward(m, input, n)
   if total != n * 2 {
     fail("output should have n*2 elements, got \{total}")
   }
@@ -61,12 +61,12 @@ test "MLP / forward output shape = (n, sizes[last])" {
 
 ///|
 test "MLP / backward d_input shape matches input" {
-  let m = @snn_mbt.MLP::new([3, 5, 2], 42UL)
+  let m = @models.MLP::new([3, 5, 2], 42UL)
   let n = 4
   let input : Array[Float] = Array::make(n * 3, 0.5F)
-  let (_out, caches, _total) = @snn_mbt.mlp_forward(m, input, n)
+  let (_out, caches, _total) = @models.mlp_forward(m, input, n)
   let d_output : Array[Float] = Array::make(n * 2, 1.0F)
-  let (d_input, grads) = @snn_mbt.mlp_backward(m, caches, d_output, n)
+  let (d_input, grads) = @models.mlp_backward(m, caches, d_output, n)
   if d_input.length() != n * 3 { fail("d_input length should be n*3") }
   // grads should include 2 Linear grads + 1 Empty (ReLU).
   let mut linear_count = 0
@@ -84,10 +84,10 @@ test "MLP / backward d_input shape matches input" {
 
 ///|
 test "SimpleCNN / forward output shape = (n, 10, 1, 1)" {
-  let m = @snn_mbt.SimpleCNN::new(1, 6, 16, 42UL)
+  let m = @models.SimpleCNN::new(1, 6, 16, 42UL)
   let n = 2
   let input : Array[Float] = Array::make(n * 1 * 28 * 28, 0.5F)
-  let (out, caches, n_out, c_out, h_out, w_out) = @snn_mbt.simple_cnn_forward(m, input, n)
+  let (out, caches, n_out, c_out, h_out, w_out) = @models.simple_cnn_forward(m, input, n)
   if n_out != n || c_out != 10 || h_out != 1 || w_out != 1 {
     fail("output shape should be (\{n},10,1,1), got (\{n_out},\{c_out},\{h_out},\{w_out})")
   }
@@ -97,10 +97,10 @@ test "SimpleCNN / forward output shape = (n, 10, 1, 1)" {
 
 ///|
 test "LeNet5 / forward output shape = (n, 10, 1, 1)" {
-  let m = @snn_mbt.LeNet5::new(42UL)
+  let m = @models.LeNet5::new(42UL)
   let n = 2
   let input : Array[Float] = Array::make(n * 1 * 32 * 32, 0.5F)
-  let (out, caches, n_out, c_out, h_out, w_out) = @snn_mbt.lenet5_forward(m, input, n)
+  let (out, caches, n_out, c_out, h_out, w_out) = @models.lenet5_forward(m, input, n)
   if n_out != n || c_out != 10 || h_out != 1 || w_out != 1 {
     fail("output shape should be (\{n},10,1,1), got (\{n_out},\{c_out},\{h_out},\{w_out})")
   }
@@ -113,12 +113,12 @@ test "LeNet5 / forward output shape = (n, 10, 1, 1)" {
 
 ///|
 test "LeNet5 / backward d_input shape matches input" {
-  let m = @snn_mbt.LeNet5::new(42UL)
+  let m = @models.LeNet5::new(42UL)
   let n = 2
   let input : Array[Float] = Array::make(n * 1 * 32 * 32, 0.5F)
-  let (_out, caches, _n_out, _c_out, _h_out, _w_out) = @snn_mbt.lenet5_forward(m, input, n)
+  let (_out, caches, _n_out, _c_out, _h_out, _w_out) = @models.lenet5_forward(m, input, n)
   let d_output : Array[Float] = Array::make(n * 10, 1.0F)
-  let (d_input, _grads) = @snn_mbt.lenet5_backward(m, caches, d_output, n)
+  let (d_input, _grads) = @models.lenet5_backward(m, caches, d_output, n)
   if d_input.length() != n * 1 * 32 * 32 {
     fail("d_input length should match input length")
   }
@@ -126,12 +126,12 @@ test "LeNet5 / backward d_input shape matches input" {
 
 ///|
 test "LeNet5 / zero d_output gives zero d_input + zero grads" {
-  let m = @snn_mbt.LeNet5::new(42UL)
+  let m = @models.LeNet5::new(42UL)
   let n = 2
   let input : Array[Float] = Array::make(n * 1 * 32 * 32, 0.5F)
-  let (_out, caches, _, _, _, _) = @snn_mbt.lenet5_forward(m, input, n)
+  let (_out, caches, _, _, _, _) = @models.lenet5_forward(m, input, n)
   let d_output : Array[Float] = Array::make(n * 10, 0.0F)
-  let (d_input, grads) = @snn_mbt.lenet5_backward(m, caches, d_output, n)
+  let (d_input, grads) = @models.lenet5_backward(m, caches, d_output, n)
   let mut all_zero = true
   for i in 0..<d_input.length() {
     if d_input[i] != 0.0F { all_zero = false; break }

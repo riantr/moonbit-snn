@@ -58,12 +58,12 @@ fn main {
   let stim_e2 = @stimulus.PoissonStimulusIF::new(e2, "ge", 0.5F, rng)
 
   // Build model.
-  let fm_e1 = @snn_mbt.Monitor::new_fire(e1, 0)
-  let fm_e2 = @snn_mbt.Monitor::new_fire(e2, 0)
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e1), @snn_mbt.IF_(e2)],
+  let fm_e1 = @infra.Monitor::new_fire(e1, 0)
+  let fm_e2 = @infra.Monitor::new_fire(e2, 0)
+  let model = @infra.compose(
+    [@infra.IF_(e1), @infra.IF_(e2)],
     [w11, w12, w21, w22],
-    stims=[@snn_mbt.PoissonIF_(stim_e1), @snn_mbt.PoissonIF_(stim_e2)],
+    stims=[@infra.PoissonIF_(stim_e1), @infra.PoissonIF_(stim_e2)],
     monitors=[fm_e1, fm_e2],
     stdp=[stdp_w11, stdp_w22],
   )
@@ -72,7 +72,7 @@ fn main {
   let duration_ms = 1000.0F
   let steps : Int = (duration_ms / dt).to_int()
   for _ in 0..<steps {
-    @snn_mbt.step_heterogeneous(model, dt)
+    @infra.step_heterogeneous(model, dt)
   }
 
   let e1_hz = fm_e1.firing_rate()

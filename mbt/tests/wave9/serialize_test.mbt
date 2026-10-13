@@ -25,8 +25,8 @@ test "serialize_linear_qnet_roundtrip" {
   q0.w[1][2] = -0.6F
   q0.b[0] = 0.01F
   q0.b[1] = -0.02F
-  let s = @snn_mbt.serialize_linear_qnet(q0)
-  let q1 = @snn_mbt.deserialize_linear_qnet(s)
+  let s = @infra.serialize_linear_qnet(q0)
+  let q1 = @infra.deserialize_linear_qnet(s)
   assert_eq(q1.n_states, 3)
   assert_eq(q1.n_actions, 2)
   assert_eq(q1.w.length(), 2)
@@ -50,8 +50,8 @@ test "serialize_linear_qnet_independent_copy" {
   let q0 : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 11UL)
   q0.w[0][0] = 0.1F
   q0.b[1] = 0.5F
-  let s = @snn_mbt.serialize_linear_qnet(q0)
-  let q1 = @snn_mbt.deserialize_linear_qnet(s)
+  let s = @infra.serialize_linear_qnet(q0)
+  let q1 = @infra.deserialize_linear_qnet(s)
   q0.w[0][0] = 99.0F
   q0.b[1] = -99.0F
   assert_eq(q1.w[0][0], 0.1F)
@@ -71,8 +71,8 @@ test "serialize_qnetwork_continuous_roundtrip" {
     q0.b1[h] = Float::from_int(h) * -0.05F
     q0.w2[h] = Float::from_int(h) * 0.1F
   }
-  let s = @snn_mbt.serialize_qnetwork_continuous(q0)
-  let q1 = @snn_mbt.deserialize_qnetwork_continuous(s)
+  let s = @infra.serialize_qnetwork_continuous(q0)
+  let q1 = @infra.deserialize_qnetwork_continuous(s)
   assert_eq(q1.state_dim, 3)
   assert_eq(q1.action_dim, 2)
   assert_eq(q1.hidden, 4)
@@ -99,8 +99,8 @@ test "serialize_qnetwork_continuous_independent" {
   q0.w1[0][0] = 0.7F
   q0.w2[0] = -0.3F
   q0.b1[1] = 0.42F
-  let s = @snn_mbt.serialize_qnetwork_continuous(q0)
-  let q1 = @snn_mbt.deserialize_qnetwork_continuous(s)
+  let s = @infra.serialize_qnetwork_continuous(q0)
+  let q1 = @infra.deserialize_qnetwork_continuous(s)
   q0.w1[0][0] = 99.0F
   q0.w2[0] = 99.0F
   q0.b1[1] = -99.0F
@@ -122,8 +122,8 @@ test "serialize_deterministic_policy_roundtrip" {
       p0.w2[a][h] = Float::from_int(a * 4 + h) * 0.05F
     }
   }
-  let s = @snn_mbt.serialize_deterministic_policy(p0)
-  let p1 = @snn_mbt.deserialize_deterministic_policy(s)
+  let s = @infra.serialize_deterministic_policy(p0)
+  let p1 = @infra.deserialize_deterministic_policy(s)
   assert_eq(p1.state_dim, 3)
   assert_eq(p1.action_dim, 2)
   assert_eq(p1.hidden, 4)
@@ -168,8 +168,8 @@ test "serialize_adam_state_after_one_step" {
   )
   // opt_b.step should be 2 (two adam_update_arrays calls bumped it
   // from 0 -> 1 -> 2). adam_next_step returns step + 1, so we expect 3.
-  let s = @snn_mbt.serialize_adam_state(opt_b)
-  let opt1 = @snn_mbt.deserialize_adam_state(s)
+  let s = @infra.serialize_adam_state(opt_b)
+  let opt1 = @infra.deserialize_adam_state(s)
   assert_eq(opt1.m_w.length(), 6)
   assert_eq(opt1.v_w.length(), 6)
   assert_eq(opt1.m_b.length(), 2)
@@ -203,8 +203,8 @@ test "serialize_adam_state_after_one_step" {
 test "serialize_adam_state_zero_state" {
   // The zero-init state must also round-trip cleanly.
   let opt0 = @optim.adam_init(4, 2)
-  let s = @snn_mbt.serialize_adam_state(opt0)
-  let opt1 = @snn_mbt.deserialize_adam_state(s)
+  let s = @infra.serialize_adam_state(opt0)
+  let opt1 = @infra.deserialize_adam_state(s)
   // adam_next_step returns state.step + 1; for zero-init state.step=0,
   // so adam_next_step = 1.
   assert_eq(@optim.adam_next_step(opt1), 1)
@@ -232,8 +232,8 @@ test "serialize_qnet_checkpoint_roundtrip" {
     weight, bias, d_weight, d_bias, opt0,
     0.001F, 0.9F, 0.999F, 1.0e-7F,
   )
-  let s = @snn_mbt.serialize_qnet_checkpoint(q0, opt_used, 99)
-  let (q1, _opt1, step1) = @snn_mbt.deserialize_qnet_checkpoint(s)
+  let s = @infra.serialize_qnet_checkpoint(q0, opt_used, 99)
+  let (q1, _opt1, step1) = @infra.deserialize_qnet_checkpoint(s)
   assert_eq(step1, 99)
   assert_eq(q1.n_states, 2)
   assert_eq(q1.n_actions, 3)
@@ -248,8 +248,8 @@ test "serialize_qnet_checkpoint_independent_copies" {
   let q0 : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 29UL)
   q0.w[0][0] = 0.5F
   let opt0 = @optim.adam_init(4, 2)
-  let s = @snn_mbt.serialize_qnet_checkpoint(q0, opt0, 5)
-  let (q1, _opt1, _) = @snn_mbt.deserialize_qnet_checkpoint(s)
+  let s = @infra.serialize_qnet_checkpoint(q0, opt0, 5)
+  let (q1, _opt1, _) = @infra.deserialize_qnet_checkpoint(s)
   q0.w[0][0] = -99.0F
   assert_eq(q1.w[0][0], 0.5F)
 }
@@ -257,7 +257,7 @@ test "serialize_qnet_checkpoint_independent_copies" {
 ///|
 test "serialize_linear_qnet_header_has_kind_tag" {
   let q : @rl.LinearQNet = @rl.LinearQNet::new(2, 2, 31UL)
-  let s = @snn_mbt.serialize_linear_qnet(q)
+  let s = @infra.serialize_linear_qnet(q)
   // First non-empty line should be the magic header.
   if !(s.length() >= 11 && s[0] == 'S' && s[1] == 'N' && s[2] == 'N') {
     abort("SNNCKPT header missing")
@@ -273,8 +273,8 @@ test "serialize_deterministic_policy_action_range_preserved" {
   let p0 : @rl.DeterministicPolicy = @rl.DeterministicPolicy::new(
     2, 1, 2, -2.5F, 3.5F, 43UL,
   )
-  let s = @snn_mbt.serialize_deterministic_policy(p0)
-  let p1 = @snn_mbt.deserialize_deterministic_policy(s)
+  let s = @infra.serialize_deterministic_policy(p0)
+  let p1 = @infra.deserialize_deterministic_policy(s)
   assert_eq(p1.action_low, -2.5F)
   assert_eq(p1.action_high, 3.5F)
 }
@@ -286,8 +286,8 @@ test "serialize_then_deserialize_preserves_negative_floats" {
   q0.w[0][0] = -3.14159F
   q0.w[1][1] = -0.0001F
   q0.b[0] = -42.0F
-  let s = @snn_mbt.serialize_linear_qnet(q0)
-  let q1 = @snn_mbt.deserialize_linear_qnet(s)
+  let s = @infra.serialize_linear_qnet(q0)
+  let q1 = @infra.deserialize_linear_qnet(s)
   assert_eq(q1.w[0][0], -3.14159F)
   assert_eq(q1.w[1][1], -0.0001F)
   assert_eq(q1.b[0], -42.0F)

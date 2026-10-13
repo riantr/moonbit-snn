@@ -18,7 +18,7 @@ import {
   "riantr/snn_mbt",
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/rl",
-} for "test"
+  "riantr/snn_mbt/infra",} for "test"
 
 options(
   "is-test": true,

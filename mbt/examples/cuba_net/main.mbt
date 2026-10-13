@@ -68,12 +68,12 @@ fn main {
   println("  drive: 150 pA per cell (phase 1: 0-5s, phase 2: 5-10s = 0 pA)")
 
   // Build model with fire monitors for both populations.
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop, i_pop],
     conns: [ee, ei, ie, ii],
     monitors: [
-      @snn_mbt.Monitor::new_fire(e_pop, 0),
-      @snn_mbt.Monitor::new_fire(i_pop, 0),
+      @infra.Monitor::new_fire(e_pop, 0),
+      @infra.Monitor::new_fire(i_pop, 0),
     ],
   }
 
@@ -86,14 +86,14 @@ fn main {
   let phase_step : Int = (5000.0F / dt).to_int()
 
   // Record t=0 (phase 1, with drive).
-  @snn_mbt.record_zero(model)
+  @infra.record_zero(model)
   for step in 0..<total_steps {
     // Phase transition at t=5s (right before step_model runs at t=5s).
     if step == phase_step {
       for k in 0..<ne { e_pop.i[k] = 0.0F }
       for k in 0..<ni { i_pop.i[k] = 0.0F }
     }
-    @snn_mbt.step_model(model, time)
+    @infra.step_model(model, time)
   }
 
   // Compute spike counts.

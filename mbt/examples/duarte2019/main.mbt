@@ -60,9 +60,9 @@ fn main {
   )
 
   // ----- Monitors for spike counting -----
-  let fm_e = @snn_mbt.Monitor::new_fire(e_pop, 0)
-  let fm_pv = @snn_mbt.Monitor::new_fire(pv_pop, 0)
-  let fm_sst = @snn_mbt.Monitor::new_fire(sst_pop, 0)
+  let fm_e = @infra.Monitor::new_fire(e_pop, 0)
+  let fm_pv = @infra.Monitor::new_fire(pv_pop, 0)
+  let fm_sst = @infra.Monitor::new_fire(sst_pop, 0)
 
   // ----- Manual sim loop (100ms, dt=0.125ms → 800 steps) -----
   let duration_ms = 100.0F
@@ -88,16 +88,16 @@ fn main {
     @neuron.step_neuron(sst_pop, dt)
 
     // Record.
-    @snn_mbt.record_one(fm_e, t_now)
-    @snn_mbt.record_one(fm_pv, t_now)
-    @snn_mbt.record_one(fm_sst, t_now)
+    @infra.record_one(fm_e, t_now)
+    @infra.record_one(fm_pv, t_now)
+    @infra.record_one(fm_sst, t_now)
   }
 
   // ----- Print per-population firing rates -----
   let t_sim_ms = duration_ms
-  let e_total = @snn_mbt.Monitor::count_spikes(fm_e)
-  let pv_total = @snn_mbt.Monitor::count_spikes(fm_pv)
-  let sst_total = @snn_mbt.Monitor::count_spikes(fm_sst)
+  let e_total = @infra.Monitor::count_spikes(fm_e)
+  let pv_total = @infra.Monitor::count_spikes(fm_pv)
+  let sst_total = @infra.Monitor::count_spikes(fm_sst)
   let e_rate = Float::from_int(e_total) / Float::from_int(ne) / (t_sim_ms / 1000.0F)
   let pv_rate = Float::from_int(pv_total) / Float::from_int(npv) / (t_sim_ms / 1000.0F)
   let sst_rate = Float::from_int(sst_total) / Float::from_int(nsst) / (t_sim_ms / 1000.0F)

@@ -2,8 +2,8 @@
 
 ///|
 test "network_summary_empty_model" {
-  let model = @snn_mbt.compose([], [])
-  let s = @snn_mbt.network_summary(model)
+  let model = @infra.compose([], [])
+  let s = @infra.network_summary(model)
   assert_eq(s.n_populations, 0)
   assert_eq(s.n_connections, 0)
   assert_eq(s.n_stimuli, 0)
@@ -21,9 +21,9 @@ test "network_summary_with_2_if_pops" {
   let rng2 = @core.Xoshiro::new(2UL)
   let p1 = @neuron.IF::new(5, @neuron.IFParameter::new(), rng1)
   let p2 = @neuron.IF::new(7, @neuron.IFParameter::new(), rng2)
-  let pops : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
-  let model = @snn_mbt.compose(pops, [])
-  let s = @snn_mbt.network_summary(model)
+  let pops : Array[@infra.AnyPop] = [IF_(p1), IF_(p2)]
+  let model = @infra.compose(pops, [])
+  let s = @infra.network_summary(model)
   assert_eq(s.n_populations, 2)
   assert_eq(s.total_neurons, 12)
 }
@@ -38,12 +38,12 @@ test "merge_heterogeneous_concatenates_topology" {
   let p2 = @neuron.IF::new(4, @neuron.IFParameter::new(), rng2)
   let p3 = @neuron.IF::new(5, @neuron.IFParameter::new(), rng3)
   let p4 = @neuron.IF::new(6, @neuron.IFParameter::new(), rng4)
-  let pops_a : Array[@snn_mbt.AnyPop] = [IF_(p1), IF_(p2)]
-  let pops_b : Array[@snn_mbt.AnyPop] = [IF_(p3), IF_(p4)]
-  let model_a = @snn_mbt.compose(pops_a, [])
-  let model_b = @snn_mbt.compose(pops_b, [])
-  let merged = @snn_mbt.merge_heterogeneous(model_a, model_b)
-  let s = @snn_mbt.network_summary(merged)
+  let pops_a : Array[@infra.AnyPop] = [IF_(p1), IF_(p2)]
+  let pops_b : Array[@infra.AnyPop] = [IF_(p3), IF_(p4)]
+  let model_a = @infra.compose(pops_a, [])
+  let model_b = @infra.compose(pops_b, [])
+  let merged = @infra.merge_heterogeneous(model_a, model_b)
+  let s = @infra.network_summary(merged)
   assert_eq(s.n_populations, 4)
   assert_eq(s.total_neurons, 18)
 }
@@ -52,25 +52,25 @@ test "merge_heterogeneous_concatenates_topology" {
 test "merge_heterogeneous_concatenates_monitors" {
   let rng = @core.Xoshiro::new(1UL)
   let p = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
-  let mon = @snn_mbt.Monitor::new_fire(p, 0)
-  let model_a = @snn_mbt.compose([IF_(p)], [], monitors=[mon])
+  let mon = @infra.Monitor::new_fire(p, 0)
+  let model_a = @infra.compose([IF_(p)], [], monitors=[mon])
   let p2 = @neuron.IF::new(4, @neuron.IFParameter::new(), rng)
-  let model_b = @snn_mbt.compose([IF_(p2)], [])
-  let merged = @snn_mbt.merge_heterogeneous(model_a, model_b)
-  let s = @snn_mbt.network_summary(merged)
+  let model_b = @infra.compose([IF_(p2)], [])
+  let merged = @infra.merge_heterogeneous(model_a, model_b)
+  let s = @infra.network_summary(merged)
   assert_eq(s.n_monitors, 1)
   assert_eq(s.n_populations, 2)
 }
 
 ///|
 test "reset_heterogeneous_full_clears_time" {
-  let model = @snn_mbt.compose([], [])
+  let model = @infra.compose([], [])
   // Advance the time.
-  @snn_mbt.heterogeneous_sim_for(model, 50.0F)
-  let s_before = @snn_mbt.network_summary(model)
+  @infra.heterogeneous_sim_for(model, 50.0F)
+  let s_before = @infra.network_summary(model)
   assert_true(s_before.current_time > 0.0F)
-  @snn_mbt.reset_heterogeneous_full(model)
-  let s_after = @snn_mbt.network_summary(model)
+  @infra.reset_heterogeneous_full(model)
+  let s_after = @infra.network_summary(model)
   assert_eq(s_after.current_time, 0.0F)
 }
 
@@ -80,11 +80,11 @@ test "reset_heterogeneous_full_clears_monitors" {
   let p = @neuron.IF::new(3, @neuron.IFParameter::new(), rng)
   // Attach a Poisson stimulus that injects spikes.
   let stim = @stimulus.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
-  let mon = @snn_mbt.Monitor::new_fire(p, 0)
-  let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
-  @snn_mbt.heterogeneous_sim_for(model, 100.0F)
+  let mon = @infra.Monitor::new_fire(p, 0)
+  let model = @infra.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
+  @infra.heterogeneous_sim_for(model, 100.0F)
   let mon_spikes_before = mon.count_spikes()
-  @snn_mbt.reset_heterogeneous_full(model)
+  @infra.reset_heterogeneous_full(model)
   let mon_spikes_after = mon.count_spikes()
   assert_true(mon_spikes_before > 0)
   assert_eq(mon_spikes_after, 0)
@@ -92,10 +92,10 @@ test "reset_heterogeneous_full_clears_monitors" {
 
 ///|
 test "heterogeneous_sim_for_with_log_advances_time" {
-  let model = @snn_mbt.compose([], [])
-  let logs = @snn_mbt.heterogeneous_sim_for_with_log(model, 50.0F, 10.0F)
+  let model = @infra.compose([], [])
+  let logs = @infra.heterogeneous_sim_for_with_log(model, 50.0F, 10.0F)
   // Time after should be 50.0.
-  let s = @snn_mbt.network_summary(model)
+  let s = @infra.network_summary(model)
   assert_true(s.current_time > 49.0F)
   // Logs may be empty if the model has no monitors; that's OK.
   let _ = logs
@@ -106,9 +106,9 @@ test "heterogeneous_sim_for_with_log_logs_when_monitors_active" {
   let rng = @core.Xoshiro::new(7UL)
   let p = @neuron.IF::new(2, @neuron.IFParameter::new(), rng)
   let stim = @stimulus.PoissonStimulusIF::new(p, "ge", 20.0F, rng)
-  let mon = @snn_mbt.Monitor::new_fire(p, 0)
-  let model = @snn_mbt.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
-  let logs = @snn_mbt.heterogeneous_sim_for_with_log(model, 30.0F, 5.0F)
+  let mon = @infra.Monitor::new_fire(p, 0)
+  let model = @infra.compose([IF_(p)], [], stims=[PoissonIF_(stim)], monitors=[mon])
+  let logs = @infra.heterogeneous_sim_for_with_log(model, 30.0F, 5.0F)
   // Should have at least 1 log entry (final time >= 5.0).
   assert_true(logs.length() >= 1)
   // First log entry's t should be >= 5.0.
@@ -118,11 +118,11 @@ test "heterogeneous_sim_for_with_log_logs_when_monitors_active" {
 
 ///|
 test "step_heterogeneous_with_record_invokes_callback" {
-  let model = @snn_mbt.compose([], [])
+  let model = @infra.compose([], [])
   // Step 5 times with a closure that captures the time.
   let captured : Array[Float] = []
   for _k in 0..<5 {
-    @snn_mbt.step_heterogeneous_with_record(model, 0.125F, fn(t : Float) { captured.push(t) })
+    @infra.step_heterogeneous_with_record(model, 0.125F, fn(t : Float) { captured.push(t) })
   }
   assert_eq(captured.length(), 5)
   // Each time should be 0.125 apart (in dt units).

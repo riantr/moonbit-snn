@@ -2,99 +2,99 @@
 
 ///|
 test "parse_int_basic" {
-  if @snn_mbt.parse_int("0") != 0 {
-    fail("parse_int('0') = \{@snn_mbt.parse_int("0")}")
+  if @infra.parse_int("0") != 0 {
+    fail("parse_int('0') = \{@infra.parse_int("0")}")
   }
-  if @snn_mbt.parse_int("123") != 123 {
-    fail("parse_int('123') = \{@snn_mbt.parse_int("123")}")
+  if @infra.parse_int("123") != 123 {
+    fail("parse_int('123') = \{@infra.parse_int("123")}")
   }
-  if @snn_mbt.parse_int("-456") != -456 {
-    fail("parse_int('-456') = \{@snn_mbt.parse_int("-456")}")
+  if @infra.parse_int("-456") != -456 {
+    fail("parse_int('-456') = \{@infra.parse_int("-456")}")
   }
-  if @snn_mbt.parse_int("+789") != 789 {
-    fail("parse_int('+789') = \{@snn_mbt.parse_int("+789")}")
+  if @infra.parse_int("+789") != 789 {
+    fail("parse_int('+789') = \{@infra.parse_int("+789")}")
   }
 }
 
 ///|
 test "parse_int_trailing_garbage_stops_at_first_non_digit" {
   // "42abc" parses as 42.
-  if @snn_mbt.parse_int("42abc") != 42 {
-    fail("parse_int('42abc') = \{@snn_mbt.parse_int("42abc")}")
+  if @infra.parse_int("42abc") != 42 {
+    fail("parse_int('42abc') = \{@infra.parse_int("42abc")}")
   }
   // "abc" parses as 0 (no leading digit).
-  if @snn_mbt.parse_int("abc") != 0 {
-    fail("parse_int('abc') = \{@snn_mbt.parse_int("abc")}")
+  if @infra.parse_int("abc") != 0 {
+    fail("parse_int('abc') = \{@infra.parse_int("abc")}")
   }
   // "" parses as 0.
-  if @snn_mbt.parse_int("") != 0 {
-    fail("parse_int('') = \{@snn_mbt.parse_int("")}")
+  if @infra.parse_int("") != 0 {
+    fail("parse_int('') = \{@infra.parse_int("")}")
   }
 }
 
 ///|
 test "parse_float_basic" {
-  if (@snn_mbt.parse_float("0.0") - 0.0F).abs() > 1.0e-6F {
-    fail("parse_float('0.0') = \{@snn_mbt.parse_float("0.0")}")
+  if (@infra.parse_float("0.0") - 0.0F).abs() > 1.0e-6F {
+    fail("parse_float('0.0') = \{@infra.parse_float("0.0")}")
   }
-  if (@snn_mbt.parse_float("1.5") - 1.5F).abs() > 1.0e-6F {
-    fail("parse_float('1.5') = \{@snn_mbt.parse_float("1.5")}")
+  if (@infra.parse_float("1.5") - 1.5F).abs() > 1.0e-6F {
+    fail("parse_float('1.5') = \{@infra.parse_float("1.5")}")
   }
-  if (@snn_mbt.parse_float("-2.75") - -2.75F).abs() > 1.0e-6F {
-    fail("parse_float('-2.75') = \{@snn_mbt.parse_float("-2.75")}")
+  if (@infra.parse_float("-2.75") - -2.75F).abs() > 1.0e-6F {
+    fail("parse_float('-2.75') = \{@infra.parse_float("-2.75")}")
   }
-  if (@snn_mbt.parse_float("3.14159") - 3.14159F).abs() > 1.0e-5F {
-    fail("parse_float('3.14159') = \{@snn_mbt.parse_float("3.14159")}")
+  if (@infra.parse_float("3.14159") - 3.14159F).abs() > 1.0e-5F {
+    fail("parse_float('3.14159') = \{@infra.parse_float("3.14159")}")
   }
 }
 
 ///|
 test "parse_float_with_exponent" {
   // "1e3" → 1000.0
-  if (@snn_mbt.parse_float("1e3") - 1000.0F).abs() > 1.0e-3F {
-    fail("parse_float('1e3') = \{@snn_mbt.parse_float("1e3")}")
+  if (@infra.parse_float("1e3") - 1000.0F).abs() > 1.0e-3F {
+    fail("parse_float('1e3') = \{@infra.parse_float("1e3")}")
   }
   // "1.5e-2" → 0.015
-  if (@snn_mbt.parse_float("1.5e-2") - 0.015F).abs() > 1.0e-5F {
-    fail("parse_float('1.5e-2') = \{@snn_mbt.parse_float("1.5e-2")}")
+  if (@infra.parse_float("1.5e-2") - 0.015F).abs() > 1.0e-5F {
+    fail("parse_float('1.5e-2') = \{@infra.parse_float("1.5e-2")}")
   }
   // "2E5" → 200000.0
-  if (@snn_mbt.parse_float("2E5") - 200000.0F).abs() > 1.0F {
-    fail("parse_float('2E5') = \{@snn_mbt.parse_float("2E5")}")
+  if (@infra.parse_float("2E5") - 200000.0F).abs() > 1.0F {
+    fail("parse_float('2E5') = \{@infra.parse_float("2E5")}")
   }
 }
 
 ///|
 test "parse_float_no_decimal" {
   // "5" parses as 5.0
-  if (@snn_mbt.parse_float("5") - 5.0F).abs() > 1.0e-6F {
-    fail("parse_float('5') = \{@snn_mbt.parse_float("5")}")
+  if (@infra.parse_float("5") - 5.0F).abs() > 1.0e-6F {
+    fail("parse_float('5') = \{@infra.parse_float("5")}")
   }
 }
 
 ///|
 test "parse_float_invalid_returns_zero" {
   // "" → 0
-  if @snn_mbt.parse_float("") != 0.0F {
+  if @infra.parse_float("") != 0.0F {
     fail("parse_float('') should be 0")
   }
   // "abc" → 0 (no leading digit)
-  if @snn_mbt.parse_float("abc") != 0.0F {
+  if @infra.parse_float("abc") != 0.0F {
     fail("parse_float('abc') should be 0")
   }
   // ".5" → 0.5 (Julia/Python accept leading-dot decimal).
-  if (@snn_mbt.parse_float(".5") - 0.5F).abs() > 1.0e-6F {
+  if (@infra.parse_float(".5") - 0.5F).abs() > 1.0e-6F {
     fail("parse_float for .5 should be 0.5")
   }
   // "-.5" → -0.5 (sign + leading-dot).
-  if (@snn_mbt.parse_float("-.5") - -0.5F).abs() > 1.0e-6F {
+  if (@infra.parse_float("-.5") - -0.5F).abs() > 1.0e-6F {
     fail("parse_float for -.5 should be -0.5")
   }
 }
 
 ///|
 test "parse_csv_row_simple" {
-  let row = @snn_mbt.parse_csv_row("1.5,2.5,3.5,4.5")
+  let row = @infra.parse_csv_row("1.5,2.5,3.5,4.5")
   if row.length() != 4 {
     fail("row.length() = \{row.length()}, expected 4")
   }
@@ -108,7 +108,7 @@ test "parse_csv_row_simple" {
 
 ///|
 test "parse_csv_row_handles_whitespace" {
-  let row = @snn_mbt.parse_csv_row(" 1.5 , 2.5 , 3.5 ")
+  let row = @infra.parse_csv_row(" 1.5 , 2.5 , 3.5 ")
   if row.length() != 3 {
     fail("row.length() = \{row.length()}, expected 3")
   }
@@ -122,7 +122,7 @@ test "parse_csv_row_handles_whitespace" {
 
 ///|
 test "parse_csv_row_handles_negative_and_exponents" {
-  let row = @snn_mbt.parse_csv_row("-1.5,2e2,-3E-1")
+  let row = @infra.parse_csv_row("-1.5,2e2,-3E-1")
   if row.length() != 3 {
     fail("row.length() = \{row.length()}, expected 3")
   }
@@ -140,7 +140,7 @@ test "parse_csv_row_handles_negative_and_exponents" {
 ///|
 test "parse_csv_multi_row" {
   let text = "1.0,2.0,3.0\n4.0,5.0,6.0\n7.0,8.0,9.0"
-  let grid = @snn_mbt.parse_csv(text)
+  let grid = @infra.parse_csv(text)
   if grid.length() != 3 {
     fail("grid.length() = \{grid.length()}, expected 3")
   }
@@ -161,7 +161,7 @@ test "parse_csv_multi_row" {
 ///|
 test "parse_csv_handles_windows_line_endings" {
   let text = "1.0,2.0\r\n3.0,4.0\r\n5.0,6.0"
-  let grid = @snn_mbt.parse_csv(text)
+  let grid = @infra.parse_csv(text)
   if grid.length() != 3 {
     fail("grid.length() = \{grid.length()}, expected 3 (CRLF handled)")
   }
@@ -173,7 +173,7 @@ test "parse_csv_handles_windows_line_endings" {
 ///|
 test "parse_csv_handles_blank_lines" {
   let text = "1.0,2.0\n\n3.0,4.0\n"
-  let grid = @snn_mbt.parse_csv(text)
+  let grid = @infra.parse_csv(text)
   if grid.length() != 2 {
     fail("grid.length() = \{grid.length()}, expected 2 (blank lines skipped)")
   }
@@ -183,7 +183,7 @@ test "parse_csv_handles_blank_lines" {
 test "parse_csv_uneven_rows" {
   // Row 1 has 2 cols, row 2 has 3 cols.
   let text = "1.0,2.0\n3.0,4.0,5.0"
-  let grid = @snn_mbt.parse_csv(text)
+  let grid = @infra.parse_csv(text)
   if grid.length() != 2 {
     fail("grid.length() = \{grid.length()}, expected 2")
   }
@@ -197,7 +197,7 @@ test "parse_csv_uneven_rows" {
 
 ///|
 test "parse_int_list_basic" {
-  let ints = @snn_mbt.parse_int_list("1,2,3,4,5")
+  let ints = @infra.parse_int_list("1,2,3,4,5")
   if ints.length() != 5 {
     fail("ints.length() = \{ints.length()}, expected 5")
   }
@@ -211,7 +211,7 @@ test "parse_int_list_basic" {
 
 ///|
 test "parse_int_list_handles_negatives" {
-  let ints = @snn_mbt.parse_int_list("-1,-2,-3")
+  let ints = @infra.parse_int_list("-1,-2,-3")
   if ints.length() != 3 {
     fail("ints.length() = \{ints.length()}, expected 3")
   }

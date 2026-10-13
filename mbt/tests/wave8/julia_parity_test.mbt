@@ -20,7 +20,7 @@
 
 ///|
 test "float32_ulp_distance_zero_for_equal" {
-  let d = @snn_mbt.float32_ulp_distance(1.0F, 1.0F)
+  let d = @infra.float32_ulp_distance(1.0F, 1.0F)
   assert_eq(d, 0)
 }
 
@@ -28,22 +28,22 @@ test "float32_ulp_distance_zero_for_equal" {
 test "float32_ulp_distance_one_for_next_float" {
   // 1.0F is 0x3F800000; the next representable Float32 is 1.0F + 2^-23.
   let next = 1.0F + Float::from_double(@math.pow(2.0, -23.0))
-  let d = @snn_mbt.float32_ulp_distance(1.0F, next)
+  let d = @infra.float32_ulp_distance(1.0F, next)
   assert_eq(d, 1)
 }
 
 ///|
 test "float32_ulp_distance_handles_negatives" {
   // -1.0F vs -1.0F: zero ULPs
-  assert_eq(@snn_mbt.float32_ulp_distance(-1.0F, -1.0F), 0)
+  assert_eq(@infra.float32_ulp_distance(-1.0F, -1.0F), 0)
   // -1.0F vs -2.0F: many ULPs apart, just check > 1
-  assert_true(@snn_mbt.float32_ulp_distance(-1.0F, -2.0F) > 1)
+  assert_true(@infra.float32_ulp_distance(-1.0F, -2.0F) > 1)
 }
 
 ///|
 test "float32_ulp_distance_nan_is_sentinel" {
   let nan : Float = 0.0F / 0.0F
-  let d = @snn_mbt.float32_ulp_distance(nan, 1.0F)
+  let d = @infra.float32_ulp_distance(nan, 1.0F)
   assert_eq(d, -1)
 }
 
@@ -51,14 +51,14 @@ test "float32_ulp_distance_nan_is_sentinel" {
 test "float32_close_default_tolerance" {
   // 1.0 vs 1.0 + 1 ULP: pass with tol=1.
   let next = 1.0F + Float::from_double(@math.pow(2.0, -23.0))
-  assert_true(@snn_mbt.float32_close(1.0F, next, 1))
-  assert_true(@snn_mbt.float32_close(1.0F, next, 5))
+  assert_true(@infra.float32_close(1.0F, next, 1))
+  assert_true(@infra.float32_close(1.0F, next, 5))
 }
 
 ///|
 test "parse_parity_csv_basic_int_trace" {
   let csv = "# header\n1\n2\n3\n4\n5\n"
-  let trace = @snn_mbt.parse_parity_csv(csv)
+  let trace = @infra.parse_parity_csv(csv)
   assert_eq(trace.kind, "int")
   assert_eq(trace.values.length(), 5)
   let v0 = trace.values[0]
@@ -69,7 +69,7 @@ test "parse_parity_csv_basic_int_trace" {
 ///|
 test "parse_parity_csv_basic_float_trace" {
   let csv = "0.5\n1.5\n-2.25\n3.125e2\n"
-  let trace = @snn_mbt.parse_parity_csv(csv)
+  let trace = @infra.parse_parity_csv(csv)
   assert_eq(trace.kind, "float")
   assert_eq(trace.values.length(), 4)
   // 3.125e2 = 312.5
@@ -81,7 +81,7 @@ test "parse_parity_csv_basic_float_trace" {
 ///|
 test "parse_parity_csv_skips_comments_and_blanks" {
   let csv = "# comment\n\n1\n# another comment\n2\n   \n3\n"
-  let trace = @snn_mbt.parse_parity_csv(csv)
+  let trace = @infra.parse_parity_csv(csv)
   assert_eq(trace.values.length(), 3)
 }
 
@@ -89,7 +89,7 @@ test "parse_parity_csv_skips_comments_and_blanks" {
 test "compare_float_traces_passes_within_tolerance" {
   let actual : Array[Float] = [1.0F, 2.0F, 3.0F]
   let expected : Array[Float] = [1.0F, 2.0F, 3.0F]
-  let r = @snn_mbt.compare_float_traces("test", actual, expected, 1.0e-6F, 0)
+  let r = @infra.compare_float_traces("test", actual, expected, 1.0e-6F, 0)
   assert_true(r.passed)
   assert_eq(r.max_error, 0.0F)
   assert_eq(r.max_ulp, 0)
@@ -99,7 +99,7 @@ test "compare_float_traces_passes_within_tolerance" {
 test "compare_float_traces_fails_outside_tolerance" {
   let actual : Array[Float] = [1.0F, 2.0F, 3.0F]
   let expected : Array[Float] = [1.0F, 2.5F, 3.0F]
-  let r = @snn_mbt.compare_float_traces("test", actual, expected, 0.01F, 0)
+  let r = @infra.compare_float_traces("test", actual, expected, 0.01F, 0)
   assert_true(!r.passed)
 }
 
@@ -107,7 +107,7 @@ test "compare_float_traces_fails_outside_tolerance" {
 test "compare_spike_trains_matches_within_tolerance" {
   let actual : Array[Int] = [10, 20, 30]
   let expected : Array[Int] = [11, 21, 31]
-  let r = @snn_mbt.compare_spike_trains("test", actual, expected, 2)
+  let r = @infra.compare_spike_trains("test", actual, expected, 2)
   assert_true(r.passed)
 }
 
@@ -115,7 +115,7 @@ test "compare_spike_trains_matches_within_tolerance" {
 test "compare_spike_trains_fails_on_mismatch" {
   let actual : Array[Int] = [10, 20, 30]
   let expected : Array[Int] = [100, 200, 300]
-  let r = @snn_mbt.compare_spike_trains("test", actual, expected, 2)
+  let r = @infra.compare_spike_trains("test", actual, expected, 2)
   assert_true(!r.passed)
 }
 
@@ -158,7 +158,7 @@ test "single_if_constant_current_matches_closed_form" {
     @neuron.step_neuron(p, dt)
     actual.push(p.v[0])
   }
-  let r = @snn_mbt.compare_float_traces("single_if_30pA", actual, expected, 0.05F, 4096)
+  let r = @infra.compare_float_traces("single_if_30pA", actual, expected, 0.05F, 4096)
   if !r.passed {
     println(
       "single_if_constant_current_matches_closed_form FAILED: max_abs=" +
@@ -205,7 +205,7 @@ test "single_if_higher_current_matches_closed_form" {
     @neuron.step_neuron(p, dt)
     actual.push(p.v[0])
   }
-  let r = @snn_mbt.compare_float_traces("single_if_100pA", actual, expected, 0.1F, 8192)
+  let r = @infra.compare_float_traces("single_if_100pA", actual, expected, 0.1F, 8192)
   if !r.passed {
     println(
       "single_if_higher_current_matches_closed_form FAILED: max_abs=" +

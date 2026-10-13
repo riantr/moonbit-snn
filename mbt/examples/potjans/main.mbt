@@ -39,8 +39,8 @@ fn main {
   @stimulus.PoissonFixed::set_mu(stim_i.param, 2.0F)
 
   // Monitors for spike counting.
-  let fm_e = @snn_mbt.Monitor::new_fire(e_pop, 0)
-  let fm_i = @snn_mbt.Monitor::new_fire(i_pop, 0)
+  let fm_e = @infra.Monitor::new_fire(e_pop, 0)
+  let fm_i = @infra.Monitor::new_fire(i_pop, 0)
 
   println("potjans.mbt: network built (simplified 2-layer Potjans-Diesmann)")
   println("  E: " + ne.to_string() + " IF neurons")
@@ -50,15 +50,15 @@ fn main {
   println("  IE connections: " + ie.matrix.nnz().to_string())
   println("  II connections: " + ii.matrix.nnz().to_string())
 
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e_pop), @snn_mbt.IF_(i_pop)],
+  let model = @infra.compose(
+    [@infra.IF_(e_pop), @infra.IF_(i_pop)],
     [ee, ei, ie, ii],
-    stims=[@snn_mbt.PoissonIF_(stim_e), @snn_mbt.PoissonIF_(stim_i)],
+    stims=[@infra.PoissonIF_(stim_e), @infra.PoissonIF_(stim_i)],
     monitors=[fm_e, fm_i],
   )
 
   // Simulate 200ms.
-  @snn_mbt.heterogeneous_sim_for(model, 200.0F * @core.ms)
+  @infra.heterogeneous_sim_for(model, 200.0F * @core.ms)
 
   let e_spikes = fm_e.count_spikes()
   let i_spikes = fm_i.count_spikes()

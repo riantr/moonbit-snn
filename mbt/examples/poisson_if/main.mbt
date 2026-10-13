@@ -38,14 +38,14 @@ fn main {
 
   // Fire monitors for E[0] and I[0]. Driven by step_heterogeneous so
   // we can count spikes after the sim.
-  let fm_e = @snn_mbt.Monitor::new_fire(e_pop, 0)
-  let fm_i = @snn_mbt.Monitor::new_fire(i_pop, 0)
+  let fm_e = @infra.Monitor::new_fire(e_pop, 0)
+  let fm_i = @infra.Monitor::new_fire(i_pop, 0)
 
   // Build the heterogeneous model
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e_pop), @snn_mbt.IF_(i_pop)],
+  let model = @infra.compose(
+    [@infra.IF_(e_pop), @infra.IF_(i_pop)],
     [ee, ei, ie, ii],
-    stims=[@snn_mbt.PoissonIF_(stim_e), @snn_mbt.PoissonIF_(stim_i)],
+    stims=[@infra.PoissonIF_(stim_e), @infra.PoissonIF_(stim_i)],
     monitors=[fm_e, fm_i],
   )
 
@@ -58,7 +58,7 @@ fn main {
   println("  II connections: " + ii.matrix.nnz().to_string())
 
   // Simulate 200 ms
-  @snn_mbt.heterogeneous_sim_for(model, 200.0F * @core.ms)
+  @infra.heterogeneous_sim_for(model, 200.0F * @core.ms)
 
   // Count spikes in E[0] and I[0] from the recorded fire monitor.
   let e_spikes = fm_e.count_spikes()

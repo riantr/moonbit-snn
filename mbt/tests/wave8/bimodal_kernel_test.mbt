@@ -15,14 +15,14 @@ test "kde — known Gaussian dataset, t=mean → peak" {
     data.push(z)
   }
   // KDE at t=0 with h=1 should be ~ 0.4 (1/sqrt(2π) ≈ 0.3989).
-  let k = @snn_mbt.kde(0.0, 1.0, data)
+  let k = @infra.kde(0.0, 1.0, data)
   if (k - 0.3989).abs() > 0.2 { fail("expected KDE(0) ≈ 0.3989, got \{k}") }
 }
 
 ///|
 test "kde — empty data returns 0" {
   let data : Array[Double] = []
-  let k = @snn_mbt.kde(0.0, 1.0, data)
+  let k = @infra.kde(0.0, 1.0, data)
   if k != 0.0 { fail("expected 0 for empty data, got \{k}") }
 }
 
@@ -30,7 +30,7 @@ test "kde — empty data returns 0" {
 test "global_kde — shape matches v_range length" {
   let data : Array[Double] = [0.0, 0.5, 1.0]
   let v_range : Array[Double] = [-1.0, 0.0, 0.5, 1.0, 2.0]
-  let k = @snn_mbt.global_kde(1.0, data, v_range)
+  let k = @infra.global_kde(1.0, data, v_range)
   if k.length() != 5 { fail("expected 5 entries, got \{k.length()}") }
   // Density at each point should be positive.
   let mut i = 0
@@ -44,7 +44,7 @@ test "global_kde — shape matches v_range length" {
 test "get_maxima — strict local maxima only" {
   // [1, 3, 2, 4, 1, 5, 0] → maxima at indices 1, 3, 5 (0-based).
   let data : Array[Double] = [1.0, 3.0, 2.0, 4.0, 1.0, 5.0, 0.0]
-  let m = @snn_mbt.get_maxima(data)
+  let m = @infra.get_maxima(data)
   if m.length() != 3 { fail("expected 3 maxima, got \{m.length()}") }
   if m[0] != 1 { fail("maxima[0] expected 1, got \{m[0]}") }
   if m[1] != 3 { fail("maxima[1] expected 3, got \{m[1]}") }
@@ -55,7 +55,7 @@ test "get_maxima — strict local maxima only" {
 test "get_maxima — plateaus don't count (strictly >)" {
   // [1, 2, 2, 1] — middle plateau is NOT a maximum (data[2] not > data[1]).
   let data : Array[Double] = [1.0, 2.0, 2.0, 1.0]
-  let m = @snn_mbt.get_maxima(data)
+  let m = @infra.get_maxima(data)
   // index 1: data[1]=2 > data[0]=1 ✓ but data[1] not > data[2]=2 ✗ → not a max
   // index 2: data[2]=2 > data[3]=1 ✓ but data[2] not > data[1]=2 ✗ → not a max
   if m.length() != 0 { fail("plateau should not count as maxima, got \{m.length()}") }
@@ -65,14 +65,14 @@ test "get_maxima — plateaus don't count (strictly >)" {
 test "is_bimodal — single peak → not bimodal" {
   // Single Gaussian peak.
   let kernel : Array[Double] = [0.0, 0.1, 0.5, 1.0, 0.5, 0.1, 0.0]
-  if @snn_mbt.is_bimodal(kernel, 0.3) { fail("single peak should not be bimodal") }
+  if @infra.is_bimodal(kernel, 0.3) { fail("single peak should not be bimodal") }
 }
 
 ///|
 test "is_bimodal — two equal peaks → bimodal" {
   // Two peaks at indices 2 and 6, equal height.
   let kernel : Array[Double] = [0.0, 0.1, 1.0, 0.3, 0.3, 0.3, 1.0, 0.1, 0.0]
-  if !@snn_mbt.is_bimodal(kernel, 0.3) { fail("two equal peaks should be bimodal") }
+  if !@infra.is_bimodal(kernel, 0.3) { fail("two equal peaks should be bimodal") }
 }
 
 ///|
@@ -82,9 +82,9 @@ test "is_bimodal — one peak too small relative to other → not bimodal" {
   let kernel : Array[Double] = [0.0, 0.1, 1.0, 0.3, 0.3, 0.3, 0.5, 0.1, 0.0]
   // Maxima indices: 2 (h=1.0), 6 (h=0.5). z=1.0.
   // ratio=0.6: only index 2 (1.0 > 0.6) counts → 1 max → not bimodal.
-  if @snn_mbt.is_bimodal(kernel, 0.6) { fail("asymmetric peaks (0.5/1.0=0.5 < 0.6) should not be bimodal at 0.6") }
+  if @infra.is_bimodal(kernel, 0.6) { fail("asymmetric peaks (0.5/1.0=0.5 < 0.6) should not be bimodal at 0.6") }
   // ratio=0.4: both 1.0 (yes) and 0.5 (yes, 0.5>0.4) → bimodal.
-  if !@snn_mbt.is_bimodal(kernel, 0.4) { fail("asymmetric peaks (0.5/1.0=0.5 > 0.4) should be bimodal at 0.4") }
+  if !@infra.is_bimodal(kernel, 0.4) { fail("asymmetric peaks (0.5/1.0=0.5 > 0.4) should be bimodal at 0.4") }
 }
 
 ///|
@@ -92,9 +92,9 @@ test "count_maxima — counts only real maxima above ratio" {
   let kernel : Array[Double] = [0.0, 0.1, 1.0, 0.3, 0.3, 0.3, 0.5, 0.1, 0.0]
   // 2 maxima at indices 2 (h=1.0) and 6 (h=0.5). z=1.0.
   // ratio=0.6 → only index 2 counts → count = 1.
-  if @snn_mbt.count_maxima(kernel, 0.6) != 1 { fail("count_maxima at 0.6 expected 1") }
+  if @infra.count_maxima(kernel, 0.6) != 1 { fail("count_maxima at 0.6 expected 1") }
   // ratio=0.4 → both count → count = 2.
-  if @snn_mbt.count_maxima(kernel, 0.4) != 2 { fail("count_maxima at 0.4 expected 2") }
+  if @infra.count_maxima(kernel, 0.4) != 2 { fail("count_maxima at 0.4 expected 2") }
 }
 
 ///|
@@ -110,7 +110,7 @@ test "critical_window — unimodal Gaussian data returns small h" {
     data.push(r * @math.cos(theta))
   }
   let v_range : Array[Double] = [-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
-  let h = @snn_mbt.critical_window(data, 0.1, 50, v_range)
+  let h = @infra.critical_window(data, 0.1, 50, v_range)
   if h < 1 || h > 50 { fail("h out of range: \{h}") }
 }
 
@@ -118,6 +118,6 @@ test "critical_window — unimodal Gaussian data returns small h" {
 test "all_windows — counter length matches max_b" {
   let data : Array[Double] = [0.0, 0.5, 1.0]
   let v_range : Array[Double] = [-1.0, 0.0, 0.5, 1.0, 2.0]
-  let c = @snn_mbt.all_windows(data, 0.3, 5, v_range)
+  let c = @infra.all_windows(data, 0.3, 5, v_range)
   if c.length() != 5 { fail("expected 5 entries, got \{c.length()}") }
 }

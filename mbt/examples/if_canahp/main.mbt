@@ -28,8 +28,8 @@ fn main {
   }
   // Build a heterogeneous model (the heterogeneous dispatcher includes
   // IF_CANAHP since v0.49.0) and run for 100 ms.
-  let model = @snn_mbt.compose([@snn_mbt.IFCANAHP_(pop)], [])
-  @snn_mbt.heterogeneous_sim_for(model, 100.0F * @core.ms)
+  let model = @infra.compose([@infra.IFCANAHP_(pop)], [])
+  @infra.heterogeneous_sim_for(model, 100.0F * @core.ms)
   // Tally spikes across the population.
   let mut total_spikes = 0
   let mut neurons_spiked = 0

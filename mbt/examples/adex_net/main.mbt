@@ -35,7 +35,7 @@ fn main {
   }
 
   // Random connectivity within the AdEx population.
-  let ee = @snn_mbt.SpikingSynapseAdEx::random(e_pop, e_pop, "he", 7.0F, 0.0F, 0.5F, rng)
+  let ee = @infra.SpikingSynapseAdEx::random(e_pop, e_pop, "he", 7.0F, 0.0F, 0.5F, rng)
 
   println("adex_net.mbt: network built")
   println("  E: " + ne.to_string() + " AdEx neurons")
@@ -43,14 +43,14 @@ fn main {
   println("  tonic drive: 1000 pA per cell")
 
   // Build the AdExModel and run for 1s.
-  let model : @snn_mbt.AdExModel = {
+  let model : @infra.AdExModel = {
     pops: [e_pop],
     conns: [ee],
     monitors: [
-      @snn_mbt.MonitorAdEx::new_v(e_pop, 0),
+      @infra.MonitorAdEx::new_v(e_pop, 0),
     ],
   }
-  @snn_mbt.adex_sim_for(model, 1000.0F * @core.ms)
+  @infra.adex_sim_for(model, 1000.0F * @core.ms)
 
   // Look at the v trace from the monitor.
   println("adex_net.mbt: simulation done (1s)")

@@ -29,7 +29,7 @@ fn main {
   let i_pop = @neuron.IF::new(ni, i_param, rng)
 
   // Set up AdEx→AdEx synapses via SpikingSynapseAdEx.
-  let ee = @snn_mbt.SpikingSynapseAdEx::random(e_pop, e_pop, "ge", 1.0F, 0.0F, 0.2F, rng)
+  let ee = @infra.SpikingSynapseAdEx::random(e_pop, e_pop, "ge", 1.0F, 0.0F, 0.2F, rng)
 
   // Background drive via CurrentStimulusArray: 1000 pA baseline +
   // 200 pA noise. Drives v above threshold so cells fire.
@@ -50,7 +50,7 @@ fn main {
     // Drive E with current noise (Poisson input approximation).
     @stimulus.stimulate_current_array(stim)
     // Forward AdEx→AdEx synapses.
-    @snn_mbt.forward_adex_synapse(ee)
+    @infra.forward_adex_synapse(ee)
     // Step AdEx.
     @neuron.adex_step_synapses(e_pop, dt)
     @neuron.adex_synaptic_current(e_pop)

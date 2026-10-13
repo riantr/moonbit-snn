@@ -20,7 +20,7 @@ fn make_if_pair(n_pre : Int, n_post : Int) -> (@neuron.IF, @neuron.IF) {
 test "dump_weights_empty_matrix_returns_empty_array" {
   let (pre, post) = make_if_pair(3, 3)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  let out = @snn_mbt.dump_weights(syn)
+  let out = @infra.dump_weights(syn)
   if out.length() != 0 {
     fail("empty matrix should yield empty array, got \{out.length()}")
   }
@@ -30,7 +30,7 @@ test "dump_weights_empty_matrix_returns_empty_array" {
 test "dump_weights_count_zero_for_no_connections" {
   let (pre, post) = make_if_pair(3, 3)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  if @snn_mbt.dump_weights_count(syn) != 0 {
+  if @infra.dump_weights_count(syn) != 0 {
     fail("empty matrix should have nnz=0")
   }
 }
@@ -39,7 +39,7 @@ test "dump_weights_count_zero_for_no_connections" {
 test "dump_weights_sum_zero_for_no_connections" {
   let (pre, post) = make_if_pair(3, 3)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  if @snn_mbt.dump_weights_sum(syn) != 0.0F {
+  if @infra.dump_weights_sum(syn) != 0.0F {
     fail("empty matrix sum should be 0.0F")
   }
 }
@@ -48,7 +48,7 @@ test "dump_weights_sum_zero_for_no_connections" {
 test "dump_weights_min_max_zero_zero_for_empty" {
   let (pre, post) = make_if_pair(2, 2)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  let (lo, hi) = @snn_mbt.dump_weights_min_max(syn)
+  let (lo, hi) = @infra.dump_weights_min_max(syn)
   if lo != 0.0F || hi != 0.0F {
     fail("empty matrix min_max should be (0, 0), got (\{lo}, \{hi})")
   }
@@ -62,7 +62,7 @@ test "dump_weights_flat_matches_matrix_vals_in_order" {
   @synapse.spiking_connect(syn, 1, 2, 1.5F)
   @synapse.spiking_connect(syn, 2, 1, 2.5F)
   @synapse.spiking_connect(syn, 3, 2, 3.5F)
-  let out = @snn_mbt.dump_weights(syn)
+  let out = @infra.dump_weights(syn)
   if out.length() != 4 {
     fail("expected 4 entries, got \{out.length()}")
   }
@@ -89,8 +89,8 @@ test "dump_weights_count_matches_nnz_after_connections" {
   @synapse.spiking_connect(syn, 1, 1, 1.0F)
   @synapse.spiking_connect(syn, 1, 3, 2.0F)
   @synapse.spiking_connect(syn, 2, 2, 3.0F)
-  if @snn_mbt.dump_weights_count(syn) != 3 {
-    fail("expected nnz=3, got \{@snn_mbt.dump_weights_count(syn)}")
+  if @infra.dump_weights_count(syn) != 3 {
+    fail("expected nnz=3, got \{@infra.dump_weights_count(syn)}")
   }
 }
 
@@ -102,7 +102,7 @@ test "dump_weights_sum_for_known_weights" {
   @synapse.spiking_connect(syn, 1, 2, 2.0F)
   @synapse.spiking_connect(syn, 2, 1, 3.0F)
   @synapse.spiking_connect(syn, 2, 2, 4.0F)
-  let s = @snn_mbt.dump_weights_sum(syn)
+  let s = @infra.dump_weights_sum(syn)
   if (s - 10.0F).abs() > 1.0e-5F {
     fail("sum = \{s}, expected 10.0")
   }
@@ -116,7 +116,7 @@ test "dump_weights_min_max_correct_for_known_weights" {
   @synapse.spiking_connect(syn, 1, 2, 5.0F)
   @synapse.spiking_connect(syn, 2, 1, 0.5F)
   @synapse.spiking_connect(syn, 3, 2, -7.0F)
-  let (lo, hi) = @snn_mbt.dump_weights_min_max(syn)
+  let (lo, hi) = @infra.dump_weights_min_max(syn)
   if (lo - -7.0F).abs() > 1.0e-6F {
     fail("min = \{lo}, expected -7.0")
   }
@@ -138,7 +138,7 @@ test "dump_weights_with_indices_extracts_correct_triples" {
   @synapse.spiking_connect(syn, 1, 2, 2.0F)
   @synapse.spiking_connect(syn, 2, 1, 3.0F)
   @synapse.spiking_connect(syn, 3, 2, 4.0F)
-  let triples = @snn_mbt.dump_weights_with_indices(syn)
+  let triples = @infra.dump_weights_with_indices(syn)
   if triples.length() != 4 {
     fail("expected 4 triples, got \{triples.length()}")
   }
@@ -165,7 +165,7 @@ test "dump_weights_with_indices_extracts_correct_triples" {
 test "dump_weights_with_indices_empty_for_no_connections" {
   let (pre, post) = make_if_pair(3, 3)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  let triples = @snn_mbt.dump_weights_with_indices(syn)
+  let triples = @infra.dump_weights_with_indices(syn)
   if triples.length() != 0 {
     fail("empty matrix should yield no triples, got \{triples.length()}")
   }
@@ -175,7 +175,7 @@ test "dump_weights_with_indices_empty_for_no_connections" {
 test "dump_weights_dense_correct_shape" {
   let (pre, post) = make_if_pair(3, 4)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  let dense = @snn_mbt.dump_weights_dense(syn)
+  let dense = @infra.dump_weights_dense(syn)
   if dense.length() != 3 {
     fail("expected 3 rows, got \{dense.length()}")
   }
@@ -194,7 +194,7 @@ test "dump_weights_dense_zeros_for_missing_edges" {
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   @synapse.spiking_connect(syn, 1, 2, 0.7F)  // (0,1) = 0.7
   @synapse.spiking_connect(syn, 2, 3, 1.3F)  // (1,2) = 1.3
-  let dense = @snn_mbt.dump_weights_dense(syn)
+  let dense = @infra.dump_weights_dense(syn)
   // dense[0][0] = 0
   if dense[0][0] != 0.0F {
     fail("dense[0][0] = \{dense[0][0]}, expected 0")
@@ -225,7 +225,7 @@ test "dump_weights_dense_zeros_for_missing_edges" {
 test "dump_weights_dense_all_zero_for_empty_matrix" {
   let (pre, post) = make_if_pair(2, 3)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  let dense = @snn_mbt.dump_weights_dense(syn)
+  let dense = @infra.dump_weights_dense(syn)
   for i in 0..<2 {
     for j in 0..<3 {
       if dense[i][j] != 0.0F {
@@ -241,7 +241,7 @@ test "dump_weights_to_csv_correct_format" {
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
   @synapse.spiking_connect(syn, 1, 1, 1.5F)
   @synapse.spiking_connect(syn, 2, 2, 2.5F)
-  let csv = @snn_mbt.dump_weights_to_csv(syn)
+  let csv = @infra.dump_weights_to_csv(syn)
   // Expected: 2 lines, "0,0,1.5\n1,1,2.5". We verify by counting
   // newlines (must be exactly 1) and substring checks. We avoid
   // String::split because it returns Iter[StringView], not
@@ -281,7 +281,7 @@ test "dump_weights_to_csv_correct_format" {
 test "dump_weights_to_csv_empty_matrix_yields_empty_string" {
   let (pre, post) = make_if_pair(3, 3)
   let syn = @synapse.SpikingSynapse::new(pre, post, "ge")
-  let csv = @snn_mbt.dump_weights_to_csv(syn)
+  let csv = @infra.dump_weights_to_csv(syn)
   if csv.length() != 0 {
     fail("empty matrix CSV should be '', got '\{csv}'")
   }

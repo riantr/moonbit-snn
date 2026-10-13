@@ -3,7 +3,7 @@
 
 ///|
 test "st_zeros / shape + numel" {
-  let s = @snn_mbt.STImage::zeros(3, 2, 4, 5, 6)
+  let s = @infra.STImage::zeros(3, 2, 4, 5, 6)
   if s.numel() != 720 { fail("numel should be 720, got \{s.numel()}") }
   let (t, b, c, h, w) = s.shape()
   if t != 3 || b != 2 || c != 4 || h != 5 || w != 6 {
@@ -21,7 +21,7 @@ test "st_offset / flat layout is row-major [T,B,C,H,W]" {
   // stride C*H*W   = 2*3*4  = 24
   // stride H*W     = 3*4    = 12
   // stride W       = 4
-  let s = @snn_mbt.STImage::zeros(2, 2, 2, 3, 4)
+  let s = @infra.STImage::zeros(2, 2, 2, 3, 4)
   // [t=1, b=0, c=1, h=2, w=3] = 1*48 + 0*24 + 1*12 + 2*4 + 3 = 71.
   if s.offset(1, 0, 1, 2, 3) != 71 {
     fail("offset(1,0,1,2,3) should be 71, got \{s.offset(1, 0, 1, 2, 3)}")
@@ -36,7 +36,7 @@ test "st_offset / flat layout is row-major [T,B,C,H,W]" {
 
 ///|
 test "st_set + st_get / round-trip" {
-  let s = @snn_mbt.STImage::zeros(2, 3, 1, 2, 2)
+  let s = @infra.STImage::zeros(2, 3, 1, 2, 2)
   s.set(1, 2, 0, 1, 1, 42.5F)
   if (s.get(1, 2, 0, 1, 1) - 42.5F).abs() > 0.000001F {
     fail("set/get round-trip failed, got \{s.get(1, 2, 0, 1, 1)}")
@@ -48,7 +48,7 @@ test "st_set + st_get / round-trip" {
 
 ///|
 test "st_get_frame / extracts one time slice as 4D Image" {
-  let s = @snn_mbt.STImage::zeros(3, 1, 2, 2, 2)
+  let s = @infra.STImage::zeros(3, 1, 2, 2, 2)
   // Fill each frame with a distinct constant so we can verify it.
   for t_idx in 0..<3 {
     for i in 0..<s.batch_slice() {
@@ -83,7 +83,7 @@ test "st_get_frame / extracts one time slice as 4D Image" {
 ///|
 test "st_get_batch / flattens time into the N axis" {
   // T=3, B=2, C=1, H=1, W=1.
-  let s = @snn_mbt.STImage::zeros(3, 2, 1, 1, 1)
+  let s = @infra.STImage::zeros(3, 2, 1, 1, 1)
   // Set distinct values so we can verify ordering.
   s.set(0, 0, 0, 0, 0, 1.0F)
   s.set(0, 1, 0, 0, 0, 2.0F)
@@ -109,16 +109,16 @@ test "st_get_batch / flattens time into the N axis" {
 
 ///|
 test "st_from_frames / stacks N=1 images along time axis" {
-  let f0 = @snn_mbt.Image::zeros(1, 3, 2, 2)
+  let f0 = @infra.Image::zeros(1, 3, 2, 2)
   // Distinguish the two frames so we can verify ordering.
   for i in 0..<f0.numel() {
     f0.data[i] = 1.0F
   }
-  let f1 = @snn_mbt.Image::zeros(1, 3, 2, 2)
+  let f1 = @infra.Image::zeros(1, 3, 2, 2)
   for i in 0..<f1.numel() {
     f1.data[i] = 2.0F
   }
-  let s = @snn_mbt.STImage::from_frames([f0, f1])
+  let s = @infra.STImage::from_frames([f0, f1])
   let (t, b, c, h, w) = s.shape()
   if t != 2 || b != 1 || c != 3 || h != 2 || w != 2 {
     fail("stacked shape should be (2,1,3,2,2), got (\{t},\{b},\{c},\{h},\{w})")
@@ -140,15 +140,15 @@ test "st_from_frames / stacks N=1 images along time axis" {
 ///|
 test "st_concat_t / merges two STImages along T" {
   // a: T=2, B=1, C=1, H=1, W=1, values [10, 20]
-  let a = @snn_mbt.STImage::zeros(2, 1, 1, 1, 1)
+  let a = @infra.STImage::zeros(2, 1, 1, 1, 1)
   a.set(0, 0, 0, 0, 0, 10.0F)
   a.set(1, 0, 0, 0, 0, 20.0F)
   // b: T=3, B=1, C=1, H=1, W=1, values [30, 40, 50]
-  let b = @snn_mbt.STImage::zeros(3, 1, 1, 1, 1)
+  let b = @infra.STImage::zeros(3, 1, 1, 1, 1)
   b.set(0, 0, 0, 0, 0, 30.0F)
   b.set(1, 0, 0, 0, 0, 40.0F)
   b.set(2, 0, 0, 0, 0, 50.0F)
-  let c = @snn_mbt.st_image_concat_t(a, b)
+  let c = @infra.st_image_concat_t(a, b)
   let (t, _b, _c, _h, _w) = c.shape()
   if t != 5 { fail("concat T should be 5, got \{t}") }
   if (c.get(0, 0, 0, 0, 0) - 10.0F).abs() > 0.000001F { fail("c[0] should be 10") }
@@ -160,12 +160,12 @@ test "st_concat_t / merges two STImages along T" {
 
 ///|
 test "st_repeat_t / duplicates a single image T times" {
-  let img = @snn_mbt.Image::zeros(1, 2, 2, 2)
+  let img = @infra.Image::zeros(1, 2, 2, 2)
   // Set a recognisable pattern.
   for i in 0..<img.numel() {
     img.data[i] = Float::from_int(i + 1)
   }
-  let s = @snn_mbt.st_image_repeat_t(img, 4)
+  let s = @infra.st_image_repeat_t(img, 4)
   let (t, b, c, h, w) = s.shape()
   if t != 4 || b != 1 || c != 2 || h != 2 || w != 2 {
     fail("repeat shape should be (4,1,2,2,2), got (\{t},\{b},\{c},\{h},\{w})")
@@ -184,7 +184,7 @@ test "st_repeat_t / duplicates a single image T times" {
 test "st_get_frame / preserves exact Float32 values across a small STImage" {
   // 1x1x2x2x2: write 8 distinct Float32 values, retrieve each frame,
   // bit-exact check (no broadcasting / reshape involved).
-  let s = @snn_mbt.STImage::zeros(1, 1, 2, 2, 2)
+  let s = @infra.STImage::zeros(1, 1, 2, 2, 2)
   let pattern : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F, 0.7F, 0.8F]
   for i in 0..<pattern.length() {
     s.data[i] = pattern[i]

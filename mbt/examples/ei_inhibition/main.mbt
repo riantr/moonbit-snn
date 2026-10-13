@@ -21,13 +21,13 @@
 
 ///|
 fn run_e_only(e : @neuron.IF, duration_ms : Float) -> Int {
-  let fm = @snn_mbt.Monitor::new_fire(e, 0)
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e)],
+  let fm = @infra.Monitor::new_fire(e, 0)
+  let model = @infra.compose(
+    [@infra.IF_(e)],
     [],
     monitors=[fm],
   )
-  @snn_mbt.heterogeneous_sim_for(model, duration_ms * @core.ms)
+  @infra.heterogeneous_sim_for(model, duration_ms * @core.ms)
   fm.count_spikes()
 }
 
@@ -39,13 +39,13 @@ fn run_ei(
   ie : @synapse.SpikingSynapse,
   duration_ms : Float,
 ) -> Int {
-  let fm = @snn_mbt.Monitor::new_fire(e, 0)
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e), @snn_mbt.IF_(i)],
+  let fm = @infra.Monitor::new_fire(e, 0)
+  let model = @infra.compose(
+    [@infra.IF_(e), @infra.IF_(i)],
     [ei, ie],
     monitors=[fm],
   )
-  @snn_mbt.heterogeneous_sim_for(model, duration_ms * @core.ms)
+  @infra.heterogeneous_sim_for(model, duration_ms * @core.ms)
   fm.count_spikes()
 }
 

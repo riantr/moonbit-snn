@@ -6,7 +6,7 @@
 
 ///|
 test "image_zeros / numel + shape" {
-  let img = @snn_mbt.Image::zeros(2, 3, 4, 5)
+  let img = @infra.Image::zeros(2, 3, 4, 5)
   if img.numel() != 120 { fail("numel should be 120, got \{img.numel()}") }
   let (n, c, h, w) = img.shape()
   if n != 2 || c != 3 || h != 4 || w != 5 {
@@ -102,7 +102,7 @@ test "image_from_bytes / 24-bit BMP 2x2 with 4 distinct pixels decodes correctly
     0, 255, 0,    // file row 1: (1,0)=green: B=0,   G=255, R=0
   ]
   let bytes = make_bmp_24bit(2, 2, pixels)
-  let img = @snn_mbt.image_from_bytes(bytes)
+  let img = @infra.image_from_bytes(bytes)
   let (_n, c, h, w) = img.shape()
   if c != 3 || h != 2 || w != 2 {
     fail("expected (1,3,2,2), got (?,\{c},\{h},\{w})")
@@ -142,7 +142,7 @@ test "image_from_bytes / uniform 4x4 BMP decodes with all-same pixels" {
   // All pixels = (128, 128, 128) in BGR.
   let pixels : Array[Int] = Array::make(w * h * 3, 128)
   let bytes = make_bmp_24bit(w, h, pixels)
-  let img = @snn_mbt.image_from_bytes(bytes)
+  let img = @infra.image_from_bytes(bytes)
   let (_n, c, h2, w2) = img.shape()
   if c != 3 || h2 != 4 || w2 != 4 {
     fail("expected (1,3,4,4), got (?,\{c},\{h2},\{w2})")
@@ -166,7 +166,7 @@ test "image_from_moonbit_image_rgba / preserves alpha=255 for opaque" {
   let pixels : Array[Int] = [255, 0, 0] // B=255, G=0, R=0 (blue)
   let bytes = make_bmp_24bit(1, 1, pixels)
   let upstream = @moonbit_image.decode(bytes)
-  let rgba = @snn_mbt.image_from_moonbit_image_rgba(upstream)
+  let rgba = @infra.image_from_moonbit_image_rgba(upstream)
   let (_, c2, h2, w2) = rgba.shape()
   if c2 != 4 || h2 != 1 || w2 != 1 {
     fail("RGBA adapter should give c=4; got c=\{c2}, h=\{h2}, w=\{w2}")

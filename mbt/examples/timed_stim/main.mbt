@@ -25,25 +25,25 @@ fn main {
   let stim = @stimulus.SpikeTimeStimulus::new(e_pop, "ge", spiketimes, neurons)
 
   // Fire monitors.
-  let fm_v = @snn_mbt.Monitor::new_v(e_pop, 0)
-  let fm_f = @snn_mbt.Monitor::new_fire(e_pop, 0)
-  let fm_ge = @snn_mbt.Monitor::new_v(e_pop, 0)  // we read glu via new_v? — actually we need a new_v_sr for glu
+  let fm_v = @infra.Monitor::new_v(e_pop, 0)
+  let fm_f = @infra.Monitor::new_fire(e_pop, 0)
+  let fm_ge = @infra.Monitor::new_v(e_pop, 0)  // we read glu via new_v? — actually we need a new_v_sr for glu
   // Use the existing Monitor::new_v for v, then read glu[i] directly.
   let _ = fm_ge
 
   // Build the model.
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e_pop)],
+  let model = @infra.compose(
+    [@infra.IF_(e_pop)],
     [],  // no synapses — input comes purely from the stimulus
     // Use μ=100 (nS) to ensure each 1-nS pulse produces enough drive
     // to push v across the threshold gap (default IF: gap El→Vt = 20mV,
     // R=0.06, so we need I ≈ 333 pA → R*I = 20 mV).
-    stims=[@snn_mbt.TimedStim_(stim, 100.0F)],
+    stims=[@infra.TimedStim_(stim, 100.0F)],
     monitors=[fm_v, fm_f],
   )
 
   // Simulate 1s = 8000 steps at dt=0.125ms.
-  @snn_mbt.heterogeneous_sim_for(model, 1000.0F)
+  @infra.heterogeneous_sim_for(model, 1000.0F)
 
   let spike_count = fm_f.count_spikes()
   println("timed_stim.mbt: 3 spikes scheduled at 100/200/300ms")

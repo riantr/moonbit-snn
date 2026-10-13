@@ -40,15 +40,15 @@ fn main {
 
   // Build a Model with fire monitors. We use fire monitors so we
   // can count spikes per population.
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [exc_pop, inh_pop],
     conns: [ee, ei, ie, ii],
     monitors: [
-      @snn_mbt.Monitor::new_fire(exc_pop, 0),
-      @snn_mbt.Monitor::new_fire(inh_pop, 0),
+      @infra.Monitor::new_fire(exc_pop, 0),
+      @infra.Monitor::new_fire(inh_pop, 0),
     ],
   }
-  @snn_mbt.sim_for(model, 100.0F * @core.ms)
+  @infra.sim_for(model, 100.0F * @core.ms)
 
   // Count spikes
   let e_spikes = model.monitors[0].count_spikes()

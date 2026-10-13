@@ -111,8 +111,8 @@ test "compose with stdp applies plasticity automatically" {
   @synapse.spiking_connect(ee, 2, 2, 1.0F)
   // STDP entry for the connection at conns[0].
   let entry = @synapse.Gerstner_(@synapse.STDPEntry::new(0, 2, 2))
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(pre), @snn_mbt.IF_(post)],
+  let model = @infra.compose(
+    [@infra.IF_(pre), @infra.IF_(post)],
     [ee],
     stdp=[entry],
   )
@@ -121,7 +121,7 @@ test "compose with stdp applies plasticity automatically" {
   post.v[0] = 100.0F
   // Run a few steps.
   for _ in 0..<10 {
-    @snn_mbt.step_heterogeneous(model, 0.125F)
+    @infra.step_heterogeneous(model, 0.125F)
   }
   // After pre+post firing, the w[0] (Pre 0 -> Post 0) should have
   // increased from its initial 1.0 due to LTP.
@@ -503,15 +503,15 @@ test "compose dispatches STDPMexicanHat entry automatically" {
   let entry = @synapse.MexicanHat_(
     @synapse.STDPEntryMexicanHat::new(0, 2, 2, param=@synapse.STDPMexicanHat::new()),
   )
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(pre), @snn_mbt.IF_(post)],
+  let model = @infra.compose(
+    [@infra.IF_(pre), @infra.IF_(post)],
     [ee],
     stdp=[entry],
   )
   pre.v[0] = 100.0F
   post.v[0] = 100.0F
   for _ in 0..<10 {
-    @snn_mbt.step_heterogeneous(model, 0.125F)
+    @infra.step_heterogeneous(model, 0.125F)
   }
   // After pre+post firing (tpre=tpost=1 → dw = A * 1 = 0.1 on each pass),
   // w[0] should have increased from 1.0. Both pre-spike and post-spike
@@ -537,8 +537,8 @@ test "compose dispatches STDPAntiSymmetric entry automatically" {
   let entry = @synapse.AntiSymmetric_(
     @synapse.STDPEntryAntiSymmetric::new(0, 2, 2, param=@synapse.STDPAntiSymmetric::new()),
   )
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(pre), @snn_mbt.IF_(post)],
+  let model = @infra.compose(
+    [@infra.IF_(pre), @infra.IF_(post)],
     [ee],
     stdp=[entry],
   )
@@ -548,7 +548,7 @@ test "compose dispatches STDPAntiSymmetric entry automatically" {
   // Initial tr_x=0 → post-spike pass: dw_post = 0 + 0.03/50 * 0 = 0
   // Step a few times to let traces accumulate.
   for _ in 0..<10 {
-    @snn_mbt.step_heterogeneous(model, 0.125F)
+    @infra.step_heterogeneous(model, 0.125F)
   }
   // w[0] is in [0, 30] (clamped). No specific magnitude expected since
   // tr_x/to_y are both 0 at start → balanced update gives 0.

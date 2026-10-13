@@ -5,7 +5,7 @@ test "count_spikes counts rising edges" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   // Simulate a 3-spike sequence: 0,1,0,0,1,0,0,1,0
   let pattern : Array[Float] = [0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F]
   for v in pattern {
@@ -19,7 +19,7 @@ test "count_spikes on empty monitor is 0" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   assert_eq(m.count_spikes(), 0)
 }
 
@@ -28,7 +28,7 @@ test "dump_summary prints min/max/mean" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   m.data.push(-65.0F)
   m.data.push(-60.0F)
   m.data.push(-70.0F)
@@ -41,7 +41,7 @@ test "duration returns t[-1] - t[0]" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   m.times.push(0.0F)
   m.times.push(100.0F)
   m.times.push(200.0F)
@@ -53,7 +53,7 @@ test "duration of empty monitor is 0" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   assert_eq(m.duration(), 0.0F)
 }
 
@@ -62,7 +62,7 @@ test "ascii_plot renders without crashing on a v monitor" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   // Push a sawtooth-like trace.
   let mut k = 0
   while k < 80 {
@@ -82,7 +82,7 @@ test "ascii_plot renders spike markers for fire monitor" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   for k in 0..<30 {
     let f = if k == 5 || k == 15 || k == 25 { 1.0F } else { 0.0F }
     m.data.push(f)
@@ -96,7 +96,7 @@ test "ascii_plot on empty monitor is a no-op" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   m.ascii_plot()  // should print "(empty)" without crashing
 }
 
@@ -105,7 +105,7 @@ test "firing_rate computes Hz from spikes and duration" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   // 5 spikes over 1000ms = 5 Hz.
   m.data.push(0.0F); m.times.push(0.0F)
   m.data.push(1.0F); m.times.push(50.0F)
@@ -129,7 +129,7 @@ test "firing_rate on empty monitor is 0" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   assert_eq(m.firing_rate(), 0.0F)
 }
 
@@ -138,7 +138,7 @@ test "firing_rate on zero-duration monitor is 0" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   m.data.push(0.0F); m.times.push(100.0F)
   m.data.push(1.0F); m.times.push(100.0F)
   assert_eq(m.firing_rate(), 0.0F)
@@ -149,7 +149,7 @@ test "spike_times returns timestamps at rising edges" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   // 3 spikes at t=50, 200, 700.
   m.data.push(0.0F); m.times.push(0.0F)
   m.data.push(1.0F); m.times.push(50.0F)
@@ -171,7 +171,7 @@ test "spike_times on empty monitor returns empty array" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   assert_eq(m.spike_times().length(), 0)
 }
 
@@ -180,7 +180,7 @@ test "count_spikes_interval filters by time window" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   // 5 spikes at t=50, 200, 700, 800, 950.
   m.data.push(0.0F); m.times.push(0.0F)
   m.data.push(1.0F); m.times.push(50.0F)
@@ -208,7 +208,7 @@ test "mean / min / max compute basic statistics" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   m.data.push(-65.0F)
   m.data.push(-60.0F)
   m.data.push(-70.0F)
@@ -226,7 +226,7 @@ test "mean on empty monitor is 0" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_v(p, 0)
+  let m = @infra.Monitor::new_v(p, 0)
   assert_eq(m.mean(), 0.0F)
 }
 
@@ -235,7 +235,7 @@ test "firing_rate_interval computes Hz in sub-window" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   // 2 spikes in [500, 700] (at t=550 and t=650), 1 spike outside.
   m.data.push(0.0F); m.times.push(0.0F)
   m.data.push(1.0F); m.times.push(50.0F)
@@ -258,7 +258,7 @@ test "clear_records resets data and times" {
   let param = @neuron.IFParameter::new()
   let rng = @core.Xoshiro::default()
   let p = @neuron.IF::new(1, param, rng)
-  let m = @snn_mbt.Monitor::new_fire(p, 0)
+  let m = @infra.Monitor::new_fire(p, 0)
   m.data.push(0.0F); m.times.push(0.0F)
   m.data.push(1.0F); m.times.push(50.0F)
   m.data.push(0.0F); m.times.push(100.0F)

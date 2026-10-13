@@ -181,7 +181,7 @@ pub fn scnn_single_step() -> (Float, Int) {
   let (images, labels) = synthetic_mnist_build()
   let num_classes = 10
   let batch = images.length()
-  let model = SimpleCNN::new(1, 8, 16, 7UL)
+  let model = @models.SimpleCNN::new(1, 8, 16, 7UL)
   let flat_input : Array[Float] = Array::make(batch * 28 * 28, 0.0F)
   let mut i = 0
   while i < batch {
@@ -193,7 +193,7 @@ pub fn scnn_single_step() -> (Float, Int) {
     }
     i = i + 1
   }
-  let (logits_flat, caches, _, _, _, _) = simple_cnn_forward(
+  let (logits_flat, caches, _, _, _, _) = @models.simple_cnn_forward(
     model, flat_input, batch,
   )
   let mut total_loss = 0.0F
@@ -217,7 +217,7 @@ pub fn scnn_single_step() -> (Float, Int) {
     ii = ii + 1
   }
   let mean_loss = total_loss / Float::from_int(batch)
-  let (_d_input, grads) = simple_cnn_backward(
+  let (_d_input, grads) = @models.simple_cnn_backward(
     model, caches, d_logits, batch,
   )
   let mut grad_count = 0
@@ -267,10 +267,10 @@ pub fn scnn_loss_is_reasonable() -> Bool {
 /// Check that running forward multiple times with the same input gives
 /// identical outputs (determinism check).
 pub fn scnn_deterministic_forward() -> Bool {
-  let model = SimpleCNN::new(1, 8, 16, 7UL)
+  let model = @models.SimpleCNN::new(1, 8, 16, 7UL)
   let input : Array[Float] = Array::make(2 * 28 * 28, 0.5F)
-  let (out1, _, _, _, _, _) = simple_cnn_forward(model, input, 2)
-  let (out2, _, _, _, _, _) = simple_cnn_forward(model, input, 2)
+  let (out1, _, _, _, _, _) = @models.simple_cnn_forward(model, input, 2)
+  let (out2, _, _, _, _, _) = @models.simple_cnn_forward(model, input, 2)
   if out1.length() != out2.length() { return false }
   let mut i = 0
   while i < out1.length() {
@@ -338,14 +338,14 @@ pub fn scnn_accuracy(
 /// Run a single forward + loss + backward pass; apply SGD updates to
 /// the model's layers in place. Returns (loss, accuracy) on the batch.
 pub fn scnn_train_step_with_sgd(
-  model : SimpleCNN,
+  model : @models.SimpleCNN,
   input : Array[Float],
   labels : Array[Int],
   batch : Int,
   n_classes : Int,
   lr : Float,
 ) -> (Float, Float) {
-  let (logits_flat, caches, _, _, _, _) = simple_cnn_forward(
+  let (logits_flat, caches, _, _, _, _) = @models.simple_cnn_forward(
     model, input, batch,
   )
   // CE gradient (per-row: per-sample).
@@ -371,7 +371,7 @@ pub fn scnn_train_step_with_sgd(
   }
   let mean_loss = total_loss / Float::from_int(batch)
   // Backward.
-  let (_d_input, grads) = simple_cnn_backward(model, caches, d_logits, batch)
+  let (_d_input, grads) = @models.simple_cnn_backward(model, caches, d_logits, batch)
   ignore(_d_input)
   // SGD update — walk per-layer params by matching on Layer enum
   // variant (shadow binding gives access to the variant's payload).
@@ -430,7 +430,7 @@ pub fn scnn_train_n_steps(
   let (images, labels) = synthetic_mnist_build()
   let batch = images.length()
   let n_classes = 10
-  let model = SimpleCNN::new(1, 8, 16, seed)
+  let model = @models.SimpleCNN::new(1, 8, 16, seed)
   // Flatten images into a single batch.
   let flat_input : Array[Float] = Array::make(batch * 28 * 28, 0.0F)
   let mut i = 0

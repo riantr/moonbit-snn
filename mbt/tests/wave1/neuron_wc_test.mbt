@@ -93,10 +93,10 @@ test "RateSynapse::new and forward_rate" {
 test "WC_ integrates via AnyPop enum" {
   let rng = @core.Xoshiro::from_state(0xC0FFEE_UL, 0xBAD_F00D_UL, 0UL, 0UL)
   let wc = @neuron.WilsonCowan::new(5, rng)
-  let pops : Array[@snn_mbt.AnyPop] = [WC_(wc)]
-  let total_n = @snn_mbt.n_total(pops)
+  let pops : Array[@infra.AnyPop] = [WC_(wc)]
+  let total_n = @infra.n_total(pops)
   assert_eq(total_n, 5)
-  @snn_mbt.sim_any_pops_for(pops, 10.0F, 0.125F)
+  @infra.sim_any_pops_for(pops, 10.0F, 0.125F)
   // Just verify the loop ran.
   let mut all_in_range = true
   for k in 0..<5 {

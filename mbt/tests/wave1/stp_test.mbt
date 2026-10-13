@@ -291,11 +291,11 @@ test "compose with STPEntryKind: scales post.he by ρ automatically" {
   post.gaba[0] = 0.0F
   post.he[0] = 0.0F
   // Build heterogeneous model.
-  let pops : Array[@snn_mbt.AnyPop] = [IF_(pre), IF_(post)]
+  let pops : Array[@infra.AnyPop] = [IF_(pre), IF_(post)]
   let conns : Array[@synapse.SpikingSynapse] = [syn]
-  let model = @snn_mbt.compose(pops, conns, stdp=[], stp=[MarkramSTP_(entry)])
+  let model = @infra.compose(pops, conns, stdp=[], stp=[MarkramSTP_(entry)])
   // Step the model once.
-  @snn_mbt.step_heterogeneous(model, 0.125F)
+  @infra.step_heterogeneous(model, 0.125F)
   // post.he[0] should have received the glu input (with tiny decay).
   // Float32: he = 0 + 0.2 - dt*he/τre = 0.2 - 0.125*0.2/tre.
   // Default τre = 1.0F (or similar). So post.he[0] ≈ 0.2 * (1 - 0.125/tre).
@@ -504,10 +504,10 @@ test "compose with STPEntryKind::MarkramSTPHet_: dispatches per-pre params" {
   post.he[0] = 0.0F
   post.glu[0] = 0.0F
   post.gaba[0] = 0.0F
-  let pops : Array[@snn_mbt.AnyPop] = [IF_(pre), IF_(post)]
+  let pops : Array[@infra.AnyPop] = [IF_(pre), IF_(post)]
   let conns : Array[@synapse.SpikingSynapse] = [syn]
-  let model = @snn_mbt.compose(pops, conns, stdp=[], stp=[MarkramSTPHet_(entry)])
-  @snn_mbt.step_heterogeneous(model, 0.125F)
+  let model = @infra.compose(pops, conns, stdp=[], stp=[MarkramSTPHet_(entry)])
+  @infra.step_heterogeneous(model, 0.125F)
   // post.he should have accumulated glu (=W*ρ[0] + W*ρ[1])
   // = 1.0*0.2 + 1.0*0.5 = 0.7, minus dt-decay (small).
   // Just verify he > 0 (something was delivered).

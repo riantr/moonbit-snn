@@ -37,8 +37,8 @@ fn main {
   println("  initial weights: " + ee.matrix.vals.to_string())
 
   // Build the model with STDP auto-integration.
-  let model = @snn_mbt.compose(
-    [@snn_mbt.IF_(e1), @snn_mbt.IF_(e2)],
+  let model = @infra.compose(
+    [@infra.IF_(e1), @infra.IF_(e2)],
     [ee],
     stdp=[stdp_entry],
   )
@@ -52,7 +52,7 @@ fn main {
     e2.v[post_idx] = 100.0F
     let mut s = 0
     while s < pair_steps {
-      @snn_mbt.step_heterogeneous(model, 0.125F)
+      @infra.step_heterogeneous(model, 0.125F)
       s = s + 1
     }
   }

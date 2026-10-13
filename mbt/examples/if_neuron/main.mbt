@@ -31,11 +31,11 @@ fn main {
   @stimulus.PoissonFixed::set_mu(sI.param, 5.1F)
 
   // Build the model
-  let model : @snn_mbt.Model = {
+  let model : @infra.Model = {
     pops: [e_pop],
     conns: [],
     monitors: [
-      @snn_mbt.Monitor::new_v(e_pop, 0),
+      @infra.Monitor::new_v(e_pop, 0),
     ],
   }
 
@@ -45,7 +45,7 @@ fn main {
   let dt = 0.125F
   let time = @core.Time::new()
   @core.set_dt(time, dt)
-  @snn_mbt.record_zero(model)
+  @infra.record_zero(model)
   let mut spikes : Int = 0
   for _ in 0..<total_steps {
     @stimulus.stimulate_if(sE, time.t[0], dt)
@@ -58,7 +58,7 @@ fn main {
     if e_pop.fire[0] && !prev_fire {
       spikes = spikes + 1
     }
-    @snn_mbt.record_one(model.monitors[0], time.t[0])
+    @infra.record_one(model.monitors[0], time.t[0])
     @core.update_time(time, dt)
   }
 

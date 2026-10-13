@@ -13,7 +13,7 @@
 ///|
 test "place_populations - random placement (E=40, I=10)" {
   let rng = @core.Xoshiro::new(42UL)
-  let pops = @snn_mbt.place_populations_e_i(40, 10, 1.0F, 1.0F, rng)
+  let pops = @infra.place_populations_e_i(40, 10, 1.0F, 1.0F, rng)
   // Verify counts
   assert_eq(pops.e.length(), 40)
   assert_eq(pops.i.length(), 10)
@@ -45,28 +45,28 @@ test "place_populations - random placement (E=40, I=10)" {
 ///|
 test "periodic_distance_scalar" {
   // |0.1 - 0.9| = 0.8, min(0.8, 1 - 0.8) = 0.2
-  let d1 = @snn_mbt.periodic_distance_scalar(0.1F, 0.9F, 1.0F)
+  let d1 = @infra.periodic_distance_scalar(0.1F, 0.9F, 1.0F)
   if (d1 - 0.2F).abs() >= 1.0e-6F {
     fail("d(0.1, 0.9) != 0.2")
   }
   // |0.0 - 0.5| = 0.5, min(0.5, 0.5) = 0.5
-  let d2 = @snn_mbt.periodic_distance_scalar(0.0F, 0.5F, 1.0F)
+  let d2 = @infra.periodic_distance_scalar(0.0F, 0.5F, 1.0F)
   if (d2 - 0.5F).abs() >= 1.0e-6F {
     fail("d(0.0, 0.5) != 0.5")
   }
   // |0.0 - 0.0| = 0
-  let d3 = @snn_mbt.periodic_distance_scalar(0.0F, 0.0F, 1.0F)
+  let d3 = @infra.periodic_distance_scalar(0.0F, 0.0F, 1.0F)
   if d3 >= 1.0e-6F {
     fail("d(0.0, 0.0) != 0")
   }
   // symmetry: d(p1, p2) == d(p2, p1)
-  let d4 = @snn_mbt.periodic_distance_scalar(0.3F, 0.8F, 1.0F)
-  let d5 = @snn_mbt.periodic_distance_scalar(0.8F, 0.3F, 1.0F)
+  let d4 = @infra.periodic_distance_scalar(0.3F, 0.8F, 1.0F)
+  let d5 = @infra.periodic_distance_scalar(0.8F, 0.3F, 1.0F)
   if (d4 - d5).abs() >= 1.0e-6F {
     fail("distance not symmetric")
   }
   // never exceeds grid_size/2
-  let d_max = @snn_mbt.periodic_distance_scalar(0.1F, 0.9F, 1.0F)
+  let d_max = @infra.periodic_distance_scalar(0.1F, 0.9F, 1.0F)
   if d_max > 0.5F {
     fail("distance exceeds half-period")
   }
@@ -75,13 +75,13 @@ test "periodic_distance_scalar" {
 ///|
 test "linear_network - default ring (N=20)" {
   let n = 20
-  let w = @snn_mbt.linear_network(n)
+  let w = @infra.linear_network(n)
   // size: n*n flat array
   assert_eq(w.length(), n * n)
   // diagonal == 0
   let mut i = 0
   while i < n {
-    if @snn_mbt.row_major_get(w, n, i, i) != 0.0F {
+    if @infra.row_major_get(w, n, i, i) != 0.0F {
       fail("diagonal not zero")
     }
     i = i + 1
@@ -91,7 +91,7 @@ test "linear_network - default ring (N=20)" {
   while i < n {
     let mut j = 0
     while j < n {
-      if @snn_mbt.row_major_get(w, n, i, j) < 0.0F {
+      if @infra.row_major_get(w, n, i, j) < 0.0F {
         fail("negative weight")
       }
       j = j + 1
@@ -104,7 +104,7 @@ test "linear_network - default ring (N=20)" {
   while i < n {
     let mut j = 0
     while j < n {
-      let v = @snn_mbt.row_major_get(w, n, i, j)
+      let v = @infra.row_major_get(w, n, i, j)
       if v > max_w {
         max_w = v
       }
@@ -120,14 +120,14 @@ test "linear_network - default ring (N=20)" {
 ///|
 test "linear_network_with - custom sigma_w=0.5, w_max=3.0 (N=16)" {
   let n = 16
-  let w = @snn_mbt.linear_network_with(n, 0.5F, 3.0F)
+  let w = @infra.linear_network_with(n, 0.5F, 3.0F)
   assert_eq(w.length(), n * n)
   let mut max_w = 0.0F
   let mut i = 0
   while i < n {
     let mut j = 0
     while j < n {
-      let v = @snn_mbt.row_major_get(w, n, i, j)
+      let v = @infra.row_major_get(w, n, i, j)
       if v > max_w {
         max_w = v
       }

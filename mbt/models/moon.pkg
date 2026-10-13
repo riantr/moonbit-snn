@@ -1,0 +1,20 @@
+// models/ — whole reference architectures assembled from other packages.
+//
+// Every file here is a composition of things that already exist elsewhere.
+// bottles.mbt builds LeNet5, SimpleCNN and an MLP out of Conv2dParameter and
+// LinearParameter; siamese_net.mbt pairs two embedding_net branches; the trainer
+// fits the pair with a contrastive loss.
+//
+// None of them introduces a primitive, which is the test for whether a file
+// belongs in nn/ or here: if you would describe it as "a layer", it is nn/; if
+// you would describe it as "a network someone might train", it is here.
+//
+// rl/ is imported by embedding_net.mbt, which selects an encoder by name --
+// backbone, mlp, lstm -- so the reference to the recurrent encoders is part of
+// that choice rather than an accident of file layout.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/rl",
+}
