@@ -4,7 +4,7 @@
 
 ///|
 test "TripletRule::pfister_alltoall_full defaults match Julia" {
-  let t = @snn_mbt.TripletRule::pfister_alltoall_full()
+  let t = @synapse.TripletRule::pfister_alltoall_full()
   assert_eq(t.a2_ltp, 5.0e-10F)
   assert_eq(t.a3_ltp, 6.2e-3F)
   assert_eq(t.a2_ltd, 7.0e-3F)
@@ -17,7 +17,7 @@ test "TripletRule::pfister_alltoall_full defaults match Julia" {
 
 ///|
 test "TripletRule custom struct literal preserves every field" {
-  let t : @snn_mbt.TripletRule = { a2_ltp: 0.0F, a3_ltp: 0.0F, a2_ltd: 0.0F,
+  let t : @synapse.TripletRule = { a2_ltp: 0.0F, a3_ltp: 0.0F, a2_ltd: 0.0F,
     a3_ltd: 0.0F, tau_x: 1.0F, tau_y: 1.0F, tau_p: 1.0F, tau_m: 1.0F }
   assert_eq(t.tau_x, 1.0F)
   assert_eq(t.tau_m, 1.0F)
@@ -25,7 +25,7 @@ test "TripletRule custom struct literal preserves every field" {
 
 ///|
 test "NLTAH struct literal preserves every field" {
-  let n : @snn_mbt.NLTAH = { tau: 50.0F, lambda_: 0.5F, mu: 1.0F }
+  let n : @synapse.NLTAH = { tau: 50.0F, lambda_: 0.5F, mu: 1.0F }
   assert_eq(n.tau, 50.0F)
   assert_eq(n.lambda_, 0.5F)
   assert_eq(n.mu, 1.0F)
@@ -33,7 +33,7 @@ test "NLTAH struct literal preserves every field" {
 
 ///|
 test "ClopathSTDP::lkd defaults match Julia lkd_stdp literal" {
-  let c = @snn_mbt.ClopathSTDP::lkd()
+  let c = @synapse.ClopathSTDP::lkd()
   assert_eq(c.a_ltd, 8.0e-5F)
   assert_eq(c.a_ltp, 14.0e-5F)
   assert_eq(c.theta_ltd, -70.0F)
@@ -50,14 +50,14 @@ test "ClopathSTDP::lkd defaults match Julia lkd_stdp literal" {
 
 ///|
 test "ClopathSTDP::lkd — w_min + w_max bounds" {
-  let c = @snn_mbt.ClopathSTDP::lkd()
+  let c = @synapse.ClopathSTDP::lkd()
   assert_eq(c.w_min, 1.78F)
   assert_eq(c.w_max, 21.0F)
 }
 
 ///|
 test "ClopathSTDP custom struct literal preserves every field" {
-  let c : @snn_mbt.ClopathSTDP = { a_ltd: 0.0F, a_ltp: 0.0F, theta_ltd: -80.0F,
+  let c : @synapse.ClopathSTDP = { a_ltd: 0.0F, a_ltp: 0.0F, theta_ltd: -80.0F,
     theta_ltp: 0.0F, tau_s: 100.0F, tau_u: 5.0F, tau_v: 5.0F, tau_x: 5.0F,
     tau_1: 5.0F, eps: 0.0F, w_min: 0.0F, w_max: 100.0F, inv_tau_u: 0.2F,
     inv_tau_v: 0.2F, inv_tau_x: 0.2F, inv_tau_1: 0.2F }
@@ -67,7 +67,7 @@ test "ClopathSTDP custom struct literal preserves every field" {
 
 ///|
 test "ISTDP::new defaults match Julia ISTDP struct" {
-  let i = @snn_mbt.ISTDP::new()
+  let i = @synapse.ISTDP::new()
   assert_eq(i.eta, 0.2F)
   assert_eq(i.r0, 0.01F)
   assert_eq(i.vd, -70.0F)
@@ -83,7 +83,7 @@ test "ISTDP::new defaults match Julia ISTDP struct" {
 
 ///|
 test "ISTDP::vogels factory matches Julia vogels_istdp()" {
-  let i = @snn_mbt.ISTDP::vogels()
+  let i = @synapse.ISTDP::vogels()
   assert_eq(i.eta, 1.0F)
   assert_eq(i.r0, 0.005F)
   assert_eq(i.tau_y, 20.0F)
@@ -96,7 +96,7 @@ test "ISTDP::vogels factory matches Julia vogels_istdp()" {
 
 ///|
 test "ISTDP custom struct literal preserves every field" {
-  let i : @snn_mbt.ISTDP = { eta: 0.5F, r0: 0.05F, vd: -65.0F, tau_d: 10.0,
+  let i : @synapse.ISTDP = { eta: 0.5F, r0: 0.05F, vd: -65.0F, tau_d: 10.0,
     tau_y: 30.0F, alpha: 3.0F, w_min: 1.0F, w_max: 100.0F }
   assert_eq(i.eta, 0.5F)
   assert_eq(i.r0, 0.05F)

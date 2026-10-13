@@ -37,7 +37,7 @@ fn main {
   // AggregateScalingParameter: tau_e=100ms, tau_a=300ms, tau=10ms
   // (plasticity every 10ms = 80 steps), Wmin=0.5, Wmax=400, Y=10Hz
   // uniform across all 100 post neurons.
-  let asp = @snn_mbt.AggregateScalingParameter::uniform(
+  let asp = @synapse.AggregateScalingParameter::uniform(
     n, 10.0F, tau=10.0F, tau_a=300.0F, tau_e=100.0F,
     w_min=0.5F, w_max=400.0F,
   )
@@ -46,8 +46,8 @@ fn main {
   let st_targets : Array[@synapse.SynapseTarget] = [
     { post_id: 0, vals: ee.matrix.vals, rowptr: ee.matrix.rowptr },
   ]
-  let agg_scaling = @snn_mbt.AggregateScaling::with_plasticity_interval(
-    @snn_mbt.AggregateScaling::new(n, st_targets, asp),
+  let agg_scaling = @synapse.AggregateScaling::with_plasticity_interval(
+    @synapse.AggregateScaling::new(n, st_targets, asp),
     80,
   )
 
@@ -88,9 +88,9 @@ fn main {
       k = k + 1
     }
     // 2. Aggregate scaling: forward (update y, WT).
-    @snn_mbt.aggregate_scaling_forward(agg_scaling, fire, dt)
+    @synapse.aggregate_scaling_forward(agg_scaling, fire, dt)
     // 3. Plasticity (every 80 steps).
-    @snn_mbt.aggregate_scaling_plasticity(agg_scaling, s + 1)
+    @synapse.aggregate_scaling_plasticity(agg_scaling, s + 1)
     // 4. Add small Gaussian noise to weights (matches Julia's
     // `model.syn.S.W .+= randn(size(...))` perturbation).
     let mut j = 0

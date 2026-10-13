@@ -7,7 +7,7 @@
 
 ///|
 test "STDPSymmetric::new: defaults match Julia" {
-  let p = @snn_mbt.STDPSymmetric::new()
+  let p = @synapse.STDPSymmetric::new()
   if p.a_x != 0.03F {
     fail("a_x = \{p.a_x}, expected 0.03")
   }
@@ -36,7 +36,7 @@ test "STDPSymmetric::new: defaults match Julia" {
 
 ///|
 test "STDPSymmetric::new: custom values" {
-  let p : @snn_mbt.STDPSymmetric = {
+  let p : @synapse.STDPSymmetric = {
     a_x: 0.05F,
     a_y: 0.02F,
     tau_x: 30.0F,
@@ -59,7 +59,7 @@ test "STDPSymmetric::new: custom values" {
 
 ///|
 test "STDPSymmetricVariables::new: zero-initialised, all four traces" {
-  let v = @snn_mbt.STDPSymmetricVariables::new(5, 4)
+  let v = @synapse.STDPSymmetricVariables::new(5, 4)
   if v.tr_x.length() != 5 || v.tr_y.length() != 5 {
     fail("tr_x/tr_y lengths = \{v.tr_x.length()}/\{v.tr_y.length()}, expected 5/5")
   }
@@ -80,7 +80,7 @@ test "STDPSymmetricVariables::new: zero-initialised, all four traces" {
 
 ///|
 test "STDPEntrySymmetric::new: fields populated" {
-  let e = @snn_mbt.STDPEntrySymmetric::new(0, 3, 2)
+  let e = @synapse.STDPEntrySymmetric::new(0, 3, 2)
   if e.conn_index != 0 || e.n_pre != 3 || e.n_post != 2 {
     fail("entry fields wrong")
   }
@@ -94,11 +94,11 @@ test "STDPEntrySymmetric::new: fields populated" {
 
 ///|
 test "STDPEntrySymmetric::change_plasticity: swaps param, preserves vars" {
-  let e = @snn_mbt.STDPEntrySymmetric::new(0, 3, 3)
+  let e = @synapse.STDPEntrySymmetric::new(0, 3, 3)
   e.vars.tr_x[0] = 0.7F
   e.vars.tr_y[1] = 0.5F
   e.vars.to_x[2] = 0.3F
-  let new_param : @snn_mbt.STDPSymmetric = {
+  let new_param : @synapse.STDPSymmetric = {
     a_x: 0.1F,
     a_y: 0.05F,
     tau_x: 20.0F,
@@ -134,12 +134,12 @@ test "stdp_symmetric_step: pre spike adds alpha_pre + (A_x*to_x - A_y*to_y)/..."
   let post_fire : Array[Bool] = [false]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.STDPSymmetricVariables::new(1, 1)
+  let vars = @synapse.STDPSymmetricVariables::new(1, 1)
   vars.to_x[0] = 0.5F
   vars.to_y[0] = 0.3F
-  let p = @snn_mbt.STDPSymmetric::new()
+  let p = @synapse.STDPSymmetric::new()
   let dt = 0.125F
-  @snn_mbt.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   // Compute expected: to_x and to_y both decay by (1 - dt/tau_x) and
   // (1 - dt/tau_y) respectively BEFORE the weight update. Then they
   // each bump by 1.0F since post fires. But post doesn't fire here, so
@@ -166,12 +166,12 @@ test "stdp_symmetric_step: post spike adds alpha_post + (A_x*tr_x - A_y*tr_y)/..
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.STDPSymmetricVariables::new(1, 1)
+  let vars = @synapse.STDPSymmetricVariables::new(1, 1)
   vars.tr_x[0] = 0.5F
   vars.tr_y[0] = 0.3F
-  let p = @snn_mbt.STDPSymmetric::new()
+  let p = @synapse.STDPSymmetric::new()
   let dt = 0.125F
-  @snn_mbt.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   // tr_x and tr_y both decay (pre doesn't fire, so no bump).
   let tr_x_after = 0.5F * (1.0F - dt / p.tau_x)
   let tr_y_after = 0.3F * (1.0F - dt / p.tau_y)
@@ -192,11 +192,11 @@ test "stdp_symmetric_step: weight clamps at w_max (LTP side)" {
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.STDPSymmetricVariables::new(1, 1)
-  let p = @snn_mbt.STDPSymmetric::new()
+  let vars = @synapse.STDPSymmetricVariables::new(1, 1)
+  let p = @synapse.STDPSymmetric::new()
   let dt = 0.125F
   for _ in 0..<100000 {
-    @snn_mbt.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+    @synapse.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
     // Reset traces each step so the bump is constant.
     vars.tr_x[0] = 1.0F
     vars.tr_y[0] = 1.0F
@@ -220,12 +220,12 @@ test "stdp_symmetric_step: weights stay finite over many steps" {
   let colptr : Array[Int] = [
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
-  let vars = @snn_mbt.STDPSymmetricVariables::new(n_pre, n_post)
-  let p = @snn_mbt.STDPSymmetric::new()
+  let vars = @synapse.STDPSymmetricVariables::new(n_pre, n_post)
+  let p = @synapse.STDPSymmetric::new()
   let dt = 0.125F
   for step in 0..<200 {
     let _ = step
-    @snn_mbt.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.stdp_symmetric_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {

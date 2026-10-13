@@ -50,8 +50,8 @@ fn main {
     10.0F, 0.0F, 0.2F, rng)
 
   // Gerstner STDP for each connection.
-  let stdp_w11 = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(0, ne1, ne1))
-  let stdp_w22 = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(3, ne2, ne2))
+  let stdp_w11 = @synapse.Gerstner_(@synapse.STDPEntry::new(0, ne1, ne1))
+  let stdp_w22 = @synapse.Gerstner_(@synapse.STDPEntry::new(3, ne2, ne2))
 
   // Constant Poisson drive (Julia uses OU process; we use fixed rate).
   let stim_e1 = @stimulus.PoissonStimulusIF::new(e1, "ge", 0.5F, rng)

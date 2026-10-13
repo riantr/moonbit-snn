@@ -169,3 +169,45 @@ pub fn f2l(s : String, l : Int) -> String {
 pub fn f2l_default(s : String) -> String {
   f2l(s, 10)
 }
+
+///|
+/// Replace the character at position `pos` in `s` with `ch`.
+/// Returns the new string. Builds via StringBuilder.
+///
+/// This was declared in vecplot.mbt, which uses it to put a single point on an
+/// ASCII canvas. synapse/stdp.mbt draws its weight matrix with the same two
+/// lines and carried a copy of this function, because it cannot import
+/// vecplot.mbt: vecplot depends on synapse, so synapse -> vecplot is a cycle and
+/// duplication was the only way to share it.
+///
+/// Editing a string is not a plotting concern. From here both sides call it
+/// normally.
+pub fn row_int_set_char(s : String, pos : Int, ch : Char) -> String {
+  let sb = StringBuilder::new(size_hint=s.length())
+  let len = s.length()
+  // Write prefix [0, pos), then ch, then suffix [pos+1, len).
+  let prefix_end = if pos < len { pos } else { len }
+  if prefix_end > 0 {
+    // Use String::substring to extract the prefix (0..prefix_end).
+    let prefix = String::make(prefix_end, ' ')
+    // Easier: just iterate by char position.
+    let mut k = 0
+    while k < prefix_end {
+      // Hack: pull chars one at a time using string view.
+      // Actually, MoonBit doesn't have s[k] indexing on String; use views.
+      // For simplicity, fall back to single-char writes.
+      sb.write_char(s[k].unsafe_to_char())
+      k = k + 1
+    }
+    let _ = prefix
+  }
+  sb.write_char(ch)
+  if pos + 1 < len {
+    let mut k = pos + 1
+    while k < len {
+      sb.write_char(s[k].unsafe_to_char())
+      k = k + 1
+    }
+  }
+  sb.to_string()
+}

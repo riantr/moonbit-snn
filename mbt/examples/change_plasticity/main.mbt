@@ -15,7 +15,7 @@
 ///|
 fn main {
   // Create an STDPEntry for a small pre/post population.
-  let entry = @snn_mbt.STDPEntry::new(0, 2, 2)
+  let entry = @synapse.STDPEntry::new(0, 2, 2)
   println("change_plasticity.mbt: STDP runtime parameter swap demo")
   println("")
   println("=== Initial STDPEntry state ===")
@@ -34,7 +34,7 @@ fn main {
   // Swap plasticity: replace STDPGerstner with custom params.
   println("")
   println("=== Calling change_plasticity! with new params ===")
-  let new_param : @snn_mbt.STDPGerstner = {
+  let new_param : @synapse.STDPGerstner = {
     a_pre: 0.5F,
     a_post: 0.3F,
     tau_pre: 30.0F,
@@ -42,7 +42,7 @@ fn main {
     w_max: 50.0F,
     w_min: 0.0F,
   }
-  @snn_mbt.STDPEntry::change_plasticity(entry, new_param)
+  @synapse.STDPEntry::change_plasticity(entry, new_param)
 
   println("  after swap:")
   println("  param.a_pre = " + entry.param.a_pre.to_string())

@@ -178,7 +178,7 @@ pub struct Quaresima2024UpDown {
   tau_d : Float
   // Soma receptors: Receptors(DuarteGluSoma, MilesGabaSoma).
   // Dendrite receptors: built from nar via eyal_equivalent_nar().
-  dend_receptors : @synapse.Receptors
+  dend_receptors : Receptors
 }
 
 ///|
@@ -205,15 +205,15 @@ pub fn Quaresima2024UpDown::new(
 /// We re-use the existing `eyal_glu_dend()` and `miles_gaba_dend()` helpers
 /// from `receptor_types.mbt` (these match the Julia defaults for the
 /// MilesGabaDend side); the AMPA/NMDA g0 values are scaled per NAR.
-pub fn eyal_equivalent_nar(nar : Float, tau_d : Float) -> @synapse.Receptors {
+pub fn eyal_equivalent_nar(nar : Float, tau_d : Float) -> Receptors {
   let nar_0 : Float = 1.31F / 0.73F
   let ampa_g0 : Float = 0.73F * (1.0F + nar_0 - nar)
   let nmda_g0 : Float = 0.73F * nar
-  let ampa = @synapse.Receptor::simple(0.0F, 0.26F, 2.0F, ampa_g0, "glu")
-  let nmda = @synapse.Receptor::nmda(0.0F, 8.0F, tau_d, nmda_g0)
-  let glu = @synapse.Glutamatergic::custom(ampa~, nmda~)
-  let gaba = @synapse.miles_gaba_dend()
-  @synapse.Receptors::from_pair(glu, gaba)
+  let ampa = Receptor::simple(0.0F, 0.26F, 2.0F, ampa_g0, "glu")
+  let nmda = Receptor::nmda(0.0F, 8.0F, tau_d, nmda_g0)
+  let glu = Glutamatergic::custom(ampa~, nmda~)
+  let gaba = miles_gaba_dend()
+  Receptors::from_pair(glu, gaba)
 }
 pub struct Quaresima2023Dend {
   e_to_ed_p : Float

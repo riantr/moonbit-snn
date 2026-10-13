@@ -4,7 +4,7 @@
 
 ///|
 test "LKD2014::new: defaults match Julia" {
-  let p = @snn_mbt.LKD2014::new()
+  let p = @synapse.LKD2014::new()
   // Julia: AdEx(El=-70mV, Vt=-52mV, τm=300pF/15nS=20ms, R=1/15nS,
   //                Vr=-60mV, τabs=1ms, E_i=-75mV, E_e=0mV, At=10mV)
   // PV(El=-62mV, Vr=-57.47mV, Vt=-52mV, τm=20ms)
@@ -53,7 +53,7 @@ test "LKD2014::new: defaults match Julia" {
 
 ///|
 test "Duarte2019::new: defaults match Julia" {
-  let p = @snn_mbt.Duarte2019::new()
+  let p = @synapse.Duarte2019::new()
   // PV (Julia: τm = 104.52pF/9.75nS, El=-64.33mV, Vt=-38.97mV,
   //             Vr=-57.47mV, τabs=0.5ms, gsyn_e=1.04nS, gsyn_i=0.84nS).
   if (p.pv_tm - 10.72F).abs() > 0.1F {
@@ -133,7 +133,7 @@ test "Duarte2019::new: defaults match Julia" {
 test "LKD2014 fields used to build IF + AdEx parameters" {
   // Demonstrate that LKD2014 constants are usable with our existing
   // IFParameter::custom + AdExParameter::new constructors.
-  let lkd = @snn_mbt.LKD2014::new()
+  let lkd = @synapse.LKD2014::new()
   // PV inhibitory IF.
   let pv_if = @neuron.IFParameter::custom(
     lkd.pv_tm, lkd.pv_vt, lkd.pv_vr, lkd.pv_el, 0.06F,
@@ -148,7 +148,7 @@ test "LKD2014 fields used to build IF + AdEx parameters" {
 
 ///|
 test "LKD2014Soma::new — defaults match Julia lkd2014_soma" {
-  let p = @snn_mbt.LKD2014Soma::new()
+  let p = @synapse.LKD2014Soma::new()
   // Julia: EsE (p=0.2, μ=2.76), E→PV (p=0.2, μ=1.27),
   //         PV→E (p=0.2, μ=48.7), PV→PV (p=0.2, μ=16.2)
   if p.es_e_p != 0.2F { fail("es_e_p expected 0.2, got \{p.es_e_p}") }
@@ -163,7 +163,7 @@ test "LKD2014Soma::new — defaults match Julia lkd2014_soma" {
 
 ///|
 test "Quaresima2023Dend::new — defaults match Julia quaresima2023_dend" {
-  let p = @snn_mbt.Quaresima2023Dend::new()
+  let p = @synapse.Quaresima2023Dend::new()
   // E→Ed: p=0.168, μ=2.8
   if p.e_to_ed_p != 0.168F { fail("e_to_ed_p expected 0.168") }
   if (p.e_to_ed_mu - 2.8F).abs() > 1.0e-3F { fail("e_to_ed_mu expected ~2.8") }
@@ -187,7 +187,7 @@ test "eyal_equivalent_nar — NAR=1.8 default computes AMPA/NMDA g0" {
   // NAR0 = 1.31/0.73 ≈ 1.795; AMPA_g0 = 0.73*(1+NAR0-NAR)
   // For NAR=1.8: ampa_g0 = 0.73*(1+1.795-1.8) = 0.73*0.995 = 0.72635
   //              nmda_g0 = 0.73*1.8 = 1.314
-  let rs = @snn_mbt.eyal_equivalent_nar(1.8F, 35.0F)
+  let rs = @synapse.eyal_equivalent_nar(1.8F, 35.0F)
   // rec[0] = AMPA, rec[1] = NMDA
   let ampa_g0 = rs.rec[0].g0
   let nmda_g0 = rs.rec[1].g0
@@ -201,7 +201,7 @@ test "eyal_equivalent_nar — NAR=1.8 default computes AMPA/NMDA g0" {
 
 ///|
 test "Quaresima2024UpDown::new — nar + tau_d stored, dend_receptors populated" {
-  let cfg = @snn_mbt.Quaresima2024UpDown::new(1.8F, 35.0F)
+  let cfg = @synapse.Quaresima2024UpDown::new(1.8F, 35.0F)
   if cfg.nar != 1.8F { fail("nar expected 1.8") }
   if cfg.tau_d != 35.0F { fail("tau_d expected 35.0") }
   if cfg.dend_receptors.rec.length() != 4 {

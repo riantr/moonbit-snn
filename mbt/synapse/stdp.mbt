@@ -192,8 +192,8 @@ pub(all) enum STDPEntryKind {
   MexicanHat_(STDPEntryMexicanHat)
   AntiSymmetric_(STDPEntryAntiSymmetric)
   Confavreux2025_(STDPEntryConfavreux2025)
-  IstdpRate_(@synapse.IstdpRateEntry)
-  IstdpPotential_(@synapse.IstdpPotentialEntry)
+  IstdpRate_(IstdpRateEntry)
+  IstdpPotential_(IstdpPotentialEntry)
   Symmetric_(STDPEntrySymmetric)
   CaPlasticity_(CaPlasticityEntry)
 }
@@ -329,7 +329,7 @@ pub fn stdp_kernel_plot(
     }
     let ch = if w >= 0.0F { '*' } else { '.' }
     let row_str = canvas[r]
-    let new_row = row_int_set_char(row_str, c + row_init.length(), ch)
+    let new_row = @core.row_int_set_char(row_str, c + row_init.length(), ch)
     canvas[r] = new_row
     c = c + 1
   }
@@ -750,7 +750,7 @@ pub fn stdp_mexican_hat_plot(
     }
     let ch = if w >= 0.0F { '*' } else { '.' }
     let row_str = canvas[r]
-    let new_row = row_int_set_char(row_str, c + row_init.length(), ch)
+    let new_row = @core.row_int_set_char(row_str, c + row_init.length(), ch)
     canvas[r] = new_row
     c = c + 1
   }
@@ -836,7 +836,7 @@ pub fn stdp_antisymmetric_plot(
       row_from_top
     }
     let ch = if w >= 0.0F { '*' } else { '.' }
-    canvas[r] = row_int_set_char(canvas[r], c + row_init.length(), ch)
+    canvas[r] = @core.row_int_set_char(canvas[r], c + row_init.length(), ch)
     c = c + 1
   }
   println("STDPAntiSymmetric (pre-spike): dW = αpre - (A_y/τ_y) * to_y")

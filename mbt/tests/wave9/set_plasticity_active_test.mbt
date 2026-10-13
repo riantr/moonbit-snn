@@ -21,16 +21,16 @@
 
 ///|
 test "STDPEntry::set_ltp_active: toggles vars.active[0]" {
-  let entry = @snn_mbt.STDPEntry::new(0, 2, 2)
+  let entry = @synapse.STDPEntry::new(0, 2, 2)
   // Defaults to active=true.
   if !entry.vars.active[0] {
     fail("default active[0] should be true")
   }
-  @snn_mbt.STDPEntry::set_ltp_active(entry, false)
+  @synapse.STDPEntry::set_ltp_active(entry, false)
   if entry.vars.active[0] {
     fail("after set_ltp_active(false), active[0] should be false")
   }
-  @snn_mbt.STDPEntry::set_ltp_active(entry, true)
+  @synapse.STDPEntry::set_ltp_active(entry, true)
   if !entry.vars.active[0] {
     fail("after set_ltp_active(true), active[0] should be true")
   }
@@ -51,19 +51,19 @@ test "stdp_step respects vars.active=false" {
   pre.fire[0] = true
   post.fire[0] = true
   // Active=true path — should change weight.
-  let vars_on = @snn_mbt.STDPVariables::new(1, 1)
+  let vars_on = @synapse.STDPVariables::new(1, 1)
   vars_on.active[0] = true
-  @snn_mbt.stdp_step(
+  @synapse.stdp_step(
     syn.matrix.vals, pre.fire, post.fire, syn.matrix.colptr, syn.matrix.rowptr,
-    vars_on, @snn_mbt.STDPGerstner::new(), 0.0F, 0.125F,
+    vars_on, @synapse.STDPGerstner::new(), 0.0F, 0.125F,
   )
   let w_after_on = syn.matrix.vals[0]
   // Restore weight, then run with active=false — no change expected.
   ignore(syn.matrix.vals.set(0, w_before))
   vars_on.active[0] = false
-  @snn_mbt.stdp_step(
+  @synapse.stdp_step(
     syn.matrix.vals, pre.fire, post.fire, syn.matrix.colptr, syn.matrix.rowptr,
-    vars_on, @snn_mbt.STDPGerstner::new(), 0.0F, 0.125F,
+    vars_on, @synapse.STDPGerstner::new(), 0.0F, 0.125F,
   )
   let w_after_off = syn.matrix.vals[0]
   if w_after_on == w_before {
@@ -146,12 +146,12 @@ test "MarkramSTPEntryTimestep::set_stp_active: toggles vars.active[0]" {
 
 ///|
 test "STDPEntry::set_ltp_active: round-trip preserves the vars state" {
-  let entry = @snn_mbt.STDPEntry::new(0, 2, 2)
+  let entry = @synapse.STDPEntry::new(0, 2, 2)
   // Touch the vars so we can verify they're preserved across toggles.
   entry.vars.tpre[0] = 0.05F
   entry.vars.tpost[1] = 0.07F
-  @snn_mbt.STDPEntry::set_ltp_active(entry, false)
-  @snn_mbt.STDPEntry::set_ltp_active(entry, true)
+  @synapse.STDPEntry::set_ltp_active(entry, false)
+  @synapse.STDPEntry::set_ltp_active(entry, true)
   if entry.vars.tpre[0] != 0.05F {
     fail("tpre[0] should survive the round-trip toggle")
   }
@@ -188,8 +188,8 @@ test "MarkramSTPEntry::set_stp_active: round-trip preserves the vars state" {
 
 ///|
 test "set_LTP_active / set_STP_active: alias names match Julia convention (sans !)" {
-  let stdp = @snn_mbt.STDPEntry::new(0, 2, 2)
-  @snn_mbt.STDPEntry::set_ltp_active(stdp, false)
+  let stdp = @synapse.STDPEntry::new(0, 2, 2)
+  @synapse.STDPEntry::set_ltp_active(stdp, false)
   if stdp.vars.active[0] {
     fail("alias path: STDP should be inactive")
   }

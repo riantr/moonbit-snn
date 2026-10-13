@@ -30,8 +30,8 @@ fn main {
   }
 
   // STDP state.
-  let stdp_param = @snn_mbt.STDPGerstner::new()
-  let stdp_vars = @snn_mbt.STDPVariables::new(n, n)
+  let stdp_param = @synapse.STDPGerstner::new()
+  let stdp_vars = @synapse.STDPVariables::new(n, n)
 
   println("stdp_demo.mbt: STDP pairing protocol (Gerstner 1996)")
   let initial_weights = ee.matrix.vals.copy()
@@ -60,7 +60,7 @@ fn main {
       @synapse.forward_synapse(ee, Float::from_int(t_step * pair_steps + s) * dt)
       // Apply STDP.
       let t_now = Float::from_int(t_step * pair_steps + s) * dt
-      @snn_mbt.stdp_step(ee.matrix.vals, e1.fire, e2.fire,
+      @synapse.stdp_step(ee.matrix.vals, e1.fire, e2.fire,
         ee.matrix.colptr, ee.matrix.rowptr, stdp_vars, stdp_param, t_now, dt)
       s = s + 1
     }
@@ -78,5 +78,5 @@ fn main {
     total_change.to_string())
   // Visualise the STDP kernel that drove these weight changes.
   println("--- STDP kernel (Gerstner 1996) ---")
-  @snn_mbt.stdp_kernel_plot(stdp_param)
+  @synapse.stdp_kernel_plot(stdp_param)
 }

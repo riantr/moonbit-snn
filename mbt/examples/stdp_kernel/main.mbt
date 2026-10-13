@@ -25,11 +25,11 @@ fn main {
   println("stdp_kernel.mbt: STDP kernel visualisations")
   println("")
   // Kernel 1: classical Gerstner 1996 (pre-only LTP, post-only LTD).
-  let p1 = @snn_mbt.STDPGerstner::new()
+  let p1 = @synapse.STDPGerstner::new()
   // Override defaults with Julia's typical values: A_pre = 0.05,
   // A_post = 0.05 (asymmetric: pre-only LTP, post-only LTD),
   // τ_pre = 15ms, τ_post = 25ms.
-  let custom_p1 : @snn_mbt.STDPGerstner = {
+  let custom_p1 : @synapse.STDPGerstner = {
     a_pre: 0.05F,
     a_post: 0.05F,
     tau_pre: 15.0F,
@@ -38,13 +38,13 @@ fn main {
     w_min: -1000.0F,
   }
   println("--- Gerstner 1996 (asymmetric, exponential) ---")
-  @snn_mbt.stdp_kernel_plot(custom_p1, t_max=80.0F, width=60, height=12)
+  @synapse.stdp_kernel_plot(custom_p1, t_max=80.0F, width=60, height=12)
   println("")
 
   // Kernel 2: symmetric kernel (both pre-only and post-only LTP).
   // We approximate this with custom_a_post = -a_pre (so negative Δt
   // → LTP, mimicking a "symmetric" Gerstner).
-  let custom_p2 : @snn_mbt.STDPGerstner = {
+  let custom_p2 : @synapse.STDPGerstner = {
     a_pre: 0.05F,
     a_post: -0.05F,  // negative → Δt<0 gives LTP (post before pre)
     tau_pre: 20.0F,
@@ -53,7 +53,7 @@ fn main {
     w_min: -1000.0F,
   }
   println("--- Symmetric Gerstner (mirror image) ---")
-  @snn_mbt.stdp_kernel_plot(custom_p2, t_max=80.0F, width=60, height=12)
+  @synapse.stdp_kernel_plot(custom_p2, t_max=80.0F, width=60, height=12)
   println("")
 
   // Suppress unused warning for p1 default.

@@ -34,9 +34,9 @@ fn main {
   let pre_fire : Array[Bool] = Array::make(n_pre, false)
   let post_fire : Array[Bool] = Array::make(n_post, false)
 
-  let entry = @snn_mbt.STDPSymmetric::new()
+  let entry = @synapse.STDPSymmetric::new()
   let _ = entry
-  let e = @snn_mbt.STDPEntrySymmetric::new(0, n_pre, n_post)
+  let e = @synapse.STDPEntrySymmetric::new(0, n_pre, n_post)
   println("stdp_symmetric.mbt: STDPSymmetric (Festa 2024) demo")
   println("")
   println("=== STDPSymmetric defaults ===")
@@ -61,7 +61,7 @@ fn main {
       post_fire[k] = @core.next_f32(rng) < 0.3F
     }
     let t_now = Float::from_int(step) * dt
-    @snn_mbt.stdp_symmetric_step(
+    @synapse.stdp_symmetric_step(
       w, pre_fire, post_fire, colptr, rowptr, e.vars, e.param, t_now, dt,
     )
   }

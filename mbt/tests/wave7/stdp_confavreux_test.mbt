@@ -8,7 +8,7 @@
 
 ///|
 test "STDPConfavreux2025::new: defaults match Julia" {
-  let p = @snn_mbt.STDPConfavreux2025::new()
+  let p = @synapse.STDPConfavreux2025::new()
   if p.eta != 0.01F {
     fail("eta = \{p.eta}, expected 0.01")
   }
@@ -40,7 +40,7 @@ test "STDPConfavreux2025::new: defaults match Julia" {
 
 ///|
 test "STDPEntryConfavreux2025::new: vars zero-initialised" {
-  let e = @snn_mbt.STDPEntryConfavreux2025::new(0, 5, 4)
+  let e = @synapse.STDPEntryConfavreux2025::new(0, 5, 4)
   if e.conn_index != 0 {
     fail("conn_index = \{e.conn_index}, expected 0")
   }
@@ -70,10 +70,10 @@ test "STDPEntryConfavreux2025::new: vars zero-initialised" {
 
 ///|
 test "STDPEntryConfavreux2025::change_plasticity: swaps param, preserves vars" {
-  let e = @snn_mbt.STDPEntryConfavreux2025::new(0, 3, 3)
+  let e = @synapse.STDPEntryConfavreux2025::new(0, 3, 3)
   e.vars.tpre[0] = 0.7F
   e.vars.tpost[1] = 0.5F
-  let new_param : @snn_mbt.STDPConfavreux2025 = {
+  let new_param : @synapse.STDPConfavreux2025 = {
     eta: 0.05F,
     alpha: 0.1F,
     beta: 0.2F,
@@ -108,10 +108,10 @@ test "stdp_confavreux_step: pre spike adds kappa * tpost[i] + alpha" {
   let post_fire : Array[Bool] = [false]
   let colptr : Array[Int] = [0] // post index of connection s=0
   let rowptr : Array[Int] = [0, 1] // pre 0 has 1 connection starting at 0
-  let vars = @snn_mbt.STDPVariables::new(1, 1)
+  let vars = @synapse.STDPVariables::new(1, 1)
   // Force tpost[0] = 0.5 (bypass decay by starting at 0.5).
   vars.tpost[0] = 0.5F
-  let p : @snn_mbt.STDPConfavreux2025 = {
+  let p : @synapse.STDPConfavreux2025 = {
     eta: 0.01F,
     alpha: 0.1F,
     beta: 0.0F,
@@ -123,7 +123,7 @@ test "stdp_confavreux_step: pre spike adds kappa * tpost[i] + alpha" {
     w_min: 0.0F,
   }
   let dt = 0.125F
-  @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   // tpost[0] was decayed before the weight update by `decay_post = exp(-dt/tau_post)`.
   // exp(-0.125/20) 鈮?0.99376. So tpost[0] after decay 鈮?0.5 * 0.99376 鈮?0.49688.
   // 螖w = 0.01 * (1 * 0.49688 + 0.1) = 0.01 * 0.59688 鈮?0.0059688.
@@ -143,9 +143,9 @@ test "stdp_confavreux_step: post spike adds gamma * tpre[j] + beta" {
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.STDPVariables::new(1, 1)
+  let vars = @synapse.STDPVariables::new(1, 1)
   vars.tpre[0] = 0.7F
-  let p : @snn_mbt.STDPConfavreux2025 = {
+  let p : @synapse.STDPConfavreux2025 = {
     eta: 0.01F,
     alpha: 0.0F,
     beta: 0.2F,
@@ -157,7 +157,7 @@ test "stdp_confavreux_step: post spike adds gamma * tpre[j] + beta" {
     w_min: 0.0F,
   }
   let dt = 0.125F
-  @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   let expected = 0.01F * (1.0F * 0.7F * @core.expf(-dt / 20.0F) + 0.2F)
   if (w[0] - (0.3F + expected)).abs() > 1.0e-5F {
     fail("w[0] = \{w[0]}, expected ~\{0.3F + expected}")
@@ -175,11 +175,11 @@ test "stdp_confavreux_step: pre + post both fire same step 鈥?additive" {
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.STDPVariables::new(1, 1)
+  let vars = @synapse.STDPVariables::new(1, 1)
   // Start with non-zero traces.
   vars.tpre[0] = 0.3F
   vars.tpost[0] = 0.4F
-  let p : @snn_mbt.STDPConfavreux2025 = {
+  let p : @synapse.STDPConfavreux2025 = {
     eta: 0.1F,
     alpha: 0.05F,
     beta: 0.07F,
@@ -191,7 +191,7 @@ test "stdp_confavreux_step: pre + post both fire same step 鈥?additive" {
     w_min: 0.0F,
   }
   let dt = 0.125F
-  @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+  @synapse.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
   // tpre after step: 0.3 * decay_pre + 1.0 (spike bump)
   // tpost after step: 0.4 * decay_post + 1.0
   let decay_pre : Float = @core.expf(-dt / 20.0F)
@@ -215,9 +215,9 @@ test "stdp_confavreux_step: weight clamps at w_max (LTP side)" {
   let post_fire : Array[Bool] = [true]
   let colptr : Array[Int] = [0]
   let rowptr : Array[Int] = [0, 1]
-  let vars = @snn_mbt.STDPVariables::new(1, 1)
+  let vars = @synapse.STDPVariables::new(1, 1)
   vars.tpre[0] = 1.0F
-  let p : @snn_mbt.STDPConfavreux2025 = {
+  let p : @synapse.STDPConfavreux2025 = {
     eta: 0.01F,
     alpha: 0.0F,
     beta: 0.0F,
@@ -231,7 +231,7 @@ test "stdp_confavreux_step: weight clamps at w_max (LTP side)" {
   let dt = 0.125F
   // Run many iterations with post firing each step.
   for _ in 0..<2000 {
-    @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
+    @synapse.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, 0.0F, dt)
     // Reset trace each step so the bump is constant.
     vars.tpre[0] = 1.0F
   }
@@ -256,12 +256,12 @@ test "stdp_confavreux_step: weights stay finite over many steps" {
   let colptr : Array[Int] = [
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
-  let vars = @snn_mbt.STDPVariables::new(n_pre, n_post)
-  let p = @snn_mbt.STDPConfavreux2025::new()
+  let vars = @synapse.STDPVariables::new(n_pre, n_post)
+  let p = @synapse.STDPConfavreux2025::new()
   let dt = 0.125F
   for step in 0..<200 {
     let _ = step
-    @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {
@@ -284,8 +284,8 @@ test "stdp_confavreux_step: integration 鈥?random pre/post spikes" {
   let colptr : Array[Int] = [
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
   ]
-  let vars = @snn_mbt.STDPVariables::new(n_pre, n_post)
-  let p = @snn_mbt.STDPConfavreux2025::new()
+  let vars = @synapse.STDPVariables::new(n_pre, n_post)
+  let p = @synapse.STDPConfavreux2025::new()
   let dt = 0.125F
   let rng = @core.Xoshiro::from_state(
     0xCAFEBABEUL, 0xDEADBEEFUL, 0xFEEDFACEUL, 0x0123456789ABCDEFUL,
@@ -298,7 +298,7 @@ test "stdp_confavreux_step: integration 鈥?random pre/post spikes" {
     for k in 0..<n_post {
       post_fire[k] = @core.next_f32(rng) < 0.3F
     }
-    @snn_mbt.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
+    @synapse.stdp_confavreux_step(w, pre_fire, post_fire, colptr, rowptr, vars, p, Float::from_int(step) * dt, dt)
   }
   for s in 0..<n_conn {
     if (w[s]).is_nan() || (w[s]).is_inf() {

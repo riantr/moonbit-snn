@@ -98,28 +98,28 @@ pub fn reset_heterogeneous_full(m : HeterogeneousModel) -> Unit {
   // STDP entries → per-type reset.
   for entry in m.stdp_entries {
     match entry {
-      Gerstner_(e) => {
+      @synapse.Gerstner_(e) => {
         let _ = e
       }
-      MexicanHat_(e) => {
+      @synapse.MexicanHat_(e) => {
         let _ = e
       }
-      AntiSymmetric_(e) => {
+      @synapse.AntiSymmetric_(e) => {
         let _ = e
       }
-      Confavreux2025_(e) => {
+      @synapse.Confavreux2025_(e) => {
         let _ = e
       }
-      IstdpRate_(e) => {
+      @synapse.IstdpRate_(e) => {
         let _ = e
       }
-      IstdpPotential_(e) => {
+      @synapse.IstdpPotential_(e) => {
         let _ = e
       }
-      Symmetric_(e) => {
+      @synapse.Symmetric_(e) => {
         let _ = e
       }
-      CaPlasticity_(e) => {
+      @synapse.CaPlasticity_(e) => {
         let _ = e
       }
     }
@@ -181,7 +181,7 @@ pub fn merge_heterogeneous(
   for m in b.monitors {
     mons.push(m)
   }
-  let stdp : Array[STDPEntryKind] = []
+  let stdp : Array[@synapse.STDPEntryKind] = []
   for e in a.stdp_entries {
     stdp.push(e)
   }

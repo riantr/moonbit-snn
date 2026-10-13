@@ -103,10 +103,10 @@ pub struct Multipod {
   cs : Array[Float]
   iv : Array[Float]
   // Synapse parameter arrays (simplified — Julia uses Receptors).
-  soma_syn : @synapse.SingleExpSynapse
-  dend_syn : @synapse.SingleExpSynapse
+  soma_syn : SingleExpSynapse
+  dend_syn : SingleExpSynapse
   // NMDA voltage-dependency.
-  nmda : @synapse.NMDAVoltageDependency
+  nmda : NMDAVoltageDependency
   // Dendrite parameters.
   dendrites : Array[@neuron.Dendrite]
 }
@@ -193,10 +193,10 @@ pub fn Multipod::new(
   let cs : Array[Float] = Array::make(nd, 0.0F)
   let iv : Array[Float] = Array::make(nd + 1, 0.0F)
   // Synapse parameters (SingleExpSynapse defaults).
-  let soma_syn = @synapse.SingleExpSynapse::new()
-  let dend_syn = @synapse.SingleExpSynapse::new()
+  let soma_syn = SingleExpSynapse::new()
+  let dend_syn = SingleExpSynapse::new()
   // NMDA voltage-dependency (Eyal defaults).
-  let nmda = @synapse.NMDAVoltageDependency::eyal()
+  let nmda = NMDAVoltageDependency::eyal()
   {
     n,
     nd,

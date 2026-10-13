@@ -1,7 +1,7 @@
 // Tests for DendNeuronParameter + Physiology.
 
 ///|
-fn tree_type_to_int(t : @snn_mbt.DendriticTreeType) -> Int {
+fn tree_type_to_int(t : @synapse.DendriticTreeType) -> Int {
   match t {
     Tripod => 0
     BallAndStick => 1
@@ -11,7 +11,7 @@ fn tree_type_to_int(t : @snn_mbt.DendriticTreeType) -> Int {
 
 ///|
 test "Physiology::human defaults match Julia human_dend" {
-  let p = @snn_mbt.Physiology::human()
+  let p = @synapse.Physiology::human()
   // 200Ω·cm → 200 * 0.001 = 0.2F (Float32)
   assert_eq(p.ri, 0.2F)
   // 38907Ω·cm² → 38907 * 0.001 ≈ 38.907F
@@ -24,7 +24,7 @@ test "Physiology::human defaults match Julia human_dend" {
 
 ///|
 test "Physiology::mouse defaults match Julia mouse_dend" {
-  let p = @snn_mbt.Physiology::mouse()
+  let p = @synapse.Physiology::mouse()
   assert_eq(p.ri, 0.2F)
   // 1700Ω·cm² → 1.7F
   assert_eq(p.rd > 1.69F && p.rd < 1.71F, true)
@@ -34,7 +34,7 @@ test "Physiology::mouse defaults match Julia mouse_dend" {
 
 ///|
 test "Physiology::custom preserves all 3 fields" {
-  let p = @snn_mbt.Physiology::custom(ri=1.0F, rd=2.0F, cd=3.0F)
+  let p = @synapse.Physiology::custom(ri=1.0F, rd=2.0F, cd=3.0F)
   assert_eq(p.ri, 1.0F)
   assert_eq(p.rd, 2.0F)
   assert_eq(p.cd, 3.0F)
@@ -42,7 +42,7 @@ test "Physiology::custom preserves all 3 fields" {
 
 ///|
 test "DendNeuronParameter::new defaults — Tripod (2 dendrites)" {
-  let p = @snn_mbt.DendNeuronParameter::new()
+  let p = @synapse.DendNeuronParameter::new()
   // ds default: 2 dendrites, each (200μm, 400μm)
   assert_eq(p.ds.length(), 2)
   assert_eq(p.ds[0].length(), 2)
@@ -64,14 +64,14 @@ test "DendNeuronParameter::new defaults — Tripod (2 dendrites)" {
 
 ///|
 test "TripodParameter::new — Tripod shortcut" {
-  let p = @snn_mbt.tripod_param_new()
+  let p = @synapse.tripod_param_new()
   assert_eq(p.ds.length(), 2)
   assert_eq(tree_type_to_int(p.tree_type), 0) // Tripod = 0
 }
 
 ///|
 test "BallAndStickParameter::new — BallAndStick shortcut" {
-  let p = @snn_mbt.ballandstick_param_new()
+  let p = @synapse.ballandstick_param_new()
   // ds: 1 dendrite (150μm, 400μm)
   assert_eq(p.ds.length(), 1)
   assert_eq(p.ds[0].length(), 2)
@@ -86,9 +86,9 @@ test "BallAndStickParameter::new — BallAndStick shortcut" {
 
 ///|
 test "DendNeuronParameter::custom — auto-infer BallAndStick (1 dend)" {
-  let p = @snn_mbt.DendNeuronParameter::custom(
+  let p = @synapse.DendNeuronParameter::custom(
     ds=[[100.0F, 200.0F]],
-    physiology=@snn_mbt.Physiology::mouse(),
+    physiology=@synapse.Physiology::mouse(),
   )
   assert_eq(tree_type_to_int(p.tree_type), 1) // BallAndStick
   assert_eq(p.geometry.length(), 1)
@@ -97,7 +97,7 @@ test "DendNeuronParameter::custom — auto-infer BallAndStick (1 dend)" {
 
 ///|
 test "DendNeuronParameter::custom — auto-infer Tripod (2 dend)" {
-  let p = @snn_mbt.DendNeuronParameter::custom(
+  let p = @synapse.DendNeuronParameter::custom(
     ds=[[100.0F, 200.0F], [100.0F, 300.0F]],
   )
   assert_eq(tree_type_to_int(p.tree_type), 0) // Tripod
@@ -108,7 +108,7 @@ test "DendNeuronParameter::custom — auto-infer Tripod (2 dend)" {
 
 ///|
 test "DendNeuronParameter::custom — auto-infer Multipod (3+ dend)" {
-  let p = @snn_mbt.DendNeuronParameter::custom(
+  let p = @synapse.DendNeuronParameter::custom(
     ds=[[100.0F, 200.0F], [100.0F, 200.0F], [100.0F, 200.0F]],
   )
   assert_eq(tree_type_to_int(p.tree_type), 2) // Multipod
@@ -120,15 +120,15 @@ test "DendNeuronParameter::custom — auto-infer Multipod (3+ dend)" {
 
 ///|
 test "population_from_dend_neuron — returns parameter (Julia passthrough)" {
-  let p = @snn_mbt.tripod_param_new()
-  let r = @snn_mbt.population_from_dend_neuron(p)
+  let p = @synapse.tripod_param_new()
+  let r = @synapse.population_from_dend_neuron(p)
   assert_eq(r.ds.length(), 2)
   assert_eq(tree_type_to_int(r.tree_type), 0) // Tripod
 }
 
 ///|
 test "Physiology fields stored as Float32 (bit-exact with Julia)" {
-  let p = @snn_mbt.Physiology::human()
+  let p = @synapse.Physiology::human()
   // Verify the Float32 internal representation
   // ri = 200 * 0.001 = 0.2F exact
   // rd = 38907 * 0.001 = 38.90700073242188F (Float32 round-off)

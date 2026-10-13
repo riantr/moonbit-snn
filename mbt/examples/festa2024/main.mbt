@@ -46,7 +46,7 @@ fn main {
   let stim_i = @stimulus.PoissonStimulusIF::new(i_pop, "ge", 2.0F, rng)
 
   // STDP on the I1->E (inhibitory) synapse - conns[2].
-  let stdp_entry = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(2, ni, ne))
+  let stdp_entry = @synapse.Gerstner_(@synapse.STDPEntry::new(2, ni, ne))
 
   println("festa2024.mbt: simplified Festa2024 network")
   println("  E: " + ne.to_string() + " IF neurons (pee=0.2, wee=1.0)")

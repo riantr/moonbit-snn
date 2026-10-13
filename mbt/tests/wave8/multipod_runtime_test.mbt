@@ -8,11 +8,11 @@
 test "multipod_step_nd2_n2_runs_finite" {
   // Dendrite::new(n) sized to match Multipod's population size.
   let d = @neuron.Dendrite::new(2)
-  let p = @snn_mbt.Multipod::new([d, d], 2)
+  let p = @synapse.Multipod::new([d, d], 2)
   // Step a few times — must not crash.
   let mut step = 0
   while step < 100 {
-    @snn_mbt.Multipod::step(p, 0.125F)
+    @synapse.Multipod::step(p, 0.125F)
     step = step + 1
   }
   // All v_s must be finite.
@@ -30,10 +30,10 @@ test "multipod_step_nd2_n2_runs_finite" {
 ///|
 test "multipod_step_nd3_n3_longer_runs" {
   let d = @neuron.Dendrite::new(3)
-  let p = @snn_mbt.Multipod::new([d, d, d], 3)
+  let p = @synapse.Multipod::new([d, d, d], 3)
   let mut step = 0
   while step < 500 {
-    @snn_mbt.Multipod::step(p, 0.125F)
+    @synapse.Multipod::step(p, 0.125F)
     step = step + 1
   }
   let mut i = 0
@@ -49,13 +49,13 @@ test "multipod_step_nd3_n3_longer_runs" {
 ///|
 test "multipod_step_under_strong_drive_produces_spike" {
   let d = @neuron.Dendrite::new(1)
-  let p = @snn_mbt.Multipod::new([d, d], 1)
+  let p = @synapse.Multipod::new([d, d], 1)
   // Inject strong he_s current → should trigger a spike.
   let mut step = 0
   let mut spike_count = 0
   while step < 200 {
     p.he_s[0] = 1000.0F
-    @snn_mbt.Multipod::step(p, 0.125F)
+    @synapse.Multipod::step(p, 0.125F)
     if p.fire[0] {
       spike_count = spike_count + 1
     }

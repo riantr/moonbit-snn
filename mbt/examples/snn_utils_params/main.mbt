@@ -22,8 +22,8 @@
 
 ///|
 fn main {
-  let lkd = @snn_mbt.LKD2014::new()
-  let duarte = @snn_mbt.Duarte2019::new()
+  let lkd = @synapse.LKD2014::new()
+  let duarte = @synapse.Duarte2019::new()
 
   println("snn_utils_params.mbt: LKD2014 + Duarte2019 parameter constants (v0.10.40)")
   println("")

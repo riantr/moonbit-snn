@@ -37,13 +37,13 @@ fn main {
 
   // Connectivity (random Bernoulli, p=0.2; weights as in LKD).
   // EE connections: E_pre → E (μ=2.76 nS).
-  let ee_w = @snn_mbt.make_random_weights(ne, ne, 2.76F, 0.2F, rng)
+  let ee_w = @synapse.make_random_weights(ne, ne, 2.76F, 0.2F, rng)
   // EI connections: I_pre → E (μ=1.27 nS).
-  let ei_w = @snn_mbt.make_random_weights(ni, ne, 1.27F, 0.2F, rng)
+  let ei_w = @synapse.make_random_weights(ni, ne, 1.27F, 0.2F, rng)
   // IE connections: E_pre → I (μ=48.7 nS).
-  let ie_w = @snn_mbt.make_random_weights(ne, ni, 48.7F, 0.2F, rng)
+  let ie_w = @synapse.make_random_weights(ne, ni, 48.7F, 0.2F, rng)
   // II connections: I_pre → I (μ=16.2 nS).
-  let ii_w = @snn_mbt.make_random_weights(ni, ni, 16.2F, 0.2F, rng)
+  let ii_w = @synapse.make_random_weights(ni, ni, 16.2F, 0.2F, rng)
 
   // Poisson inputs (scaled down 100× from 4.5Hz/2.5Hz).
   let e_stim = @stimulus.PoissonStimulusIF::new(e_pre, "ge", 0.0045F, rng)
@@ -61,15 +61,15 @@ fn main {
     // 1. Drive pre-neurons (IF) with Poisson + decay their synapses.
     @stimulus.stimulate_if(e_stim, t_now, dt)
     @stimulus.stimulate_if(i_stim, t_now, dt)
-    @snn_mbt.simulate_step_if(e_pre, dt)
-    @snn_mbt.simulate_step_if(i_pre, dt)
+    @synapse.simulate_step_if(e_pre, dt)
+    @synapse.simulate_step_if(i_pre, dt)
     // 2. Route pre-spikes to post-synaptic glu/gaba buffers.
     //    EE + IE → post.glu (excitatory).
     //    EI + II → post.gaba (inhibitory).
-    @snn_mbt.route_pre_to_post(e_pre, e_pop, ee_w, true, false)
-    @snn_mbt.route_pre_to_post(i_pre, e_pop, ei_w, false, true)
-    @snn_mbt.route_pre_to_post(e_pre, i_pop, ie_w, true, false)
-    @snn_mbt.route_pre_to_post(i_pre, i_pop, ii_w, false, true)
+    @synapse.route_pre_to_post(e_pre, e_pop, ee_w, true, false)
+    @synapse.route_pre_to_post(i_pre, e_pop, ei_w, false, true)
+    @synapse.route_pre_to_post(e_pre, i_pop, ie_w, true, false)
+    @synapse.route_pre_to_post(i_pre, i_pop, ii_w, false, true)
     // 3. Integrate AdExSinExp posts.
     @neuron.adex_sinexp_step_synapses(e_pop, dt)
     @neuron.adex_sinexp_synaptic_current(e_pop)
@@ -82,14 +82,14 @@ fn main {
     @neuron.record_one_sinexp(fm_i, t_now)
   }
 
-  let e_hz = @snn_mbt.monitor_firing_rate(fm_e.data)
-  let i_hz = @snn_mbt.monitor_firing_rate(fm_i.data)
-  let e_count = @snn_mbt.monitor_count_spikes(fm_e.data)
-  let i_count = @snn_mbt.monitor_count_spikes(fm_i.data)
-  let ee_count = @snn_mbt.count_nnz(ee_w)
-  let ei_count = @snn_mbt.count_nnz(ei_w)
-  let ie_count = @snn_mbt.count_nnz(ie_w)
-  let ii_count = @snn_mbt.count_nnz(ii_w)
+  let e_hz = @synapse.monitor_firing_rate(fm_e.data)
+  let i_hz = @synapse.monitor_firing_rate(fm_i.data)
+  let e_count = @synapse.monitor_count_spikes(fm_e.data)
+  let i_count = @synapse.monitor_count_spikes(fm_i.data)
+  let ee_count = @synapse.count_nnz(ee_w)
+  let ei_count = @synapse.count_nnz(ei_w)
+  let ie_count = @synapse.count_nnz(ie_w)
+  let ii_count = @synapse.count_nnz(ii_w)
   println("lkd2014_adex.mbt: LKD 2014 vSTDP network with AdExSinExp")
   println("  E: " + ne.to_string() + " AdExSinExp neurons (El=-70, Vt=-52, Vr=-60)")
   println("  I: " + ni.to_string() + " AdExSinExp neurons (El=-62, Vt=-52, Vr=-60)")

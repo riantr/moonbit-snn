@@ -31,7 +31,7 @@ fn main {
   }
 
   // STDP entry for the EE connection at conns[0].
-  let stdp_entry = @snn_mbt.Gerstner_(@snn_mbt.STDPEntry::new(0, n, n))
+  let stdp_entry = @synapse.Gerstner_(@synapse.STDPEntry::new(0, n, n))
 
   println("stdp_compose_demo.mbt: STDP pairing via compose layer (Gerstner 1996)")
   println("  initial weights: " + ee.matrix.vals.to_string())

@@ -38,7 +38,7 @@ fn main {
   let post_fire : Array[Bool] = Array::make(n_post, false)
 
   // Build the entry with default STDPConfavreux2025 params.
-  let entry = @snn_mbt.STDPEntryConfavreux2025::new(0, n_pre, n_post)
+  let entry = @synapse.STDPEntryConfavreux2025::new(0, n_pre, n_post)
   println("stdp_confavreux.mbt: STDPConfavreux2025 (Confavreux 2025) demo")
   println("")
   println("=== STDPConfavreux2025 defaults ===")
@@ -65,7 +65,7 @@ fn main {
       post_fire[k] = @core.next_f32(rng) < 0.3F
     }
     let t_now = Float::from_int(step) * dt
-    @snn_mbt.stdp_confavreux_step(
+    @synapse.stdp_confavreux_step(
       w, pre_fire, post_fire, colptr, rowptr, entry.vars, entry.param, t_now, dt,
     )
   }

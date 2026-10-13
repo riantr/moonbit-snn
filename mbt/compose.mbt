@@ -29,7 +29,7 @@ pub(all) struct HeterogeneousModel {
   // plasticity rule each step. Empty by default (no plasticity).
   // Each entry's `conn_index` selects which synapse to update.
   // Mutating `t_now` happens inside step_heterogeneous.
-  stdp_entries : Array[STDPEntryKind]
+  stdp_entries : Array[@synapse.STDPEntryKind]
   // STP entries — one per synapse that should be updated with a
   // short-term plasticity rule (Markram) each step. Run BEFORE
   // forward so that the ρ scaling is fresh when spikes propagate.
@@ -81,7 +81,7 @@ pub fn compose(
   conns : Array[@synapse.SpikingSynapse],
   stims? : Array[AnyStim] = [],
   monitors? : Array[Monitor] = [],
-  stdp? : Array[STDPEntryKind] = [],
+  stdp? : Array[@synapse.STDPEntryKind] = [],
   stp? : Array[@synapse.STPEntryKind] = [],
 ) -> HeterogeneousModel {
   { pops, conns, stims, time: @core.Time::new(), monitors, stdp_entries: stdp,
@@ -132,9 +132,9 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
   // 3. apply STDP! (plasticity mutates weights in-place)
   for entry in m.stdp_entries {
     match entry {
-      Gerstner_(e) => {
+      @synapse.Gerstner_(e) => {
         let syn = m.conns[e.conn_index]
-        stdp_step(
+        @synapse.stdp_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
@@ -147,9 +147,9 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      MexicanHat_(e) => {
+      @synapse.MexicanHat_(e) => {
         let syn = m.conns[e.conn_index]
-        stdp_mexican_hat_step(
+        @synapse.stdp_mexican_hat_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
@@ -162,9 +162,9 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      AntiSymmetric_(e) => {
+      @synapse.AntiSymmetric_(e) => {
         let syn = m.conns[e.conn_index]
-        stdp_antisymmetric_step(
+        @synapse.stdp_antisymmetric_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
@@ -176,9 +176,9 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      Confavreux2025_(e) => {
+      @synapse.Confavreux2025_(e) => {
         let syn = m.conns[e.conn_index]
-        stdp_confavreux_step(
+        @synapse.stdp_confavreux_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
@@ -191,7 +191,7 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      IstdpRate_(e) => {
+      @synapse.IstdpRate_(e) => {
         let syn = m.conns[e.conn_index]
         @synapse.istdp_rate_step(
           syn.matrix.vals,
@@ -206,7 +206,7 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      IstdpPotential_(e) => {
+      @synapse.IstdpPotential_(e) => {
         let syn = m.conns[e.conn_index]
         @synapse.istdp_potential_step(
           syn.matrix.vals,
@@ -222,9 +222,9 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      Symmetric_(e) => {
+      @synapse.Symmetric_(e) => {
         let syn = m.conns[e.conn_index]
-        stdp_symmetric_step(
+        @synapse.stdp_symmetric_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
@@ -237,9 +237,9 @@ pub fn step_heterogeneous(m : HeterogeneousModel, dt : Float) -> Unit {
         )
         e.t_now[0] = e.t_now[0] + dt
       }
-      CaPlasticity_(e) => {
+      @synapse.CaPlasticity_(e) => {
         let syn = m.conns[e.conn_index]
-        ca_plasticity_step(
+        @synapse.ca_plasticity_step(
           syn.matrix.vals,
           syn.pre.fire,
           syn.post.fire,
