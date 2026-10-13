@@ -1,0 +1,7 @@
+import {
+  "riantr/snn_mbt/gpu",
+}
+
+options(
+  "is-main": true,
+)

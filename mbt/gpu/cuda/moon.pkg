@@ -1,0 +1,23 @@
+// The CUDA sub-package carries no MoonBit symbol. It exists so that
+// `native-stub` and `link-libraries` have somewhere to live: gpu/ffi.mbt
+// declares its externs directly, and gpu/moon.pkg imports this package only to
+// pick up the options block below.
+//
+// Nothing in source references this package; that is expected and is why the
+// import in gpu/moon.pkg is the only one.
+
+options(
+  link: {
+    "native": {
+      // dlopen / dlsym live in libdl on POSIX. kernel32, which provides
+      // LoadLibrary / GetProcAddress, is linked by default on Windows.
+      //
+      // Note what is absent: cublas, cudart and cusolverDn. The CUDA library
+      // is built separately by build_linear_accel_linux.sh / _windows.ps1 and
+      // reached through dlopen at run time, so a machine without a CUDA
+      // toolchain can still build this tree.
+      "link-libraries": [ "dl" ],
+    },
+  },
+  "native-stub": [ "linear_accel_stub.c" ],
+)

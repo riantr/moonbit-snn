@@ -46,3 +46,7 @@
 // Adding this package must not change nn/ until liblinear_accel_sgemm
 // actually exists on disk. A declaration with no implementation does not fail
 // at build time -- it fails at load time, on a machine nobody is watching.
+
+import {
+  "riantr/snn_mbt/gpu/cuda"
+}
