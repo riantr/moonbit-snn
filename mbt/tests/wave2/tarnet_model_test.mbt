@@ -24,13 +24,13 @@
 /// Cross-entropy of the model on a fixed batch. `targets[b]` is the class of
 /// sample `b`.
 fn tn_obj_model(
-  net : @snn_mbt.Tarnet,
+  net : @tarnet.Tarnet,
   x : Array[Float],
   n : Int,
   targets : Array[Int],
 ) -> Float {
-  let o = @snn_mbt.tarnet_forward(net, x, n)
-  let (_d, loss) = @snn_mbt.tarnet_softmax_dlogits(
+  let o = @tarnet.tarnet_forward(net, x, n)
+  let (_d, loss) = @tarnet.tarnet_softmax_dlogits(
     o.logits, n, net.n_classes, targets,
   )
   loss
@@ -46,8 +46,8 @@ fn tn_model_fixture(
   in_chan : Int,
   t : Int,
   seed : UInt64,
-) -> (@snn_mbt.Tarnet, Array[Float], Array[Int]) {
-  let net = @snn_mbt.Tarnet::new(
+) -> (@tarnet.Tarnet, Array[Float], Array[Int]) {
+  let net = @tarnet.Tarnet::new(
     n_classes,
     in_chan,
     t,
@@ -94,8 +94,8 @@ fn tm_split_tol(f_base : Float) -> Float {
 
 test "Tarnet: the thin and full forward are bit-identical" {
   let (net, x, _tg) = tn_model_fixture(3, 4, 6, 6, 131UL)
-  let a = @snn_mbt.tarnet_forward(net, x, 3)
-  let (b, _cache) = @snn_mbt.tarnet_forward_full(net, x, 3)
+  let a = @tarnet.tarnet_forward(net, x, 3)
+  let (b, _cache) = @tarnet.tarnet_forward_full(net, x, 3)
   let mut i = 0
   while i < a.logits.length() {
     if a.logits[i] != b.logits[i] {
@@ -119,7 +119,7 @@ test "Tarnet: the model gradient matches central differences" {
   // either panic or -- worse -- silently drop tallies for the high indices,
   // which are exactly the ones a layout fault moves.
   let (probe, _px, _pt) = tn_model_fixture(n, 4, 6, 6, 141UL)
-  let n_params = @snn_mbt.tarnet_param_count(probe)
+  let n_params = @tarnet.tarnet_param_count(probe)
   let seed_hits = Array::make(n_params, 0)
   let mut total_checked = 0
   let mut total_kinks = 0
@@ -131,12 +131,12 @@ test "Tarnet: the model gradient matches central differences" {
   let mut seed = 141UL
   while seed < 141UL + TM_SEEDS.to_uint64() {
     let (net, x, targets) = tn_model_fixture(n, 4, 6, 6, seed)
-    let (out, cache) = @snn_mbt.tarnet_forward_full(net, x, n)
-    let (d_logits, _loss) = @snn_mbt.tarnet_softmax_dlogits(
+    let (out, cache) = @tarnet.tarnet_forward_full(net, x, n)
+    let (d_logits, _loss) = @tarnet.tarnet_softmax_dlogits(
       out.logits, n, net.n_classes, targets,
     )
-    let (gf, _dx) = @snn_mbt.tarnet_backward(net, n, cache, d_logits, 0.0F)
-    let base = @snn_mbt.tarnet_flatten(net)
+    let (gf, _dx) = @tarnet.tarnet_backward(net, n, cache, d_logits, 0.0F)
+    let base = @tarnet.tarnet_flatten(net)
     let f_base = tn_obj_model(net, x, n, targets)
     let tol_split = tm_split_tol(f_base)
     let stride = (base.length() / 150) + 1
@@ -147,10 +147,10 @@ test "Tarnet: the model gradient matches central differences" {
       bu[k] = base[k] + TM_H
       bd[k] = base[k] - TM_H
       let fu = tn_obj_model(
-        @snn_mbt.tarnet_unflatten(net, bu), x, n, targets,
+        @tarnet.tarnet_unflatten(net, bu), x, n, targets,
       )
       let fm = tn_obj_model(
-        @snn_mbt.tarnet_unflatten(net, bd), x, n, targets,
+        @tarnet.tarnet_unflatten(net, bd), x, n, targets,
       )
       let d_pos = (fu - f_base) / TM_H
       let d_neg = (f_base - fm) / TM_H
@@ -215,7 +215,7 @@ test "Tarnet: softmax cross-entropy matches a hand-computed row" {
   // -log p. d_logits must be (p - onehot)/n.
   let logits = [0.0F, 0.0F]
   let targets = [0]
-  let (d, loss) = @snn_mbt.tarnet_softmax_dlogits(logits, 1, 2, targets)
+  let (d, loss) = @tarnet.tarnet_softmax_dlogits(logits, 1, 2, targets)
   // equal logits -> p = 0.5 each; loss = -log(0.5) = 0.6931472
   if loss > 0.6931473F || loss < 0.6931470F {
     fail("softmax cross-entropy on equal logits gave \{loss}, expected log(2) = 0.6931472")
@@ -237,9 +237,9 @@ test "Tarnet: cross-entropy gradient matches central differences on the logits" 
   let n = 2
   let n_classes = 3
   let targets = [2, 0]
-  let (d, _loss) = @snn_mbt.tarnet_softmax_dlogits(logits, n, n_classes, targets)
+  let (d, _loss) = @tarnet.tarnet_softmax_dlogits(logits, n, n_classes, targets)
   let loss_at = fn(flat : Array[Float]) -> Float {
-    let (_dd, l) = @snn_mbt.tarnet_softmax_dlogits(
+    let (_dd, l) = @tarnet.tarnet_softmax_dlogits(
       flat, n, n_classes, targets,
     )
     l

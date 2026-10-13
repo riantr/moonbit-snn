@@ -65,11 +65,11 @@ fn dn_split_tol(f_base : Float, h : Float) -> Float {
 /// fixed vector, so every input and every weight has a non-zero gradient.
 fn tn_obj_dw(
   x : Array[Float],
-  p : @snn_mbt.Conv1DDepthwise,
+  p : @tarnet.Conv1DDepthwise,
   w : Array[Float],
   n : Int,
 ) -> Float {
-  let y = @snn_mbt.conv1d_depthwise_forward(x, n, p)
+  let y = @tarnet.conv1d_depthwise_forward(x, n, p)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -86,10 +86,10 @@ fn tn_obj_dw(
 /// shape for the test: the finite difference and the analytic path must see
 /// genuinely different parameter objects.
 fn tn_dw_with(
-  p : @snn_mbt.Conv1DDepthwise,
+  p : @tarnet.Conv1DDepthwise,
   w : Array[Float],
   b : Array[Float],
-) -> @snn_mbt.Conv1DDepthwise {
+) -> @tarnet.Conv1DDepthwise {
   {
     weight: w,
     bias: b,
@@ -103,10 +103,10 @@ fn tn_dw_with(
 ///|
 /// Same idea for a single weight entry.
 fn tn_dw_bump_w(
-  p : @snn_mbt.Conv1DDepthwise,
+  p : @tarnet.Conv1DDepthwise,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.Conv1DDepthwise {
+) -> @tarnet.Conv1DDepthwise {
   let w = p.weight.copy()
   w[idx] = p.weight[idx] + delta
   tn_dw_with(p, w, p.bias.copy())
@@ -115,10 +115,10 @@ fn tn_dw_bump_w(
 ///|
 /// Same idea for a single bias entry.
 fn tn_dw_bump_b(
-  p : @snn_mbt.Conv1DDepthwise,
+  p : @tarnet.Conv1DDepthwise,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.Conv1DDepthwise {
+) -> @tarnet.Conv1DDepthwise {
   let b = p.bias.copy()
   b[idx] = p.bias[idx] + delta
   tn_dw_with(p, p.weight.copy(), b)
@@ -132,10 +132,10 @@ fn tn_dw_bump_b(
 fn tn_obj_asp(
   x : Array[Float],
   n : Int,
-  p : @snn_mbt.AspParam,
+  p : @tarnet.AspParam,
   w : Array[Float],
 ) -> Float {
-  let (y, _c) = @snn_mbt.asp_forward(x, n, p)
+  let (y, _c) = @tarnet.asp_forward(x, n, p)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -148,10 +148,10 @@ fn tn_obj_asp(
 ///|
 /// Perturb one entry of `AspParam`'s first attention weight.
 fn tn_asp_w1_bump(
-  p : @snn_mbt.AspParam,
+  p : @tarnet.AspParam,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.AspParam {
+) -> @tarnet.AspParam {
   let w1 = p.w1.copy()
   w1[idx] = p.w1[idx] + delta
   {
@@ -167,10 +167,10 @@ fn tn_asp_w1_bump(
 ///|
 /// Rebuild `AspParam` with a perturbed second attention weight.
 fn tn_asp_w2_bump(
-  p : @snn_mbt.AspParam,
+  p : @tarnet.AspParam,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.AspParam {
+) -> @tarnet.AspParam {
   let w2 = p.w2.copy()
   w2[idx] = p.w2[idx] + delta
   {
@@ -198,9 +198,9 @@ test "ASP: every gradient matches central differences" {
   let c = 5
   let t = 7
   let x = tn_fixture(n, c, t, 41UL)
-  let p = @snn_mbt.AspParam::new(c, 6, 43UL)
+  let p = @tarnet.AspParam::new(c, 6, 43UL)
   let w = @core.rand_f32(@core.Xoshiro::new(47UL), n * 2 * c)
-  let (y, cache) = @snn_mbt.asp_forward(x, n, p)
+  let (y, cache) = @tarnet.asp_forward(x, n, p)
   if y.length() != n * 2 * c {
     fail("ASP output length is not n*2c")
   }
@@ -222,7 +222,7 @@ test "ASP: every gradient matches central differences" {
     }
     b = b + 1
   }
-  let g = @snn_mbt.asp_backward(w, n, p, cache)
+  let g = @tarnet.asp_backward(w, n, p, cache)
   let mut over = 0
   let mut worst = 0.0F
   let mut worst_i = -1
@@ -281,8 +281,8 @@ test "ASP: every gradient matches central differences" {
 ///|
 ///|
 /// The small configuration the layout tests use.
-fn tn_flat_model() -> @snn_mbt.Tarnet {
-  @snn_mbt.Tarnet::new(
+fn tn_flat_model() -> @tarnet.Tarnet {
+  @tarnet.Tarnet::new(
     4,
     6,
     9,
@@ -302,12 +302,12 @@ fn tn_flat_model() -> @snn_mbt.Tarnet {
 ///|
 test "Tarnet flatten round-trips and the named offsets land where documented" {
   let net = tn_flat_model()
-  let flat = @snn_mbt.tarnet_flatten(net)
-  let cnt = @snn_mbt.tarnet_param_count(net)
+  let flat = @tarnet.tarnet_flatten(net)
+  let cnt = @tarnet.tarnet_param_count(net)
   if flat.length() != cnt {
     fail("flatten length is not tarnet_param_count")
   }
-  let back = @snn_mbt.tarnet_flatten(@snn_mbt.tarnet_unflatten(net, flat))
+  let back = @tarnet.tarnet_flatten(@tarnet.tarnet_unflatten(net, flat))
   let mut i = 0
   while i < cnt {
     if flat[i] != back[i] {
@@ -334,13 +334,13 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
       o = o + b.dw.weight.length() + b.dw.bias.length() + 1
       o = o + b.hid * 2
       o = o + b.chan * b.hid + b.chan
-      o = o + @snn_mbt.ctse_param_count(b.se)
+      o = o + @tarnet.ctse_param_count(b.se)
     }
   }
   // The offset the walk arrives at must be mfa_w's first element.
   let mb = flat.copy()
   mb[o] = mb[o] + 1.0F
-  let qm = @snn_mbt.tarnet_unflatten(net, mb)
+  let qm = @tarnet.tarnet_unflatten(net, mb)
   if qm.mfa_w[0] != net.mfa_w[0] + 1.0F {
     fail("the offset after the three stacks does not reach mfa_w[0]")
   }
@@ -350,7 +350,7 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
   // A bump at the FIRST slot must reach ln_in.gamma[0].
   let bumped = flat.copy()
   bumped[0] = bumped[0] + 1.0F
-  let q = @snn_mbt.tarnet_unflatten(net, bumped)
+  let q = @tarnet.tarnet_unflatten(net, bumped)
   if q.ln_in.gamma[0] != flat[0] + 1.0F {
     fail("offset 0 does not reach ln_in.gamma[0]")
   }
@@ -366,7 +366,7 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
     b0.dw.weight.length() + b0.dw.bias.length()
   let pb = flat.copy()
   pb[pre] = pb[pre] + 1.0F
-  let q2 = @snn_mbt.tarnet_unflatten(net, pb)
+  let q2 = @tarnet.tarnet_unflatten(net, pb)
   if q2.stack_s[0].prelu1 != net.stack_s[0].prelu1 + 1.0F {
     fail("the prelu offset does not reach the first block's prelu1")
   }
@@ -376,7 +376,7 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
   // The TAIL: the last entry must be the classifier bias.
   let lb = flat.copy()
   lb[cnt - 1] = lb[cnt - 1] + 1.0F
-  let q3 = @snn_mbt.tarnet_unflatten(net, lb)
+  let q3 = @tarnet.tarnet_unflatten(net, lb)
   if q3.cls_b[net.n_classes - 1] != net.cls_b[net.n_classes - 1] + 1.0F {
     fail("the last offset does not reach cls_b")
   }
@@ -391,11 +391,11 @@ test "Tarnet flatten round-trips and the named offsets land where documented" {
 test "Tarnet unflatten preserves the forward output exactly" {
   let net = tn_flat_model()
   let x = tn_fixture(3, 6, 9, 61UL)
-  let a = @snn_mbt.tarnet_forward(net, x, 3)
-  let again = @snn_mbt.tarnet_unflatten(
-    net, @snn_mbt.tarnet_flatten(net),
+  let a = @tarnet.tarnet_forward(net, x, 3)
+  let again = @tarnet.tarnet_unflatten(
+    net, @tarnet.tarnet_flatten(net),
   )
-  let b = @snn_mbt.tarnet_forward(again, x, 3)
+  let b = @tarnet.tarnet_forward(again, x, 3)
   let mut i = 0
   while i < a.logits.length() {
     if a.logits[i] != b.logits[i] {
@@ -407,12 +407,12 @@ test "Tarnet unflatten preserves the forward output exactly" {
 
 ///|
 fn tn_obj_block(
-  b : @snn_mbt.TarnetBlock,
+  b : @tarnet.TarnetBlock,
   x : Array[Float],
   n : Int,
   u : Array[Float],
 ) -> Float {
-  let (y, _c) = @snn_mbt.tarnet_block_forward_full(b, x, n)
+  let (y, _c) = @tarnet.tarnet_block_forward_full(b, x, n)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -434,8 +434,8 @@ const DN_H_DIR : Float = 8.0e-4F
 /// A small block with a wide receptive field, so the depthwise dilation is
 /// actually in play.
 fn tn_block_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
-  -> (@snn_mbt.TarnetBlock, Array[Float], Array[Float]) {
-  let b = @snn_mbt.TarnetBlock::new(chan, 8, 3, 2, t, seed)
+  -> (@tarnet.TarnetBlock, Array[Float], Array[Float]) {
+  let b = @tarnet.TarnetBlock::new(chan, 8, 3, 2, t, seed)
   let x = @core.rand_f32(@core.Xoshiro::new(seed + 1UL), n * chan * t)
   let u = @core.rand_f32(@core.Xoshiro::new(seed + 2UL), n * chan * t)
   (b, x, u)
@@ -518,11 +518,11 @@ test "TarnetBlock: per-parameter sweep over eight fixtures" {
   let mut seed = 71UL
   while seed < 71UL + TN_SEEDS.to_uint64() {
     let (b, x, u) = tn_block_fixture(n, chan, t, seed)
-    let (_y, cache) = @snn_mbt.tarnet_block_forward_full(b, x, n)
-    let gb = @snn_mbt.tarnet_block_grad_flatten(
-      @snn_mbt.tarnet_block_backward(b, n, cache, u, 0.0F).1, b,
+    let (_y, cache) = @tarnet.tarnet_block_forward_full(b, x, n)
+    let gb = @tarnet.tarnet_block_grad_flatten(
+      @tarnet.tarnet_block_backward(b, n, cache, u, 0.0F).1, b,
     )
-    let base = @snn_mbt.tarnet_block_flatten(b)
+    let base = @tarnet.tarnet_block_flatten(b)
     let f_base = tn_obj_block(b, x, n, u)
     let tol = dn_split_tol(f_base, TN_H)
     let stride = (base.length() / 120) + 1
@@ -532,8 +532,8 @@ test "TarnetBlock: per-parameter sweep over eight fixtures" {
       let bd = base.copy()
       bu[k] = base[k] + TN_H
       bd[k] = base[k] - TN_H
-      let fu = tn_obj_block(@snn_mbt.tarnet_block_unflatten(b, bu), x, n, u)
-      let fm = tn_obj_block(@snn_mbt.tarnet_block_unflatten(b, bd), x, n, u)
+      let fu = tn_obj_block(@tarnet.tarnet_block_unflatten(b, bu), x, n, u)
+      let fm = tn_obj_block(@tarnet.tarnet_block_unflatten(b, bd), x, n, u)
       let d_pos = (fu - f_base) / TN_H
       let d_neg = (f_base - fm) / TN_H
       let split = if d_pos > d_neg { d_pos - d_neg } else { d_neg - d_pos }
@@ -591,8 +591,8 @@ test "TarnetBlock: the input gradient matches where the objective is smooth" {
   let chan = 5
   let t = 8
   let (b, x, u) = tn_block_fixture(n, chan, t, 73UL)
-  let (_y, cache) = @snn_mbt.tarnet_block_forward_full(b, x, n)
-  let d_x = @snn_mbt.tarnet_block_backward(b, n, cache, u, 0.0F).0
+  let (_y, cache) = @tarnet.tarnet_block_forward_full(b, x, n)
+  let d_x = @tarnet.tarnet_block_backward(b, n, cache, u, 0.0F).0
   let f0 = tn_obj_block(b, x, n, u)
   let mut kinks = 0
   let mut checked = 0
@@ -663,7 +663,7 @@ test "layer_norm: d_input matches central differences at every coordinate" {
   let c = 5
   let t = 8
   let ln = @nn.LayerNorm::new(c, 1, t, eps=1.0e-4F)
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(133UL))
+  let x = @tarnet.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(133UL))
   // an arbitrary upstream gradient, asymmetric in position so a layout
   // mistake cannot hide behind a symmetric one
   let w : Array[Float] = Array::make(n * c * t, 0.0F)
@@ -723,7 +723,7 @@ fn tn_obj_c1x1(
   b : Array[Float],
   u : Array[Float],
 ) -> Float {
-  let y = @snn_mbt.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
+  let y = @tarnet.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -739,15 +739,15 @@ test "tn_conv1x1: d_input, d_weight and d_bias all match central differences" {
   let in_ch = 5
   let out_ch = 4
   let t = 8
-  let x = @snn_mbt.tn_randn(n * in_ch * t, 1.0F, @core.Xoshiro::new(211UL))
-  let w = @snn_mbt.tn_randn(out_ch * in_ch, 0.4F, @core.Xoshiro::new(212UL))
-  let b = @snn_mbt.tn_randn(out_ch, 0.2F, @core.Xoshiro::new(213UL))
-  let u = @snn_mbt.tn_randn(n * out_ch * t, 1.0F, @core.Xoshiro::new(214UL))
-  let y = @snn_mbt.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
+  let x = @tarnet.tn_randn(n * in_ch * t, 1.0F, @core.Xoshiro::new(211UL))
+  let w = @tarnet.tn_randn(out_ch * in_ch, 0.4F, @core.Xoshiro::new(212UL))
+  let b = @tarnet.tn_randn(out_ch, 0.2F, @core.Xoshiro::new(213UL))
+  let u = @tarnet.tn_randn(n * out_ch * t, 1.0F, @core.Xoshiro::new(214UL))
+  let y = @tarnet.tn_conv1x1_forward(x, n, in_ch, out_ch, w, b)
   if y.length() != n * out_ch * t {
     fail("forward length wrong")
   }
-  let (d_x, d_w, d_b) = @snn_mbt.tn_conv1x1_backward(
+  let (d_x, d_w, d_b) = @tarnet.tn_conv1x1_backward(
     x, u, n, in_ch, out_ch, w,
   )
   let h = TN_H
@@ -805,12 +805,12 @@ test "tn_conv1x1: d_input, d_weight and d_bias all match central differences" {
 ///|
 ///|
 fn tn_obj_stack(
-  stack : Array[@snn_mbt.TarnetBlock],
+  stack : Array[@tarnet.TarnetBlock],
   x : Array[Float],
   n : Int,
   u : Array[Float],
 ) -> Float {
-  let (y, _c) = @snn_mbt.tn_stack_forward_full(stack, x, n)
+  let (y, _c) = @tarnet.tn_stack_forward_full(stack, x, n)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -822,12 +822,12 @@ fn tn_obj_stack(
 
 ///|
 fn tn_stack_fixture(n : Int, chan : Int, t : Int, seed : UInt64)
-  -> (Array[@snn_mbt.TarnetBlock], Array[Float], Array[Float]) {
-  let b0 = @snn_mbt.TarnetBlock::new(chan, 8, 3, 1, t, seed)
-  let b1 = @snn_mbt.TarnetBlock::new(chan, 8, 3, 2, t, seed + 5UL)
+  -> (Array[@tarnet.TarnetBlock], Array[Float], Array[Float]) {
+  let b0 = @tarnet.TarnetBlock::new(chan, 8, 3, 1, t, seed)
+  let b1 = @tarnet.TarnetBlock::new(chan, 8, 3, 2, t, seed + 5UL)
   let stack = [b0, b1]
-  let x = @snn_mbt.tn_randn(n * chan * t, 1.0F, @core.Xoshiro::new(seed + 9UL))
-  let u = @snn_mbt.tn_randn(n * chan * t, 1.0F, @core.Xoshiro::new(seed + 13UL))
+  let x = @tarnet.tn_randn(n * chan * t, 1.0F, @core.Xoshiro::new(seed + 9UL))
+  let u = @tarnet.tn_randn(n * chan * t, 1.0F, @core.Xoshiro::new(seed + 13UL))
   (stack, x, u)
 }
 
@@ -837,8 +837,8 @@ test "stack: d_input matches central differences where the objective is smooth" 
   let chan = 5
   let t = 8
   let (stack, x, u) = tn_stack_fixture(n, chan, t, 151UL)
-  let (_y, cache) = @snn_mbt.tn_stack_forward_full(stack, x, n)
-  let d_x = @snn_mbt.tn_stack_backward(stack, n, cache, u, 0.0F).0
+  let (_y, cache) = @tarnet.tn_stack_forward_full(stack, x, n)
+  let d_x = @tarnet.tn_stack_backward(stack, n, cache, u, 0.0F).0
   let f0 = tn_obj_stack(stack, x, n, u)
   let mut kinks = 0
   let mut checked = 0
@@ -912,8 +912,8 @@ test "layer_norm: d_beta matches central differences in BETA" {
   let c = 8
   let t = 8
   let chw = c * t
-  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @core.Xoshiro::new(321UL))
-  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @core.Xoshiro::new(322UL))
+  let g0 = @tarnet.tn_randn(chw, 0.7F, @core.Xoshiro::new(321UL))
+  let b0 = @tarnet.tn_randn(chw, 0.3F, @core.Xoshiro::new(322UL))
   let ln : @nn.LayerNorm = {
     gamma: g0,
     beta: b0,
@@ -922,7 +922,7 @@ test "layer_norm: d_beta matches central differences in BETA" {
     h: 1,
     w: t,
   }
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(323UL))
+  let x = @tarnet.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(323UL))
   let u : Array[Float] = Array::make(n * c * t, 0.0F)
   let mut i = 0
   while i < u.length() {
@@ -1014,8 +1014,8 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
   let c = 8
   let t = 8
   let chw = c * t
-  let g0 = @snn_mbt.tn_randn(chw, 0.7F, @core.Xoshiro::new(311UL))
-  let b0 = @snn_mbt.tn_randn(chw, 0.3F, @core.Xoshiro::new(312UL))
+  let g0 = @tarnet.tn_randn(chw, 0.7F, @core.Xoshiro::new(311UL))
+  let b0 = @tarnet.tn_randn(chw, 0.3F, @core.Xoshiro::new(312UL))
   let ln : @nn.LayerNorm = {
     gamma: g0,
     beta: b0,
@@ -1024,7 +1024,7 @@ test "layer_norm: d_gamma matches central differences in GAMMA" {
     h: 1,
     w: t,
   }
-  let x = @snn_mbt.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(313UL))
+  let x = @tarnet.tn_randn(n * c * t, 1.0F, @core.Xoshiro::new(313UL))
   let u : Array[Float] = Array::make(n * c * t, 0.0F)
   let mut i = 0
   while i < u.length() {
@@ -1085,8 +1085,8 @@ test "stack: per-parameter sweep across both blocks" {
   let chan = 5
   let t = 8
   let (stack, x, u) = tn_stack_fixture(n, chan, t, 167UL)
-  let (_y, cache) = @snn_mbt.tn_stack_forward_full(stack, x, n)
-  let gs = @snn_mbt.tn_stack_backward(stack, n, cache, u, 0.0F).1
+  let (_y, cache) = @tarnet.tn_stack_forward_full(stack, x, n)
+  let gs = @tarnet.tn_stack_backward(stack, n, cache, u, 0.0F).1
   if gs.length() != stack.length() {
     fail("stack returned \{gs.length()} block gradients for \{stack.length()} blocks")
   }
@@ -1102,8 +1102,8 @@ test "stack: per-parameter sweep across both blocks" {
   let mut worst_an = 0.0F
   let mut bi = 0
   while bi < stack.length() {
-    let base = @snn_mbt.tarnet_block_flatten(stack[bi])
-    let gb = @snn_mbt.tarnet_block_grad_flatten(gs[bi], stack[bi])
+    let base = @tarnet.tarnet_block_flatten(stack[bi])
+    let gb = @tarnet.tarnet_block_grad_flatten(gs[bi], stack[bi])
     let stride = (base.length() / 60) + 1
     let mut k = 0
     while k < base.length() {
@@ -1114,8 +1114,8 @@ test "stack: per-parameter sweep across both blocks" {
       // replace block bi with the bumped copy, leave the others alone
       let up = [stack[0], stack[1]]
       let dn = [stack[0], stack[1]]
-      up[bi] = @snn_mbt.tarnet_block_unflatten(stack[bi], bu)
-      dn[bi] = @snn_mbt.tarnet_block_unflatten(stack[bi], bd)
+      up[bi] = @tarnet.tarnet_block_unflatten(stack[bi], bu)
+      dn[bi] = @tarnet.tarnet_block_unflatten(stack[bi], bd)
       let fu = tn_obj_stack(up, x, n, u)
       let fd_ = tn_obj_stack(dn, x, n, u)
       let d_pos = (fu - f_base) / TN_H
@@ -1162,17 +1162,17 @@ test "depthwise dilated conv1d: forward and backward agree with differences" {
   let d = 2
   let x = tn_fixture(n, c, t, 11UL)
   let rng = @core.Xoshiro::new(29UL)
-  let p = @snn_mbt.Conv1DDepthwise::new(c, k, d, (k - 1) * d / 2)
-  let wv = @snn_mbt.tn_randn(c * k, 0.4F, rng)
-  let bv = @snn_mbt.tn_randn(c, 0.3F, rng)
+  let p = @tarnet.Conv1DDepthwise::new(c, k, d, (k - 1) * d / 2)
+  let wv = @tarnet.tn_randn(c * k, 0.4F, rng)
+  let bv = @tarnet.tn_randn(c, 0.3F, rng)
   let p = tn_dw_with(p, wv, bv)
   let w = @core.rand_f32(@core.Xoshiro::new(31UL), n * c * t)
   // ---- forward sanity: shape preserved ----
-  let y = @snn_mbt.conv1d_depthwise_forward(x, n, p)
+  let y = @tarnet.conv1d_depthwise_forward(x, n, p)
   if y.length() != x.length() {
     fail("depthwise conv changed the length: \{x.length()} -> \{y.length()}")
   }
-  let (d_x, d_w, d_b) = @snn_mbt.conv1d_depthwise_backward(x, w, n, p)
+  let (d_x, d_w, d_b) = @tarnet.conv1d_depthwise_backward(x, w, n, p)
   let mut i = 0
   while i < c * k {
     let pu = tn_dw_bump_w(p, i, TN_H)
@@ -1212,7 +1212,7 @@ test "depthwise dilated conv1d: forward and backward agree with differences" {
 
 ///|
 fn tn_obj_prelu(x : Array[Float], a : Float, w : Array[Float]) -> Float {
-  let y = @snn_mbt.prelu_forward(x, a)
+  let y = @tarnet.prelu_forward(x, a)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -1227,7 +1227,7 @@ test "PReLU: slope gradient collects ONLY the negative entries" {
   let x = [-2.0F, -0.5F, 0.0F, 0.25F, 1.5F, 3.0F]
   let w = [1.0F, -2.0F, 0.5F, 3.0F, -1.0F, 0.75F]
   let a = 0.25F
-  let (d_x, d_a) = @snn_mbt.prelu_backward(x, w, a)
+  let (d_x, d_a) = @tarnet.prelu_backward(x, w, a)
   // slope, by difference
   let fd_a = (tn_obj_prelu(x, a + TN_H, w) - tn_obj_prelu(x, a - TN_H, w)) /
     (2.0F * TN_H)
@@ -1237,7 +1237,7 @@ test "PReLU: slope gradient collects ONLY the negative entries" {
   }
   // and the sign asymmetry itself: a pure-ReLU batch must have zero slope grad
   let pos = [0.5F, 1.0F, 2.0F]
-  let (_p, d_a_pos) = @snn_mbt.prelu_backward(pos, [1.0F, 1.0F, 1.0F], a)
+  let (_p, d_a_pos) = @tarnet.prelu_backward(pos, [1.0F, 1.0F, 1.0F], a)
   if d_a_pos != 0.0F {
     fail("PReLU slope gradient on an all-positive batch is \{d_a_pos}, not 0")
   }
@@ -1285,8 +1285,8 @@ test "PReLU: slope gradient collects ONLY the negative entries" {
 /// A deliberately small configuration: the paper's default builds twenty
 /// residual blocks at 512 hidden channels, which is a fine number for PyTorch
 /// and a poor number for a smoke test.
-fn tn_small_model(n_classes : Int, in_chan : Int, t : Int) -> @snn_mbt.Tarnet {
-  @snn_mbt.Tarnet::new(
+fn tn_small_model(n_classes : Int, in_chan : Int, t : Int) -> @tarnet.Tarnet {
+  @tarnet.Tarnet::new(
     n_classes,
     in_chan,
     t,
@@ -1311,7 +1311,7 @@ test "TARNet forward: shapes, finiteness and seed determinism" {
   let n = 3
   let net = tn_small_model(n_classes, in_chan, t)
   let x = tn_fixture(n, in_chan, t, 61UL)
-  let out = @snn_mbt.tarnet_forward(net, x, n)
+  let out = @tarnet.tarnet_forward(net, x, n)
   if out.logits.length() != n * n_classes {
     fail("logits length \{out.logits.length()}, expected \{n * n_classes}")
   }
@@ -1334,7 +1334,7 @@ test "TARNet forward: shapes, finiteness and seed determinism" {
   }
   // same seed, same result
   let net2 = tn_small_model(n_classes, in_chan, t)
-  let out2 = @snn_mbt.tarnet_forward(net2, x, n)
+  let out2 = @tarnet.tarnet_forward(net2, x, n)
   i = 0
   while i < out.logits.length() {
     if out.logits[i] != out2.logits[i] {

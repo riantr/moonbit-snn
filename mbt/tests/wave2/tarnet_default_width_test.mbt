@@ -41,8 +41,8 @@ fn tn_default_width_fixture(
   n_classes : Int,
   t : Int,
   seed : UInt64,
-) -> (@snn_mbt.Tarnet, Array[Float], Array[Int]) {
-  let net = @snn_mbt.Tarnet::new(
+) -> (@tarnet.Tarnet, Array[Float], Array[Int]) {
+  let net = @tarnet.Tarnet::new(
     n_classes,
     80, // in_chan: the reference's 80 log-Mel bands
     t,
@@ -64,7 +64,7 @@ fn tn_default_width_fixture(
 /// Number of residual blocks the default stack holds. Computed from the model
 /// rather than hard-coded, so the assertion below fails if the architecture
 /// changes rather than silently testing a different network.
-fn tn_default_block_count(net : @snn_mbt.Tarnet) -> Int {
+fn tn_default_block_count(net : @tarnet.Tarnet) -> Int {
   net.stack_s.length() + net.stack_m.length() + net.stack_l.length()
 }
 
@@ -86,7 +86,7 @@ test "TARNet: 20 default-width blocks keep the forward finite" {
   let n_classes = 5
   let t = 4
   let (net, x, _tg) = tn_default_width_fixture(n, n_classes, t, 311UL)
-  let out = @snn_mbt.tarnet_forward(net, x, n)
+  let out = @tarnet.tarnet_forward(net, x, n)
   if out.logits.length() != n * n_classes {
     fail("logits length \{out.logits.length()}, expected \{n * n_classes}")
   }
@@ -135,7 +135,7 @@ test "TARNet: ONE model runs utterances of different lengths" {
   let n = 2
   let n_classes = 4
   let built_for = 5
-  let net = @snn_mbt.Tarnet::new(
+  let net = @tarnet.Tarnet::new(
     n_classes,
     6,
     built_for,
@@ -158,7 +158,7 @@ test "TARNet: ONE model runs utterances of different lengths" {
     let x = @core.rand_f32(
       @core.Xoshiro::new(400UL + t.to_uint64()), n * 6 * t,
     )
-    let (out, cache) = @snn_mbt.tarnet_forward_full(net, x, n)
+    let (out, cache) = @tarnet.tarnet_forward_full(net, x, n)
     if out.logits.length() != n * n_classes {
       fail("t = \{t}: logits length \{out.logits.length()}")
     }
@@ -177,11 +177,11 @@ test "TARNet: ONE model runs utterances of different lengths" {
     }
     // and the backward has to close at that length too
     let targets : Array[Int] = [0, 1]
-    let (d_logits, loss) = @snn_mbt.tarnet_softmax_dlogits(
+    let (d_logits, loss) = @tarnet.tarnet_softmax_dlogits(
       out.logits, n, n_classes, targets,
     )
-    let (g, d_x) = @snn_mbt.tarnet_backward(net, n, cache, d_logits, 0.0F)
-    if g.length() != @snn_mbt.tarnet_param_count(net) {
+    let (g, d_x) = @tarnet.tarnet_backward(net, n, cache, d_logits, 0.0F)
+    if g.length() != @tarnet.tarnet_param_count(net) {
       fail("t = \{t}: gradient length \{g.length()} -- the parameter count must not depend on the frame count")
     }
     if d_x.length() != x.length() {
@@ -200,7 +200,7 @@ test "TARNet: ONE model runs utterances of different lengths" {
   let mut li2 = 0
   while li2 < lengths.length() {
     let t = lengths[li2]
-    let net2 = @snn_mbt.Tarnet::new(
+    let net2 = @tarnet.Tarnet::new(
       n_classes,
       6,
       t,
@@ -215,7 +215,7 @@ test "TARNet: ONE model runs utterances of different lengths" {
       att_hidden=8,
       seed=331UL,
     )
-    let cnt = @snn_mbt.tarnet_param_count(net2)
+    let cnt = @tarnet.tarnet_param_count(net2)
     if li2 == 0 {
       counts = cnt
     } else if cnt != counts {
@@ -232,8 +232,8 @@ test "TARNet: default-width backward and one Adam step stay finite" {
   let n_classes = 5
   let t = 4
   let (net, x, targets) = tn_default_width_fixture(n, n_classes, t, 321UL)
-  let (out, cache) = @snn_mbt.tarnet_forward_full(net, x, n)
-  let (d_logits, loss) = @snn_mbt.tarnet_softmax_dlogits(
+  let (out, cache) = @tarnet.tarnet_forward_full(net, x, n)
+  let (d_logits, loss) = @tarnet.tarnet_softmax_dlogits(
     out.logits, n, n_classes, targets,
   )
   if !(loss == loss) {
@@ -242,8 +242,8 @@ test "TARNet: default-width backward and one Adam step stay finite" {
   if loss <= 0.0F {
     fail("cross-entropy returned \{loss}, which cannot be positive")
   }
-  let (g, d_x) = @snn_mbt.tarnet_backward(net, n, cache, d_logits, 0.0F)
-  if g.length() != @snn_mbt.tarnet_param_count(net) {
+  let (g, d_x) = @tarnet.tarnet_backward(net, n, cache, d_logits, 0.0F)
+  if g.length() != @tarnet.tarnet_param_count(net) {
     fail("gradient length \{g.length()} != param count")
   }
   if d_x.length() != x.length() {
@@ -271,11 +271,11 @@ test "TARNet: default-width backward and one Adam step stay finite" {
   }
   // And the whole loop has to close: allocate state for the real parameter
   // count, step, and confirm the model still evaluates afterwards.
-  let state = @snn_mbt.tarnet_adam_init(net)
-  let (next, _st, _l) = @snn_mbt.tarnet_train_step(
+  let state = @tarnet.tarnet_adam_init(net)
+  let (next, _st, _l) = @tarnet.tarnet_train_step(
     net, x, n, targets, state, 0.001F,
   )
-  let after = @snn_mbt.tarnet_forward(next, x, n)
+  let after = @tarnet.tarnet_forward(next, x, n)
   i = 0
   while i < after.logits.length() {
     if !(after.logits[i] == after.logits[i]) {

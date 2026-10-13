@@ -16,10 +16,10 @@
 fn tn_obj_se(
   x : Array[Float],
   n : Int,
-  p : @snn_mbt.SeParam,
+  p : @tarnet.SeParam,
   w : Array[Float],
 ) -> Float {
-  let y = @snn_mbt.se_forward(x, n, p)
+  let y = @tarnet.se_forward(x, n, p)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -70,7 +70,7 @@ fn tn_se_rtol() -> Float {
 /// stays near 0, so `gate` sits around 0.5-0.7 and `gate*(1-gate)` does not
 /// collapse. Measured share of the squeeze path after this fixture: ~13% of
 /// each `d_x` coordinate, against a 3% relative tolerance.
-fn tn_se_awake(p : @snn_mbt.SeParam, lift : Float, gain : Float) -> @snn_mbt.SeParam {
+fn tn_se_awake(p : @tarnet.SeParam, lift : Float, gain : Float) -> @tarnet.SeParam {
   let b1 = p.b1.copy()
   let mut i = 0
   while i < b1.length() {
@@ -97,7 +97,7 @@ fn tn_se_awake(p : @snn_mbt.SeParam, lift : Float, gain : Float) -> @snn_mbt.SeP
 /// EXPLICIT offsets rather than a captured mutable cursor, because an
 /// off-by-one in the cursor would silently mis-pair every gradient with the
 /// wrong parameter -- the exact bug class this file already caught twice.
-fn tn_se_flat(p : @snn_mbt.SeParam) -> Array[Float] {
+fn tn_se_flat(p : @tarnet.SeParam) -> Array[Float] {
   let c = p.channels
   let bk = p.bottleneck
   let n1 = bk * c
@@ -122,7 +122,7 @@ fn tn_se_put(dst : Array[Float], off : Int, src : Array[Float]) -> Int {
   off + src.length()
 }
 
-fn tn_se_unflat(p : @snn_mbt.SeParam, f : Array[Float]) -> @snn_mbt.SeParam {
+fn tn_se_unflat(p : @tarnet.SeParam, f : Array[Float]) -> @tarnet.SeParam {
   let c = p.channels
   let bk = p.bottleneck
   let w1 = tn_se_take(f, 0, bk * c)
@@ -144,7 +144,7 @@ fn tn_se_take(f : Array[Float], off : Int, len : Int) -> Array[Float] {
 
 ///|
 /// `SeGrad` -> flat, in the same order as `tn_se_flat`.
-fn tn_se_grad_flat(g : @snn_mbt.SeGrad, p : @snn_mbt.SeParam) -> Array[Float] {
+fn tn_se_grad_flat(g : @tarnet.SeGrad, p : @tarnet.SeParam) -> Array[Float] {
   let c = p.channels
   let bk = p.bottleneck
   let f : Array[Float] = Array::make(bk * c + bk + c * bk + c, 0.0F)
@@ -160,10 +160,10 @@ test "SE: the full and thin forward are bit-identical" {
   let n = 3
   let c = 6
   let t = 5
-  let p = @snn_mbt.SeParam::new(c, 4, 91UL)
+  let p = @tarnet.SeParam::new(c, 4, 91UL)
   let x = @core.rand_f32(@core.Xoshiro::new(92UL), n * c * t)
-  let a = @snn_mbt.se_forward(x, n, p)
-  let (b, _cache) = @snn_mbt.se_forward_full(x, n, p)
+  let a = @tarnet.se_forward(x, n, p)
+  let (b, _cache) = @tarnet.se_forward_full(x, n, p)
   let mut i = 0
   while i < a.length() {
     if a[i] != b[i] {
@@ -177,11 +177,11 @@ test "SE: every parameter class matches central differences" {
   let n = 3
   let c = 6
   let t = 5
-  let proto = tn_se_awake(@snn_mbt.SeParam::new(c, 4, 93UL), 0.5F, 4.0F)
+  let proto = tn_se_awake(@tarnet.SeParam::new(c, 4, 93UL), 0.5F, 4.0F)
   let x = @core.rand_f32(@core.Xoshiro::new(94UL), n * c * t)
   let w = @core.rand_f32(@core.Xoshiro::new(95UL), n * c * t)
-  let (_y, cache) = @snn_mbt.se_forward_full(x, n, proto)
-  let g = @snn_mbt.se_backward(x, w, n, proto, cache)
+  let (_y, cache) = @tarnet.se_forward_full(x, n, proto)
+  let g = @tarnet.se_backward(x, w, n, proto, cache)
   let gf = tn_se_grad_flat(g, proto)
   let base = tn_se_flat(proto)
   let f_base = tn_obj_se(x, n, proto, w)
@@ -249,11 +249,11 @@ test "SE: the input gradient matches central differences" {
   let n = 3
   let c = 6
   let t = 5
-  let p = tn_se_awake(@snn_mbt.SeParam::new(c, 4, 97UL), 0.5F, 4.0F)
+  let p = tn_se_awake(@tarnet.SeParam::new(c, 4, 97UL), 0.5F, 4.0F)
   let x = @core.rand_f32(@core.Xoshiro::new(98UL), n * c * t)
   let w = @core.rand_f32(@core.Xoshiro::new(99UL), n * c * t)
-  let (_y, cache) = @snn_mbt.se_forward_full(x, n, p)
-  let g = @snn_mbt.se_backward(x, w, n, p, cache)
+  let (_y, cache) = @tarnet.se_forward_full(x, n, p)
+  let g = @tarnet.se_backward(x, w, n, p, cache)
   let f_base = tn_obj_se(x, n, p, w)
   let tol_split = tn_se_split_tol(f_base)
   let mut checked = 0

@@ -16,10 +16,10 @@
 fn tn_obj_ctse(
   x : Array[Float],
   n : Int,
-  p : @snn_mbt.CtseParam,
+  p : @tarnet.CtseParam,
   w : Array[Float],
 ) -> Float {
-  let (y, _c) = @snn_mbt.ctse_forward(x, n, p)
+  let (y, _c) = @tarnet.ctse_forward(x, n, p)
   let mut s = 0.0F
   let mut i = 0
   while i < y.length() {
@@ -36,7 +36,7 @@ fn tn_obj_ctse(
 /// `b1 = 0` and tn_randn's small scale, `W1 * squeeze` is negative for every
 /// (b, j) on the fixture, `h == 0` everywhere, `d_w1` and `d_b1` are
 /// legitimately zero, and the kink filter skips every fc1 coordinate.
-fn tn_ctse_awake(p : @snn_mbt.CtseParam, lift : Float) -> @snn_mbt.CtseParam {
+fn tn_ctse_awake(p : @tarnet.CtseParam, lift : Float) -> @tarnet.CtseParam {
   let b1 = p.b1.copy()
   let mut i = 0
   while i < b1.length() {
@@ -65,11 +65,11 @@ fn tn_ctse_awake(p : @snn_mbt.CtseParam, lift : Float) -> @snn_mbt.CtseParam {
 ///   4 large.weight  5 large.bias    6 fw[3]         7 fb
 ///   8 w1            9 b1            10 w2           11 b2
 fn tn_ctse_bump(
-  p : @snn_mbt.CtseParam,
+  p : @tarnet.CtseParam,
   which : Int,
   idx : Int,
   delta : Float,
-) -> @snn_mbt.CtseParam {
+) -> @tarnet.CtseParam {
   let sw = p.small.weight.copy()
   let sb = p.small.bias.copy()
   let mw = p.mid.weight.copy()
@@ -125,7 +125,7 @@ fn tn_ctse_bump(
 ///|
 /// The analytic gradient for a `which` / `idx` pair, read out of `CtseGrad`.
 fn tn_ctse_analytic(
-  g : @snn_mbt.CtseGrad,
+  g : @tarnet.CtseGrad,
   which : Int,
   idx : Int,
 ) -> Float {
@@ -158,7 +158,7 @@ fn tn_ctse_analytic(
 
 ///|
 /// Length of the array slot `which` selects.
-fn tn_ctse_len(p : @snn_mbt.CtseParam, which : Int) -> Int {
+fn tn_ctse_len(p : @tarnet.CtseParam, which : Int) -> Int {
   if which == 0 {
     p.small.weight.length()
   } else if which == 1 {
@@ -192,15 +192,15 @@ test "channel-time SE: every parameter class matches central differences" {
   let c = 4
   let t = 6
   let x = tn_fixture(n, c, t, 67UL)
-  let p = tn_ctse_awake(@snn_mbt.CtseParam::new(c, 71UL), 0.5F)
+  let p = tn_ctse_awake(@tarnet.CtseParam::new(c, 71UL), 0.5F)
   let w = @core.rand_f32(@core.Xoshiro::new(73UL), n * c * t)
   // forward sanity: the gate is a per-channel multiplier, so the output keeps
   // the input's shape
-  let (y, cache) = @snn_mbt.ctse_forward(x, n, p)
+  let (y, cache) = @tarnet.ctse_forward(x, n, p)
   if y.length() != x.length() {
     fail("ctse changed the length: \{x.length()} -> \{y.length()}")
   }
-  let g = @snn_mbt.ctse_backward(w, n, p, cache)
+  let g = @tarnet.ctse_backward(w, n, p, cache)
   // ---- input gradient, every coordinate ----
   let mut i = 0
   while i < x.length() {
@@ -265,11 +265,11 @@ test "channel-time SE: every parameter class matches central differences" {
 fn tn_obj_ctse_flat(
   x : Array[Float],
   n : Int,
-  p : @snn_mbt.CtseParam,
+  p : @tarnet.CtseParam,
   flat : Array[Float],
   w : Array[Float],
 ) -> Float {
-  tn_obj_ctse(x, n, @snn_mbt.ctse_unflatten(p, flat), w)
+  tn_obj_ctse(x, n, @tarnet.ctse_unflatten(p, flat), w)
 }
 
 ///|
@@ -284,19 +284,19 @@ test "channel-time SE: directional derivative over all parameters" {
   let c = 4
   let t = 6
   let x = tn_fixture(n, c, t, 67UL)
-  let p = tn_ctse_awake(@snn_mbt.CtseParam::new(c, 71UL), 0.5F)
+  let p = tn_ctse_awake(@tarnet.CtseParam::new(c, 71UL), 0.5F)
   let w = @core.rand_f32(@core.Xoshiro::new(73UL), n * c * t)
-  let (_y, cache) = @snn_mbt.ctse_forward(x, n, p)
-  let g = @snn_mbt.ctse_backward(w, n, p, cache)
-  let flat = @snn_mbt.ctse_flatten(p)
-  let gf = @snn_mbt.ctse_grad_flatten(g)
+  let (_y, cache) = @tarnet.ctse_forward(x, n, p)
+  let g = @tarnet.ctse_backward(w, n, p, cache)
+  let flat = @tarnet.ctse_flatten(p)
+  let gf = @tarnet.ctse_grad_flatten(g)
   if flat.length() != gf.length() {
     fail("flat param length \{flat.length()} != flat grad length \{gf.length()}")
   }
   // three independent directions
   let mut d = 0
   while d < 3 {
-    let u = @snn_mbt.tn_randn(gf.length(), 1.0F, @core.Xoshiro::new(101UL + d.to_uint64()))
+    let u = @tarnet.tn_randn(gf.length(), 1.0F, @core.Xoshiro::new(101UL + d.to_uint64()))
     let up = flat.copy()
     let dn = flat.copy()
     let mut an = 0.0F
@@ -324,12 +324,12 @@ test "channel-time SE: directional derivative over all parameters" {
 /// the parameters it claims to.
 test "ctse flatten round-trips and the layout is the documented one" {
   let c = 4
-  let p = @snn_mbt.CtseParam::new(c, 97UL)
-  let flat = @snn_mbt.ctse_flatten(p)
-  if flat.length() != @snn_mbt.ctse_param_count(p) {
+  let p = @tarnet.CtseParam::new(c, 97UL)
+  let flat = @tarnet.ctse_flatten(p)
+  if flat.length() != @tarnet.ctse_param_count(p) {
     fail("flatten length does not match ctse_param_count")
   }
-  let back = @snn_mbt.ctse_flatten(@snn_mbt.ctse_unflatten(p, flat))
+  let back = @tarnet.ctse_flatten(@tarnet.ctse_unflatten(p, flat))
   for i in 0..<flat.length() {
     if flat[i] != back[i] {
       fail("round trip differs at \{i}")
@@ -339,7 +339,7 @@ test "ctse flatten round-trips and the layout is the documented one" {
   // offset must reach that field
   let bumped = flat.copy()
   bumped[0] = bumped[0] + 1.0F
-  let q = @snn_mbt.ctse_unflatten(p, bumped)
+  let q = @tarnet.ctse_unflatten(p, bumped)
   if q.small.weight[0] != flat[0] + 1.0F {
     fail("offset 0 is not small.weight[0]")
   }
@@ -348,7 +348,7 @@ test "ctse flatten round-trips and the layout is the documented one" {
     p.large.weight.length()
   let fb = flat.copy()
   fb[at_fb] = fb[at_fb] + 1.0F
-  let q2 = @snn_mbt.ctse_unflatten(p, fb)
+  let q2 = @tarnet.ctse_unflatten(p, fb)
   if q2.fb != p.fb + 1.0F {
     fail("the documented fb offset does not land on fb")
   }

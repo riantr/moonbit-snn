@@ -8,16 +8,22 @@
 // The import is marked `for "test"` rather than unconditional. An
 // `is-test: true` package already receives every public symbol of the package
 // under test through test-import-all, so the plain form left moon reporting
-// `Unused package 'riantr/snn_mbt'` on all nine wave manifests even though the
-// files qualify hundreds of references as `@snn_mbt.X`. The qualified form is
-// what moonbit-community/rabbita does for the same reason.
+// `Unused package 'riantr/snn_mbt'` on all nine wave manifests. The qualified
+// form is what moonbit-community/rabbita does for the same reason.
+//
+// This note was written when the root package held all 292 files and
+// `@snn_mbt.X` was the only qualified form in use. The root is now empty apart
+// from its manifest, and the tests reach twenty packages by name -- `@core.X`,
+// `@synapse.X`, `@infra.X`, `@tarnet.X` and so on -- each of which has to be
+// listed below explicitly. The test-import-all shortcut only ever covered one
+// package, and that package no longer has code in it.
 //
 // Third-party packages are a separate, unconditional block.
 
 import {
   "riantr/snn_mbt",
   "riantr/snn_mbt/core",
-  "riantr/snn_mbt/activ", "riantr/snn_mbt/nn", "riantr/snn_mbt/optim", "riantr/snn_mbt/causal",} for "test"
+  "riantr/snn_mbt/activ", "riantr/snn_mbt/nn", "riantr/snn_mbt/optim", "riantr/snn_mbt/causal", "riantr/snn_mbt/tarnet",} for "test"
 
 options(
   "is-test": true,

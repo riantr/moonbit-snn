@@ -49,7 +49,7 @@ test "log-Mel: pre-emphasis matches the reference filter and is a real high-pass
     x[i] = Float::from_int(i + 1)
     i = i + 1
   }
-  let y = @snn_mbt.tn_pre_emphasis(x, coef=coef)
+  let y = @tarnet.tn_pre_emphasis(x, coef=coef)
   if y.length() != n {
     fail("pre-emphasis changed the length: \{y.length()} vs \{n}")
   }
@@ -77,8 +77,8 @@ test "log-Mel: pre-emphasis matches the reference filter and is a real high-pass
     nyq[i] = if i % 2 == 0 { 0.25F } else { -0.25F }
     i = i + 1
   }
-  let dcy = @snn_mbt.tn_pre_emphasis(dc, coef=coef)
-  let nyqy = @snn_mbt.tn_pre_emphasis(nyq, coef=coef)
+  let dcy = @tarnet.tn_pre_emphasis(dc, coef=coef)
+  let nyqy = @tarnet.tn_pre_emphasis(nyq, coef=coef)
   let dc_gain = dcy[m / 2].abs() / 0.25F
   let nyq_gain = nyqy[m / 2].abs() / 0.25F
   if (dc_gain - 0.03F).abs() > 1.0e-3F {
@@ -91,7 +91,7 @@ test "log-Mel: pre-emphasis matches the reference filter and is a real high-pass
     fail("pre-emphasis attenuates Nyquist more than DC -- that is a low-pass")
   }
   // coef <= 0 disables the filter (the reference's DATASET path).
-  let off = @snn_mbt.tn_pre_emphasis(x, coef=0.0F)
+  let off = @tarnet.tn_pre_emphasis(x, coef=0.0F)
   i = 0
   while i < n {
     if off[i] != x[i] {
@@ -113,8 +113,8 @@ test "log-Mel: the model path applies pre-emphasis and the dataset path does not
     wav[i] = 0.4F * lm_sin(0.05F * Float::from_int(i))
     i = i + 1
   }
-  let with_pe = @snn_mbt.tn_log_mel(wav, n_mels=16)
-  let without_pe = @snn_mbt.tn_log_mel(wav, n_mels=16, pre_emphasis=0.0F)
+  let with_pe = @tarnet.tn_log_mel(wav, n_mels=16)
+  let without_pe = @tarnet.tn_log_mel(wav, n_mels=16, pre_emphasis=0.0F)
   if with_pe.length() != without_pe.length() {
     fail("the two front ends disagree on shape")
   }
@@ -173,8 +173,8 @@ test "log-Mel FFT matches a direct DFT, in magnitude and in phase" {
     }
     i = i + 1
   }
-  let (d_re, d_im) = @snn_mbt.tn_dft(re)
-  let (f_re, f_im) = @snn_mbt.tn_fft_complex(re)
+  let (d_re, d_im) = @tarnet.tn_dft(re)
+  let (f_re, f_im) = @tarnet.tn_fft_complex(re)
   if f_re.length() != n || f_im.length() != n {
     fail("FFT returned length \{f_re.length()}, expected \{n}")
   }
@@ -211,7 +211,7 @@ test "log-Mel: the hamming window is symmetric, not periodic" {
   // over N-1. A periodic window is a DIFFERENT function that still looks like
   // a window, and using it shifts every frame of the spectrogram.
   let n = 400
-  let w = @snn_mbt.tn_hamming(n)
+  let w = @tarnet.tn_hamming(n)
   if w.length() != n {
     fail("hamming length \{w.length()}, expected \{n}")
   }
@@ -239,7 +239,7 @@ test "log-Mel: the hamming window is symmetric, not periodic" {
 test "log-Mel: the HTK filterbank is non-negative, non-empty and contiguous" {
   let n_freqs = 257
   let n_mels = 80
-  let fb = @snn_mbt.tn_mel_filterbank(n_freqs, n_mels, 16000, 20.0F, 7600.0F)
+  let fb = @tarnet.tn_mel_filterbank(n_freqs, n_mels, 16000, 20.0F, 7600.0F)
   if fb.length() != n_mels * n_freqs {
     fail("filterbank length \{fb.length()}")
   }
@@ -310,8 +310,8 @@ test "log-Mel: a pure tone lands in the mel band that contains it" {
     wav[i] = lm_sin(two_pi_f * Float::from_int(i))
     i = i + 1
   }
-  let mel = @snn_mbt.tn_log_mel(wav, sample_rate=sr, n_fft=n_fft, hop=hop, n_mels=n_mels)
-  let n_frames = @snn_mbt.tn_log_mel_frames(len, n_fft=n_fft, hop=hop)
+  let mel = @tarnet.tn_log_mel(wav, sample_rate=sr, n_fft=n_fft, hop=hop, n_mels=n_mels)
+  let n_frames = @tarnet.tn_log_mel_frames(len, n_fft=n_fft, hop=hop)
   if n_frames <= 1 {
     fail("degenerate frame count \{n_frames}")
   }
@@ -360,7 +360,7 @@ test "log-Mel: the mean-normalisation invariant holds exactly" {
     i = i + 1
   }
   let n_mels = 40
-  let mel = @snn_mbt.tn_log_mel(wav, n_mels=n_mels)
+  let mel = @tarnet.tn_log_mel(wav, n_mels=n_mels)
   let n_frames = mel.length() / n_mels
   let mut worst = 0.0F
   let mut m = 0
@@ -390,7 +390,7 @@ test "log-Mel: a silent waveform stays finite" {
   // through the whole model while looking like a training failure.
   let wav : Array[Float] = Array::make(4000, 0.0F)
   let n_mels = 20
-  let mel = @snn_mbt.tn_log_mel(wav, n_mels=n_mels)
+  let mel = @tarnet.tn_log_mel(wav, n_mels=n_mels)
   let mut i = 0
   while i < mel.length() {
     if !(mel[i] == mel[i]) {
@@ -417,11 +417,11 @@ test "log-Mel: batching pads to the longest utterance and keeps rows aligned" {
     i = i + 1
   }
   let n_mels = 12
-  let f_short = @snn_mbt.tn_log_mel(short, n_mels=n_mels)
-  let f_long = @snn_mbt.tn_log_mel(long, n_mels=n_mels)
+  let f_short = @tarnet.tn_log_mel(short, n_mels=n_mels)
+  let f_long = @tarnet.tn_log_mel(long, n_mels=n_mels)
   let feats = [f_short, f_long]
-  let batch = @snn_mbt.tn_log_mel_batch(feats, n_mels)
-  let t_max = @snn_mbt.tn_log_mel_batch_frames(feats, n_mels)
+  let batch = @tarnet.tn_log_mel_batch(feats, n_mels)
+  let t_max = @tarnet.tn_log_mel_batch_frames(feats, n_mels)
   if batch.length() != 2 * n_mels * t_max {
     fail("batch length \{batch.length()}")
   }

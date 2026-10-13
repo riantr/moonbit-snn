@@ -18,11 +18,11 @@
 /// Four samples, two classes: samples 0-1 carry a positive mean, samples 2-3 a
 /// negative one. Nothing random about the inputs -- a task the model cannot do
 /// would make this gate fail for the wrong reason.
-fn tn_learnable_batch(n_classes : Int) -> (@snn_mbt.Tarnet, Array[Float], Array[Int]) {
+fn tn_learnable_batch(n_classes : Int) -> (@tarnet.Tarnet, Array[Float], Array[Int]) {
   let n = 4
   let in_chan = 4
   let t = 6
-  let net = @snn_mbt.Tarnet::new(
+  let net = @tarnet.Tarnet::new(
     n_classes,
     in_chan,
     t,
@@ -93,18 +93,18 @@ test "Tarnet: one train step moves exactly the parameters with a gradient" {
   // a test pass.
   let (net, x, targets) = tn_learnable_batch(2)
   let n = 4
-  let state = @snn_mbt.tarnet_adam_init(net)
-  let before = @snn_mbt.tarnet_flatten(net)
+  let state = @tarnet.tarnet_adam_init(net)
+  let before = @tarnet.tarnet_flatten(net)
   // recompute the gradient this step will use
-  let (out, cache) = @snn_mbt.tarnet_forward_full(net, x, n)
-  let (d_logits, _l0) = @snn_mbt.tarnet_softmax_dlogits(
+  let (out, cache) = @tarnet.tarnet_forward_full(net, x, n)
+  let (d_logits, _l0) = @tarnet.tarnet_softmax_dlogits(
     out.logits, n, net.n_classes, targets,
   )
-  let (g, _dx) = @snn_mbt.tarnet_backward(net, n, cache, d_logits, 0.0F)
-  let (next, _st, loss0) = @snn_mbt.tarnet_train_step(
+  let (g, _dx) = @tarnet.tarnet_backward(net, n, cache, d_logits, 0.0F)
+  let (next, _st, loss0) = @tarnet.tarnet_train_step(
     net, x, n, targets, state, 0.01F,
   )
-  let after = @snn_mbt.tarnet_flatten(next)
+  let after = @tarnet.tarnet_flatten(next)
   if after.length() != before.length() || g.length() != before.length() {
     fail(
       "length mismatch across a training step: params \{before.length()} grad \{g.length()} after \{after.length()}",
@@ -167,7 +167,7 @@ test "Tarnet: training drives the loss down and the error rate to zero" {
   let (net, x, targets) = tn_learnable_batch(2)
   let n = 4
   let steps = 60
-  let (_final, history) = @snn_mbt.tarnet_train_loop(
+  let (_final, history) = @tarnet.tarnet_train_loop(
     net, x, n, targets, steps, 0.02F,
   )
   let first = history[0]
@@ -204,7 +204,7 @@ test "Tarnet: training drives the loss down and the error rate to zero" {
   if up_runs > 0 {
     fail("the loss rose for more than 3 consecutive steps in \{up_runs} places -- training is unstable")
   }
-  let err = @snn_mbt.tarnet_error_rate(_final, x, n, targets)
+  let err = @tarnet.tarnet_error_rate(_final, x, n, targets)
   if err > 0.0F {
     fail("error rate after training is \{err}, expected 0 on a separable batch")
   }

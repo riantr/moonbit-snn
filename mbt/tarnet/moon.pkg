@@ -1,0 +1,27 @@
+// tarnet/ — TARNet: a speaker-identification network.
+//
+// This is the one model in the tree that is not a spiking network. TARNet is
+// the x-vector architecture: a frame-level TDNN (tarnet_conv1d), temporal
+// pooling by attentive statistics (tarnet_asp), squeeze-and-excitation
+// (tarnet_se), and a log-Mel front end (tarnet_logmel), trained end to end by
+// tarnet_train. It shares the same autodiff-free plumbing as everything else --
+// Conv2d-style parameters, an Adam step -- and nothing else. The connections and
+// spikes that neuron/ and synapse/ model are simply not involved.
+//
+// The seven files are inseparable: 52 call sites across 19 file pairs, with
+// tarnet.mbt itself reaching into tarnet_asp, tarnet_se, tarnet_conv1d and
+// tarnet_logmel, and tarnet_backward mirroring that structure for the gradient
+// side. This is the same shape as rl/ and meta/ -- a forward pass and its
+// backward pass written out by hand rather than taped.
+//
+// causal/ is imported by tarnet.mbt, which reports a counterfactual estimate
+// alongside the embedding. That is a deliberate addition to a speaker model
+// rather than a stray reference, so the dependency is kept rather than worked
+// around by copying the estimator in.
+import {
+  "riantr/snn_mbt/core",
+  "riantr/snn_mbt/nn",
+  "riantr/snn_mbt/activ",
+  "riantr/snn_mbt/optim",
+  "riantr/snn_mbt/causal",
+}
