@@ -50,3 +50,34 @@
 import {
   "riantr/snn_mbt/gpu/cuda"
 }
+
+// Why nothing here is wired into nn/ yet
+// ---------------------------------------
+// Measured on 2026-10-14, release build, at the LeNet5 fc1 shape (batch 64,
+// 4000 -> 500). These are the numbers that decide whether a dispatch is worth
+// writing:
+//
+//   linear_forward (current CPU path)      98.4 ms
+//   Array -> FixedArray, input  (1.0 MB)    0.426 ms
+//   Array -> FixedArray, weight (8.0 MB)    4.508 ms
+//   PCIe 4.0 x16 round trip, 1.0 MB         0.041 ms
+//
+// The conversion costs ten times the transfer for input and a hundred and ten
+// times for weight, because FixedArray::from_array is a deep copy -- confirmed
+// by mutating the source afterwards and seeing the FixedArray keep the old
+// value. So the honest order of operations is: convert, then transfer. The
+// transfer is only cheap if the FixedArray already exists.
+//
+// That makes the prerequisite concrete: LinearParam has to hold its weight as
+// a FixedArray rather than an Array[Float], so the conversion is paid once when
+// the parameter is built instead of once per call. It is not free -- 4.5 ms per
+// training step, where every optimiser update invalidates the cached copy -- but
+// it is bounded and it happens outside the inner loop.
+//
+// Changing LinearParam is invasive. Every layer that constructs one, every
+// optimiser that writes into param.weight, and every test that inspects it would
+// need to move with it. That is a real cost against a benefit (98.4 ms down to
+// something well under a millisecond) that has not been demonstrated on
+// hardware this repository cannot see. So the seam stops here, deliberately,
+// and the numbers above are recorded so the next person does not have to
+// rediscover them.
