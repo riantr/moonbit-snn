@@ -15,5 +15,4 @@
 // side out properly.
 import {
   "riantr/snn_mbt/core",
-  "riantr/snn_mbt/nn",
 }
