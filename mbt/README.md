@@ -6,13 +6,37 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.165.0, 2026-10-07)
+## Status (v0.166.0, 2026-10-15)
 
 `moon.mod` carries the version that is published to mooncakes.io, and
 this header tracks it. The batch sections at the end of this file run
 from Batch C (v0.58.0) through Batch AF (v0.165.0)
 and describe what changed in each.
 
+### What v0.166.0 changed structurally
+
+The package was split. The root now holds **no source files at all** --
+every `.mbt` lives in one of 23 sub-packages, and `mbt/moon.pkg` is a
+manifest with an import list rather than a body. The waves under
+`mbt/tests/` were already split; this moved the library to match.
+
+| | |
+|---|---|
+| Packages | 23 |
+| Library source files | 681 |
+| Library lines | ~125,000 |
+| Largest package | `rl` (~15,000 lines), then `synapse` (~8,000) |
+| Tests | 1884 across nine waves |
+| Examples | 77 |
+
+Two additions came with the split. `mbt/gpu/` is an optional
+single-precision BLAS seam for the dense layers in `nn/`, complete with a C
+stub, CUDA kernels and build scripts, and deliberately unconnected -- see
+its own `moon.pkg` for the measurements behind that decision.
+`verify/qa_loop.py` runs thirteen quality gates over the tree.
+
+See the top-level `README.md` for both, and for the release-vs-debug
+performance caveat that applies to any timing taken here.
 | Component | Status | Notes |
 |---|---|---|
 | Unit system | ✅ done | 30+ Float32 unit constants; `units_test.mbt` (8 tests pass) |
@@ -353,51 +377,58 @@ s2, s3)` with raw UInt64s (bypassing the integer-seed hashing).
 
 ## Layout
 
+As of v0.166.0 the root package holds no source. `mbt/moon.pkg` is an import
+list; every `.mbt` lives in a sub-package.
+
 ```
 mbt/
-├── moon.mod                     # module: riantr/snn_mbt
-├── moon.pkg
-├── README.md
-├── units.mbt                    # 30+ Float32 unit constants
-├── units_test.mbt
-├── time.mbt                     # Time struct
-├── time_test.mbt
-├── rng.mbt                      # Xoshiro256++ RNG
-├── rng_test.mbt
-├── neuron_if.mbt                # IF neuron + DoubleExpSynapse state
-├── neuron_if_test.mbt
-├── neuron_adex.mbt              # AdEx neuron + AdExPostSpike + AdExParameter::with_vr
-├── neuron_iz.mbt                # IZ neuron + IZParameter::fs
-├── neuron_hh.mbt                # HH neuron
-├── neuron_ml.mbt                # Morris-Lecar neuron
-├── neuron_poisson.mbt           # Poisson population
-├── neuron_wc.mbt                # Wilson-Cowan rate neuron
-├── neuron_wc_test.mbt
-├── stimulus_poisson.mbt         # PoissonStimulus (Knuth)
-├── stimulus_poisson_layer.mbt   # PoissonLayer (N sources projecting sparsely to IF)
-├── stimulus_current.mbt         # CurrentStimulus + CurrentStimulusArray
-├── connection_spiking.mbt       # SpikingSynapse (CSR, delay_dist + pending queue)
-├── connection_spiking_iz.mbt   # SpikingSynapseIZ
-├── connection_spiking_hh.mbt   # SpikingSynapseHH
-├── connection_compartment.mbt   # CompartmentSynapseBall/Tripod (multi-compartment routing)
-├── connection_receptor_tripod.mbt # ReceptorSynapseTripod (multi-receptor soma/dendrite routing)
-├── receptor.mbt                 # NMDA primitives (Receptor / Receptors / gating / 2-state ODE)
-├── connection_spiking_test.mbt # delay_dist tests
-├── connection_rate.mbt         # RateSynapse
-├── sparse_matrix.mbt            # SparseMatrixCSR + ConnectRule
-├── compose.mbt                  # HeterogeneousModel + AnyPop/AnyStim
-├── vecplot.mbt                  # text dump + ascii_plot
-├── stdp.mbt                     # STDP (Gerstner 1996, MexicanHat, AntiSymmetric, STDPEntryKind)
-├── stdp_test.mbt
-├── stp.mbt                      # Markram STP (event-based update_traces! + ρ broadcast)
-├── stp_test.mbt
-├── sim.mbt                      # Model, Monitor, sim_for
-├── examples/
-│   └── chain/
-│       ├── main.mbt             # port of SpikingNeuralNetworks.jl/examples/chain.jl
-│       └── moon.pkg
-└── _build/                      # moon build artifacts
+|-- moon.mod                     # module riantr/snn_mbt, version 0.166.0
+|-- moon.pkg                     # root manifest: imports only, no source
+|-- README.md
+|
+|-- core/                       #   Time struct, Xoshiro RNG, units, he_init
+|-- neuron/                     #   IF, AdEx, Izhikevich, HH, MorrisLecar,
+|--                             #   Poisson, Wilson-Cowan, multi-compartment
+|-- synapse/                    #   plasticity, dendritic morphology (~8k lines)
+|-- stimulus/                   #   Poisson / spike-time / current stimuli
+|-- units/                      #   (re-export only)
+|
+|-- nn/                         #   Tensor, Linear, Conv2d, norms, attention,
+|--                             #   backwards for all of them
+|-- optim/                      #   SGD, Adam, AdamW, RMSprop, AdaGrad,
+|--                             #   Adafactor, LR schedules
+|-- activ/                      #   activation functions
+|-- attention/                  #   SAttention, position encodings
+|-- infra/                      #   training loops, evaluators, datasets
+|
+|-- rl/                         #   DDPG, TD3, SAC, recurrent actors, (~15k lines)
+|-- gnn/                        #   GCN, MPNN, GIN, PNA, GAT, H2GCN
+|-- generative/                 #   flows, VAE, DDPM, GAN, EBM
+|-- tarnet/                     #   temporal-aspect graph nets
+|-- models/                     #   LeNet5, MLP, SimpleCNN, ViT, Siamese
+|-- capsule/                    #   capsule / metric-learning networks
+|-- causal/                     #   SCM, do-calculus, counterfactuals
+|-- meta/                       #   MAML, FOMAML, Reptile, task sampling
+|-- autodiff/                   #   reverse-mode autodiff
+|-- analysis/                   #   trajectory and spike-train analysis
+|-- timeseries/                 #   ARIMA and friends
+|
+|-- gpu/                        #   optional single-precision BLAS seam
+|   |-- ffi.mbt                 #     extern declarations + non-native stubs
+|   |-- gemm.mbt                #     checked wrappers
+|   |-- loader.mbt              #     availability
+|   `-- cuda/                   #     C stub, CUDA kernels, build scripts
+|
+|-- fuzz_props/                 #   property checks driven by the QA loop
+|-- gpu_selftest/               #   known-answer checks for the BLAS fallback
+|
+|-- tests/wave1 ... wave9       #   1884 tests, split by domain
+|-- examples/                   #   77 runnable examples
+`-- testdata/                   #   fixtures
 ```
+
+Dependency depth is 4; the widest fan-out is `tarnet` at 5 packages.
+`verify/qa_loop.py` reports both.
 
 ## Network experiments summary
 
