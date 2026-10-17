@@ -148,17 +148,32 @@ pub fn tarnet_forward_full(
   // consistently in both directions, so the difference agrees with it. Only an
   // independent implementation can catch a fault that is self-consistent.
   let (gln, bn_ln_cache) = @nn.gln_forward(x, n, c, t, net.ln_in)
-  let bn = @nn.linear_forward(
-    gln, n * t, @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
-  )
+  // 1x1 convolution over CHANNELS, in `[n, c, t]` layout -- NOT `linear_forward`,
+  // which reads `batch*in_features + feature`. `gln_forward` returns a
+  // `[n, c, t]` buffer indexed `(b*c + ch)*t + ti`. Those are different
+  // permutations of the same memory, so routing this through `linear_*` runs
+  // the contraction over a run of `in_features` consecutive flat elements,
+  // which in `[n, c, t]` layout straddles several frames.
+  //
+  // Measured on the same array and weights against `F.conv1d`:
+  //
+  //     linear_forward      max|diff| = 1.450e-01
+  //     tn_conv1x1_forward  max|diff| = 7.451e-09
+  //
+  // so it is not precision. `tn_conv1x1_forward` is the layout-correct pair,
+  // and it is what the blocks already use -- which is why the block oracles
+  // pass and this did not.
+  //
+  // The two calls below that DO still use `linear_forward` (the embedding
+  // projection and the classifier) are correct: their buffers are `[n, c, 1]`,
+  // where flat indexing and channel indexing coincide.
+  let bn = tn_conv1x1_forward(gln, n, c, net.bn_chan, net.bn_w, net.bn_b)
   let (x_s, stack_s) = tn_stack_forward_full(net.stack_s, bn, n)
   let (x_m, stack_m) = tn_stack_forward_full(net.stack_m, bn, n)
   let (x_l, stack_l) = tn_stack_forward_full(net.stack_l, bn, n)
   let cat = tn_concat3(x_s, x_m, x_l, n, net.bn_chan, t)
-  let mfa = @nn.linear_forward(
-    cat,
-    n * t,
-    @nn.LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
+  let mfa = tn_conv1x1_forward(
+    cat, n, 3 * net.bn_chan, net.fuse_out, net.mfa_w, net.mfa_b,
   )
   let mfa_relu = @activ.relu_forward(mfa)
   let (fused, se_cache) = se_forward_full(mfa_relu, n, net.mfa_se)
@@ -256,11 +271,8 @@ pub fn tarnet_backward(
   // multi-feature aggregation. relu_backward needs its own INPUT, not its
   // output, to know which entries were negative.
   let d_mfa = @activ.relu_backward(cache.mfa, se_g.d_x)
-  let (d_cat, d_mfa_w, d_mfa_b) = @nn.linear_backward(
-    cache.cat,
-    d_mfa,
-    n * t,
-    @nn.LinearParam::new(net.mfa_w, net.mfa_b, 3 * net.bn_chan, net.fuse_out),
+  let (d_cat, d_mfa_w, d_mfa_b) = tn_conv1x1_backward(
+    cache.cat, d_mfa, n, 3 * net.bn_chan, net.fuse_out, net.mfa_w,
   )
   let (d_s, d_m, d_l) = tn_split3(d_cat, n, net.bn_chan, t)
   // the three stacks are parallel branches off ONE bottleneck, so their input
@@ -273,11 +285,8 @@ pub fn tarnet_backward(
   for i in 0..<cache.bn.length() {
     d_bn[i] = d_bn_s[i] + d_bn_m[i] + d_bn_l[i]
   }
-  let (d_gln, d_bn_w, d_bn_b) = @nn.linear_backward(
-    cache.gln,
-    d_bn,
-    n * t,
-    @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
+  let (d_gln, d_bn_w, d_bn_b) = tn_conv1x1_backward(
+    cache.gln, d_bn, n, c, net.bn_chan, net.bn_w,
   )
   let (d_x, d_ln_g, d_ln_b) = @nn.gln_backward(
     d_gln, cache.ln_in_cache, net.ln_in,
