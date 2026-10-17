@@ -75,9 +75,11 @@ def run(cmd, cwd=None, timeout=None, env=None):
         # Bytes, not text. MoonBit's test runner emits output that is not valid
         # UTF-8 -- the progress dots and box-drawing characters come out in the
         # console's code page -- and decoding it with errors="replace" truncated
-        # the stream at 406 bytes, right in the middle of
-        # "Total tests: 220, passed: 220, faile". Reading bytes and decoding
-        # afterwards keeps the whole thing.
+        # the stream at 406 bytes, in the middle of the summary line: between
+        # the "passed" count and the "failed: N" that follows it. Reproducing
+        # that cut fragment literally would leave a misspelling in this
+        # comment for the typos gate to find, which is its own distraction.
+        # Reading bytes and decoding afterwards keeps the whole thing.
         p = subprocess.run(
             cmd, cwd=cwd or ROOT,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

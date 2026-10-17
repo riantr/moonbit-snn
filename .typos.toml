@@ -37,6 +37,10 @@ Meger = "Meger"
 mis = "mis"
 # ERROR_FILENAME_EXCED_RANGE: Microsoft's own spelling of the Win32 constant
 EXCED = "EXCED"
+# activ: the name of the activations sub-package (`mbt/activ`), created by the
+# sub-package split. It appears 268 times as `@activ.relu_forward` and friends,
+# and `typos` reads the bare identifier as the English word. Not a misspelling.
+activ = "activ"
 
 [default.extend-identifiers]
 PNAx1 = "PNAx1"

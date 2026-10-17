@@ -168,22 +168,55 @@ pub fn batch_norm2d_forward(
   // We always compute batch mean / var so the cache is complete (in
   // inference mode we still want the cache to record what we used).
   for ci in 0..<c {
-    // Compute mean over (n, h, w) for this channel.
+    // Two passes over (n, h, w) for this channel.
+    //
+    // The first pass accumulates the mean. The second accumulates the squared
+    // deviations FROM THAT MEAN, which is PyTorch's formulation.
+    //
+    // The obvious one-pass form, E[x^2] - (E[x])^2, was what this used to do
+    // and it is a latent precision defect. It is exact in real arithmetic and
+    // correct in float64, but in float32 it subtracts two nearly equal numbers
+    // whenever the mean is large relative to the spread, and the result loses
+    // roughly (mean^2 / var) * 6e-8 of relative precision.
+    //
+    // MEASURED on the ASP BatchNorm1d gate's fixture (shape [4, 6, 7], per-channel
+    // means spread over [-7.5, +7.5], variances spread 1535x):
+    //
+    //     channel   true var    E[x^2]-E[x]^2     rel err    inv_std err
+    //     ch0       3.3255e-04  3.3951e-04         2.0918%    1.0001%
+    //     ch1       1.3433e-03  1.3447e-03         0.1019%    0.0506%
+    //     ch2       6.0896e-03  6.0892e-03         0.0069%    0.0034%
+    //     ch5       5.1041e-01  5.1041e-01         0.0002%    0.0001%
+    //
+    // The same expression evaluated in float64 on the same input is exact to
+    // 6e-12, which is what identifies the formula rather than the fixture as
+    // the cause (`verify/confirm_bn_var.py`).
+    //
+    // Why this stayed hidden for so long: every pre-existing test normalises
+    // inputs that are either already centred (mean ~ 0) or have a spread
+    // comparable to their mean, where the cancellation costs six figures
+    // rather than two. Channel 0 here has mean^2 = 56.3 against var = 3.3e-4.
     let mut sum = 0.0F
-    let mut sum_sq = 0.0F
     for ni in 0..<n {
       for hi in 0..<h {
         for wi in 0..<w {
-          let idx = ni * chw + ci * h * w + hi * w + wi
-          let v = input[idx]
-          sum = sum + v
-          sum_sq = sum_sq + v * v
+          sum = sum + input[ni * chw + ci * h * w + hi * w + wi]
         }
       }
     }
     let m = sum / Float::from_int(nhw)
-    // Population variance: E[x^2] - (E[x])^2.
-    let v = sum_sq / Float::from_int(nhw) - m * m
+    let mut sum_sq = 0.0F
+    for ni in 0..<n {
+      for hi in 0..<h {
+        for wi in 0..<w {
+          let d = input[ni * chw + ci * h * w + hi * w + wi] - m
+          sum_sq = sum_sq + d * d
+        }
+      }
+    }
+    // Population variance: E[(x - mean)^2]. No Bessel correction, matching
+    // PyTorch's training-mode statistic.
+    let v = sum_sq / Float::from_int(nhw)
     mean[ci] = m
     inv_std[ci] = 1.0F / @core.sqrtf(v + bn.eps)
     // Update running stats in-place (if training).

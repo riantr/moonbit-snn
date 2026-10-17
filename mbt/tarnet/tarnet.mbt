@@ -20,15 +20,23 @@
 // WHAT IS DELIBERATELY NOT HERE, and each omission is a judgement rather
 // than an oversight:
 //
-//   * BatchNorm1d inside the ASP attention network and after the final
-//     projection. BatchNorm's gradient depends on the batch through its
-//     running statistics, which makes a per-sample gradient check
-//     meaningless; the module is kept so a batch-level check can be added.
 //   * Dropout before the classifier (the reference's default is p = 0, i.e.
 //     absent).
 //   * The front-end is not differentiable. The reference computes it under
 //     `torch.no_grad()`, so `tarnet_forward` takes a log-Mel spectrogram and
 //     `tarnet_logmel.mbt` produces one from raw audio.
+//
+// ALL THREE OF THE REFERENCE'S BatchNorm1d LAYERS ARE NOW PRESENT: the two
+// around the embedding (`bn_seg`, `bn_out`, applied in `tarnet_backward.mbt`
+// where the pipeline lives) and the one inside the ASP attention network
+// (`tarnet_asp.mbt`). The ASP one used to be listed below as a deliberate
+// omission, on the grounds that "BatchNorm's gradient depends on the batch
+// through its running statistics, which makes a per-sample gradient check
+// meaningless". That was false in both halves -- in training mode the
+// statistics come from the batch and are differentiated exactly, and the check
+// that matters is against a batch oracle rather than a per-sample one. It is
+// gated in `tests/wave2/asp_oracle_test.mbt` against a PyTorch autograd
+// reference.
 //
 // The three dilation patterns are the paper's contribution: each stack keeps
 // its own receptive field and all three see the same bottleneck output, which
@@ -405,7 +413,13 @@ pub fn tarnet_param_count(net : Tarnet) -> Int {
   total = total + bk * c + bk + c * bk + c
   let ac = net.asp.channels
   let ah = net.asp.att_hidden
-  total = total + ah * 3 * ac + ah + ac * ah + ac
+  // asp: w1, b1, the BatchNorm1d's gamma and beta, w2, b2.
+  // The `2 * ah` is the attention BatchNorm's affine. It is easy to forget
+  // here and leave it out of the arithmetic while still putting both arrays in
+  // `tarnet_flatten`, which under-allocates and then writes off the end of the
+  // buffer -- so this expression has to be read together with the tn_put
+  // sequence below it, not on its own.
+  total = total + ah * 3 * ac + ah + 2 * ah + ac * ah + ac
   total = total + 2 * net.fuse_out * 2
   total = total + net.emb_dim * 2 * net.fuse_out + net.emb_dim
   total = total + net.emb_dim * 2
@@ -447,6 +461,8 @@ pub fn tarnet_flatten(net : Tarnet) -> Array[Float] {
   o = tn_put(flat, o, net.mfa_se.b2)
   o = tn_put(flat, o, net.asp.w1)
   o = tn_put(flat, o, net.asp.b1)
+  o = tn_put(flat, o, net.asp.att_bn_gamma)
+  o = tn_put(flat, o, net.asp.att_bn_beta)
   o = tn_put(flat, o, net.asp.w2)
   o = tn_put(flat, o, net.asp.b2)
   o = tn_put(flat, o, net.bn_seg.gamma)
@@ -570,6 +586,14 @@ pub fn tarnet_unflatten(
   o = o + aw1.length()
   let ab1 = tn_take(flat, o, asp.att_hidden)
   o = o + ab1.length()
+  // The ASP attention's BatchNorm1d affine. It has to be in this list or the
+  // optimiser never sees it: a normalisation whose gamma and beta are outside
+  // the Adam state stays frozen at 1 and 0 forever, and every forward check
+  // still passes because the layer is correct -- it is simply not learning.
+  let abn_g = tn_take(flat, o, asp.att_hidden)
+  o = o + abn_g.length()
+  let abn_b = tn_take(flat, o, asp.att_hidden)
+  o = o + abn_b.length()
   let aw2 = tn_take(flat, o, asp.channels * asp.att_hidden)
   o = o + aw2.length()
   let ab2 = tn_take(flat, o, asp.channels)
@@ -610,6 +634,8 @@ pub fn tarnet_unflatten(
     asp: {
       w1: aw1,
       b1: ab1,
+      att_bn_gamma: abn_g,
+      att_bn_beta: abn_b,
       w2: aw2,
       b2: ab2,
       channels: asp.channels,

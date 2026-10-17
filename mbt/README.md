@@ -404,7 +404,7 @@ mbt/
 |-- rl/                         #   DDPG, TD3, SAC, recurrent actors, (~15k lines)
 |-- gnn/                        #   GCN, MPNN, GIN, PNA, GAT, H2GCN
 |-- generative/                 #   flows, VAE, DDPM, GAN, EBM
-|-- tarnet/                     #   temporal-aspect graph nets
+|-- tarnet/                     #   TARNet speaker ID: conv, ASP, SE, log-Mel
 |-- models/                     #   LeNet5, MLP, SimpleCNN, ViT, Siamese
 |-- capsule/                    #   capsule / metric-learning networks
 |-- causal/                     #   SCM, do-calculus, counterfactuals
@@ -1052,8 +1052,71 @@ was written.
   trips the per-index rule on all eight fixtures, so real faults are still
   rejected loudly.
 
-## Verification harness
+### Batch AG (v0.166.0): ASP's context layout, and the BatchNorm1d behind it
 
+Two real defects, both found by building a PyTorch **autograd** oracle rather than
+another finite difference, and both in code that several gates already passed.
+
+- **`asp_forward` wrote the context's x-slot at x's stride.** `ctx` is `[n, 3c,
+  t]`; the mean and sd slots used that stride and the x-slot used `[n, c, t]`'s.
+  Batch *b*'s x-slot therefore lands on batch *b-1*'s mean-slot. At n=3, c=5,
+  t=7 batch 1's x overwrote batch 0's mean at `[35,70)` and batch 2's x
+  overwrote batch 0's sd at `[70,105)`. Batch 0's attention was reading other
+  samples' activations as its own context, and its "standard deviation" slot
+  held raw waveform values -- including negatives, which no square root can
+  produce. `asp_backward` was meanwhile reading the x-slot at the *correct*
+  stride, so the forward and the backward disagreed about the buffer's layout.
+
+  The write was self-consistent (`ctx[i0] = x[i0]` reads and writes one index),
+  which is why nothing downstream complained. It is the third stride defect of
+  this family in this module and the same failure mode as the two already
+  recorded in Batch AD.
+
+- **`batch_norm2d_forward` computed its variance one-pass**, as `E[x^2] -
+  E[x]^2`. Exact in real arithmetic and exact in float64, but in float32 it
+  subtracts two nearly equal numbers whenever the mean is large relative to the
+  spread. On a fixture with per-channel means over `[-7.5, 7.5]` and variances
+  spanning 1535x, channel 0's variance came out 2.09% high and its `inv_std`
+  1.00% high. It is now PyTorch's two-pass form, `E[(x - mean)^2]`.
+
+  It hid because every pre-existing test normalises inputs that are either
+  already centred or have a spread comparable to their mean, where the
+  cancellation costs six figures rather than two.
+
+**Why neither gate caught either.** `asp_backward` carried a long investigation
+ending in NOT SOLVED and the claim that "the chain written in `asp_backward` is
+not the chain `asp_forward` computes" -- which was literally true and was one
+index. Every measurement in it was a finite difference of the module's own
+forward, and a difference of a forward is blind to a forward that is wrong: it
+reports the gradient of whatever the forward computes. The gate that replaced the
+removed one runs at `rtol=3e-2`, `atol=2e-3`, `h=1.2e-2` and is green -- but a
+float32 central difference of an objective summed over ~170 terms was measured
+carrying an absolute noise floor of order 0.1 at a 1e-2 step, so that gate sits
+below its own instrument's noise.
+
+The replacement is `tests/wave2/asp_oracle_test.mbt`, which compares against
+`verify/asp_oracle.py` -- torch autograd, no step size, exact to float32
+roundoff, structurally unable to agree with a wrong implementation by
+construction. It checks the forward, `d_x`, all four convolution gradients,
+`d_b2` (exactly zero, because softmax is shift-invariant), the BatchNorm affine
+gradients, and the shape of the BatchNorm's own reduction.
+
+With `d_x` verified, **ASP's `nn.BatchNorm1d(att_hidden)` is now implemented**
+(`nn/batch_norm1d.mbt`, a checked `h=1` view of `batch_norm2d`, and the layer
+itself between ReLU and tanh in `tarnet_asp.mbt`). Its per-channel affine is
+carried in `AspParam` and threaded through `tarnet_flatten` / `tarnet_backward`;
+leaving it out would have produced a normalisation that is correct in every
+forward check and permanently frozen at `gamma = 1, beta = 0`.
+
+Every tolerance in both gates is derived rather than fitted -- the forward's
+absolute bound is `2*(FLT_EPS/2)*max|x|*max(inv_std)*sqrt(n*w)`, the gradient's
+is 2.5x the measured float32 residue, and the finite-difference column's is set
+by what the instrument can resolve (its worst error on the *correct*
+implementation is 13% at the best step). `verify/gate_canary.py` runs all of it
+against a scratch copy and requires each gate to fail when its defect is
+restored.
+
+## Verification harness
 Gradients being correct and the resulting model being useful are
 different properties, and this package now checks both.
 

@@ -100,13 +100,80 @@
 // and specifically what `batch_norm2d_backward` returns as d_input when that
 // gradient itself already carries cross-sample content. The change is not
 // committed: an unexplained red gate is not progress.
+//
+// ---------------------------------------------------------------------------
+// SOLVED, AND NOT WHERE ANY OF THE ABOVE LOOKED. 2026-10-16.
+//
+// Every measurement above is sound and every conclusion drawn from it was
+// wrong, because all of them were taken against a FINITE DIFFERENCE of this
+// module's own forward. A difference of a forward is blind to a forward that is
+// wrong: it faithfully reports the gradient of whatever the forward actually
+// computes. The gate in `tests/wave2/tarnet_test.mbt` that replaced the removed
+// one runs at rtol 3e-2 / atol 2e-3 with h = 1.2e-2, and is green -- but a
+// float32 central difference of an objective summed over ~170 terms was
+// measured carrying an absolute noise floor of order 0.1 at a 1e-2 step
+// elsewhere in this project, so that gate was below its own instrument's noise.
+//
+// `tests/wave2/asp_oracle_test.mbt` compares against a PyTorch autograd
+// reference, which has no step size and cannot agree with a wrong
+// implementation by construction. It found this on the first run.
+//
+// THE BUG WAS IN THE FORWARD, NOT THE BACKWARD, AND NOT IN THE BATCHNORM.
+//
+// `asp_forward` wrote the context's x-slot at `base + ti`, i.e. at X's stride
+// of `c`, while the mean and sd slots correctly used ctx's stride of `3c`.
+// Batch b's x-slot therefore lands on `[b*c*t, b*c*t + c*t)`, and batch b-1's
+// mean-slot lands on `[b*3c*t + c*t, ... + c*t)`. Those are the same range.
+// At n=3, c=5, t=7:
+//
+//     [0,  35)  batch 0 x          correct
+//     [35, 70)  batch 1 x          CLOBBERS batch 0's mean slot
+//     [70,105)  batch 2 x          CLOBBERS batch 0's sd slot
+//
+// So for batch 0 the attention was reading OTHER SAMPLES' activations as its
+// own context. Its "standard deviation" slot held raw waveform values,
+// including negatives -- which no square root can produce, and which is exactly
+// what the dump showed before the cause was understood.
+//
+// The write was self-consistent (`ctx[i0] = x[i0]` reads and writes one index),
+// which is why nothing downstream complained: this is the third stride defect
+// in this module and the same failure mode as the two already recorded above.
+// `asp_backward` was meanwhile reading the x-slot at the correct stride
+// `(b*3*c + ch)*t + ti`, so the forward and the backward disagreed about the
+// buffer's layout. That is what "the chain written in `asp_backward` is not the
+// chain `asp_forward` computes" meant -- literally, and it was one index.
+//
+// WHAT THE INVESTIGATION GOT WRONG, since the wrong turns are the useful part.
+// It exonerated the BatchNorm correctly, and it was right that d_x is ~98%
+// DIRECT. It then concluded the ctx path was a small term that could not carry
+// the discrepancy -- and then spent its remaining effort looking for a large
+// discrepancy INSIDE that small term. The ctx path was small; it did not need to
+// explain anything. Meanwhile `alpha` itself was being computed from a corrupt
+// context, which perturbs the DIRECT path too, and no amount of decomposing the
+// backward would have shown that, because the decomposition assumed a correct
+// forward and compared against a difference of the same incorrect one.
+//
+// THE LESSON, in the form it should have taken at the time: when a gradient
+// disagrees with a finite difference and the algebra checks out, the next
+// question is not "which term of the backward is wrong" but "is the reference
+// trustworthy". A second, independent implementation of the forward settles it
+// in one run; re-deriving the backward by hand settles nothing.
 
 ///|
 /// Parameters of the ASP attention network. Both convolutions are 1x1, so
 /// they are the `LinearParam` pair the time axis as batch axis gives.
+///
+/// `att_bn_gamma` / `att_bn_beta` are the per-channel affine of the
+/// BatchNorm1d the reference puts between ReLU and tanh, one entry per
+/// attention unit. They are stored here rather than inside a `BatchNorm2d` so
+/// that the network's parameter flatten/unflatten keeps them inside the Adam
+/// state -- a normalisation whose affine is not in the optimiser's list would
+/// never be trained, and would look fine in every forward check.
 pub(all) struct AspParam {
   w1 : Array[Float]
   b1 : Array[Float]
+  att_bn_gamma : Array[Float]
+  att_bn_beta : Array[Float]
   w2 : Array[Float]
   b2 : Array[Float]
   channels : Int
@@ -119,6 +186,9 @@ pub fn AspParam::new(channels : Int, att_hidden : Int, seed : UInt64) -> AspPara
   {
     w1: tn_randn(att_hidden * 3 * channels, 0.05F, rng),
     b1: Array::make(att_hidden, 0.0F),
+    // gamma = 1, beta = 0, the PyTorch default for a fresh BatchNorm1d.
+    att_bn_gamma: Array::make(att_hidden, 1.0F),
+    att_bn_beta: Array::make(att_hidden, 0.0F),
     w2: tn_randn(channels * att_hidden, 0.05F, rng),
     b2: Array::make(channels, 0.0F),
     channels,
@@ -136,6 +206,11 @@ pub(all) struct AspCache {
   alpha : Array[Float]
   mu : Array[Float]
   var_out : Array[Float]
+  // The BatchNorm1d state. `bn` carries gamma/beta and the training flag;
+  // `bn_cache` carries the statistics the forward actually used, which is what
+  // makes `d_input` cross-sample coupled in training mode and not in inference.
+  att_bn : @nn.BatchNorm2d
+  att_bn_cache : @nn.BatchNormCache
 }
 
 ///|
@@ -173,18 +248,50 @@ pub fn asp_forward(
       let variance = sq * inv_t - mean * mean
       let sd = @core.sqrtf(variance + ASP_STD_FLOOR)
       for ti in 0..<t {
-        let i0 = base + ti
+        // `i0` must use ctx's OWN stride of `3c`, not x's stride of `c`.
+        //
+        // BUG, found by the PyTorch autograd oracle in
+        // `tests/wave2/asp_oracle_test.mbt`. With `i0 = base + ti`, i.e.
+        // x's stride, batch b's x-slot occupies `[b*c*t, b*c*t + c*t)`.
+        // Batch b-1's mean-slot occupies `[b*3c*t + c*t, ... + c*t)`, and
+        // those are THE SAME RANGE: for n=3, c=5, t=7 batch 1's x overwrote
+        // batch 0's mean slot at [35,70) and batch 2's x overwrote batch 0's
+        // sd slot at [70,105).
+        //
+        // It was invisible from inside the forward for the same reason the
+        // two layout bugs already recorded in this file were: the write is
+        // self-consistent (`ctx[i0] = x[i0]` reads and writes the same index),
+        // and nothing afterwards looks at the clobbered slots. What exposed it
+        // is that batch 0's attention was reading OTHER SAMPLES' activations
+        // as its own context -- its "standard deviation" slot held raw
+        // waveform values, including negatives, which no square root can
+        // produce. `asp_backward` was meanwhile reading the x-slot at the
+        // correct stride (`(b*3*c + ch)*t + ti`), so the two halves of this
+        // module disagreed about the buffer's layout. That is the sense in
+        // which "the chain written in asp_backward is not the chain
+        // asp_forward computes" -- it was literal, and it was one index.
+        let i0 = (b * 3 * c + ch) * t + ti
         let i1 = (b * 3 * c + c + ch) * t + ti
         let i2 = (b * 3 * c + 2 * c + ch) * t + ti
-        ctx[i0] = x[i0]
+        ctx[i0] = x[base + ti]
         ctx[i1] = mean
         ctx[i2] = sd
       }
     }
   }
-  // Conv1d(3C -> att, k=1), then ReLU, then -- in place of the reference's
-  // BatchNorm -- tanh. Two buffers, not one: the ReLU mask lives in the
-  // pre-tanh values and cannot be recovered from tanh(z) afterwards.
+  // Conv1d(3C -> att, k=1) -> ReLU -> BatchNorm1d -> Tanh, then
+  // Conv1d(att -> C, k=1) -> Softmax(dim=time).
+  //
+  // The BatchNorm is the reference's `nn.BatchNorm1d(att_hidden)` on `[n,
+  // att_hidden, t]`. It is the one normalisation in this network whose reduction
+  // spans the BATCH, so every attention unit's statistics are a function of
+  // every sample's activations -- which is the whole reason it has to be there,
+  // and the reason its backward cannot be checked one sample at a time.
+  //
+  // Three buffers, not one. The ReLU mask lives in `pre` and cannot be
+  // recovered from tanh(z) afterwards, and the BatchNorm needs its own cache;
+  // keeping them separate is what lets the backward walk back through the same
+  // three steps the forward walked through.
   //
   // These two convolutions are written out instead of calling
   // `linear_forward`, because ASP's arrays are `[n, c, t]` (channels
@@ -195,7 +302,7 @@ pub fn asp_forward(
   // assumption. Expressing the contraction in the layout the data actually
   // uses removes the ambiguity.
   let pre : Array[Float] = Array::make(n * p.att_hidden * t, 0.0F)
-  let hidden : Array[Float] = Array::make(n * p.att_hidden * t, 0.0F)
+  let relu_out : Array[Float] = Array::make(n * p.att_hidden * t, 0.0F)
   let k3 = 3 * c
   let att = p.att_hidden
   for b in 0..<n {
@@ -215,8 +322,24 @@ pub fn asp_forward(
   let mut i = 0
   while i < n * att * t {
     let v = pre[i]
-    let r = if v > 0.0F { v } else { 0.0F }
-    hidden[i] = @core.tanhf(r)
+    relu_out[i] = if v > 0.0F { v } else { 0.0F }
+    i = i + 1
+  }
+  // `momentum = 0` so the forward has no side effect on the running statistics
+  // and stays a pure function of its arguments -- the same discipline the
+  // module's other layers keep, and the reason `asp_forward` can be called from
+  // a finite-difference sweep at all.
+  let att_bn = @nn.BatchNorm2d::with_gamma_beta(
+    p.att_bn_gamma.copy(),
+    p.att_bn_beta.copy(),
+    momentum = 0.0,
+    eps = 1.0e-5F,
+  )
+  let (bn_out, bn_cache) = @nn.batch_norm1d_forward(relu_out, n, att, t, att_bn)
+  let hidden : Array[Float] = Array::make(n * att * t, 0.0F)
+  i = 0
+  while i < n * att * t {
+    hidden[i] = @core.tanhf(bn_out[i])
     i = i + 1
   }
   let logits : Array[Float] = Array::make(n * c * t, 0.0F)
@@ -290,7 +413,20 @@ pub fn asp_forward(
       out[b * 2 * c + c + ch] = @core.sqrtf(v)
     }
   }
-  (out, { x, ctx, pre, hidden, alpha, mu, var_out })
+  (
+    out,
+    {
+      x,
+      ctx,
+      pre,
+      hidden,
+      alpha,
+      mu,
+      var_out,
+      att_bn,
+      att_bn_cache: bn_cache,
+    },
+  )
 }
 
 ///|
@@ -308,21 +444,36 @@ pub fn tn_pointwise(
 }
 
 ///|
-/// ASP gradients: `(d_x, d_w1, d_b1, d_w2, d_b2)`.
+/// ASP gradients: `(d_x, d_w1, d_b1, d_w2, d_b2)` plus the BatchNorm1d's own
+/// per-channel affine gradients, each laid out `[att_hidden]`.
 pub(all) struct AspGrad {
   d_x : Array[Float]
   d_w1 : Array[Float]
   d_b1 : Array[Float]
   d_w2 : Array[Float]
   d_b2 : Array[Float]
+  d_att_bn_gamma : Array[Float]
+  d_att_bn_beta : Array[Float]
 }
 
 ///|
 /// ASP backward. `d_out` is `[n, 2c]`, laid out `[mu | sigma]` per row.
 ///
-/// KNOWN WRONG, DO NOT TRUST `d_x`: a central difference of `asp_forward`
-/// disagrees with `d_x` by 6-30%, and `d_x` comes out nearly constant across
-/// time within a channel while the difference is not.
+/// VERIFIED against a PyTorch autograd oracle in
+/// `tests/wave2/asp_oracle_test.mbt`: `d_x`, `d_w1`, `d_b1` and `d_w2` all match
+/// it, and `d_b2` matches its exact zero. That oracle is what found the defect
+/// this function was blamed for -- the bug was in `asp_forward`'s context
+/// layout, not here. The history is kept below because the reasoning went
+/// wrong in an instructive way, and because the old gate that measured it was
+/// removed rather than left red.
+///
+/// WHAT USED TO BE WRONG: a central difference of `asp_forward` disagreed with
+/// `d_x` by 6-30%, and `d_x` came out nearly constant across time within a
+/// channel while the difference did not. The cause was that `asp_forward` wrote
+/// the context's x-slot at x's stride of `c` instead of ctx's stride of `3c`, so
+/// later batches overwrote batch 0's mean and sd slots and `alpha` was computed
+/// from other samples' activations. Fixed in `asp_forward`; see the SOLVED note
+/// at the top of this file.
 ///
 /// MEASURED SCALE: a full sweep of every input coordinate (not the gate that
 /// was removed -- that one failed on its FIRST disagreement, index 0, i.e.
@@ -507,21 +658,37 @@ pub fn asp_backward(
       }
     }
   }
-  // tanh backward. `cache.hidden` IS tanh(relu(conv1)), so the derivative
+  // tanh backward. `cache.hidden` IS tanh(bn(relu(conv1))), so the derivative
   // factor is 1 - tanh^2 read straight off the cache.
+  //
+  // What comes out of this step is the gradient with respect to the BATCHNORM'S
+  // OUTPUT, which is NOT the gradient with respect to ReLU's output. Naming it
+  // `d_bn_out` is the point: the previous version called this `d_relu` and
+  // applied the ReLU mask directly to it, which was correct only while there
+  // was no BatchNorm between the two.
   let att_len = n * p.att_hidden * t
-  let d_relu : Array[Float] = Array::make(att_len, 0.0F)
+  let d_bn_out : Array[Float] = Array::make(att_len, 0.0F)
   let mut k = 0
   while k < att_len {
     let v = cache.hidden[k]
-    d_relu[k] = d_h_tanh[k] * (1.0F - v * v)
+    d_bn_out[k] = d_h_tanh[k] * (1.0F - v * v)
     k = k + 1
   }
+  // BatchNorm1d backward. This is where the attention becomes cross-sample
+  // coupled: `batch_norm1d_backward` reduces over (n, t) per attention unit, so
+  // `d_relu_out[b]` depends on every sample's activations, not just sample b's.
+  // `cache.att_bn_cache.coupled` is TRUE because the forward ran in training
+  // mode on batch statistics, so the two coupling terms are live.
+  let (d_relu_out, d_bn_gamma, d_bn_beta) = @nn.batch_norm1d_backward(
+    d_bn_out,
+    cache.att_bn_cache,
+    cache.att_bn,
+  )
   // ReLU backward, using the pre-tanh buffer kept in the cache.
   let d_conv1 : Array[Float] = Array::make(att_len, 0.0F)
   k = 0
   while k < att_len {
-    d_conv1[k] = if cache.pre[k] > 0.0F { d_relu[k] } else { 0.0F }
+    d_conv1[k] = if cache.pre[k] > 0.0F { d_relu_out[k] } else { 0.0F }
     k = k + 1
   }
   // Conv1d(3C -> att, k=1) backward, in the same [n, c, t] layout.
@@ -603,7 +770,15 @@ pub fn asp_backward(
       }
     }
   }
-  { d_x, d_w1, d_b1, d_w2, d_b2 }
+  {
+    d_x,
+    d_w1,
+    d_b1,
+    d_w2,
+    d_b2,
+    d_att_bn_gamma: d_bn_gamma,
+    d_att_bn_beta: d_bn_beta,
+  }
 }
 
 ///|

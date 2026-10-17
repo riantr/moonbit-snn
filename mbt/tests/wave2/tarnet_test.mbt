@@ -157,6 +157,8 @@ fn tn_asp_w1_bump(
   {
     w1: w1,
     b1: p.b1.copy(),
+    att_bn_gamma: p.att_bn_gamma.copy(),
+    att_bn_beta: p.att_bn_beta.copy(),
     w2: p.w2.copy(),
     b2: p.b2.copy(),
     channels: p.channels,
@@ -176,6 +178,8 @@ fn tn_asp_w2_bump(
   {
     w1: p.w1.copy(),
     b1: p.b1.copy(),
+    att_bn_gamma: p.att_bn_gamma.copy(),
+    att_bn_beta: p.att_bn_beta.copy(),
     w2: w2,
     b2: p.b2.copy(),
     channels: p.channels,

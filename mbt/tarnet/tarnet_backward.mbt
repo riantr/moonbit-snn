@@ -265,6 +265,12 @@ pub fn tarnet_backward(
   o = tn_put(g, o, se_g.b2)
   o = tn_put(g, o, asp_g.d_w1)
   o = tn_put(g, o, asp_g.d_b1)
+  // The ASP BatchNorm1d's affine, in `tarnet_flatten`'s order. These two lines
+  // and their counterparts in the flatten are the difference between a
+  // normalisation that trains and one that is permanently frozen at gamma = 1,
+  // beta = 0 -- and the frozen version passes every forward check it has.
+  o = tn_put(g, o, asp_g.d_att_bn_gamma)
+  o = tn_put(g, o, asp_g.d_att_bn_beta)
   o = tn_put(g, o, asp_g.d_w2)
   o = tn_put(g, o, asp_g.d_b2)
   o = tn_put(g, o, d_bn_seg_g)
