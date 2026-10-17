@@ -62,6 +62,43 @@ it afterwards, because a freshly created sub-package cannot resolve any
 symbol from the parent module. See
 [`mbt/README.md`](./mbt/README.md#verification-harness) for the criteria.
 
+### TARNet against PyTorch autograd
+
+Every other gradient gate in this repository compares a layer against a finite
+difference of **its own** forward. That cannot see a forward which is wrong in a
+self-*consistent* way, and whole-model wiring is exactly where that lives:
+concatenate the three scale stacks in the wrong order and the forward and the
+backward are both wrong in matching ways, every finite difference agrees with
+both, the loss still descends, and the model optimises a network that is not the
+paper's.
+
+`mbt/tarnet/` is checked against PyTorch autograd end to end instead:
+
+```sh
+python verify/gen_model_oracle.py --selftest     # the oracle validates ITSELF
+python verify/gate_canary.py                     # proves each gate can fail
+```
+
+The selftest needs no MoonBit, no goldens and no export: it differentiates the
+oracle's own forward in float64, along random directions, and compares against
+its analytic gradients. Directional differences rather than per-coordinate ones,
+because the network is kinked (ReLU, PReLU, `clamp`) and a coordinate probe of
+step 1e-5 against pre-activations of order 9e-3 steps across zero constantly —
+measured per-coordinate relative error was 1e-1 to 3e+0, and got *worse* as the
+step shrank.
+
+This matters more than its test count suggests. The oracle had six defects of its
+own behind it, including one whose headline number was `absmax(x) / absmax(x)` —
+identically 1.0, green regardless of what the backward did — and one that made
+the logit gradient six frames wide so it silently *broadcast* against the
+logits. Four fix-diagnose-revert cycles had blamed the port for faults that were
+in the reference. A reference that cannot validate itself is a reference that
+gets trusted, and being trusted is what made it wrong four times.
+
+`python verify/gate_canary.py` exists because of that history: it reintroduces
+each defect on a scratch copy of the tree and requires the corresponding gate to
+report `FAILED > 0`. A gate that has only ever been green measures nothing.
+
 ## Optional GPU path
 
 `mbt/gpu/` is a single-precision BLAS surface for the dense layers in `nn/`.

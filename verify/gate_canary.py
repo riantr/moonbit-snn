@@ -9,6 +9,7 @@
 #   canary 2  the sweep holds only `Correct`    -> must be RED (G3's third
 #                                                  assertion is the one that
 #                                                  exists to catch this)
+#   canary 7  the bottleneck 1x1 conv reverted  -> must be RED (M1, M2)
 #
 # canary 2 is the subtle one. Removing every mutant makes the sweep vacuous and
 # `missed_by_fd` fall to 0, which is precisely the condition G3 asserts against
@@ -57,6 +58,38 @@ ASP_FIXED = "        let i0 = (b * 3 * c + ch) * t + ti\n"
 BN_RE = re.compile(
     r"( *)p\.att_bn_gamma\.copy\(\),(?:\r?\n)\1p\.att_bn_beta\.copy\(\),"
 )
+
+# The whole-model defect: the bottleneck's 1x1 convolution after gLN, which is a
+# `[n, c, t]` buffer, routed through `linear_forward`, which reads
+# `batch*in_features + feature`. Reverting this ONE line turns the autograd gate
+# red on 12 of 12 logits and 108 of 108 d_input coordinates, so it is the
+# cheapest possible proof that the gate is not merely green by construction.
+#
+# Matched with a regex rather than a literal so it survives CRLF: an anchor
+# written with "\n" against a CRLF file never matches, and a canary that silently
+# finds nothing reports the same "green" a working canary would.
+TARNET_TARGET = os.path.join(ROOT, "mbt", "tarnet", "tarnet_backward.mbt")
+BOTTLENECK_RE = re.compile(
+    r"( *)let bn = tn_conv1x1_forward\("
+    r"gln, n, c, net\.bn_chan, net\.bn_w, net\.bn_b\)"
+)
+
+
+def swap_in_linear(text):
+    if not BOTTLENECK_RE.search(text):
+        sys.exit("canary 7: the bottleneck 1x1 convolution was not found in its "
+                 "fixed form; tarnet_backward.mbt changed and this canary needs "
+                 "updating before it can be trusted")
+    nl = "\r\n" if "\r\n" in text else "\n"
+
+    def simple(m):
+        i = m.group(1)
+        return (i + "let bn = @nn.linear_forward(" + nl
+                + i + "  gln, n * t,"
+                + " @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan)," + nl
+                + i + ")")
+
+    return BOTTLENECK_RE.sub(simple, text, count=1)
 
 
 def swap_bn_affine(text):
@@ -136,6 +169,7 @@ def summarise(out):
 TOUCHED = [
     os.path.join("mbt", "nn", "batch_norm2d.mbt"),
     os.path.join("mbt", "tarnet", "tarnet_asp.mbt"),
+    os.path.join("mbt", "tarnet", "tarnet_backward.mbt"),
     os.path.join("mbt", "tests", "wave1", "batch_norm1d_test.mbt"),
     os.path.join("mbt", "tests", "wave2", "block_oracle_test.mbt"),
     os.path.join("mbt", "tests", "wave2", "block_oracle_golden.mbt"),
@@ -251,13 +285,23 @@ def main():
         with open(c_se_gold, "w", encoding="utf-8", newline="") as fh:
             fh.write(perturb_first_value(sg, "se_out_golden", 1.05))
         print("canary 6  SE oracle golden skewed    -> %s" % run_wave2(work))
+
+        # canary 7: the whole-model defect. One line, and the autograd gate goes
+        # red on every coordinate -- the clearest evidence available that the
+        # gate discriminates rather than merely reporting green.
+        restore(work)
+        tarnet_src = open(TARNET_TARGET, encoding="utf-8").read()
+        c_tarnet = os.path.join(work, "mbt", "tarnet", "tarnet_backward.mbt")
+        with open(c_tarnet, "w", encoding="utf-8", newline="") as fh:
+            fh.write(swap_in_linear(tarnet_src))
+        print("canary 7  bottleneck 1x1 conv reverted -> %s" % run_wave2(work))
     finally:
         with open(TARGET, "w", encoding="utf-8", newline="") as fh:
             fh.write(original_bn)
         shutil.rmtree(tmp, ignore_errors=True)
 
     print()
-    print("canaries 1 to 6 must each report FAILED > 0, and only its own.")
+    print("canaries 1 to 7 must each report FAILED > 0, and only its own.")
     print("The real files were never modified; the scratch copy is deleted.")
 
 
