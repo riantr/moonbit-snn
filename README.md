@@ -37,9 +37,10 @@ python verify/qa_loop.py --list     # the registry
 python verify/qa_loop.py --quick    # skip the slow gates
 ```
 
-Thirteen gates: formatting, static analysis, dependency shape, duplicate-code
-detection, a secret scan, the unit suite, the example suite, property checks,
-a performance baseline, coverage, a repeat-run stability check, and mutation
+Fifteen gates: formatting, static analysis, dependency shape, duplicate-code
+detection, a secret scan, the TARNet autograd oracle's self-test, the reference
+transcription audit, the unit suite, the example suite, property checks, a
+performance baseline, coverage, a repeat-run stability check, and mutation
 testing. A gate that does not run reports `unavailable` with the reason rather
 than `pass` — "did not check" is a finding, not a success.
 
@@ -76,6 +77,7 @@ paper's.
 
 ```sh
 python verify/gen_model_oracle.py --selftest     # the oracle validates ITSELF
+python verify/audit_transcription.py --selftest  # the audit can FAIL
 python verify/gate_canary.py                     # proves each gate can fail
 ```
 
@@ -94,6 +96,29 @@ the logit gradient six frames wide so it silently *broadcast* against the
 logits. Four fix-diagnose-revert cycles had blamed the port for faults that were
 in the reference. A reference that cannot validate itself is a reference that
 gets trusted, and being trusted is what made it wrong four times.
+
+### Provenance is checked, not asserted
+
+The oracle's independence rests entirely on one sentence in its header: it is
+transcribed from the upstream `tarnet/models/tarnet.py` rather than from this
+port. `verify/audit_transcription.py` makes that sentence checkable — it reads
+the reference and asserts 31 structural facts the oracles depend on: the
+concat order of the three scale stacks, SE after the ReLU rather than before,
+the `1e-4` ASP floors, `max(32, fuse_out // 4)` for the SE bottleneck, the
+depthwise padding formula, the dilation lists, and the
+`bn_seg → fc → bn_out` tail.
+
+It reports **31/31** against the current reference, and it lists the two
+deliberate deviations as assertions rather than excuses: the port shares one
+PReLU slope where the reference declares two, and it inits the classifier with
+`randn(0.05)` where the reference uses `xavier_uniform_`. Its `--selftest`
+mutates the reference ten ways and requires each mutation to turn its own check
+red and nothing else.
+
+`_build/` is gitignored, so the reference is a local checkout. Where it is
+absent this gate reports `unavailable`, not `pass` — and that is a real
+limitation worth stating plainly: outside this checkout, the transcription is
+unverified.
 
 `python verify/gate_canary.py` exists because of that history: it reintroduces
 each defect on a scratch copy of the tree and requires the corresponding gate to

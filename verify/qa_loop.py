@@ -686,12 +686,76 @@ def gate_security():
     return Result("security", "pass", "no secret patterns in tracked source", 0)
 
 
+def gate_oracle():
+    """The PyTorch oracle's self-test: does its own backward match its own forward?
+
+    This is the gate that had to exist first. The oracle is what the whole-model
+    test compares against, and it shipped having never been run: its selftest
+    reported `absmax(x) / absmax(x)`, which is 1.0 by construction, and it wired
+    the SE after the ASP head where the channel counts do not even match. Six of
+    its defects were its own, and four fix-diagnose-revert cycles blamed the port
+    for faults that lived in the reference.
+
+    Runs in well under a second and needs no MoonBit, no goldens and no export,
+    which is the point: a reference nobody can validate alone is a reference
+    nobody validates.
+    """
+    script = os.path.join(ROOT, "verify", "gen_model_oracle.py")
+    if not os.path.isfile(script):
+        return Result("oracle", "unavailable", "verify/gen_model_oracle.py not found", 0)
+    rc, text, dt = run([sys.executable, script, "--selftest"], timeout=600)
+    m = re.search(r"worst relative error ([\d.e+-]+), tolerance ([\d.e+-]+)", text)
+    if rc != 0:
+        tail = [ln for ln in text.splitlines() if "Error" in ln or "assert" in ln]
+        return Result("oracle", "fail",
+                      "; ".join(tail[:2]) or text.strip().splitlines()[-1:], dt)
+    if not m:
+        return Result("oracle", "fail", "selftest produced no verdict line", dt,
+                      {"output": text[-400:]})
+    return Result("oracle", "pass",
+                  "worst relative error %s against tolerance %s"
+                  % (m.group(1), m.group(2)), dt)
+
+
+def gate_provenance():
+    """Is the oracle still a transcription of the reference, or of a memory of it?
+
+    The oracle's entire claim to independence is one sentence in its header: it
+    is transcribed from `_build/tarnet_ref/tarnet/models/tarnet.py` rather than
+    from this port. That sentence is what makes its verdict worth anything, and
+    it was an assertion. If the reference drifts, nothing notices.
+
+    `_build/` is gitignored, so this is a LOCAL gate: the reference is a checkout,
+    not a tracked file. Missing reference reports `unavailable` rather than
+    `pass`, because "did not check" is a finding and reporting it as a success
+    is the exact failure this project has already paid for once.
+    """
+    script = os.path.join(ROOT, "verify", "audit_transcription.py")
+    if not os.path.isfile(script):
+        return Result("provenance", "unavailable",
+                      "verify/audit_transcription.py not found", 0)
+    rc, text, dt = run([sys.executable, script], timeout=300)
+    if rc == 2:
+        return Result("provenance", "unavailable",
+                      "reference not checked out under _build/", dt)
+    m = re.search(r"transcription audit: (\d+)/(\d+) structural facts hold", text)
+    if rc != 0 or not m:
+        failed = [ln.strip() for ln in text.splitlines() if "[FAIL]" in ln]
+        return Result("provenance", "fail",
+                      "; ".join(failed[:2]) or "audit produced no verdict", dt)
+    return Result("provenance", "pass",
+                  "%s of %s structural facts hold against the reference"
+                  % (m.group(1), m.group(2)), dt)
+
+
 GATES = [
     ("fmt", gate_fmt, False),
     ("lint", gate_lint, False),
     ("deps", gate_deps, False),
     ("dup", gate_dup, False),
     ("security", gate_security, False),
+    ("oracle", gate_oracle, False),
+    ("provenance", gate_provenance, False),
     ("unit", gate_unit, False),
     ("integration", gate_integration, False),
     ("fuzz", gate_fuzz, False),

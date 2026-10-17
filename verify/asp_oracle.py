@@ -142,7 +142,20 @@ def asp_forward_torch(x, w1, b1, gamma, beta, w2, b2):
     n, c, t = x.shape
     att = w1.shape[0]
     mean = x.mean(dim=2, keepdim=True)                      # [n,c,1]
-    # ctx variance as written: E[x^2] - mean^2, no floor clamp inside
+    # NOT what the reference writes. `_build/tarnet_ref/tarnet/models/tarnet.py`
+    # line 290 says `torch.sqrt(x.var(dim=2, keepdim=True, unbiased=False) + 1e-4)`
+    # -- Welford, which is numerically stable. This is the algebraically equal
+    # one-pass form, and it is here because it is what the MoonBit port computes
+    # (tarnet_asp.mbt), so this oracle must too or the gate compares two
+    # different functions.
+    #
+    # Measured, whole model, against a rebuild that calls the reference's own
+    # `var()`: logits differ by 0.0 (bit-identical) and the 3573 parameter
+    # gradients by 9.5e-07 on a scale of 7.56 -- under one float32 ulp. So the
+    # deviation is real and immaterial here, but it is a deviation, and calling
+    # it "as written" is the kind of claim that sends the next reader looking
+    # for a fidelity problem that is in fact in the one-pass variance's
+    # conditioning rather than in the arithmetic.
     var_ctx = (x * x).mean(dim=2, keepdim=True) - mean * mean
     sd = torch.sqrt(var_ctx + STD_FLOOR)
     ctx = torch.cat([x, mean.expand(-1, -1, t), sd.expand(-1, -1, t)], dim=1)
