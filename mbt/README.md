@@ -509,6 +509,17 @@ That is 74 of 732 source files. The other 658 are original.
 differentiation over a recorded tape; the second is a cuBLAS binding whose
 measurements are recorded in `gpu/moon.pkg`.
 
+### One unresolved deviation
+
+TARNet's global layer norm comes from `asteroid.masknn.norms.get("gLN")`.
+Asteroid is neither vendored here nor installed in the environment used to
+check, so two things follow: that dependency is documented rather than
+compared, and the epsilon this port uses (1e-8, in `nn/layer_norm.mbt`) is
+tighter than asteroid's documented default (1e-5). At the variances this model
+actually sees the difference is around one part in 1e7. It is recorded in
+`nn/layer_norm.mbt` so that anyone comparing against asteroid does not have to
+discover it.
+
 ## How validity is established
 
 The honest answer has three layers, and they are not equally strong. It is

@@ -246,6 +246,27 @@ pub fn layer_norm_backward(
 ///|
 /// Global layer norm with a PER-CHANNEL affine of length `c`, applied to a
 /// `[n, c, t]` tensor. Deliberately not `LayerNorm`: see the section comment.
+///
+/// EPSILON, and a deviation to be honest about. The default here is 1e-8. The
+/// model this ports, TARNet, obtains its global layer norm from
+/// `asteroid.masknn.norms.get("gLN")(c)`, and asteroid's `GlobalLayerNorm`
+/// defaults to 1e-5. So this port's floor is two-and-a-half orders of magnitude
+/// tighter than the thing it is porting.
+///
+/// Asteroid is neither vendored in this repository nor installed in the
+/// environment used to check, so that comparison could not be made here -- the
+/// 1e-5 is the documented default, not a value read out of a checkout. What
+/// IS checked is that this file's own gradient matches its own forward; see
+/// `layer_norm_test.mbt` and the per-coordinate `d_gamma` / `d_beta` /
+/// `d_input` gates.
+///
+/// The difference is negligible at any operating point this model sees: eps
+/// only enters when the variance approaches it, and the per-sample variances
+/// here are O(0.1-10), where 1e-8 against 1e-5 moves the result by about one
+/// part in 1e7. It is recorded because a reader comparing against asteroid
+/// should not have to discover it, and because if asteroid's default ever
+/// changes, this constant is the thing that would have to move with it.
+///|
 pub(all) struct GlobalLayerNorm {
   gamma : Array[Float]
   beta : Array[Float]
