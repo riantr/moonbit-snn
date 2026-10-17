@@ -186,3 +186,28 @@ dataflow, the residual paths, the backward, and the parameter count, and it
 invalidates every golden in `mbt/tests/wave2/`. Anyone doing it should start from
 the autograd gate rather than from the code, because that gate is the only thing
 here that would tell them whether the new topology is right.
+
+---
+
+## DECISION (2026-10-17): keep the parallel topology
+
+**Decided: this port keeps the code's parallel taps. §1 is not being changed.**
+
+The reasoning, recorded so the next reader does not re-open it:
+
+- The released code is what produced the numbers in Tables I and II. A port that
+  reproduces the code reproduces those results; a port that follows the
+  equations implements a different network and would need its own training run
+  to say anything about accuracy at all.
+- §1 is a genuine divergence, not a typo, and the paper does not flag it
+  anywhere. Anyone comparing this port against the paper's description will hit
+  it, which is why this file exists and why the module header points here.
+- The autograd gate is what makes the parallel reading safe to keep: the whole
+  network's forward, embedding, `d_input` and all 3573 parameter gradients are
+  checked against PyTorch, so "parallel" here means "verified against the
+  released implementation", not "believed to be what was meant".
+
+If the topology is ever revisited, that last point is the entry point: change the
+wiring, regenerate `model_oracle_golden.mbt` from the corrected reference, and
+let M1/M2 say whether the new dataflow is self-consistent. Do not reason about it
+from the equations.
