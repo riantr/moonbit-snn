@@ -73,7 +73,10 @@ backward are both wrong in matching ways, every finite difference agrees with
 both, the loss still descends, and the model optimises a network that is not the
 paper's.
 
-`mbt/tarnet/` is checked against PyTorch autograd end to end instead:
+`mbt/tarnet/` is checked against PyTorch autograd end to end instead. Before
+using it, read [`mbt/tarnet/PAPER_VS_CODE.md`](./mbt/tarnet/PAPER_VS_CODE.md) —
+the paper and the authors' released code do not describe the same network, and
+the difference is structural rather than a hyperparameter.
 
 ```sh
 python verify/gen_model_oracle.py --selftest     # the oracle validates ITSELF

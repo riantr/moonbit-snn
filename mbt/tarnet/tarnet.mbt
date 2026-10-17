@@ -5,6 +5,18 @@
 // (ICME 2026).  Transcribed from the authors' implementation,
 // github.com/YassinTERRAF/TARNet, `tarnet/models/tarnet.py`.
 //
+// READ PAPER_VS_CODE.md IN THIS DIRECTORY FIRST. That file is the paper, and it
+// does not describe the network the paper's code implements. The largest
+// difference is structural, not a hyperparameter: the paper's equations (2) and
+// (3) feed each stage from the previous one ("three cascaded temporal stages",
+// `X_M = (...)^R(X_S)`, `X_L = (...)^R(X_M)`), while this package runs three
+// PARALLEL taps off one bottleneck, which is what the code does and what its
+// class name says. The paper's long stage also has dilations `{16, 32}` and
+// R = 3; the code has `[16]` and R = 4. This package follows the CODE, because
+// the code is what produced the reported numbers -- but it is therefore not a
+// literal reading of the paper, and that should be a decision someone makes
+// deliberately rather than discovers later.
+//
 //   log-Mel (no grad, in tarnet_logmel.mbt)
 //     -> gLN + 1x1 conv                        = bottleneck, [n, bn_chan, T]
 //     -> THREE PARALLEL Conv-TasNet stacks, each starting from the SAME
