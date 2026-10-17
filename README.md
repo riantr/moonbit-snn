@@ -123,6 +123,34 @@ absent this gate reports `unavailable`, not `pass` — and that is a real
 limitation worth stating plainly: outside this checkout, the transcription is
 unverified.
 
+### The acoustic front-end is checked too
+
+The autograd gate starts at a log-Mel spectrogram, which leaves everything
+*before* it — pre-emphasis, the STFT, the mel filterbank, the log and the
+per-band mean removal — verified only by invariants. Those cannot see a
+composition that is uniformly wrong, and `mbt/tests/wave2/logmel_oracle_test.mbt`
+exists because it did not catch a real defect: every mel triangle was half height,
+because both edges were divided by the full band width instead of their own
+half-widths.
+
+The reference is `verify/gen_logmel_golden.py`, whose STFT is `torch.stft` — a
+library call — against this package's hand-rolled radix-2 FFT. It now agrees to
+**1.84e-06**.
+
+Two things from that investigation are worth more than the fix:
+
+- **The obvious guard does not exist.** "Every band peaks at 1.0" is *false* — the
+  triangle is continuous in Hz and sampled at 257 bin frequencies 31.25 Hz apart,
+  so it peaks at 1.0 only when a bin lands on the band's centre. Band 3's centre
+  misses its nearest bin by 12.6 Hz and peaks at 0.4934; torchaudio has the same
+  property, so such a gate would be red on a *correct* implementation.
+- **The output is the wrong thing to gate.** The error is a per-band constant,
+  and `log` followed by per-band mean subtraction removes a per-band constant
+  exactly — so fixing it moved the log-Mel output from 4.9e-03 to 2.5e-03 while
+  the filterbank moved from 5.1e-01 to 1.0e-05. A gate on the output would have
+  been a gate that could not see the bug it was written for, so the output is
+  reported and the filterbank is the gate.
+
 `python verify/gate_canary.py` exists because of that history: it reintroduces
 each defect on a scratch copy of the tree and requires the corresponding gate to
 report `FAILED > 0`. A gate that has only ever been green measures nothing.
