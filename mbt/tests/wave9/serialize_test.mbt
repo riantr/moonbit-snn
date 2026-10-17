@@ -32,8 +32,14 @@ test "serialize_linear_qnet_roundtrip" {
   assert_eq(q1.w.length(), 2)
   assert_eq(q1.w[0].length(), 3)
   assert_eq(q1.b.length(), 2)
-  // Round-trip floats (MoonBit Float::to_string -> parse_float
-  // produces a stable representation for the same process).
+  // Round-trip floats. The encoding is NOT `Float::to_string` -> `parse_float`
+  // -- an earlier version of this comment said so, and was wrong. `serialize.mbt`
+  // writes `Float::reinterpret_as_int` hex for every float it emits (see
+  // `encode_float_list`, `encode_float_matrix`, and the scalar fields `b2`,
+  // `action_low`, `action_high`), so the round trip is bit-exact by
+  // construction and does not depend on any decimal representation being
+  // stable. That is why `0.1F` is a useful value to round-trip here: it has no
+  // short decimal form, so a to_string-based path would lose it.
   assert_eq(q1.w[0][0], 0.1F)
   assert_eq(q1.w[0][1], -0.2F)
   assert_eq(q1.w[0][2], 0.3F)
@@ -291,4 +297,106 @@ test "serialize_then_deserialize_preserves_negative_floats" {
   assert_eq(q1.w[0][0], -3.14159F)
   assert_eq(q1.w[1][1], -0.0001F)
   assert_eq(q1.b[0], -42.0F)
+}
+
+///|
+/// Encode -> decode -> encode must be the IDENTITY on the bytes, for all five
+/// checkpoint kinds.
+///
+/// Every other test here compares VALUES, which is the weaker question. A codec
+/// that normalises silently -- emits a field in a different order, pads an Int
+/// header, rounds a float through a decimal -- returns the right numbers and
+/// still cannot round-trip a file. Byte equality is what makes "bit-exact" a
+/// demonstrated property rather than an intention.
+///
+/// Borrowed from `chnlkw/moon_protobuf`, whose whole conformance story rests on
+/// `wire == again`; that project is NOT a dependency here and this is not an
+/// argument for adopting it. It is the one technique worth copying from it.
+///
+/// The values are deliberately un-printable: 0.1F, -3.14159F and the float32
+/// result 0.09999999403953552F have no short decimal form. A codec going through
+/// `Float::to_string` would lose them, so this test fails the moment someone
+/// "simplifies" the hex encoding.
+test "re-encode after decode is byte-identical for every checkpoint kind" {
+  // -- LinearQNet -------------------------------------------------------
+  let q : @rl.LinearQNet = @rl.LinearQNet::new(3, 2, 7UL)
+  q.w[0][0] = 0.1F
+  q.w[0][1] = -3.14159F
+  q.w[1][2] = 0.09999999403953552F
+  q.b[0] = 1.0F / 3.0F
+  let s1 = @infra.serialize_linear_qnet(q)
+  let s2 = @infra.serialize_linear_qnet(
+    @infra.deserialize_linear_qnet(s1),
+  )
+  assert_eq(s2, s1)
+
+  // -- QNetworkContinuous -----------------------------------------------
+  // `b2` is not `pub` and is left as the constructor set it; w1/b1 carry the
+  // un-printable values.
+  let qc : @rl.QNetworkContinuous = @rl.QNetworkContinuous::new(3, 2, 4, 13UL)
+  qc.w1[0][0] = 0.1F
+  qc.w1[2][1] = 0.09999999403953552F
+  qc.b1[0] = -3.14159F
+  let c1 = @infra.serialize_qnetwork_continuous(qc)
+  let c2 = @infra.serialize_qnetwork_continuous(
+    @infra.deserialize_qnetwork_continuous(c1),
+  )
+  assert_eq(c2, c1)
+
+  // -- DeterministicPolicy (action_low/high are scalars) -----------------
+  let p : @rl.DeterministicPolicy = @rl.DeterministicPolicy::new(
+    3, 2, 4, -1.5F, 1.5F, 17UL,
+  )
+  p.w1[0][1] = 0.1F
+  p.b2[1] = -3.14159F
+  let p1 = @infra.serialize_deterministic_policy(p)
+  let p2 = @infra.serialize_deterministic_policy(
+    @infra.deserialize_deterministic_policy(p1),
+  )
+  assert_eq(p2, p1)
+
+  // -- AdamState (moments are float32 arithmetic results) ---------------
+  let opt0 = @optim.adam_init(6, 2)
+  let w : Array[Float] = [0.5F, -0.5F, 0.5F, -0.5F, 0.5F, -0.5F]
+  let b : Array[Float] = [0.1F, -0.1F]
+  let dw : Array[Float] = [0.1F, 0.2F, 0.3F, 0.4F, 0.5F, 0.6F]
+  let db : Array[Float] = [0.01F, -0.01F]
+  let (_w1, _b1, opt_a) = @optim.adam_update_arrays(
+    w, b, dw, db, opt0, 0.001F, 0.9F, 0.999F, 1.0e-7F,
+  )
+  let dw2 : Array[Float] = [-0.1F, 0.2F, -0.3F, 0.4F, -0.5F, 0.6F]
+  let db2 : Array[Float] = [-0.02F, 0.03F]
+  let (_w2, _b2, opt_b) = @optim.adam_update_arrays(
+    w, b, dw2, db2, opt_a, 0.001F, 0.9F, 0.999F, 1.0e-7F,
+  )
+  let a1 = @infra.serialize_adam_state(opt_b)
+  let a2 = @infra.serialize_adam_state(@infra.deserialize_adam_state(a1))
+  assert_eq(a2, a1)
+
+  // -- QNetCheckpoint (model + optimizer + step in one payload) ---------
+  let k1 = @infra.serialize_qnet_checkpoint(q, opt_b, 99)
+  let (kq, kopt, kstep) = @infra.deserialize_qnet_checkpoint(k1)
+  let k2 = @infra.serialize_qnet_checkpoint(kq, kopt, kstep)
+  assert_eq(k2, k1)
+}
+
+///|
+/// The check above is only worth having if it CAN fail, so prove it on a
+/// difference it is supposed to catch.
+///
+/// Without this, a comparison that compared two identical strings by mistake
+/// would report the property holds -- and a byte-equality gate that cannot go
+/// red is the same failure as a tolerance no defect can reach.
+test "the byte-identity check does detect a changed payload" {
+  let q : @rl.LinearQNet = @rl.LinearQNet::new(3, 2, 7UL)
+  q.w[0][0] = 0.1F
+  let before = @infra.serialize_linear_qnet(q)
+  // One float in the last place. The hex encoding makes this a visible
+  // difference; a decimal encoder would have rounded it away, which is the
+  // other half of why the encoding is hex.
+  q.w[0][0] = Float::reinterpret_from_int(
+    Float::reinterpret_as_int(0.1F) + 1,
+  )
+  let after = @infra.serialize_linear_qnet(q)
+  assert_eq(after == before, false)
 }
