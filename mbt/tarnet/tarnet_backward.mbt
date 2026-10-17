@@ -126,15 +126,27 @@ pub fn tarnet_forward_full(
   //
   // Changing all four call sites to the layout-correct pair makes the FORWARD
   // match a PyTorch autograd reference exactly: the end-to-end oracle's logits
-  // and embedding gates went from 12 of 12 wrong to clean. The BACKWARD
-  // gradients did not come with it, and that half is unverified, so the change
-  // was reverted rather than shipped half-applied.
+  // and embedding gates went from 12 of 12 wrong to clean.
   //
-  // Why no existing gate saw this: the per-coordinate finite-difference sweep in
-  // `tarnet_model_test.mbt` compares the backward against a difference of THIS
-  // forward, and a wrong contraction is wrong consistently in both directions,
-  // so the difference agrees with it. Only an independent implementation can
-  // catch a fault that is self-consistent.
+  // The BACKWARD gradients did not come with it, so the change was reverted
+  // rather than shipped half-applied. But the evidence now points AWAY from
+  // this module's backward: the classifier bias gradient -- the FIRST gradient
+  // in the chain, involving no composition at all -- was checked against its
+  // closed form and matches bit for bit:
+  //
+  //     port  -6.480000019073486 -4.014286041259766 -1.9399999380111694 -1.4742858409881592
+  //     sum_b d_logits[b,o]  (identical to the last bit)
+  //
+  // The oracle's remaining disagreements are therefore more likely its own flat
+  // assembly than this module. Finding them means rebuilding that oracle and
+  // validating it against a case with a known answer BEFORE trusting it --
+  // four of its earlier bugs were harness bugs, not model bugs.
+  //
+  // Why no existing gate sees the defect above: the per-coordinate
+  // finite-difference sweep in `tarnet_model_test.mbt` compares the backward
+  // against a difference of THIS forward, and a wrong contraction is wrong
+  // consistently in both directions, so the difference agrees with it. Only an
+  // independent implementation can catch a fault that is self-consistent.
   let (gln, bn_ln_cache) = @nn.gln_forward(x, n, c, t, net.ln_in)
   let bn = @nn.linear_forward(
     gln, n * t, @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
