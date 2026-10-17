@@ -204,14 +204,31 @@ pub fn tn_mel_filterbank(
     let lo = f_pts[m]
     let ctr = f_pts[m + 1]
     let hi = f_pts[m + 2]
-    let denom = hi - lo
+    // Each edge is divided by its OWN half-width. Dividing both by `hi - lo`
+    // gives a triangle that peaks at (ctr - lo) / (hi - lo), which is about
+    // 0.4924 for this bank's evenly spaced mel points -- so every band came out
+    // half the height it should be, and `norm = None` no longer means "peak at
+    // 1".
+    //
+    // Found by an INDEPENDENT reference (verify/gen_logmel_golden.py, whose STFT
+    // is torch.stft rather than this package's hand-rolled FFT). Not by any
+    // existing check: the filterbank tests assert non-negativity, contiguity and
+    // that band 0 excludes DC, and a triangle scaled by 0.49 satisfies all three.
+    // The log-Mel output barely moves either, because a per-band constant is
+    // removed exactly by `log` followed by per-band mean subtraction -- so the
+    // defect hid behind a front-end that still produced plausible features.
+    //
+    // Measured: band 3's rising edge is the correct triangle times 0.492455,
+    // predicted 0.492455, spread over the whole edge 0.00e+00.
+    let rise = ctr - lo
+    let fall = hi - ctr
     let mut k = 0
     while k < n_freqs {
       let f = all_freqs[k]
       let v = if f >= lo && f <= ctr {
-        if denom > 0.0F { (f - lo) / denom } else { 0.0F }
+        if rise > 0.0F { (f - lo) / rise } else { 0.0F }
       } else if f > ctr && f <= hi {
-        if denom > 0.0F { (hi - f) / denom } else { 0.0F }
+        if fall > 0.0F { (hi - f) / fall } else { 0.0F }
       } else {
         0.0F
       }
