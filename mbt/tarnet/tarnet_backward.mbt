@@ -106,6 +106,35 @@ pub fn tarnet_forward_full(
   // on the struct as the expected length, not as a constraint.
   let t = x.length() / (n * c)
   // bottleneck: gLN over (in_chan, t) jointly, then a 1x1 convolution
+  //
+  // KNOWN DEFECT, measured, NOT YET FIXED. This 1x1 convolution goes through
+  // `linear_forward`, which reads `batch*in_features + feature`. `gln_forward`
+  // returns a `[n, c, t]` buffer indexed `(b*c + ch)*t + ti`. Those are
+  // different permutations of the same memory, so the contraction runs over a
+  // run of `in_features` consecutive flat elements -- which, in `[n, c, t]`
+  // layout, straddles several frames -- instead of over one frame's channels.
+  //
+  // Measured on the same array and weights, against `F.conv1d`:
+  //
+  //     linear_forward      max|diff| = 1.450e-01
+  //     tn_conv1x1_forward  max|diff| = 7.451e-09
+  //
+  // so it is not precision. `tn_conv1x1_forward` -- which the blocks use, and
+  // which is why the block oracles pass -- is the correct contraction here.
+  // The same mistake appears at the MFA's 1x1 convolution below, and twice more
+  // in the backward (the MFA and the bottleneck).
+  //
+  // Changing all four call sites to the layout-correct pair makes the FORWARD
+  // match a PyTorch autograd reference exactly: the end-to-end oracle's logits
+  // and embedding gates went from 12 of 12 wrong to clean. The BACKWARD
+  // gradients did not come with it, and that half is unverified, so the change
+  // was reverted rather than shipped half-applied.
+  //
+  // Why no existing gate saw this: the per-coordinate finite-difference sweep in
+  // `tarnet_model_test.mbt` compares the backward against a difference of THIS
+  // forward, and a wrong contraction is wrong consistently in both directions,
+  // so the difference agrees with it. Only an independent implementation can
+  // catch a fault that is self-consistent.
   let (gln, bn_ln_cache) = @nn.gln_forward(x, n, c, t, net.ln_in)
   let bn = @nn.linear_forward(
     gln, n * t, @nn.LinearParam::new(net.bn_w, net.bn_b, c, net.bn_chan),
