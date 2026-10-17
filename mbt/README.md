@@ -1,4 +1,4 @@
-﻿# snn_mbt — MoonBit port of SpikingNeuralNetworks.jl
+# snn_mbt — MoonBit port of SpikingNeuralNetworks.jl
 
 A bit-exact MoonBit re-implementation of the
 [SpikingNeuralNetworks.jl](https://github.com/AlessioQuer/SpikingNeuralNetworks.jl)
@@ -375,10 +375,26 @@ integer seeds; sequences diverge from Julia for integer seeds. For
 bit-exact comparison, set the seed via `Xoshiro::from_state(s0, s1,
 s2, s3)` with raw UInt64s (bypassing the integer-seed hashing).
 
+**Status of this contract.** The paragraph above describes what the port is
+built to do and how a comparison is to be set up. It is not a claim that any
+particular example has been checked against Julia in this repository: the
+comparison machinery is in `infra/parity_check.mbt` and
+`infra/julia_parity.mbt`, but the reference traces it would compare against are
+not committed here. See layer 2 of *How validity is established*.
+
 ## Layout
 
 As of v0.166.0 the root package holds no source. `mbt/moon.pkg` is an import
-list; every `.mbt` lives in a sub-package.
+list; every `.mbt` lives in a sub-package. There are 732 source `.mbt` files
+outside `tests/` and `examples/`.
+
+Each package below says where its code comes from:
+
+- **ported** — at least one file is a translation of a named upstream file, and
+  the count is `ported / total` files in that package. Provenance is per-file,
+  so a package can be mostly ported and still carry original work.
+- **original** — no code upstream. Written against a published paper, with the
+  citation in the file.
 
 ```
 mbt/
@@ -386,55 +402,189 @@ mbt/
 |-- moon.pkg                     # root manifest: imports only, no source
 |-- README.md
 |
-|-- core/                       #   Time struct, Xoshiro RNG, units, he_init
-|-- neuron/                     #   IF, AdEx, Izhikevich, HH, MorrisLecar,
-|--                             #   Poisson, Wilson-Cowan, multi-compartment
-|-- synapse/                    #   plasticity, dendritic morphology (~8k lines)
-|-- stimulus/                   #   Poisson / spike-time / current stimuli
-|-- units/                      #   (re-export only)
+|-- core/                        #   Time, Xoshiro RNG, units, libm bindings
+|--  `- ported 3/5               #   time/units/util from SNNModels.jl
+|-- neuron/                      #   IF, AdEx, Izhikevich, HH, MorrisLecar,
+|--  `- ported 19/21             #   Poisson, Wilson-Cowan, dendrites
+|-- synapse/                     #   connections, receptors, plasticity (~7.7k)
+|--  `- ported 26/34
+|-- stimulus/                    #   Poisson / spike-time / current stimuli
+|--  `- ported 9/10
+|-- analysis/                    #   spike-train statistics and measures
+|--  `- ported 10/13
+|-- infra/                       #   sim, serialisation, parity, datasets
+|--  `- ported 6/20
 |
-|-- nn/                         #   Tensor, Linear, Conv2d, norms, attention,
-|--                             #   backwards for all of them
-|-- optim/                      #   SGD, Adam, AdamW, RMSprop, AdaGrad,
-|--                             #   Adafactor, LR schedules
-|-- activ/                      #   activation functions
-|-- attention/                  #   SAttention, position encodings
-|-- infra/                      #   training loops, evaluators, datasets
+|-- nn/                          #   Tensor, Linear, Conv2d, norms, backwards
+|--  `- ported 1/16              #   structs_extra from SNNModels.jl
+|-- optim/                       #   SGD, Adam, AdamW, RMSprop, AdaGrad,
+|--  `- original                 #   Adafactor, LR schedules
+|-- activ/                       #   activations, pooling, elementwise ops
+|--  `- original
+|-- attention/                   #   MHA, SAttention, position encodings
+|--  `- original
+|-- autodiff/                    #   reverse-mode autodiff over a tape
+|--  `- original
+|-- gpu/                         #   single-precision BLAS seam
+|--  `- original                 #   ffi/gemm/loader .mbt + cuda/
 |
-|-- rl/                         #   DDPG, TD3, SAC, recurrent actors, (~15k lines)
-|-- gnn/                        #   GCN, MPNN, GIN, PNA, GAT, H2GCN
-|-- generative/                 #   flows, VAE, DDPM, GAN, EBM
-|-- tarnet/                     #   TARNet speaker ID: conv, ASP, SE, log-Mel
-|-- models/                     #   LeNet5, MLP, SimpleCNN, ViT, Siamese
-|-- capsule/                    #   capsule / metric-learning networks
-|-- causal/                     #   SCM, do-calculus, counterfactuals
-|-- meta/                       #   MAML, FOMAML, Reptile, task sampling
-|-- autodiff/                   #   reverse-mode autodiff
-|-- analysis/                   #   trajectory and spike-train analysis
-|-- timeseries/                 #   ARIMA and friends
+|-- rl/                          #   DDPG, TD3, SAC, recurrent actors (~14.6k)
+|--  `- original
+|-- gnn/                         #   message passing, GCN/GIN/PNA/GAT (~6.5k)
+|--  `- original
+|-- generative/                  #   flows, VAE, DDPM, GAN, EBM
+|--  `- original
+|-- meta/                        #   MAML, FOMAML, Reptile, neural ODEs
+|--  `- original
+|-- causal/                      #   SCM, do-calculus, counterfactuals
+|--  `- original
+|-- capsule/                     #   CapsNet, dynamic routing
+|--  `- original
+|-- models/                      #   LeNet5, MLP, SimpleCNN, ViT, Siamese
+|--  `- original
+|-- timeseries/                  #   AR / ARIMA, Holt-Winters
+|--  `- original
+|-- tarnet/                      #   TARNet speaker ID: conv, ASP, SE, log-Mel
+|--  `- original                 #   (port of arXiv:2605.07735, see below)
 |
-|-- gpu/                        #   optional single-precision BLAS seam
-|   |-- ffi.mbt                 #     extern declarations + non-native stubs
-|   |-- gemm.mbt                #     checked wrappers
-|   |-- loader.mbt              #     availability
-|   `-- cuda/                   #     C stub, CUDA kernels, build scripts
-|
-|-- fuzz_props/                 #   property checks driven by the QA loop
-|-- gpu_selftest/               #   known-answer checks for the BLAS fallback
-|
-|-- tests/wave1 ... wave9       #   1884 tests, split by domain
-|-- examples/                   #   77 runnable examples
-`-- testdata/                   #   fixtures
+|-- fuzz_props/                  #   property checks the QA loop drives
+|-- gpu_selftest/                #   known-answer checks for the BLAS fallback
+|-- testdata/                    #   fixtures
+|-- examples/                    #   77 runnable examples, one per model
+`-- tests/wave1 ... wave9        #   247 test files, split by domain
 ```
 
+`src/`, `test/` and `units/` exist on disk but hold no files. They are
+leftovers from the sub-package split: nothing imports them, and they carry
+nothing that is not already in `core/`.
+
 Dependency depth is 4; the widest fan-out is `tarnet` at 5 packages.
-`verify/qa_loop.py` reports both.
+`verify/qa_loop.py` reports both. The order bottom to top is `core`, then
+`activ`, then `nn`, then everything else; `infra` sits at the top because
+running a model touches a neuron, a connection, a stimulus and an optimiser at
+once.
+
+## Provenance and attribution
+
+### Code upstreams
+
+Three Julia packages are vendored in this repository and are the source of the
+`ported` files above. All three are MIT, as is this package.
+
+| Upstream | Vendored at | Ported into |
+|---|---|---|
+| SpikingNeuralNetworks.jl v1.0.0 | `SpikingNeuralNetworks.jl/` | `neuron/`, `synapse/`, `analysis/`, `stimulus/`, `infra/` |
+| SNNModels.jl | `refs/SNNModels.jl/` | `core/` (Time, units, util), `nn/structs_extra.mbt` |
+| SNNUtils.jl v0.2.0 | `refs/SNNUtils.jl/` | `infra/sim.mbt`, `infra/compose.mbt`, `infra/population.mbt`, `infra/bimodal_kernel.mbt` |
+
+Those directories are unmodified upstream checkouts kept for reference. No
+build reads them, and `.typos.toml` excludes `_build/` but not them, so a lint
+run over the repository sees upstream sources as well.
+
+That is 74 of 732 source files. The other 658 are original.
+
+### Papers the original work follows
+
+| Area | Work | Source |
+|---|---|---|
+| `tarnet/` | TARNet speaker identification | Terraf & Iraqi, *TARNet: A Temporal-Aware Multi-Scale Architecture for Closed-Set Speaker Identification*, arXiv:2605.07735; upstream implementation `github.com/YassinTERRAF/CAT-Net` |
+| `tarnet/tarnet_se.mbt` | CTSE, the multi-scale channel-time gate | part of the same work |
+| `neuron/`, `attention/` | surrogate gradient for the Heaviside derivative | Zenke & Ganguli 2018 |
+| `attention/` | SAttention, spike-driven attention | Zenke & Ganguli 2018 |
+| `nn/` | ResNet foundations | He et al. 2015 |
+| `attention/` | multi-head self-attention, positional encodings | Vaswani et al. 2017 |
+| `attention/` | Vision Transformer | Dosovitskiy et al. 2020 |
+| `rl/` | PPO, DDPG, TD3, SAC | Mnih; Lillicrap; Fujimoto; Silver |
+| `rl/` | Decision Transformer, GTrXL | Chen et al. 2021 |
+| `gnn/` | message-passing interface, GCN, GAT, PNA, H2GCN, Set2Set | Gilmer et al. 2017; Hamilton; Velickovic; Battaglia; Lee et al. |
+| `generative/` | RealNVP, Glow, VAE/IWAE, DDPM, EBM, WGAN-GP | Dinh et al.; Kingma & Welling; Ho et al.; Arjovsky et al. |
+| `meta/` | MAML, FOMAML, Reptile | Finn et al. 2017; Nichol et al. 2018 |
+| `causal/` | SCMs, do-calculus, counterfactuals | Pearl; Spirtes et al.; Robins |
+| `capsule/` | CapsNet and dynamic routing | Hinton et al. 2017; Sabour et al. 2017 |
+| `models/` | Siamese embedding and contrastive loss | Bromley et al. 2015 |
+| `optim/` | AdamW, Adafactor | Loshchilov & Hinton 2019; Shazeer & Stern 2018 |
+| `timeseries/` | AR/ARIMA, Holt-Winters | Box & Jenkins; Hamilton |
+
+`autodiff/` and `gpu/` have no paper. The first is ordinary reverse-mode
+differentiation over a recorded tape; the second is a cuBLAS binding whose
+measurements are recorded in `gpu/moon.pkg`.
+
+## How validity is established
+
+The honest answer has three layers, and they are not equally strong. It is
+worth being explicit about which is which, because a port that is merely
+self-consistent looks exactly like a port that is correct.
+
+### 1. Self-consistency (everywhere)
+
+`verify/qa_loop.py` runs 1899 assertions across nine waves, plus a
+finite-difference sweep over every parameter coordinate of a model, a property
+suite, and a mutation gate that kills 3 of 3 planted defects. This establishes
+that a computation is internally consistent: that the backward really is the
+derivative of the forward, that unflatten round-trips, that a train step moves
+the parameters its gradient says to move.
+
+It does **not** establish that the computation is the *right* one. A finite
+difference differentiates whatever forward it is given, so a forward that is
+wrong in a self-consistent way passes at any tolerance loose enough to tolerate
+float32. Two of the defects fixed in this release are of exactly that shape --
+`asp_forward` wrote its context buffer at the wrong stride, and
+`batch_norm2d_forward` cancelled catastrophically in its variance -- and the
+suite was green through both.
+
+### 2. Bit-exact comparison against the Julia upstream (partially available)
+
+`infra/parity_check.mbt` and `infra/julia_parity.mbt` implement the
+cross-language check: Float32 state is quantised to Int32, hashed with FNV-1a,
+and compared against the same hash computed on the Julia side. The MoonBit
+half is present and deterministic, and `tests/wave9/parity_check_test.mbt`
+exercises it.
+
+What is **not** in this repository is the other half of that comparison. There
+are no committed Julia reference traces and no Julia-side harness script, and
+the existing tests assert that the hash is stable and input-sensitive rather
+than that it equals a recorded Julia value. So the machinery is ready for a
+cross-language check and has not been closed against one here. Any claim that
+a specific file is bit-exact with Julia is a claim about a run performed
+elsewhere.
+
+### 3. Comparison against an independent reference implementation (new)
+
+Where a paper or an upstream implementation exists, a second implementation is
+generated from *that* source and compared value by value:
+
+- `verify/gen_bn1d_golden.py` and `verify/asp_oracle.py` build PyTorch
+  references for TARNet's ASP head and its BatchNorm1d, emitting goldens that
+  `tests/wave1/batch_norm1d_test.mbt` and `tests/wave2/asp_oracle_test.mbt`
+  compare against. This is the layer that found both defects named above, in
+  the first run of each gate.
+- Both generators are deterministic -- integer-hash fixtures, fixed torch
+  seeds, no RNG -- so regenerating the goldens reproduces them byte for byte,
+  which is itself checked.
+- Every tolerance in those gates is derived from the arithmetic rather than
+  fitted to a run: the BatchNorm forward's absolute bound is
+  `2*(FLT_EPS/2)*max|x|*max(inv_std)*sqrt(n*w)`, its gradient bound is 2.5x
+  the measured float32 residue, and the finite-difference column's bound is
+  set by the instrument's own noise floor rather than by taste.
+- `verify/gate_canary.py` restores each defect on a scratch copy and requires
+  the corresponding gate to go red. A gate that has only ever been green is
+  not evidence.
+
+This layer is currently applied to TARNet's ASP head. It is the layer worth
+extending, and it is the one that does not depend on the Julia side being run.
 
 ## Network experiments summary
 
 Examples marked ⚠ partial demonstrate qualitative network
 behaviour matching the Julia run, but are not bit-exact (we scale
 population sizes and rates down to keep sim times tractable).
+
+The marks in the "Bit-exact?" column record comparisons made while developing
+against the Julia side. This repository does not carry the reference traces
+those comparisons were made from -- see layer 2 of *How validity is
+established* above. The claim is therefore about a run that has to be repeated
+to be reproduced, not about a fact a reader can check from what is checked in
+here. Nothing in the table is verified by `verify/qa_loop.py`.
 
 | Example | Network size | Population scales | Bit-exact? | Notes |
 |---|---|---|---|---|
