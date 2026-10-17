@@ -207,6 +207,20 @@ def main():
         with open(block_test, "w", encoding="utf-8", newline="") as fh:
             fh.write(bt.replace(loose[0], loose[1], 1))
         print("canary 5  block oracle tolerance 1.0 -> %s" % run_wave2(work))
+
+        # canary 6: the SE gate, same reasoning as canary 5.
+        se_test = os.path.join(work, "mbt", "tests", "wave2",
+                               "se_oracle_test.mbt")
+        st = open(se_test, encoding="utf-8", newline="").read()
+        loose_se = ("const SE_ATOL : Float = 1.0e-3F",
+                    "const SE_ATOL : Float = 1.0F")
+        if loose_se[0] not in st:
+            sys.exit("canary 6: the SE gate's tolerance was not found; "
+                     "se_oracle_test.mbt changed and this canary needs "
+                     "updating before it can be trusted")
+        with open(se_test, "w", encoding="utf-8", newline="") as fh:
+            fh.write(st.replace(loose_se[0], loose_se[1], 1))
+        print("canary 6  SE oracle tolerance 1.0   -> %s" % run_wave2(work))
     finally:
         with open(TARGET, "w", encoding="utf-8", newline="") as fh:
             fh.write(original_bn)
@@ -214,7 +228,7 @@ def main():
 
     print()
     print("canaries 1 to 5 must all report FAILED > 0. The real files were "
-          "never modified; the scratch copy is deleted.")
+          "were never modified; the scratch copy is deleted.")
 
 
 if __name__ == "__main__":
