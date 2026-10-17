@@ -186,15 +186,35 @@ def main():
         with open(c_asp, "w", encoding="utf-8", newline="") as fh:
             fh.write(swap_bn_affine(asp_src))
         print("canary 4  ASP BatchNorm gamma/beta   -> %s" % run_wave2(work))
+
+        # canary 5: the block oracle's tolerance is widened until it has to fail.
+        #
+        # A goldens-based gate has a failure mode the BatchNorm mutation sweep
+        # does not: if the tolerance is simply too loose, it passes forever and
+        # checks nothing. The measured disagreement here is 1.3e-4 on
+        # quantities of scale ~2.9, so this restores the 1.0 bound the gate
+        # briefly carried while its tolerance was being derived. A gate that
+        # cannot go red on a 1.0 tolerance is not checking anything.
+        block_test = os.path.join(work, "mbt", "tests", "wave2",
+                                  "block_oracle_test.mbt")
+        bt = open(block_test, encoding="utf-8", newline="").read()
+        loose = ("const BLOCK_ATOL : Float = 1.0e-3F",
+                 "const BLOCK_ATOL : Float = 1.0F")
+        if loose[0] not in bt:
+            sys.exit("canary 5: the block gate's tolerance was not found; "
+                     "block_oracle_test.mbt changed and this canary needs "
+                     "updating before it can be trusted")
+        with open(block_test, "w", encoding="utf-8", newline="") as fh:
+            fh.write(bt.replace(loose[0], loose[1], 1))
+        print("canary 5  block oracle tolerance 1.0 -> %s" % run_wave2(work))
     finally:
         with open(TARGET, "w", encoding="utf-8", newline="") as fh:
             fh.write(original_bn)
         shutil.rmtree(tmp, ignore_errors=True)
 
     print()
-    print("canaries 1, 2, 3 and 4 must all report FAILED > 0. The real files "
-          "were")
-    print("never modified; the scratch copy is deleted.")
+    print("canaries 1 to 5 must all report FAILED > 0. The real files were "
+          "never modified; the scratch copy is deleted.")
 
 
 if __name__ == "__main__":
