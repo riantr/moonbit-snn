@@ -139,8 +139,50 @@ the paper's equations and the code disagree, matching the code is the choice tha
 keeps this port comparable to the authors' reported results — but it means the
 port is not a literal reading of Eq. (1)–(3).
 
-Changing §1 to match the paper is a substantial piece of work, not a fix: it
-alters the encoder's dataflow, the residual paths, the backward, and the parameter
-count, and it invalidates every golden in `mbt/tests/wave2/`. Anyone doing it
-should start from the autograd gate rather than from the code, because that gate
-is the only thing here that would tell them whether the new topology is right.
+## 7. Two places where the PORT departs from the CODE
+
+Everything above is paper-versus-code, and this port follows the code on all of
+it. These two are different: the port departs from the code, and the paper does
+not rescue it.
+
+**One shared PReLU slope where there are two.** `Conv1DBlock.shared` is
+
+```
+Conv1d(in,hid,1) -> PReLU -> gLN -> Conv1d(depthwise) -> PReLU -> gLN
+```
+
+Two `nn.PReLU()` modules, two learnable slopes. §II-B agrees: "PReLU nonlinear
+activation and normalization layers are applied between convolutional
+operations", plural. This port stores a single `prelu1` and applies it at both
+sites, so its slope gradient is the sum of the two.
+
+The forward is well defined and the gradient is consistent — `tarnet.mbt`'s
+`tarnet_block_backward` documents the sharing at the point of use. What is lost
+is capacity: one parameter per block instead of two, and the two sites cannot
+adapt independently. For the default configuration that is 12 parameters out of
+several million, so it is very unlikely to matter for accuracy; it is listed
+because a reader counting parameters against the paper will find a discrepancy
+and should not have to derive it.
+
+**`randn(0.05)` where the classifier uses `xavier_uniform_`.** The reference does
+
+```python
+nn.init.xavier_uniform_(self.fc.weight)
+nn.init.zeros_(self.fc.bias)
+```
+
+The port allocates `tn_randn(n_classes * emb_dim, 0.05F)`. For the default
+5-class / 512-d shape, xavier_uniform's gain is `sqrt(6/(5+512))` = 0.068
+against 0.05 here — the same order, so this changes the initial scale slightly
+and not the architecture. Initialisation only: no forward, no backward, no
+gradient depends on it. `verify/audit_transcription.py` asserts the reference's
+`xavier_uniform_` is still present, so if either side changes, that gate says so
+rather than letting the two drift apart unnoticed.
+
+## Changing §1 to match the paper
+
+That is a substantial piece of work, not a fix: it alters the encoder's
+dataflow, the residual paths, the backward, and the parameter count, and it
+invalidates every golden in `mbt/tests/wave2/`. Anyone doing it should start from
+the autograd gate rather than from the code, because that gate is the only thing
+here that would tell them whether the new topology is right.
