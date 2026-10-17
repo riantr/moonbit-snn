@@ -133,6 +133,52 @@ def summarise(out):
     return "no summary; build/compile failure. first: %s" % (fails[:2] or out[-500:])
 
 
+TOUCHED = [
+    os.path.join("mbt", "nn", "batch_norm2d.mbt"),
+    os.path.join("mbt", "tarnet", "tarnet_asp.mbt"),
+    os.path.join("mbt", "tests", "wave1", "batch_norm1d_test.mbt"),
+    os.path.join("mbt", "tests", "wave2", "block_oracle_test.mbt"),
+    os.path.join("mbt", "tests", "wave2", "block_oracle_golden.mbt"),
+    os.path.join("mbt", "tests", "wave2", "se_oracle_test.mbt"),
+    os.path.join("mbt", "tests", "wave2", "se_oracle_golden.mbt"),
+]
+
+
+def restore(work):
+    """Put every file any canary touches back to its committed state.
+
+    Without this the canaries compound. An earlier version of this harness
+    restored only the one file the previous canary had edited, so canary 4's
+    swapped ASP affine was still in place when canary 5 and canary 6 ran, and
+    both reported THAT canary's five failures while their own mutations were
+    ineffective. A canary that cannot be trusted to isolate its own defect is
+    worse than no canary, because it reads as a passing check.
+    """
+    for rel in TOUCHED:
+        shutil.copyfile(os.path.join(ROOT, rel), os.path.join(work, rel))
+
+
+def perturb_first_value(text, array_name, factor):
+    """Scale the first literal of a generated golden array.
+
+    Used instead of loosening a tolerance. Tolerance-loosening only fails when
+    the values are large enough for the loosened bound to be exceeded, which is
+    not true here: the SE's output and d_x are O(1) and agree to about 1e-5, so
+    no attainable atol makes that gate red. Perturbing the reference itself
+    asks the question the gate actually exists to answer -- does it notice when
+    the numbers it is compared against are wrong.
+    """
+    pat = re.compile(
+        r"(pub let %s : Array\[Float\] = \[\s*\n?\s*)(-?[\d.]+F?)" % array_name
+    )
+    m = pat.search(text)
+    if not m:
+        sys.exit("could not find %s to perturb; the golden's shape changed"
+                 % array_name)
+    val = float(m.group(2).rstrip("F"))
+    return text[:m.start(2)] + ("%.9gF" % (val * factor)) + text[m.end(2):]
+
+
 def main():
     for p in (TARGET, TEST, MOON):
         if not os.path.exists(p):
@@ -149,20 +195,24 @@ def main():
     c_bn = os.path.join(work, "mbt", "nn", "batch_norm2d.mbt")
     c_test = os.path.join(work, "mbt", "tests", "wave1", "batch_norm1d_test.mbt")
     c_asp = os.path.join(work, "mbt", "tarnet", "tarnet_asp.mbt")
+    c_blk_gold = os.path.join(work, "mbt", "tests", "wave2",
+                              "block_oracle_golden.mbt")
+    c_se_gold = os.path.join(work, "mbt", "tests", "wave2",
+                            "se_oracle_golden.mbt")
 
     try:
         print()
         print("canary 0  tree as committed          -> %s" % run_wave1(work))
 
         # canary 1: put the defect G1 caught back into batch_norm2d.
+        restore(work)
         with open(c_bn, "w", encoding="utf-8", newline="") as fh:
             fh.write(swap_in_two_pass(original_bn))
         print("canary 1  one-pass variance restored -> %s" % run_wave1(work))
 
-        # restore, then canary 2: empty the mutation sweep.
-        with open(c_bn, "w", encoding="utf-8", newline="") as fh:
-            fh.write(original_bn)
-        ttext = open(c_test, encoding="utf-8").read()
+        # canary 2: empty the mutation sweep.
+        restore(work)
+        ttext = open(c_test, encoding="utf-8", newline="").read()
         full = ("    Correct,\n    NoEps,\n    NoMeanSub,\n    NoSqrt,\n    NoGamma,\n"
                 "    NoBeta,\n    SwapAB,\n    PerSample,\n    Unbiased,\n")
         if full not in ttext:
@@ -172,6 +222,7 @@ def main():
         print("canary 2  sweep holds only Correct    -> %s" % run_wave1(work))
 
         # canary 3: put the ASP context-layout defect back.
+        restore(work)
         asp_src = open(ASP_TARGET, encoding="utf-8").read()
         if ASP_FIXED not in asp_src:
             sys.exit("canary 3: the ASP context index was not found in its "
@@ -182,53 +233,32 @@ def main():
         print("canary 3  ASP ctx stride reverted     -> %s" % run_wave2(work))
 
         # canary 4: swap the ASP BatchNorm's gamma and beta.
-        asp_src = open(ASP_TARGET, encoding="utf-8", newline="").read()
+        restore(work)
         with open(c_asp, "w", encoding="utf-8", newline="") as fh:
             fh.write(swap_bn_affine(asp_src))
         print("canary 4  ASP BatchNorm gamma/beta   -> %s" % run_wave2(work))
 
-        # canary 5: the block oracle's tolerance is widened until it has to fail.
-        #
-        # A goldens-based gate has a failure mode the BatchNorm mutation sweep
-        # does not: if the tolerance is simply too loose, it passes forever and
-        # checks nothing. The measured disagreement here is 1.3e-4 on
-        # quantities of scale ~2.9, so this restores the 1.0 bound the gate
-        # briefly carried while its tolerance was being derived. A gate that
-        # cannot go red on a 1.0 tolerance is not checking anything.
-        block_test = os.path.join(work, "mbt", "tests", "wave2",
-                                  "block_oracle_test.mbt")
-        bt = open(block_test, encoding="utf-8", newline="").read()
-        loose = ("const BLOCK_ATOL : Float = 1.0e-3F",
-                 "const BLOCK_ATOL : Float = 1.0F")
-        if loose[0] not in bt:
-            sys.exit("canary 5: the block gate's tolerance was not found; "
-                     "block_oracle_test.mbt changed and this canary needs "
-                     "updating before it can be trusted")
-        with open(block_test, "w", encoding="utf-8", newline="") as fh:
-            fh.write(bt.replace(loose[0], loose[1], 1))
-        print("canary 5  block oracle tolerance 1.0 -> %s" % run_wave2(work))
+        # canary 5: the block oracle's reference is perturbed, not its bound.
+        restore(work)
+        bg = open(c_blk_gold, encoding="utf-8", newline="").read()
+        with open(c_blk_gold, "w", encoding="utf-8", newline="") as fh:
+            fh.write(perturb_first_value(bg, "blk0_out_golden", 1.05))
+        print("canary 5  block oracle golden skewed -> %s" % run_wave2(work))
 
-        # canary 6: the SE gate, same reasoning as canary 5.
-        se_test = os.path.join(work, "mbt", "tests", "wave2",
-                               "se_oracle_test.mbt")
-        st = open(se_test, encoding="utf-8", newline="").read()
-        loose_se = ("const SE_ATOL : Float = 1.0e-3F",
-                    "const SE_ATOL : Float = 1.0F")
-        if loose_se[0] not in st:
-            sys.exit("canary 6: the SE gate's tolerance was not found; "
-                     "se_oracle_test.mbt changed and this canary needs "
-                     "updating before it can be trusted")
-        with open(se_test, "w", encoding="utf-8", newline="") as fh:
-            fh.write(st.replace(loose_se[0], loose_se[1], 1))
-        print("canary 6  SE oracle tolerance 1.0   -> %s" % run_wave2(work))
+        # canary 6: the same for the SE oracle's reference.
+        restore(work)
+        sg = open(c_se_gold, encoding="utf-8", newline="").read()
+        with open(c_se_gold, "w", encoding="utf-8", newline="") as fh:
+            fh.write(perturb_first_value(sg, "se_out_golden", 1.05))
+        print("canary 6  SE oracle golden skewed    -> %s" % run_wave2(work))
     finally:
         with open(TARGET, "w", encoding="utf-8", newline="") as fh:
             fh.write(original_bn)
         shutil.rmtree(tmp, ignore_errors=True)
 
     print()
-    print("canaries 1 to 5 must all report FAILED > 0. The real files were "
-          "were never modified; the scratch copy is deleted.")
+    print("canaries 1 to 6 must each report FAILED > 0, and only its own.")
+    print("The real files were never modified; the scratch copy is deleted.")
 
 
 if __name__ == "__main__":
