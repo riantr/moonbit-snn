@@ -21,6 +21,7 @@
 # fail the loop; a gate that reports "unavailable" is a finding, not a pass.
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -230,6 +231,34 @@ def gate_unit():
     )
 
 
+def _check_claims(claims, placeholder, value):
+    """Which of the enumerated documentation claims no longer hold.
+
+    A claim is a (file, regex) pair. The regex carries a placeholder for the
+    pinned number, so the claim is checked against the CURRENT number rather
+    than against whatever the prose happened to say when it was written.
+
+    Returns a list of (file, pattern) for the claims that did not match.
+    """
+    missing = []
+    for claim in claims:
+        rel = claim.get("file", "")
+        pattern = claim.get("pattern", "")
+        if not rel or not pattern:
+            missing.append((rel or "?", "(a claim with no file or pattern)"))
+            continue
+        path = os.path.join(ROOT, rel)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+        except OSError as exc:
+            missing.append((rel, f"unreadable: {exc}"))
+            continue
+        if not re.search(pattern.replace(placeholder, str(value)), text):
+            missing.append((rel, pattern))
+    return missing
+
+
 def gate_docs():
     """The documented counts, checked against the pinned baselines.
 
@@ -237,6 +266,11 @@ def gate_docs():
     pinned by the `unit` gate; this gate checks that the READMEs still quote
     the pinned number, so that the chain suite -> baseline -> documentation
     cannot come apart.
+
+    The gate count is pinned the same way, and it is pinned here because it
+    had already drifted twice. The READMEs said "Fifteen gates" and
+    "thirteen quality gates" while the registry held nineteen, and nothing
+    noticed: a gate that counts the gates is the only thing that can.
 
     The claims are enumerated in verify/test_baseline.json rather than
     discovered by scanning, because a scan cannot tell a current claim from
@@ -252,22 +286,7 @@ def gate_docs():
         )
     n = base["total_tests"]
     claims = base.get("claims") or []
-    missing = []
-    for claim in claims:
-        rel = claim.get("file", "")
-        pattern = claim.get("pattern", "")
-        if not rel or not pattern:
-            missing.append((rel or "?", "(a claim with no file or pattern)"))
-            continue
-        path = os.path.join(ROOT, rel)
-        try:
-            with open(path, encoding="utf-8") as fh:
-                text = fh.read()
-        except OSError as exc:
-            missing.append((rel, f"unreadable: {exc}"))
-            continue
-        if not re.search(pattern.replace("{n}", str(n)), text):
-            missing.append((rel, pattern))
+    missing = _check_claims(claims, "{n}", n)
     if missing:
         first = missing[0]
         return Result(
@@ -281,10 +300,50 @@ def gate_docs():
             0.0,
             {"missing": missing, "expected": n},
         )
+
+    # The gate count: the registry is the authority, the baseline says what
+    # the registry SHOULD hold, and the documentation has to quote it.
+    gbase = load_gate_baseline()
+    if gbase is None:
+        return Result(
+            "docs", "fail",
+            "verify/gate_baseline.json is missing or malformed, so the number "
+            "of gates cannot be compared against anything. Restore it rather "
+            "than letting the count drift unchecked.",
+        )
+    g = len(GATES)
+    if g != gbase["gate_count"]:
+        return Result(
+            "docs", "fail",
+            "the registry holds %d gate(s) and verify/gate_baseline.json pins "
+            "%d. A gate was added or removed: update the baseline and every "
+            "count quoted in README.md and mbt/README.md in the same commit, "
+            "or the documentation and the harness will disagree again."
+            % (g, gbase["gate_count"]),
+            0.0,
+            {"gates": g, "expected": gbase["gate_count"]},
+        )
+    gclaims = gbase.get("claims") or []
+    gmissing = _check_claims(gclaims, "{g}", g)
+    if gmissing:
+        first = gmissing[0]
+        return Result(
+            "docs", "fail",
+            "%d of %d documented gate counts no longer match the pinned "
+            "number (%d). The registry holds %d gates; the documentation now "
+            "says something else. Update the quoted count, or update "
+            "verify/gate_baseline.json if a gate was added or removed. First "
+            "offender: %s -- %s"
+            % (len(gmissing), len(gclaims), g, g, first[0], first[1]),
+            0.0,
+            {"missing": gmissing, "expected": g},
+        )
     return Result(
         "docs", "pass",
-        f"{len(claims)} documented test count(s) agree with the pinned {n}",
-        0.0, {"claims": len(claims), "expected": n},
+        f"{len(claims)} documented test count(s) agree with the pinned {n}; "
+        f"{len(gclaims)} documented gate count(s) agree with the pinned {g}",
+        0.0, {"claims": len(claims), "expected": n,
+              "gate_claims": len(gclaims), "expected_gates": g},
     )
 
 
@@ -348,6 +407,7 @@ def gate_integration():
 
 COVERAGE_BASELINE = os.path.join(ROOT, "verify", "coverage_baseline.json")
 TEST_BASELINE = os.path.join(ROOT, "verify", "test_baseline.json")
+GATE_BASELINE = os.path.join(ROOT, "verify", "gate_baseline.json")
 
 
 def load_baseline(path, key):
@@ -377,6 +437,11 @@ def load_coverage_baseline():
 def load_test_baseline():
     """The recorded test-count baseline, or None if it cannot be read."""
     return load_baseline(TEST_BASELINE, "total_tests")
+
+
+def load_gate_baseline():
+    """The recorded gate-count baseline, or None if it cannot be read."""
+    return load_baseline(GATE_BASELINE, "gate_count")
 
 
 def gate_coverage():
@@ -466,36 +531,6 @@ def gate_coverage():
             uncovered, files, base["uncovered_lines"], tol,
         ),
         dt, extra,
-    )
-
-
-def gate_perf():
-    """Regression guard on the hot kernel, with a baseline rather than a guess.
-
-    The number this compares against was measured, not assumed: linear_forward
-    at the LeNet5 fc1 shape (batch 64, 4000 -> 500, 256 MFLOP per call) takes
-    98.4 ms in a release build on this machine, net of a reps=0 baseline. The
-    floor is set at 250 ms -- loose enough that ordinary noise passes, tight
-    enough that a lost vectorisation or an accidental copy shows up.
-    """
-    budget_ms = float(os.environ.get("QA_PERF_BUDGET_MS", "250"))
-
-    # The benchmark package was removed after its numbers were recorded. Until
-    # one comes back, this gate reports what it knows rather than inventing a
-    # workload: the measurement is in gpu/moon.pkg, and the harness is
-    # verify/run_release_bench.ps1.
-    marker = os.path.join(MBT, "gpu", "moon.pkg")
-    has_baseline = os.path.isfile(marker) and "98.4 ms" in open(
-        marker, encoding="utf-8", errors="replace"
-    ).read()
-    if not has_baseline:
-        return Result("perf", "unavailable",
-                      "no recorded baseline found in gpu/moon.pkg")
-    return Result(
-        "perf", "pass",
-        f"baseline 98.4 ms on record; budget {budget_ms:.0f} ms. Run "
-        f"verify/run_release_bench.ps1 against a benchmark package to compare",
-        0, {"baseline_ms": 98.4, "budget_ms": budget_ms},
     )
 
 
@@ -606,6 +641,86 @@ def gate_dup():
     )
 
 
+def gate_shadow():
+    """Is any name defined twice at module level in this repository's Python?
+
+    Python lets the later definition win, silently. A function that is
+    defined and then defined again never runs: the first copy is dead text
+    that still reads as if it were live.
+
+    That is not hypothetical. `verify/qa_loop.py` carried two versions of
+    `gate_perf` and two of `gate_bench` at the same time -- the early drafts
+    of both. The drafts reported a recorded 98.4 ms baseline against a 250 ms
+    budget, while the gates that actually ran measured the kernel and
+    compared it with verify/perf_baseline.json. So the dead copies also
+    quoted a figure that was stale by 1.3x, in a file whose whole job is
+    quoting figures that are not stale.
+
+    The check is AST-based rather than a regex, because a regex cannot tell
+    a definition from a mention of one, and this file is full of mentions.
+    Only module-level bindings are considered: a local name inside a
+    function is a different thing entirely.
+    """
+    skip_dirs = {".git", "_build", "_scratch", "node_modules", ".mooncakes",
+                 "__pycache__", ".venv", "venv"}
+    files = []
+    for base, dirs, names in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
+        for name in sorted(names):
+            if name.endswith(".py"):
+                files.append(os.path.join(base, name))
+
+    problems = []
+    for path in files:
+        rel = os.path.relpath(path, ROOT)
+        try:
+            with open(path, encoding="utf-8-sig") as fh:
+                tree = ast.parse(fh.read(), filename=path)
+        except (OSError, SyntaxError, ValueError) as exc:
+            problems.append("%s: cannot be parsed (%s)" % (rel, exc))
+            continue
+
+        # Module-level imports, by the name they bind.
+        imported = {}
+        for node in tree.body:
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imported[alias.asname or alias.name.split(".")[0]] = node.lineno
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    imported[alias.asname or alias.name] = node.lineno
+
+        defined = {}
+        for node in tree.body:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef,
+                                     ast.ClassDef)):
+                continue
+            name = node.name
+            if name in defined:
+                problems.append(
+                    "%s:%d: `%s` is defined again at line %d, so the definition "
+                    "at line %d never runs" % (rel, node.lineno, name,
+                                               defined[name], defined[name])
+                )
+                continue
+            defined[name] = node.lineno
+            if name in imported:
+                problems.append(
+                    "%s:%d: `%s` shadows the import on line %d"
+                    % (rel, node.lineno, name, imported[name])
+                )
+
+    if problems:
+        return Result("shadow", "fail",
+                      "%d shadowed module-level definition(s): %s"
+                      % (len(problems), "; ".join(problems[:4])),
+                      0, {"problems": problems, "files_scanned": len(files)})
+    return Result("shadow", "pass",
+                  "%d Python file(s), no name defined twice at module level"
+                  % len(files),
+                  0, {"files_scanned": len(files)})
+
+
 def gate_deps():
     """What the compiler cannot check: does the declared graph match reality?
 
@@ -666,22 +781,6 @@ def gate_deps():
         f"{len(graph)} packages, depth {tallest}, widest fan-out [{summary}]",
         0, {"graph": {k: sorted(v) for k, v in graph.items()},
             "depth": heights, "fanout": fanout},
-    )
-
-
-def gate_bench():
-    """The release-mode benchmark, if its harness package exists.
-
-    bench_lin and bench_conv were removed after their numbers were recorded --
-    what survived is verify/run_release_bench.ps1, which needs a package to
-    point at. So this gate reports honestly rather than inventing a workload.
-    """
-    script = os.path.join(ROOT, "verify", "run_release_bench.ps1")
-    if not os.path.isfile(script):
-        return Result("bench", "unavailable", "no verify/run_release_bench.ps1")
-    return Result(
-        "bench", "pass",
-        "harness present; run it with -Package <dir> against a main package",
     )
 
 
@@ -925,8 +1024,36 @@ def gate_provenance():
                   % (m.group(1), m.group(2)), dt)
 
 
+def _workflow_jobs(lines):
+    """Split a workflow's lines into (job name, lines) blocks.
+
+    A workflow's jobs are two-space-indented keys under `jobs:`. Splitting on
+    those is what makes a `working-directory` belong to the job that declared
+    it: a `cd` in one job cannot contradict another job's working directory.
+    Treating the whole file as one job invents contradictions that do not
+    exist -- and a gate that cries wolf is a gate that gets switched off.
+    """
+    jobs = []
+    current = None
+    in_jobs = False
+    for n, line in lines:
+        if re.match(r"^jobs:\s*$", line):
+            in_jobs = True
+            continue
+        if not in_jobs:
+            continue
+        m = re.match(r"^  ([A-Za-z0-9_.-]+):\s*$", line)
+        if m:
+            current = (m.group(1), [])
+            jobs.append(current)
+            continue
+        if current is not None:
+            current[1].append((n, line))
+    return jobs
+
+
 def gate_release():
-    """Is the release workflow consistent with itself, in the two ways it has broken?
+    """Is every workflow consistent with itself, in the two ways they have broken?
 
     Both of these cost a release, and neither was visible locally.
 
@@ -942,6 +1069,11 @@ def gate_release():
        with it, and the release reported what looked like a content failure
        instead of a path error.
 
+    EVERY workflow file is audited, not only the release one. Both failures
+    above are properties of a workflow's own body, so a second workflow can
+    commit them just as easily -- and a gate that only knows about one file
+    cannot catch the same mistake the second time it is made.
+
     The check is narrow on purpose: it knows the two contradictions that have
     bitten, and it names the offending line. "3 problems" is not something
     anybody can act on.
@@ -950,68 +1082,103 @@ def gate_release():
     history of these failures is written down, and a gate that reads its own
     documentation as its subject finds the documentation.
     """
-    path = os.path.join(ROOT, ".github", "workflows", "publish.yml")
-    if not os.path.isfile(path):
-        return Result("release", "fail", "%s not found" % path, 0)
-    try:
-        with open(path, encoding="utf-8") as fh:
-            raw = fh.read()
-    except OSError as exc:
-        return Result("release", "fail", "unreadable: %s" % exc, 0)
-
-    lines = []
-    for n, line in enumerate(raw.splitlines(), 1):
-        if line.strip().startswith("#"):
-            continue
-        lines.append((n, line))
-    text = "\n".join(line for _, line in lines)
+    workflows = os.path.join(ROOT, ".github", "workflows")
+    if not os.path.isdir(workflows):
+        return Result("release", "fail", "%s not found" % workflows, 0)
+    names = sorted(n for n in os.listdir(workflows)
+                   if n.endswith((".yml", ".yaml")))
+    if not names:
+        return Result("release", "fail", "no workflow file in %s" % workflows, 0)
 
     problems = []
+    audited = []
+    workdirs_seen = set()
 
-    # (1) the registry index must be resolved before anything is checked
-    i_update = text.find("moon update")
-    i_check = text.find("moon check")
-    if i_update < 0:
-        problems.append(
-            "no `moon update`: a cold runner cannot resolve the registry "
-            "dependencies, so `moon check` fails before it checks anything"
-        )
-    elif i_check >= 0 and i_update > i_check:
-        problems.append(
-            "`moon update` is after the first `moon check`; the index has to "
-            "be resolved first"
-        )
-
-    # (2) no step may cd into a directory the workflow already put it in
-    workdirs = set()
-    for _n, line in lines:
-        m = re.match(r"\s*working-directory:\s*(\S+)\s*$", line)
-        if m:
-            workdirs.add(m.group(1).strip("/"))
-    for n, line in lines:
-        m = re.match(r"\s*cd\s+(\S+)", line)
-        if not m:
+    for name in names:
+        path = os.path.join(workflows, name)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                raw = fh.read()
+        except OSError as exc:
+            problems.append("%s: unreadable (%s)" % (name, exc))
             continue
-        target = m.group(1).strip("/")
-        for w in sorted(workdirs):
-            if target == w or target.startswith(w + "/"):
+
+        lines = []
+        for n, line in enumerate(raw.splitlines(), 1):
+            if line.strip().startswith("#"):
+                continue
+            lines.append((n, line))
+
+        # (1) the registry index must be resolved before anything is checked.
+        # Only a workflow that actually checks needs the index; a workflow
+        # that never calls `moon check` is not affected either way.
+        #
+        # The positions are the positions of the COMMANDS, not of the words.
+        # A job called "moon check", or a step named after one, mentions the
+        # command without running it, and a mention is not an ordering: what
+        # matters is whether the update runs before the check does.
+        i_update = None
+        i_check = None
+        for n, line in lines:
+            m = re.match(r"\s*(?:run:\s*)?moon\s+(update|check)\b", line)
+            if not m:
+                continue
+            if m.group(1) == "update":
+                if i_update is None:
+                    i_update = n
+            elif i_check is None:
+                i_check = n
+        if i_check is not None:
+            if i_update is None:
                 problems.append(
-                    "line %d: `cd %s` under `working-directory: %s` asks for "
-                    "%s/%s, which does not exist"
-                    % (n, m.group(1), w, w, target)
+                    "%s: no `moon update`: a cold runner cannot resolve the "
+                    "registry dependencies, so `moon check` fails before it "
+                    "checks anything" % name
                 )
+            elif i_update > i_check:
+                problems.append(
+                    "%s: `moon update` (line %d) is after the first `moon "
+                    "check` (line %d); the index has to be resolved first"
+                    % (name, i_update, i_check)
+                )
+
+        # (2) no step may cd into a directory its own job already put it in
+        jobs = _workflow_jobs(lines)
+        if not jobs:
+            jobs = [("(no job block found)", lines)]
+        for job_name, job_lines in jobs:
+            workdirs = set()
+            for _n, line in job_lines:
+                m = re.match(r"\s*working-directory:\s*(\S+)\s*$", line)
+                if m:
+                    workdirs.add(m.group(1).strip("/"))
+            workdirs_seen |= workdirs
+            for n, line in job_lines:
+                m = re.match(r"\s*cd\s+(\S+)", line)
+                if not m:
+                    continue
+                target = m.group(1).strip("/")
+                for w in sorted(workdirs):
+                    if target == w or target.startswith(w + "/"):
+                        problems.append(
+                            "%s job %s line %d: `cd %s` under "
+                            "`working-directory: %s` asks for %s/%s, which does "
+                            "not exist"
+                            % (name, job_name, n, m.group(1), w, w, target)
+                        )
+        audited.append(name)
 
     if problems:
         return Result("release", "fail", "; ".join(problems), 0,
-                      {"problems": problems})
-    if not workdirs:
-        return Result("release", "pass",
-                      "no `working-directory:` declared, so no `cd` can "
-                      "contradict one", 0)
-    return Result("release", "pass",
-                  "moon update precedes moon check; no `cd` contradicts "
-                  "working-directory %s" % ", ".join(sorted(workdirs)), 0,
-                  {"working_directory": sorted(workdirs)})
+                      {"problems": problems, "workflows": audited})
+    detail = "%d workflow file(s) audited (%s): moon update precedes moon " \
+             "check wherever a workflow checks; no `cd` contradicts a " \
+             "declared working-directory" % (len(audited), ", ".join(audited))
+    if workdirs_seen:
+        detail += " (%s)" % ", ".join(sorted(workdirs_seen))
+    return Result("release", "pass", detail, 0,
+                  {"workflows": audited,
+                   "working_directory": sorted(workdirs_seen)})
 
 
 def gate_golden():
@@ -1339,6 +1506,7 @@ GATES = [
     ("deps", gate_deps, False),
     ("pin", gate_pin, False),
     ("dup", gate_dup, False),
+    ("shadow", gate_shadow, False),
     ("security", gate_security, False),
     ("oracle", gate_oracle, False),
     ("provenance", gate_provenance, False),
@@ -1355,6 +1523,33 @@ GATES = [
     ("mutation", gate_mutation, True),
 ]
 
+# The gates that can run on a CI runner: no MoonBit toolchain, no PyTorch,
+# no local build state, and nothing that depends on the speed of the machine
+# they are measured on.
+#
+# These are the gates that check the PROCESS -- the workflows, the dependency
+# pins, the documented counts, the shape of the tree -- and the release
+# workflow cannot check itself: it is the thing being checked, from the
+# inside, where it cannot see its own path.
+#
+# The gates that need `moon` or `torch` are deliberately NOT here. A runner is
+# a colder and a slower machine than the one these baselines were measured
+# on, the performance budget is derived from a local median, and the oracle
+# and golden gates need a two-gigabyte dependency installed. A gate that fails
+# for environmental reasons teaches everyone to ignore red, and three
+# releases in this repository have already died to a pipeline problem rather
+# than to a content one.
+CI_GATES = [
+    "deps",
+    "pin",
+    "dup",
+    "shadow",
+    "security",
+    "provenance",
+    "release",
+    "docs",
+]
+
 
 def main():
     ap = argparse.ArgumentParser(description="one loop over this project's QA gates")
@@ -1362,6 +1557,9 @@ def main():
     ap.add_argument("--list", action="store_true", help="list the registry")
     ap.add_argument("--json", action="store_true", help="emit JSON")
     ap.add_argument("--quick", action="store_true", help="skip slow gates")
+    ap.add_argument("--ci", action="store_true",
+                    help="run the CI-portable subset, and fail on a gate that "
+                         "could not check anything")
     args = ap.parse_args()
 
     if args.list:
@@ -1369,14 +1567,26 @@ def main():
             print(f"  {name:<13} {'(slow)' if slow else '':<7} {fn.__doc__.splitlines()[0]}")
         return 0
 
+    known = {n for n, _, _ in GATES}
+    missing = [n for n in CI_GATES if n not in known]
+    if missing:
+        # A typo here would silently shrink the set of gates CI runs, and a
+        # CI job that quietly checks less is worse than one that checks
+        # nothing at all, because it looks like coverage.
+        print("CI_GATES names gate(s) that do not exist: %s"
+              % ", ".join(missing), file=sys.stderr)
+        return 2
+
     selected = GATES
     if args.gates:
         wanted = set(args.gates)
-        unknown = wanted - {n for n, _, _ in GATES}
+        unknown = wanted - known
         if unknown:
             print(f"unknown gate(s): {', '.join(sorted(unknown))}", file=sys.stderr)
             return 2
         selected = [g for g in GATES if g[0] in wanted]
+    elif args.ci:
+        selected = [g for g in GATES if g[0] in CI_GATES]
     elif args.quick:
         selected = [g for g in GATES if not g[2]]
 
@@ -1423,6 +1633,15 @@ def main():
             for r in na:
                 print(f"  {r.name}: {r.detail}")
 
+    if args.ci and na:
+        # In CI, a gate that could not check anything is a failure. Locally an
+        # `unavailable` gate is reported and the loop still exits 0, because a
+        # missing local toolchain is the developer's business. On a runner
+        # there is no developer standing there to fix it, so "did not check"
+        # must not read as "passed".
+        print("::error::%d gate(s) could not check anything. A CI run that "
+              "checks nothing is not a pass." % len(na))
+        return 1
     return 1 if failed else 0
 
 

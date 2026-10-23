@@ -35,20 +35,44 @@ build if one appears there.
 python verify/qa_loop.py            # every gate, one exit code
 python verify/qa_loop.py --list     # the registry
 python verify/qa_loop.py --quick    # skip the slow gates
+python verify/qa_loop.py --ci       # the CI-portable subset
 ```
 
-Fifteen gates: formatting, static analysis, dependency shape, duplicate-code
-detection, a secret scan, the TARNet autograd oracle's self-test, the reference
-transcription audit, the unit suite, the example suite, property checks, a
-performance baseline, coverage, a repeat-run stability check, and mutation
-testing. A gate that does not run reports `unavailable` with the reason rather
-than `pass` — "did not check" is a finding, not a success.
+20 gates: formatting, static analysis, dependency shape, a dependency-pin check
+against the registry, duplicate-code detection, a secret scan, the TARNet
+autograd oracle's self-test, the reference transcription audit, a release
+workflow audit, a golden-file reproducibility check, the unit suite, the
+documented counts, the example suite, property checks, the benchmark harness, a
+performance baseline, coverage, a repeat-run stability check, mutation testing,
+and a shadowed-definition scan. A gate that does not run reports `unavailable`
+with the reason rather than `pass` — "did not check" is a finding, not a
+success.
 
 The mutation gate is the one worth knowing about. It injects mutants into the
 CPU reference loops in `mbt/gpu/cuda/linear_accel_stub.c` and checks that
 `mbt/fuzz_props/` notices. It currently kills 3 of 3. When it did not, the
 property suite was not covering a primitive at all, which is the kind of gap
 a passing test count hides.
+
+### What runs where
+
+The release is tag-driven: `.github/workflows/publish.yml` publishes when a
+`v*` tag appears. It runs `moon check` and the nine test waves, and it is the
+only thing that publishes.
+
+`.github/workflows/ci.yml` runs on every push and runs the eight gates that
+need no toolchain — `deps`, `pin`, `dup`, `shadow`, `security`, `provenance`,
+`release`, `docs` — plus `moon check`. These are the checks the release
+workflow structurally cannot make about itself: it is the thing being checked,
+from the inside, where it cannot see its own path. Three releases here died
+at three different steps of that workflow, and every one of them was the
+workflow's fault rather than the code's.
+
+The gates that need PyTorch or a release build stay local, on purpose: the
+performance budget is derived from a median measured on one machine, and a
+runner is a colder and a slower machine than that. A gate that fails for
+environmental reasons teaches everyone to ignore red. In CI, a gate that
+could not check anything fails the job — "did not check" is not a pass.
 
 Two gradient harnesses remain, for checks that need to execute rather than
 type-check:

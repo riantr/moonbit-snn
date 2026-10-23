@@ -1,0 +1,8 @@
+{
+  "gate_count": 20,
+  "claims": [
+    {"file": "README.md", "pattern": "{g} gates: formatting"},
+    {"file": "mbt/README.md", "pattern": "runs {g} quality gates over the tree"}
+  ],
+  "note": "The number of gates the QA loop runs, and the number the documentation quotes. It is pinned here because a prose count is a snapshot with no expiry date, and this one had already drifted twice: README.md said 'Fifteen gates' and mbt/README.md said 'thirteen quality gates' while the registry held nineteen, and nothing noticed. The chain is registry -> this file -> the READMEs: the `docs` gate checks that the registry still holds the pinned number AND that the READMEs still quote it. Adding or removing a gate means updating this file and both READMEs in the same commit."
+}

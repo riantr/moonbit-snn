@@ -28,11 +28,15 @@ like a content failure.
 
 **The gate suite grew a `release` gate.** The two release failures in a row
 were both invisible locally, so they are now checked against the workflow
-file itself: `moon update` has to precede the first `moon check` (a cold
+files themselves: `moon update` has to precede the first `moon check` (a cold
 runner's registry index is empty -- that is what broke v0.165.0), and no step
-may `cd` into a directory the workflow already put it in. Both checks are
-proven to fail: re-inserting `cd mbt` names the offending line, and moving
-`moon update` after `moon check` is caught too.
+may `cd` into a directory its own job already put it in. Both checks are
+proven to fail: re-inserting `cd mbt` names the file, the job and the
+offending line, and moving `moon update` after `moon check` is caught too.
+The gate audits every workflow in `.github/workflows/`, not just the release
+one, and it compares the order of the commands that RUN rather than the order
+of the words that mention them -- a job named after a command is not a
+command.
 
 The registry check also refreshes the index before it reads the version
 listing, because a stale index would report the version as absent *after* a
@@ -101,7 +105,10 @@ Two additions came with the split. `mbt/gpu/` is an optional
 single-precision BLAS seam for the dense layers in `nn/`, complete with a C
 stub, CUDA kernels and build scripts, and deliberately unconnected -- see
 its own `moon.pkg` for the measurements behind that decision.
-`verify/qa_loop.py` runs thirteen quality gates over the tree.
+`verify/qa_loop.py` runs 20 quality gates over the tree. Eight of them --
+the ones that need no MoonBit toolchain and no PyTorch -- also run on every
+push in `.github/workflows/ci.yml`, because the release workflow is tag-driven
+and cannot check itself.
 
 See the top-level `README.md` for both, and for the release-vs-debug
 performance caveat that applies to any timing taken here.

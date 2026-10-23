@@ -1,0 +1,89 @@
+name: ci
+
+# The release workflow is tag-driven, and it cannot check itself: it is the
+# thing being checked, from the inside, where it cannot see its own path.
+# Three releases in this repository died at three different steps of that
+# workflow, and every one of them was a problem with the workflow rather than
+# with the code -- a cold runner with an empty registry index, a typo gate,
+# and a `cd mbt` under `working-directory: mbt` that asked for `mbt/mbt` and
+# took the thirteen steps behind it down with it.
+#
+# So the process gates run on every push, BEFORE a tag exists. The gates
+# here check the workflow, the dependency pins, the documented counts and the
+# shape of the tree. They need no MoonBit toolchain, no PyTorch and no local
+# build state, so they run in about a second and cannot fail for
+# environmental reasons.
+#
+# The gates that need `moon` or `torch` stay local, deliberately: a runner is
+# a colder and a slower machine than the one their baselines were measured
+# on, and a gate that fails for environmental reasons teaches everyone to
+# ignore red. `verify/qa_loop.py` runs the whole registry.
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The process gates. Seconds, no toolchain, and they cover the checks that
+  # the release workflow structurally cannot make about itself.
+  gates:
+    name: process gates
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run the CI-portable gates
+        run: python verify/qa_loop.py --ci
+
+  # The compile gate. The release workflow runs this too, but on a tag: by
+  # then the release is already the thing that is failing. Catching a
+  # compile error on the push that introduced it is worth a few minutes.
+  moon:
+    name: moon check
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: mbt
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install moon
+        run: |
+          # NOTE the path is install/unix.sh, not install.sh. Getting that wrong
+          # 403s, and piping into `bash` then HIDES it: bash exits 0 on empty
+          # stdin, so the step goes green and the next step fails with a
+          # misleading "moon: command not found". Hence the explicit verify.
+          # cli.moonbitlang.com is what MoonBit's own CI uses; the .cn mirror
+          # is a fallback for when the .com host is unreachable from a runner.
+          { curl -fsSL https://cli.moonbitlang.com/install/unix.sh \
+            || curl -fsSL https://cli.moonbitlang.cn/install/unix.sh; } \
+            > /tmp/moon-install.sh
+          test -s /tmp/moon-install.sh
+          bash /tmp/moon-install.sh
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Verify moon is on PATH
+        run: moon version --all
+
+      # A fresh runner's registry index is empty, and this module imports
+      # riantr/moonbit_image and moonbit-community/sqlite3 from mooncakes.io.
+      # Without this, `moon check` fails with "Failed to resolve registry
+      # dependency" before a single file is checked. It has to come BEFORE the
+      # check, not merely exist somewhere in the file.
+      - name: Resolve the registry index
+        run: moon update
+
+      - name: moon check
+        # `--target native`, not `--target all`. This package is native-only by
+        # design: `math_native.mbt` and friends bind libm directly through
+        # `extern "C"`, and moon.mod declares `preferred_target = "native"`.
+        run: moon check --target native
