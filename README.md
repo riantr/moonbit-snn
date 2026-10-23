@@ -26,7 +26,7 @@ cd mbt
 moon test ./tests/wave1 --target native   # ... through ./tests/wave9
 ```
 
-That is 1884 tests. A test placed in the root would never run, so CI fails the
+That is 1925 tests. A test placed in the root would never run, so CI fails the
 build if one appears there.
 
 ## Quality gates
@@ -191,7 +191,7 @@ numbers are recorded in [`mbt/gpu/moon.pkg`](./mbt/gpu/moon.pkg).
   `mbt/autodiff`, `mbt/tarnet`, `mbt/models`, `mbt/analysis`,
   `mbt/timeseries` — the newer domains, each its own package.
 - `mbt/gpu/` — the optional BLAS seam, described above.
-- `mbt/tests/wave1` … `wave9` — 1884 tests, split by domain so a failure
+- `mbt/tests/wave1` … `wave9` — 1925 tests, split by domain so a failure
   points at one. None of it can live in the package root; see Quick start.
 - `mbt/fuzz_props/`, `mbt/gpu_selftest/` — property and fallback checks,
   driven by the mutation and fuzz gates.

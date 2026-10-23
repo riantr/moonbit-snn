@@ -1,0 +1,15 @@
+{
+  "total_tests": 1925,
+  "waves": 9,
+  "measured_on": "d8a4661",
+  "measured_at": "2026-10-23",
+  "command": "moon test ./tests/waveN --target native, all nine waves, summed",
+  "claims": [
+    {"file": "README.md", "pattern": "That is {n} tests\\."},
+    {"file": "README.md", "pattern": "wave9` — {n} tests, split by domain"},
+    {"file": "mbt/README.md", "pattern": "\\| Tests \\| {n} across nine waves \\|"},
+    {"file": "mbt/README.md", "pattern": "\\*\\*Test count\\*\\*: {n}"},
+    {"file": "mbt/README.md", "pattern": "runs {n} assertions across nine waves"}
+  ],
+  "note": "The number of test cases the suite runs, and the number the documentation quotes. It is pinned here because four places quoted it and nothing made them agree: at the same time README.md said 1884, mbt/README.md said 1899 in one sentence and 1884 in another, and the suite ran 1925. The chain is suite -> this file -> the READMEs, and the `unit` gate checks the first link while the `docs` gate checks the second. Any change to the count - a test added, a test removed - must update this file and the quoted counts in the same commit. The claims are enumerated rather than discovered by scanning, because this repository also contains historical counts, marked Superseded, that must keep the number they were written with."
+}

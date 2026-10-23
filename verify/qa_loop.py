@@ -194,10 +194,95 @@ def gate_unit():
             sum(v["seconds"] for v in per.values()),
             {"per_wave": per, "total_passed": total},
         )
+    # The count is pinned, not merely reported. Four places quote it - the
+    # two READMEs, the tag messages, and this gate's own summary - and
+    # nothing made them agree: the repository carried 1884 in one README
+    # and 1899 in the other at the same time, while the suite ran 1925.
+    # A count that is only asserted rots; a count that is pinned cannot.
+    base = load_test_baseline()
+    if base is None:
+        return Result(
+            "unit", "fail",
+            "verify/test_baseline.json is missing or malformed, so the number of "
+            "tests the suite runs cannot be compared against anything. Restore "
+            "it rather than letting the count drift unchecked.",
+            sum(v["seconds"] for v in per.values()),
+            {"per_wave": per, "total_passed": total},
+        )
+    if total != base["total_tests"]:
+        return Result(
+            "unit", "fail",
+            f"the suite runs {total} tests, the baseline says "
+            f"{base['total_tests']}. A test was added or removed: update "
+            f"verify/test_baseline.json and every count quoted in README.md "
+            f"and mbt/README.md in the same commit, or the documentation and "
+            f"the suite will disagree again.",
+            sum(v["seconds"] for v in per.values()),
+            {"per_wave": per, "total_passed": total,
+             "baseline_tests": base["total_tests"]},
+        )
     return Result(
         "unit", "pass", f"{total} assertions across {len(waves)} waves",
         sum(v["seconds"] for v in per.values()),
         {"per_wave": per, "total_passed": total},
+    )
+
+
+def gate_docs():
+    """The documented counts, checked against the pinned baselines.
+
+    A number in prose is a snapshot with no expiry date. The test count is
+    pinned by the `unit` gate; this gate checks that the READMEs still quote
+    the pinned number, so that the chain suite -> baseline -> documentation
+    cannot come apart.
+
+    The claims are enumerated in verify/test_baseline.json rather than
+    discovered by scanning, because a scan cannot tell a current claim from
+    a historical one - this repository has both, and the historical ones are
+    marked "Superseded" and must keep the number they were written with.
+    """
+    base = load_test_baseline()
+    if base is None:
+        return Result(
+            "docs", "fail",
+            "verify/test_baseline.json is missing or malformed, so the counts "
+            "quoted in the documentation cannot be checked against anything.",
+        )
+    n = base["total_tests"]
+    claims = base.get("claims") or []
+    missing = []
+    for claim in claims:
+        rel = claim.get("file", "")
+        pattern = claim.get("pattern", "")
+        if not rel or not pattern:
+            missing.append((rel or "?", "(a claim with no file or pattern)"))
+            continue
+        path = os.path.join(ROOT, rel)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+        except OSError as exc:
+            missing.append((rel, f"unreadable: {exc}"))
+            continue
+        if not re.search(pattern.replace("{n}", str(n)), text):
+            missing.append((rel, pattern))
+    if missing:
+        first = missing[0]
+        return Result(
+            "docs", "fail",
+            "%d of %d documented test counts no longer match the pinned "
+            "number (%d). The suite runs %d tests; the documentation now says "
+            "something else. Update the quoted count, or update "
+            "verify/test_baseline.json if the suite itself changed. First "
+            "offender: %s -- %s"
+            % (len(missing), len(claims), n, n, first[0], first[1]),
+            0.0,
+            {"missing": missing, "expected": n},
+        )
+    return Result(
+        "docs", "pass",
+        f"{len(claims)} documented test count(s) agree with the pinned {n}",
+        0.0, {"claims": len(claims), "expected": n},
     )
 
 
@@ -260,25 +345,36 @@ def gate_integration():
 
 
 COVERAGE_BASELINE = os.path.join(ROOT, "verify", "coverage_baseline.json")
+TEST_BASELINE = os.path.join(ROOT, "verify", "test_baseline.json")
 
 
-def load_coverage_baseline():
-    """The recorded coverage baseline, or None if it cannot be read.
+def load_baseline(path, key):
+    """A recorded baseline, or None if the file is missing or unusable.
 
     The file is the gate's memory. A gate that cannot find its own baseline
     reports the problem rather than guessing one, because a guessed baseline
     is the same thing as no baseline except that it looks like a measurement.
     """
     try:
-        with open(COVERAGE_BASELINE, encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             doc = json.load(fh)
     except (OSError, ValueError):
         return None
     if not isinstance(doc, dict):
         return None
-    if not isinstance(doc.get("uncovered_lines"), int):
+    if not isinstance(doc.get(key), int):
         return None
     return doc
+
+
+def load_coverage_baseline():
+    """The recorded coverage baseline, or None if it cannot be read."""
+    return load_baseline(COVERAGE_BASELINE, "uncovered_lines")
+
+
+def load_test_baseline():
+    """The recorded test-count baseline, or None if it cannot be read."""
+    return load_baseline(TEST_BASELINE, "total_tests")
 
 
 def gate_coverage():
@@ -834,6 +930,7 @@ GATES = [
     ("oracle", gate_oracle, False),
     ("provenance", gate_provenance, False),
     ("unit", gate_unit, False),
+    ("docs", gate_docs, False),
     ("integration", gate_integration, False),
     ("fuzz", gate_fuzz, False),
     ("bench", gate_bench, False),

@@ -103,7 +103,7 @@ touch the network) answers this directly:
 
 ```
 moon package --list          # the manifest, on stderr, after ~4 MB of warnings
-moon package                 # -> _build/publish/riantr-snn_mbt-0.155.0.zip
+moon package                 # -> _build/publish/riantr-snn_mbt-<version>.zip
 ```
 
 Measured on the wave-1 archive: **760 entries, 1.25 MB compressed, 3.78 MB

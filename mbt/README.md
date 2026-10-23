@@ -6,12 +6,56 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.166.0, 2026-10-15)
+## Status (v0.166.1, 2026-10-23)
 
-`moon.mod` carries the version that is published to mooncakes.io, and
-this header tracks it. The batch sections at the end of this file run
-from Batch C (v0.58.0) through Batch AF (v0.165.0)
-and describe what changed in each.
+`moon.mod` carries this tree's version. The version currently on
+mooncakes.io is **0.155.0**: v0.165.0 and v0.166.0 were both tagged, but
+their publish runs failed, and this tree is 0.166.1. The batch sections at
+the end of this file run from Batch C (v0.58.0) through Batch AG
+(v0.166.0) and describe what changed in each.
+
+### What v0.166.1 changed
+
+The module did not compile against the current MoonBit core, and three
+separate things had to be fixed before it would.
+
+**The core renamed `to_float`.** 23 call sites across 13 files — in the
+analysis, nn, rl, stimulus and synapse packages, and their tests — used
+`to_float()`, which no longer exists. They are now `Float::from_int` or
+`Float::from_double`, chosen by the receiver's type. The rewrite is
+value-preserving: `to_float` was the same intrinsic under another name,
+and the operation order in every expression is unchanged.
+
+**`Float::round` changed meaning in the same core update.** The old
+native was `floor(x + 0.5)`; the new one is a corrected implementation
+that rounds ties toward +∞. The repository rounds in exactly two places,
+`infra/vecplot.mbt` and `synapse/stdp.mbt`, and both are axis-label
+formatters, so the effect is cosmetic label text.
+
+**The dependency was unpublishable.** `riantr/moonbit_image` 0.3.7 used
+the `try?` operator, which the core removed: unpack the published 0.3.7
+archive and `moon check` in it fails with `Error: [3002] try? has been
+removed`. 0.3.8 and 0.3.9 fix that and are published — 0.3.8 also declares
+js and wasm-gc as supported targets. This tree depends on 0.3.9 and no
+longer carries a patched copy of the dependency under `mbt/.mooncakes`,
+so a clean checkout builds.
+
+**The coverage gate had stopped working.** `moon coverage analyze` no
+longer prints a percentage, so the gate that parsed one had been reporting
+`unavailable` instead of a verdict — a gate that cannot produce a verdict
+is not a gate. It now compares the toolchain's count of uncovered
+executable lines against a measured baseline, and the baseline records
+that the count is not the number of source lines in the raw coverage
+dumps.
+
+Also: the test count is pinned in `verify/test_baseline.json` and checked
+by the `unit` and `docs` gates, so it cannot drift away from the
+documentation again; the release workflow resolves the registry index,
+checks the shape of its credentials, and treats the registry listing —
+not `moon publish`'s exit code — as the authority on whether anything
+landed; and the mutation-canary harness asserts that its control builds
+and that each of its seven canaries fails, instead of reporting a broken
+build as a pass.
 
 ### What v0.166.0 changed structurally
 
@@ -23,10 +67,10 @@ manifest with an import list rather than a body. The waves under
 | | |
 |---|---|
 | Packages | 23 |
-| Library source files | 681 |
-| Library lines | ~125,000 |
+| Library source files | 299 (`*.mbt` in the library packages, not `mbt/tests/`) |
+| Library lines | ~62,700 |
 | Largest package | `rl` (~15,000 lines), then `synapse` (~8,000) |
-| Tests | 1884 across nine waves |
+| Tests | 1925 across nine waves |
 | Examples | 77 |
 
 Two additions came with the split. `mbt/gpu/` is an optional
@@ -398,7 +442,7 @@ Each package below says where its code comes from:
 
 ```
 mbt/
-|-- moon.mod                     # module riantr/snn_mbt, version 0.166.0
+|-- moon.mod                     # module riantr/snn_mbt, version 0.166.1
 |-- moon.pkg                     # root manifest: imports only, no source
 |-- README.md
 |
@@ -528,7 +572,7 @@ self-consistent looks exactly like a port that is correct.
 
 ### 1. Self-consistency (everywhere)
 
-`verify/qa_loop.py` runs 1899 assertions across nine waves, plus a
+`verify/qa_loop.py` runs 1925 assertions across nine waves, plus a
 finite-difference sweep over every parameter coordinate of a model, a property
 suite, and a mutation gate that kills 3 of 3 planted defects. This establishes
 that a computation is internally consistent: that the backward really is the
