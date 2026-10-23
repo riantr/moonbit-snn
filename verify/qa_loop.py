@@ -42,7 +42,7 @@ KNOWN_PACKAGES = {
 }
 
 # Gates that take long enough that a quick pass should skip them.
-SLOW = {"coverage", "stress", "mutation"}
+SLOW = {"coverage", "stress", "mutation", "golden"}
 
 
 class Result:
@@ -1010,6 +1010,57 @@ def gate_release():
                   {"working_directory": sorted(workdirs)})
 
 
+def gate_golden():
+    """Can every committed oracle golden still be produced by the generator beside it?
+
+    A golden is the expected answer, so a stale one is not a stale test -- it is
+    a wrong answer that keeps passing. Nothing connected the six checked-in
+    goldens to the five checked-in generators, and when the link was finally
+    made, two of the generators turned out to have been dead code since the
+    day they were written: their `parse()` demanded a `TNORACLE bx` line that
+    no file in this repository has ever emitted, in any commit of the history.
+    So the block and SE goldens could not be regenerated at all.
+
+    Four of the six now reproduce byte for byte. The other two do not, because
+    PyTorch's FFT and convolutions are not bit-reproducible across builds, so
+    the rule for those is that every element must agree with a fresh
+    regeneration to within the SAME bound the MoonBit test applies to that
+    array -- the tolerance the golden is used at, not one fitted to whatever
+    comes out.
+
+    This needs PyTorch and `moon`, so it is LOCAL: a missing tool reports
+    `unavailable`, because "did not check" is a finding and reporting it as a
+    success is the failure this project has paid for before.
+    """
+    script = os.path.join(ROOT, "verify", "golden_repro.py")
+    if not os.path.isfile(script):
+        return Result("golden", "fail",
+                      "verify/golden_repro.py not found", 0)
+    rc, text, dt = run([sys.executable, script], timeout=3600)
+    if rc == 2:
+        first = ""
+        for ln in text.splitlines():
+            if ln.strip():
+                first = ln.strip()
+                break
+        return Result("golden", "unavailable",
+                      first or "the tools needed to regenerate the goldens "
+                               "are not installed", dt)
+    m = re.search(r"(\d+) passed, (\d+) failed", text)
+    if rc != 0 or not m:
+        bad = [ln.strip() for ln in text.splitlines() if ln.startswith("[FAIL")]
+        return Result("golden", "fail",
+                      "; ".join(bad[:2]) or "the golden check produced no verdict",
+                      dt)
+    passed, failed = int(m.group(1)), int(m.group(2))
+    if failed:
+        return Result("golden", "fail",
+                      "%d of %d goldens do not reproduce" % (failed, passed + failed),
+                      dt)
+    return Result("golden", "pass",
+                  "%d goldens reproduce from their generators" % passed, dt)
+
+
 GATES = [
     ("fmt", gate_fmt, False),
     ("lint", gate_lint, False),
@@ -1019,6 +1070,7 @@ GATES = [
     ("oracle", gate_oracle, False),
     ("provenance", gate_provenance, False),
     ("release", gate_release, False),
+    ("golden", gate_golden, True),
     ("unit", gate_unit, False),
     ("docs", gate_docs, False),
     ("integration", gate_integration, False),
