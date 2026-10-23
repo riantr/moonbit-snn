@@ -6,13 +6,37 @@ ecosystem. Long-term goal: every example in
 `SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
 the same numerical trajectories (last-bit Float32) as the Julia run.
 
-## Status (v0.166.1, 2026-10-23)
+## Status (v0.166.2, 2026-10-23)
 
 `moon.mod` carries this tree's version. The version currently on
-mooncakes.io is **0.155.0**: v0.165.0 and v0.166.0 were both tagged, but
-their publish runs failed, and this tree is 0.166.1. The batch sections at
+mooncakes.io is **0.155.0**: v0.165.0, v0.166.0 and v0.166.1 were all
+tagged, but their publish runs failed, and this tree is 0.166.2. The batch
+sections at
 the end of this file run from Batch C (v0.58.0) through Batch AG
 (v0.166.0) and describe what changed in each.
+
+### What v0.166.2 changed
+
+**The release workflow died on its own path, not on the code.** The v0.166.1
+publish run failed at step 9 of 22 with `cd: mbt: No such file or directory`.
+The job declares `working-directory: mbt`, so every step already runs in the
+package root, and the guard step then ran `cd mbt` -- which asked for
+`mbt/mbt`. The runner is `bash -e`, so that one failure skipped the thirteen
+steps behind it: every wave of tests, the credential write, the publish and
+the registry check. Nothing was published, and the run reported what looked
+like a content failure.
+
+**The gate suite grew a `release` gate.** The two release failures in a row
+were both invisible locally, so they are now checked against the workflow
+file itself: `moon update` has to precede the first `moon check` (a cold
+runner's registry index is empty -- that is what broke v0.165.0), and no step
+may `cd` into a directory the workflow already put it in. Both checks are
+proven to fail: re-inserting `cd mbt` names the offending line, and moving
+`moon update` after `moon check` is caught too.
+
+The registry check also refreshes the index before it reads the version
+listing, because a stale index would report the version as absent *after* a
+successful publish and call the release a failure for having worked.
 
 ### What v0.166.1 changed
 
@@ -442,7 +466,7 @@ Each package below says where its code comes from:
 
 ```
 mbt/
-|-- moon.mod                     # module riantr/snn_mbt, version 0.166.1
+|-- moon.mod                     # module riantr/snn_mbt, version 0.166.2
 |-- moon.pkg                     # root manifest: imports only, no source
 |-- README.md
 |
