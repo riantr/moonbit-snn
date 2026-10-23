@@ -858,7 +858,9 @@ def gate_security():
     if hits:
         return Result("security", "fail", "; ".join(hits[:4]), 0,
                       {"findings": hits})
-    return Result("security", "pass", "no secret patterns in tracked source", 0)
+    return Result("security", "pass",
+                  "no secret patterns in the source tree (every file under "
+                  "the repo except the skipped directories)", 0)
 
 
 def gate_oracle():

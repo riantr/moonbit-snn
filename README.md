@@ -195,6 +195,8 @@ numbers are recorded in [`mbt/gpu/moon.pkg`](./mbt/gpu/moon.pkg).
   points at one. None of it can live in the package root; see Quick start.
 - `mbt/fuzz_props/`, `mbt/gpu_selftest/` — property and fallback checks,
   driven by the mutation and fuzz gates.
+- `mbt/bench_lin/` — the release-mode timing of the hot kernel, which the
+  `perf` gate measures against a budget derived from the measurement.
 - `tools/split_tests/` — the rewriter that qualifies a root test for a
   sub-package, and its README, which records why the split exists and what
   the allow-list must not be derived from.

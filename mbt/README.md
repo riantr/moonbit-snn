@@ -523,6 +523,7 @@ mbt/
 |
 |-- fuzz_props/                  #   property checks the QA loop drives
 |-- gpu_selftest/                #   known-answer checks for the BLAS fallback
+|-- bench_lin/                   #   release-mode timing of the hot kernel
 |-- testdata/                    #   fixtures
 |-- examples/                    #   77 runnable examples, one per model
 `-- tests/wave1 ... wave9        #   247 test files, split by domain
