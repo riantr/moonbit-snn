@@ -23,7 +23,7 @@
 //
 // Regenerating the golden needs the MoonBit export first:
 //
-//   moon test -p moonbit-snn/mbt/tests/wave2 *> $env:TEMP\tnexp.log
+//   moon test -p riantr/snn_mbt/tests/wave2 *> $env:TEMP\tnexp.log
 //   python verify/gen_model_oracle.py $env:TEMP\tnexp.log
 //
 // The fixture is byte-for-byte the one `model_export_test.mbt` hands over, and

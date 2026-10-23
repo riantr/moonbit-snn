@@ -18,7 +18,7 @@
 // golden that quietly describes the wrong model is worse than no golden,
 // because it goes on passing.
 //
-//   moon test -p moonbit-snn/mbt/tests/wave2 *> $env:TEMP\tnexp.log
+//   moon test -p riantr/snn_mbt/tests/wave2 *> $env:TEMP\tnexp.log
 //   python verify/gen_model_oracle.py $env:TEMP\tnexp.log
 
 ///|

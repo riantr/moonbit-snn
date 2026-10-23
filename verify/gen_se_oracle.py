@@ -36,7 +36,7 @@ import torch.nn.functional as F
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gen_block_oracle import parse  # noqa: E402
+from gen_block_oracle import parse, blk_fixture  # noqa: E402
 
 N, C, T = 3, 8, 6
 BNK = 32                     # max(32, fuse_out // 4) with fuse_out = 8
@@ -80,18 +80,6 @@ class SE(torch.nn.Module):
         return np.array(out, dtype=np.float32)
 
 
-def fixture(seed):
-    x = np.zeros((N, C, T), dtype=np.float32)
-    for b in range(N):
-        for c in range(C):
-            base = 0.5 * c - 2.0
-            scale = 0.3 + 0.2 * c
-            for ti in range(T):
-                h = ((b * T + ti) * 37 + c * 101 + seed) % 71 - 35
-                x[b, c, ti] = base + scale * h / 35.0
-    return torch.tensor(x)
-
-
 def fmt(vals, per_line=6):
     def lit(v):
         s = repr(float(v))
@@ -115,8 +103,8 @@ def main():
     assert len(params) == 3573
     se_params = params[SE_OFFSET:SE_OFFSET + SE_LEN]
 
-    x = fixture(0).requires_grad_(True)
-    d_out = fixture(500)
+    x = blk_fixture(0).requires_grad_(True)
+    d_out = blk_fixture(500)
     se = SE(C, BNK, se_params)
     y = se(x)
     (y * d_out).sum().backward()

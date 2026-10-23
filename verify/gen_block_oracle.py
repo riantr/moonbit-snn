@@ -70,7 +70,20 @@ def parse(path):
         sys.exit("no TNORACLE marker found in the export under any encoding")
 
     out = {}
-    for key in ("params", "bx", "bd"):
+    # ONLY `params` is read out of the export. `bx` and `bd` used to be
+    # required here too, and that made this generator impossible to run: no
+    # file in this repository has ever emitted a `TNORACLE bx` line -- not
+    # the block test, not the export test, not any commit in the history
+    # (`git log --all -S 'TNORACLE bx'` returns nothing) -- so `parse` exited
+    # with "missing bx in the export" before a single number was computed.
+    # The golden this script writes was therefore not produced by the script
+    # that ships with it.
+    #
+    # The fixture does not need exporting. `blk_fixture` below is an
+    # integer-hash fixture -- no RNG, no shared state -- and it is the same
+    # fixture `block_oracle_test.mbt` builds, down to the last bit, because
+    # both sides compute it with integer arithmetic and one division.
+    for key in ("params",):
         i = txt.find("TNORACLE " + key + " ")
         if i < 0:
             sys.exit("missing %s in the export" % key)
@@ -81,6 +94,32 @@ def parse(path):
         except ValueError as e:
             sys.exit("could not parse %s (%s): %r" % (key, e, vals[:5]))
     return out
+
+
+def blk_fixture(seed):
+    """The block oracle's fixture, transcribed from `blk_fixture` in
+    `mbt/tests/wave2/block_oracle_test.mbt`.
+
+    Integer arithmetic plus one division, so the two sides agree exactly:
+    the same hash, the same per-channel base and scale, the same rounding.
+
+        base_v = 0.5F * ch - 2.0F
+        scale  = 0.3F + 0.2F * ch
+        h      = ((b * t + ti) * 37 + ch * 101 + seed) % 71 - 35
+        out    = base_v + scale * h / 35.0F
+
+    Seed 0 is the input, seed 500 is the cotangent the backward is taken
+    against -- the two the MoonBit test uses.
+    """
+    x = np.zeros((N, C, T), dtype=np.float32)
+    for b in range(N):
+        for c in range(C):
+            base = 0.5 * c - 2.0
+            scale = 0.3 + 0.2 * c
+            for ti in range(T):
+                h = ((b * T + ti) * 37 + c * 101 + seed) % 71 - 35
+                x[b, c, ti] = base + scale * h / 35.0
+    return torch.tensor(x)
 
 
 def prelu(x, slope):
@@ -267,8 +306,8 @@ def main():
         sys.exit("usage: gen_block_oracle.py <export.log>")
     data = parse(sys.argv[1])
     params = data["params"]
-    bx = torch.tensor(data["bx"], dtype=torch.float32).reshape(N, C, T)
-    bd = torch.tensor(data["bd"], dtype=torch.float32).reshape(N, C, T)
+    bx = blk_fixture(0)
+    bd = blk_fixture(500)
 
     print("nparam %d  (header %d + %d blocks x %d = %d)"
           % (len(params), HEADER, len(BLOCKS), BLOCK_PARAMS,

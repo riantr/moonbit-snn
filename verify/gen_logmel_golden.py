@@ -27,7 +27,7 @@
 # The four stages are exported and compared SEPARATELY, so a disagreement names
 # the stage that moved instead of arriving as one number at the end.
 #
-#   Run:  moon test -p moonbit-snn/mbt/tests/wave2 *> <export.log>
+#   Run:  moon test -p riantr/snn_mbt/tests/wave2 *> <export.log>
 #         python verify/gen_logmel_golden.py <export.log>
 
 import io
