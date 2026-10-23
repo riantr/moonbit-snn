@@ -259,15 +259,53 @@ def gate_integration():
     )
 
 
-def gate_coverage():
-    """moon coverage analyze, with a floor rather than a report.
+COVERAGE_BASELINE = os.path.join(ROOT, "verify", "coverage_baseline.json")
 
-    The gate fails below the floor rather than printing a number, because a
-    coverage number nobody compares against is documentation, not a gate. The
-    floor is deliberately low: this is a fast signal that a change did not stop
-    exercising a whole package, not a target to climb towards.
+
+def load_coverage_baseline():
+    """The recorded coverage baseline, or None if it cannot be read.
+
+    The file is the gate's memory. A gate that cannot find its own baseline
+    reports the problem rather than guessing one, because a guessed baseline
+    is the same thing as no baseline except that it looks like a measurement.
     """
-    floor = float(os.environ.get("QA_COVERAGE_FLOOR", "40"))
+    try:
+        with open(COVERAGE_BASELINE, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(doc, dict):
+        return None
+    if not isinstance(doc.get("uncovered_lines"), int):
+        return None
+    return doc
+
+
+def gate_coverage():
+    """Uncovered executable lines, against a measured baseline.
+
+    `moon coverage analyze` used to print a percentage and this gate compared
+    it to a floor. The current toolchain prints no percentage at all - only
+
+        Total: 4062 uncovered line(s) in 289 file(s)
+
+    - so there is nothing to compare against a floor, and a gate that parses
+    a percentage it can no longer find is a gate that silently reports
+    "unavailable" forever. The count is compared instead, against the
+    baseline recorded in verify/coverage_baseline.json.
+
+    The baseline is a measurement, not a fitted tolerance: it is the number
+    the toolchain printed on the committed tree, recorded next to the commit
+    it was measured on and the command that produced it. The default
+    tolerance is zero lines, because the count repeats exactly across
+    instrumented runs of the same tree - so a rise is a real change in what
+    the suite exercises rather than noise. QA_COVERAGE_TOLERANCE widens it
+    for a change that deliberately lands untested code.
+
+    The count is the toolchain's own count of uncovered EXECUTABLE lines. It
+    is not the number of source lines in the raw coverage dumps, which is a
+    different and larger number, and it must not be recomputed from them.
+    """
     rc, out, dt = run(
         ["moon", "coverage", "analyze"], cwd=MBT, timeout=2400,
         env={"MOON_COVE_REPORT_ENABLED": "1"},
@@ -279,19 +317,58 @@ def gate_coverage():
             "built with the coverage run; see the detail in `moon coverage --help`",
             dt,
         )
-    m = re.search(r"(?:total|overall|line)[^\d]*(\d+(?:\.\d+)?)\s*%", out, re.I)
+    m = re.search(
+        r"Total:\s*([\d,]+)\s+uncovered line\(s\)\s+in\s+([\d,]+)\s+file\(s\)", out
+    )
     if not m:
-        return Result("coverage", "unavailable",
-                      "coverage ran but produced no percentage to compare", dt)
-    pct = float(m.group(1))
-    if pct < floor:
+        return Result(
+            "coverage", "unavailable",
+            "moon coverage analyze printed no uncovered-line count to compare; the "
+            "toolchain's output format changed and this gate has to follow it",
+            dt,
+        )
+    uncovered = int(m.group(1).replace(",", ""))
+    files = int(m.group(2).replace(",", ""))
+    base = load_coverage_baseline()
+    if base is None:
         return Result(
             "coverage", "fail",
-            f"{pct:.1f}% below the {floor:.0f}% floor", dt,
-            {"percent": pct, "floor": floor},
+            "verify/coverage_baseline.json is missing or malformed, so there is "
+            "nothing to compare the count against. Restore it rather than "
+            "letting this gate go quiet.",
+            dt,
         )
-    return Result("coverage", "pass", f"{pct:.1f}% line coverage (floor {floor:.0f}%)",
-                  dt, {"percent": pct, "floor": floor})
+    try:
+        tol = int(os.environ.get("QA_COVERAGE_TOLERANCE", "0"))
+    except ValueError:
+        tol = 0
+    budget = base["uncovered_lines"] + tol
+    extra = {
+        "uncovered_lines": uncovered,
+        "files": files,
+        "baseline_lines": base["uncovered_lines"],
+        "baseline_files": base.get("files"),
+        "tolerance": tol,
+    }
+    if uncovered > budget:
+        return Result(
+            "coverage", "fail",
+            "%d uncovered line(s) in %d file(s), %d above the baseline of %d "
+            "(tolerance %d). Add the missing tests, or if the new code is "
+            "deliberately untested, update verify/coverage_baseline.json with "
+            "the reason." % (
+                uncovered, files, uncovered - base["uncovered_lines"],
+                base["uncovered_lines"], tol,
+            ),
+            dt, extra,
+        )
+    return Result(
+        "coverage", "pass",
+        "%d uncovered line(s) in %d file(s) (baseline %d, tolerance %d)" % (
+            uncovered, files, base["uncovered_lines"], tol,
+        ),
+        dt, extra,
+    )
 
 
 def gate_perf():

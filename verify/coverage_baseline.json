@@ -1,0 +1,8 @@
+{
+  "uncovered_lines": 4062,
+  "files": 289,
+  "measured_on": "702d4ae",
+  "measured_at": "2026-10-23",
+  "command": "moon coverage analyze (MOON_COVE_REPORT_ENABLED=1)",
+  "note": "The toolchain's count of uncovered EXECUTABLE lines, which is not the number of source lines in the raw coverage dumps - that is a different and larger number, and it must not be recomputed from them. Two independent measurements, on 702d4ae and on 702d4ae with the moonbit_image 0.3.9 repin, both printed 4062 in 289 files."
+}
