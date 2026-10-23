@@ -921,6 +921,95 @@ def gate_provenance():
                   % (m.group(1), m.group(2)), dt)
 
 
+def gate_release():
+    """Is the release workflow consistent with itself, in the two ways it has broken?
+
+    Both of these cost a release, and neither was visible locally.
+
+    1. A cold runner's registry index is empty, so `moon check` failed with
+       "Failed to resolve registry dependency" before a single file was
+       checked. The fix was `moon update` -- and it has to come BEFORE the
+       first `moon check`, not merely exist somewhere in the file.
+
+    2. The job declares `working-directory: mbt`, so every step already runs
+       in the package root. The guard step then ran `cd mbt`, asked for
+       `mbt/mbt`, and died on the path. The runner is `bash -e`, so that one
+       failure took the thirteen steps behind it -- including the publish --
+       with it, and the release reported what looked like a content failure
+       instead of a path error.
+
+    The check is narrow on purpose: it knows the two contradictions that have
+    bitten, and it names the offending line. "3 problems" is not something
+    anybody can act on.
+
+    Comments are stripped before anything is parsed. They are where the
+    history of these failures is written down, and a gate that reads its own
+    documentation as its subject finds the documentation.
+    """
+    path = os.path.join(ROOT, ".github", "workflows", "publish.yml")
+    if not os.path.isfile(path):
+        return Result("release", "fail", "%s not found" % path, 0)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            raw = fh.read()
+    except OSError as exc:
+        return Result("release", "fail", "unreadable: %s" % exc, 0)
+
+    lines = []
+    for n, line in enumerate(raw.splitlines(), 1):
+        if line.strip().startswith("#"):
+            continue
+        lines.append((n, line))
+    text = "\n".join(line for _, line in lines)
+
+    problems = []
+
+    # (1) the registry index must be resolved before anything is checked
+    i_update = text.find("moon update")
+    i_check = text.find("moon check")
+    if i_update < 0:
+        problems.append(
+            "no `moon update`: a cold runner cannot resolve the registry "
+            "dependencies, so `moon check` fails before it checks anything"
+        )
+    elif i_check >= 0 and i_update > i_check:
+        problems.append(
+            "`moon update` is after the first `moon check`; the index has to "
+            "be resolved first"
+        )
+
+    # (2) no step may cd into a directory the workflow already put it in
+    workdirs = set()
+    for _n, line in lines:
+        m = re.match(r"\s*working-directory:\s*(\S+)\s*$", line)
+        if m:
+            workdirs.add(m.group(1).strip("/"))
+    for n, line in lines:
+        m = re.match(r"\s*cd\s+(\S+)", line)
+        if not m:
+            continue
+        target = m.group(1).strip("/")
+        for w in sorted(workdirs):
+            if target == w or target.startswith(w + "/"):
+                problems.append(
+                    "line %d: `cd %s` under `working-directory: %s` asks for "
+                    "%s/%s, which does not exist"
+                    % (n, m.group(1), w, w, target)
+                )
+
+    if problems:
+        return Result("release", "fail", "; ".join(problems), 0,
+                      {"problems": problems})
+    if not workdirs:
+        return Result("release", "pass",
+                      "no `working-directory:` declared, so no `cd` can "
+                      "contradict one", 0)
+    return Result("release", "pass",
+                  "moon update precedes moon check; no `cd` contradicts "
+                  "working-directory %s" % ", ".join(sorted(workdirs)), 0,
+                  {"working_directory": sorted(workdirs)})
+
+
 GATES = [
     ("fmt", gate_fmt, False),
     ("lint", gate_lint, False),
@@ -929,6 +1018,7 @@ GATES = [
     ("security", gate_security, False),
     ("oracle", gate_oracle, False),
     ("provenance", gate_provenance, False),
+    ("release", gate_release, False),
     ("unit", gate_unit, False),
     ("docs", gate_docs, False),
     ("integration", gate_integration, False),

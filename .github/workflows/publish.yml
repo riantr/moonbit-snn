@@ -97,13 +97,25 @@ jobs:
       # new `*_test.mbt` there is a genuine regression and fails the build.
       - name: Guard against unrunnable root-package tests
         run: |
-          cd mbt
-          leftover=$(ls *_test.mbt 2>/dev/null | wc -l)
+          # NO `cd` HERE. Every step in this job already runs with
+          # `working-directory: mbt` (the workflow default), so the working
+          # directory IS the package root. This step used to `cd mbt` first,
+          # which asked for `mbt/mbt` -- a directory that does not exist --
+          # and `bash -e` turned that into a failed step. Everything after it
+          # was then skipped, so the release died at the guard and never
+          # reached the publish. A guard that dies on its own path error is
+          # worse than no guard: it looks like a content failure and hides
+          # the thirteen steps behind it.
+          #
+          # `find`, not a glob: `ls *_test.mbt` with no match hands the
+          # literal pattern to ls and leans on `2>/dev/null` plus the exit
+          # status of `wc` to swallow it. `find` just reports the empty set.
+          leftover=$(find . -maxdepth 1 -type f -name '*_test.mbt' | wc -l)
           if [ "$leftover" -ne 0 ]; then
             echo "::error::${leftover} 个 *_test.mbt 留在根包，它们不会被 CI 执行"
             echo "根包 moon test 撞 Win32 CreateProcessW 32K 上限，无法链接。"
             echo "请移入 tests/waveN/ 子包 —— 工具与说明见 tools/split_tests/README.md"
-            ls *_test.mbt
+            find . -maxdepth 1 -type f -name '*_test.mbt'
             exit 1
           fi
           echo "根包无残留测试文件。"
@@ -246,6 +258,12 @@ jobs:
           set -euo pipefail
           echo "published versions of riantr/snn_mbt:"
           moon view riantr/snn_mbt --versions
+          # Refresh the index first, in case `moon view` reads the local copy
+          # rather than the server: a stale index would report the version as
+          # absent AFTER a successful publish, and the release would be called
+          # a failure for having worked. Tolerated, not required -- a failing
+          # `moon update` must not fail the release on its own.
+          moon update || echo "::warning::moon update failed; relying on the live listing"
           if moon view riantr/snn_mbt --versions | grep -qx "$VERSION"; then
             echo "::notice::$VERSION is live on mooncakes.io"
           else
