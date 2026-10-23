@@ -28,6 +28,8 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MBT = os.path.join(ROOT, "mbt")
@@ -42,7 +44,7 @@ KNOWN_PACKAGES = {
 }
 
 # Gates that take long enough that a quick pass should skip them.
-SLOW = {"coverage", "stress", "mutation", "golden"}
+SLOW = {"coverage", "stress", "mutation", "golden", "bench", "perf"}
 
 
 class Result:
@@ -1061,10 +1063,279 @@ def gate_golden():
                   "%d goldens reproduce from their generators" % passed, dt)
 
 
+PERF_BASELINE = os.path.join(ROOT, "verify", "perf_baseline.json")
+BENCH_PKG = os.path.join(MBT, "bench_lin")
+
+
+def _bench_exe():
+    """The release-built benchmark executable, or None.
+
+    A package inside a module is built into the MODULE's `_build`, not its
+    own: `mbt/bench_lin` has no `_build` directory of its own and the binary
+    appears as `_build/native/release/build/bench_lin/bench_lin.exe`. The
+    harness in verify/run_release_bench.ps1 used to look in the package's
+    directory and so never found it.
+    """
+    leaf = os.path.basename(BENCH_PKG)
+    rel = os.path.join("native", "release", "build", leaf)
+    for name in (leaf + ".exe", leaf):
+        cand = os.path.join(MBT, "_build", rel, name)
+        if os.path.isfile(cand):
+            return cand
+    return None
+
+
+def _bench_measure(runs=3):
+    """Run the release benchmark `runs` times; return the per-call ms list."""
+    rc, out, dt = run(["moon", "build", "--release", "--target", "native",
+                       "./bench_lin"], cwd=MBT, timeout=1800)
+    if rc != 0:
+        return None, "the release build failed: %s" % out.strip()[-200:]
+    exe = _bench_exe()
+    if exe is None:
+        return None, "the release build produced no executable"
+    per_call = []
+    for _ in range(runs):
+        rc, out, _dt = run([exe], cwd=BENCH_PKG, timeout=600)
+        m = re.search(r"bench_delta:\s*(\d+)", out)
+        r = re.search(r"bench_reps:\s*(\d+)", out)
+        if rc != 0 or not m or not r:
+            return None, "the benchmark produced no timing (exit %s)" % rc
+        reps = int(r.group(1))
+        if reps <= 0:
+            return None, "the benchmark reported %d reps" % reps
+        per_call.append(int(m.group(1)) / float(reps))
+    return per_call, None
+
+
+def gate_perf():
+    """The hot kernel, measured against a budget derived from a measurement.
+
+    This gate used to grep a COMMENT out of `gpu/moon.pkg` for the string
+    "98.4 ms" and report PASS. It measured nothing: the number was prose, and
+    the budget it printed was never compared with anything. A gate that
+    cannot produce a verdict is not a gate.
+
+    It measures now. `mbt/bench_lin` times `linear_forward` at the LeNet5 fc1
+    shape -- batch 64, 4000 -> 500, which is 256 MFLOP per call -- in a
+    RELEASE build, and the median of three runs is compared with the budget
+    in verify/perf_baseline.json.
+
+    The budget is DERIVED, not fitted: it is twice the measured median, so a
+    2x regression fails while the observed run-to-run spread (1.25x over nine
+    runs) does not. `QA_PERF_BUDGET_MS` overrides it.
+
+    MACHINE-SPECIFIC, and the detail line says so. The baseline was measured
+    on one CPU; a slower one reads high, so the measured value is reported
+    rather than hidden behind a pass.
+    """
+    if not os.path.isfile(os.path.join(BENCH_PKG, "main.mbt")):
+        return Result("perf", "unavailable",
+                      "mbt/bench_lin/main.mbt not found, so there is no "
+                      "benchmark to measure")
+    if not os.path.isfile(PERF_BASELINE):
+        return Result("perf", "fail",
+                      "verify/perf_baseline.json is missing, so there is no "
+                      "budget to measure against.")
+    try:
+        with open(PERF_BASELINE, encoding="utf-8") as fh:
+            base = json.load(fh)
+    except (OSError, ValueError) as exc:
+        return Result("perf", "fail",
+                      "verify/perf_baseline.json is unreadable: %s" % exc, 0)
+    for key in ("per_call_ms", "budget_ms"):
+        if key not in base:
+            return Result("perf", "fail",
+                          "verify/perf_baseline.json has no '%s'" % key, 0)
+
+    budget = float(os.environ.get("QA_PERF_BUDGET_MS", base["budget_ms"]))
+    started = time.time()
+    per_call, err = _bench_measure(runs=3)
+    elapsed = time.time() - started
+    if per_call is None:
+        return Result("perf", "fail", err or "the benchmark did not run", elapsed)
+
+    ordered = sorted(per_call)
+    median = ordered[len(ordered) // 2]
+    used = median / budget if budget > 0 else float("inf")
+    detail = ("median %.1f ms/call (min %.1f, max %.1f) against a budget of "
+              "%.0f ms -- %.0f%% of it used; baseline %.1f ms on %s"
+              % (median, ordered[0], ordered[-1], budget, 100.0 * used,
+                 base.get("per_call_ms", float("nan")),
+                 base.get("cpu", "an unnamed machine")))
+    if median > budget:
+        return Result("perf", "fail",
+                      "the hot kernel is slower than the budget. " + detail,
+                      elapsed, {"median_ms": median, "budget_ms": budget,
+                                "runs": per_call})
+    return Result("perf", "pass", detail, elapsed,
+                  {"median_ms": median, "budget_ms": budget, "runs": per_call})
+
+
+def gate_bench():
+    """The documented measurement entry point, run end to end.
+
+    `verify/run_release_bench.ps1` is what a human is told to run, and it
+    could not run at all. It looked for the executable under the PACKAGE's
+    `_build`, while a package inside a module is built into the MODULE's;
+    and with PowerShell's `$ErrorActionPreference = 'Stop'`, a native
+    command that merely wrote to stderr -- as moon does on every successful
+    build -- became a terminating error, so the script died on a build that
+    had worked.
+
+    This gate runs it and checks that it produced a timing. It is not the
+    same check as `perf`: `perf` compares a measurement against a budget,
+    and this one checks that the harness works at all.
+    """
+    script = os.path.join(ROOT, "verify", "run_release_bench.ps1")
+    if not os.path.isfile(script):
+        return Result("bench", "unavailable",
+                      "verify/run_release_bench.ps1 not found")
+    shell = shutil.which("pwsh") or shutil.which("powershell")
+    if not shell:
+        return Result("bench", "unavailable",
+                      "neither pwsh nor powershell is on PATH, so the "
+                      "documented harness cannot be run here")
+    rc, out, dt = run([shell, "-NoProfile", "-ExecutionPolicy", "Bypass",
+                       "-File", script], cwd=ROOT, timeout=1800)
+    times = re.findall(r"run\s+\d+:\s+([\d.]+)\s+ms", out)
+    if rc != 0 or not times:
+        tail = " | ".join([ln.strip() for ln in out.splitlines() if ln.strip()][-3:])
+        return Result("bench", "fail",
+                      "the harness produced no timing (exit %s): %s"
+                      % (rc, tail[:300]), dt)
+    vals = [float(v) for v in times]
+    return Result("bench", "pass",
+                  "the release harness ran and reported %s ms (wall clock, "
+                  "including process start)" % ", ".join("%.0f" % v for v in vals),
+                  dt, {"wall_ms": vals})
+
+
+PIN_BASELINE = os.path.join(ROOT, "verify", "pin_baseline.json")
+
+
+def _moon_mod_pins():
+    """The module pins in mbt/moon.mod: {module: version}.
+
+    Only the import block is read. The rest of the file carries a
+    description and a keyword list, and a scan of the whole file would pick
+    up anything in them that happens to look like a pin.
+    """
+    path = os.path.join(MBT, "moon.mod")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as exc:
+        return None, "mbt/moon.mod is unreadable: %s" % exc
+    m = re.search(r"import\s*\{(.*?)\}", text, re.S)
+    if not m:
+        return None, "mbt/moon.mod has no import block"
+    pins = {}
+    for pin in re.finditer(r'"([^"\s@]+)@([^"\s]+)"', m.group(1)):
+        pins[pin.group(1)] = pin.group(2)
+    if not pins:
+        return None, "mbt/moon.mod's import block pins nothing"
+    return pins, None
+
+
+def _registry_latest(module):
+    """The registry's latest version for a module, or None if unreachable."""
+    url = "https://mooncakes.io/api/v0/modules/" + module
+    try:
+        with urllib.request.urlopen(url, timeout=30) as fh:
+            doc = json.loads(fh.read().decode("utf-8"))
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+    return doc.get("latest_version")
+
+
+def gate_pin():
+    """Are the pinned dependencies the current ones?
+
+    The release policy is "upgrade the dependencies to their latest version,
+    THEN run the gates against them", and nothing enforced it. The reason it
+    matters is the failure this repository has already paid for twice: a
+    published dependency that cannot compile against the current core. The
+    v0.166.1 release was cut against `riantr/moonbit_image` 0.3.9 while 0.3.9
+    happened to be the latest -- luck, not a check.
+
+    The registry is the authority. mooncakes.io's module API reports
+    `latest_version` for every module, and every pin in `mbt/moon.mod` has to
+    equal it.
+
+    A dependency deliberately held back is recorded in
+    verify/pin_baseline.json with a reason, and this gate says so in its
+    detail instead of failing silently. An exception whose recorded version
+    no longer matches what moon.mod pins is itself a finding -- a stale
+    exception is an excuse nobody is reading.
+    """
+    pins, err = _moon_mod_pins()
+    if pins is None:
+        return Result("pin", "fail", err, 0)
+
+    exceptions = {}
+    if os.path.isfile(PIN_BASELINE):
+        try:
+            with open(PIN_BASELINE, encoding="utf-8") as fh:
+                doc = json.load(fh)
+            for ex in doc.get("exceptions") or []:
+                if ex.get("module") and ex.get("version"):
+                    exceptions[ex["module"]] = ex
+        except (OSError, ValueError) as exc:
+            return Result("pin", "fail",
+                          "verify/pin_baseline.json is unreadable: %s" % exc, 0)
+    else:
+        return Result("pin", "fail",
+                      "verify/pin_baseline.json is missing, so a dependency "
+                      "held back on purpose could not be recorded.", 0)
+
+    stale = [m for m, ex in exceptions.items()
+             if pins.get(m) != ex.get("version")]
+    if stale:
+        return Result("pin", "fail",
+                      "these exceptions no longer match what mbt/moon.mod "
+                      "pins: %s" % ", ".join(stale), 0)
+
+    behind = []
+    unreachable = []
+    checked = 0
+    for module, pinned in sorted(pins.items()):
+        if module in exceptions:
+            continue
+        latest = _registry_latest(module)
+        if latest is None:
+            unreachable.append(module)
+            continue
+        checked += 1
+        if latest != pinned:
+            behind.append("%s is pinned at %s and the registry has %s"
+                          % (module, pinned, latest))
+
+    if unreachable and checked == 0:
+        return Result("pin", "unavailable",
+                      "the registry could not be reached for %s, so no pin "
+                      "was checked" % ", ".join(unreachable), 0)
+
+    held = ", ".join("%s at %s (%s)" % (m, ex["version"],
+                                       ex.get("reason", "no reason recorded"))
+                     for m, ex in sorted(exceptions.items()))
+    detail = "%d pin(s) checked against the registry" % checked
+    if held:
+        detail += "; held back on purpose: " + held
+    if unreachable:
+        detail += "; the registry could not be reached for %s" % ", ".join(unreachable)
+
+    if behind:
+        return Result("pin", "fail",
+                      "; ".join(behind) + ". " + detail, 0)
+    return Result("pin", "pass", detail, 0)
+
+
 GATES = [
     ("fmt", gate_fmt, False),
     ("lint", gate_lint, False),
     ("deps", gate_deps, False),
+    ("pin", gate_pin, False),
     ("dup", gate_dup, False),
     ("security", gate_security, False),
     ("oracle", gate_oracle, False),
@@ -1075,8 +1346,8 @@ GATES = [
     ("docs", gate_docs, False),
     ("integration", gate_integration, False),
     ("fuzz", gate_fuzz, False),
-    ("bench", gate_bench, False),
-    ("perf", gate_perf, False),
+    ("bench", gate_bench, True),
+    ("perf", gate_perf, True),
     ("coverage", gate_coverage, True),
     ("stress", gate_stress, True),
     ("mutation", gate_mutation, True),

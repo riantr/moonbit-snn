@@ -34,6 +34,78 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $pkgPath  = Join-Path $repoRoot $Package
 
+# Scratch for the captured streams. `_scratch/` is gitignored, and the files
+# are overwritten rather than deleted, so nothing here has to remove
+# anything.
+$scratch = Join-Path $repoRoot '_scratch\bench'
+New-Item -ItemType Directory -Force -Path $scratch | Out-Null
+
+function Invoke-Native {
+  # Run a native command with its streams captured to files, and print them.
+  #
+  # Not `2>&1`: in Windows PowerShell 5.1 that converts stderr into error
+  # records, and with `$ErrorActionPreference = 'Stop'` the first one is
+  # terminating -- so a build that merely SAID something on stderr, as moon
+  # does on every successful build ("Finished. moon: no work to do"), killed
+  # the script. Redirecting to files sidesteps the error-record machinery
+  # entirely, and the verdict comes from the exit code, which is the only
+  # thing that knows whether the command worked.
+  param([string] $File, [string[]] $Arguments, [string] $WorkingDirectory)
+
+  $outFile = Join-Path $scratch 'stdout.txt'
+  $errFile = Join-Path $scratch 'stderr.txt'
+  $start = @{
+    FilePath             = $File
+    WorkingDirectory     = $WorkingDirectory
+    NoNewWindow          = $true
+    Wait                 = $true
+    PassThru             = $true
+    RedirectStandardOutput = $outFile
+    RedirectStandardError  = $errFile
+  }
+  # `Start-Process` rejects an empty `-ArgumentList`, and the benchmark
+  # executable takes none.
+  if ($Arguments -and $Arguments.Count -gt 0) { $start['ArgumentList'] = $Arguments }
+  $p = Start-Process @start
+  foreach ($f in @($outFile, $errFile)) {
+    if (Test-Path $f) { Get-Content $f | Out-Host }
+  }
+  return $p.ExitCode
+}
+
+function Find-BenchExe {
+  # The executable lands in the MODULE's _build, not the package's. A package
+  # inside a module is built as part of that module, so `mbt/bench_lin` has no
+  # `_build` of its own and the binary shows up as
+  # `mbt/_build/native/release/build/bench_lin/bench_lin.exe`. Searching only
+  # the package's own `_build` finds nothing, and the harness then reports
+  # "build reported success but produced no .exe" for a build that worked.
+  #
+  # The name is matched rather than the extension, because the binary has no
+  # extension off Windows.
+  param([string] $PkgPath, [string] $RepoRoot)
+
+  $leaf = Split-Path -Leaf $PkgPath
+  $roots = @((Join-Path $PkgPath '_build'))
+
+  $moduleRoot = $PkgPath
+  while ($moduleRoot -and -not (Test-Path (Join-Path $moduleRoot 'moon.mod'))) {
+    $parent = Split-Path -Parent $moduleRoot
+    if (-not $parent -or $parent -eq $moduleRoot) { $moduleRoot = $null }
+    else { $moduleRoot = $parent }
+  }
+  if ($moduleRoot) { $roots += (Join-Path $moduleRoot '_build') }
+
+  $found = @()
+  foreach ($root in $roots) {
+    if (Test-Path $root) {
+      $found += Get-ChildItem -Path $root -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -eq "$leaf.exe" -or $_.Name -eq $leaf }
+    }
+  }
+  return $found | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+}
+
 if (-not (Test-Path $pkgPath)) {
   Write-Error "no such package: $Package (looked in $pkgPath)"
   exit 2
@@ -42,22 +114,21 @@ if (-not (Test-Path $pkgPath)) {
 Push-Location $pkgPath
 try {
   Write-Host "building release in $pkgPath"
-  & moon build --release --target native .
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  $buildExit = Invoke-Native -File 'moon' `
+      -Arguments @('build', '--release', '--target', 'native', '.') `
+      -WorkingDirectory $pkgPath
+  if ($buildExit -ne 0) { exit $buildExit }
 
-  $exe = Get-ChildItem -Path _build -Recurse -Filter '*.exe' -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
+  $exe = Find-BenchExe -PkgPath $pkgPath -RepoRoot $repoRoot
   if (-not $exe) {
-    Write-Error "build reported success but produced no .exe under _build"
+    Write-Error "build reported success but produced no executable for '$leaf' under the module's _build"
     exit 2
   }
 
   Write-Host "running $($exe.Name) $($Repeats)x"
   for ($i = 1; $i -le $Repeats; $i++) {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    & $exe.FullName
-    $code = $LASTEXITCODE
+    $code = Invoke-Native -File $exe.FullName -Arguments @() -WorkingDirectory $pkgPath
     $sw.Stop()
     # Milliseconds, one decimal, so two runs are visibly distinguishable.
     $ms = [Math]::Round($sw.Elapsed.TotalMilliseconds, 1)
@@ -68,3 +139,7 @@ try {
 finally {
   Pop-Location
 }
+
+# Explicit, so that a caller reading $LASTEXITCODE gets a verdict rather
+# than whatever the last native command happened to leave behind.
+exit 0

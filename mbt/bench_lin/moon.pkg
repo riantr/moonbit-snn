@@ -1,0 +1,17 @@
+// moon.pkg for the linear-kernel benchmark.
+//
+// A MAIN package, not a test package: it is run, not asserted. `is-main`
+// makes `moon run ./bench_lin` the entry point, and the import of `nn` is
+// what puts the kernel under measurement in reach.
+//
+// `moonbitlang/core/env` is imported for `env.now()`. The core ROOT is
+// always available, but `env` is a sub-package and has to be named.
+
+import {
+  "moonbitlang/core/env",
+  "riantr/snn_mbt/nn",
+}
+
+options(
+  "is-main": true,
+)

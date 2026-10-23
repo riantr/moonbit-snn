@@ -1,0 +1,13 @@
+{
+  "per_call_ms": 73.4,
+  "worst_ms": 82.5,
+  "best_ms": 65.8,
+  "budget_ms": 150.0,
+  "runs_measured": 9,
+  "reps": 20,
+  "measured_on": "2026-10-24",
+  "cpu": "Intel(R) Core(TM) Ultra 9 285H",
+  "command": "moon run --release ./bench_lin",
+  "workload": "linear_forward, batch 64, 4000 -> 500: 128M multiply-accumulates, 256 MFLOP per call",
+  "note": "The measured cost of one linear_forward call in a RELEASE build, net of the warm-up, at the LeNet5 fc1 shape. The unit of core's env.now() is milliseconds, established by cross-checking the package's internal delta against an external wall clock: the package reported 1230 ms for 20 calls while the process took 2050 ms, and the difference is the array construction, the process start and the untimed warm-up call. Nine runs spanned 65.8 to 82.5 ms, a spread of 1.25x, so the median is used and the budget is set at twice it: a 2x regression fails, and the observed noise cannot. QA_PERF_BUDGET_MS overrides the budget. This REPLACES the 98.4 ms recorded in gpu/moon.pkg, which was a comment rather than a measurement and which the same workload now beats by 1.3x -- the compiler moved since it was written. MACHINE-SPECIFIC: the budget was measured on the CPU named above, and a slower machine reads high. The gate reports the measured value so the reader can judge that rather than being told."
+}

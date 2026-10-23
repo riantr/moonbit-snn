@@ -62,6 +62,14 @@ import {
 //   Array -> FixedArray, weight (8.0 MB)    4.508 ms
 //   PCIe 4.0 x16 round trip, 1.0 MB         0.041 ms
 //
+// THE FIRST NUMBER IS NOW MEASURED, not remembered. The `perf` gate runs
+// `mbt/bench_lin`, which times exactly this workload in a release build, and
+// compares the median of three runs with a budget derived from the
+// measurement (verify/perf_baseline.json). The 98.4 ms above was a comment,
+// and the same workload now measures about 73 ms on the machine that
+// baseline was taken on -- the compiler moved since it was written -- so the
+// figure is kept here for the history and the gate owns the current one.
+//
 // The conversion costs ten times the transfer for input and a hundred and ten
 // times for weight, because FixedArray::from_array is a deep copy -- confirmed
 // by mutating the source afterwards and seeing the FixedArray keep the old
@@ -76,8 +84,8 @@ import {
 //
 // Changing LinearParam is invasive. Every layer that constructs one, every
 // optimiser that writes into param.weight, and every test that inspects it would
-// need to move with it. That is a real cost against a benefit (98.4 ms down to
-// something well under a millisecond) that has not been demonstrated on
+// need to move with it. That is a real cost against a benefit (tens of ms down
+// to something well under a millisecond) that has not been demonstrated on
 // hardware this repository cannot see. So the seam stops here, deliberately,
 // and the numbers above are recorded so the next person does not have to
 // rediscover them.

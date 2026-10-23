@@ -1,0 +1,4 @@
+{
+  "exceptions": [],
+  "note": "Dependencies deliberately held BELOW the version the registry calls latest. Each entry names the module, the version this repository pins, and why it is held back. The `pin` gate checks every other pin in mbt/moon.mod against mooncakes.io's latest_version, and it also checks these entries against what mbt/moon.mod actually pins -- so an exception left behind after the pin moved is a finding, not an excuse nobody is reading. An entry here is a decision, not a workaround: if the reason stops being true, delete the entry and let the gate say so."
+}
