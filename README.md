@@ -215,3 +215,23 @@ that factor. `verify/run_release_bench.ps1` exists for this, and its header
 records why a baseline subtraction is required rather than merely tidy: on
 Windows the `time` builtin reports ~0.02 s of user CPU for a run whose wall
 clock is 2 s, so only elapsed-minus-baseline is usable.
+
+## A note on `git status` after a build
+
+A build regenerates the 80 tracked `pkg.generated.mbti` interface snapshots
+and rewrites them with new timestamps, so `git status` reports all 80 as
+modified right after a build — while `git diff` shows **no** content change
+whatsoever, and `git add -A` stages nothing.
+
+It is a stale index cache, not a change. The index still holds the size and
+timestamp of the checkout, and the rewritten files no longer match that
+size, so git re-checks them and finds them identical; the stat entry it
+cached is never refreshed, and the files stay listed as modified until
+something refreshes the index. `git add -A` does exactly that, and the tree
+is clean again.
+
+Nothing can be committed out of that state — the content is identical, so
+the staged diff is empty and `git commit -a` reports that there is nothing
+to commit — but it looks alarming enough to be worth saying here, because
+the reflex is to "fix" it with a commit, and the only way to get one is to
+change the line endings by hand.
