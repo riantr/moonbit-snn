@@ -1,8 +1,13 @@
 {
   "gate_count": 20,
+  "ci_gate_count": 7,
   "claims": [
     {"file": "README.md", "pattern": "{g} gates: formatting"},
     {"file": "mbt/README.md", "pattern": "runs {g} quality gates over the tree"}
   ],
-  "note": "The number of gates the QA loop runs, and the number the documentation quotes. It is pinned here because a prose count is a snapshot with no expiry date, and this one had already drifted twice: README.md said 'Fifteen gates' and mbt/README.md said 'thirteen quality gates' while the registry held nineteen, and nothing noticed. The chain is registry -> this file -> the READMEs: the `docs` gate checks that the registry still holds the pinned number AND that the READMEs still quote it. Adding or removing a gate means updating this file and both READMEs in the same commit."
+  "ci_claims": [
+    {"file": "README.md", "pattern": "runs the {c} gates that need\\s+no toolchain"},
+    {"file": "mbt/README.md", "pattern": "{c} of them -- the\\s+ones that need no MoonBit toolchain"}
+  ],
+  "note": "The number of gates the QA loop runs, the number of them that can run on a CI runner, and the numbers the documentation quotes. They are pinned here because a prose count is a snapshot with no expiry date, and these have already drifted: README.md said 'Fifteen gates' and mbt/README.md said 'thirteen quality gates' while the registry held nineteen, and nothing noticed. The chain is registry -> this file -> the READMEs, and the `docs` gate checks both links: the registry still holds the pinned number, and the READMEs still quote it. The CI count is pinned for the same reason and because a CI list that shrinks without anyone noticing is a CI job that quietly checks less. Adding or removing a gate means updating this file and both READMEs in the same commit."
 }

@@ -60,13 +60,19 @@ The release is tag-driven: `.github/workflows/publish.yml` publishes when a
 `v*` tag appears. It runs `moon check` and the nine test waves, and it is the
 only thing that publishes.
 
-`.github/workflows/ci.yml` runs on every push and runs the eight gates that
-need no toolchain — `deps`, `pin`, `dup`, `shadow`, `security`, `provenance`,
-`release`, `docs` — plus `moon check`. These are the checks the release
-workflow structurally cannot make about itself: it is the thing being checked,
-from the inside, where it cannot see its own path. Three releases here died
-at three different steps of that workflow, and every one of them was the
+`.github/workflows/ci.yml` runs on every push and runs the 7 gates that need
+no toolchain — `deps`, `pin`, `dup`, `shadow`, `security`, `release`, `docs`
+— plus `moon check`. These are the checks the release workflow structurally
+cannot make about itself: it is the thing being checked, from the inside,
+where it cannot see its own path. Three releases here died at three
+different steps of that workflow, and every one of them was the
 workflow's fault rather than the code's.
+
+The `provenance` gate is deliberately not among them. It audits the oracle
+against a checkout of the reference under `_build/`, which is gitignored, so
+on a runner there is nothing to audit against; it reports `unavailable`
+rather than `pass`. That is the rule working: the first version of the CI
+list did include it, and the first CI run failed on exactly this.
 
 The gates that need PyTorch or a release build stay local, on purpose: the
 performance budget is derived from a median measured on one machine, and a

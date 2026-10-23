@@ -301,8 +301,9 @@ def gate_docs():
             {"missing": missing, "expected": n},
         )
 
-    # The gate count: the registry is the authority, the baseline says what
-    # the registry SHOULD hold, and the documentation has to quote it.
+    # The gate count and the CI gate count: the registry is the authority, the
+    # baseline says what the registry SHOULD hold, and the documentation has to
+    # quote it.
     gbase = load_gate_baseline()
     if gbase is None:
         return Result(
@@ -311,39 +312,62 @@ def gate_docs():
             "of gates cannot be compared against anything. Restore it rather "
             "than letting the count drift unchecked.",
         )
-    g = len(GATES)
-    if g != gbase["gate_count"]:
-        return Result(
-            "docs", "fail",
-            "the registry holds %d gate(s) and verify/gate_baseline.json pins "
-            "%d. A gate was added or removed: update the baseline and every "
-            "count quoted in README.md and mbt/README.md in the same commit, "
-            "or the documentation and the harness will disagree again."
-            % (g, gbase["gate_count"]),
-            0.0,
-            {"gates": g, "expected": gbase["gate_count"]},
-        )
-    gclaims = gbase.get("claims") or []
-    gmissing = _check_claims(gclaims, "{g}", g)
-    if gmissing:
-        first = gmissing[0]
-        return Result(
-            "docs", "fail",
-            "%d of %d documented gate counts no longer match the pinned "
-            "number (%d). The registry holds %d gates; the documentation now "
-            "says something else. Update the quoted count, or update "
-            "verify/gate_baseline.json if a gate was added or removed. First "
-            "offender: %s -- %s"
-            % (len(gmissing), len(gclaims), g, g, first[0], first[1]),
-            0.0,
-            {"missing": gmissing, "expected": g},
-        )
+
+    # (label, baseline document, its file, key, placeholder, claims key,
+    #  the live value -- None when the pinned number IS the authority)
+    specs = [
+        ("gate", gbase, "gate_baseline.json", "gate_count", "{g}",
+         "claims", len(GATES)),
+        ("CI gate", gbase, "gate_baseline.json", "ci_gate_count", "{c}",
+         "ci_claims", len(CI_GATES)),
+    ]
+    checked = []
+    for label, doc, fname, key, placeholder, claim_key, live in specs:
+        pinned = doc.get(key)
+        if not isinstance(pinned, int):
+            return Result(
+                "docs", "fail",
+                "verify/%s does not pin a %s, so the number the documentation "
+                "quotes cannot be checked against anything." % (fname, label),
+            )
+        actual = live if live is not None else pinned
+        if actual != pinned:
+            return Result(
+                "docs", "fail",
+                "the registry holds %d %s(s) and verify/%s pins %d. A gate was "
+                "added or removed: update the baseline and every count quoted "
+                "in README.md and mbt/README.md in the same commit, or the "
+                "documentation and the harness will disagree again."
+                % (actual, label, fname, pinned),
+                0.0,
+                {key: actual, "expected": pinned},
+            )
+        cclaims = doc.get(claim_key) or []
+        cmissing = _check_claims(cclaims, placeholder, actual)
+        if cmissing:
+            first = cmissing[0]
+            return Result(
+                "docs", "fail",
+                "%d of %d documented %s counts no longer match the pinned "
+                "number (%d). The registry holds %d; the documentation now "
+                "says something else. Update the quoted count, or update "
+                "verify/%s if the harness changed. First offender: %s -- %s"
+                % (len(cmissing), len(cclaims), label, actual, actual, fname,
+                   first[0], first[1]),
+                0.0,
+                {"missing": cmissing, "expected": actual},
+            )
+        checked.append((label, len(cclaims), actual))
+
     return Result(
         "docs", "pass",
-        f"{len(claims)} documented test count(s) agree with the pinned {n}; "
-        f"{len(gclaims)} documented gate count(s) agree with the pinned {g}",
+        "%d documented test count(s) agree with the pinned %d; %s"
+        % (len(claims), n,
+           "; ".join("%d documented %s counts agree with the pinned %d"
+                     % (c, label, v) for label, c, v in checked)),
         0.0, {"claims": len(claims), "expected": n,
-              "gate_claims": len(gclaims), "expected_gates": g},
+              "checked": [{"label": l, "claims": c, "value": v}
+                          for l, c, v in checked]},
     )
 
 
@@ -662,7 +686,14 @@ def gate_shadow():
     function is a different thing entirely.
     """
     skip_dirs = {".git", "_build", "_scratch", "node_modules", ".mooncakes",
-                 "__pycache__", ".venv", "venv"}
+                 "__pycache__", ".venv", "venv",
+                 # The reference checkouts are gitignored, so they exist on
+                 # some machines and not on others. Scanning them would make
+                 # the file count in this gate's own message depend on
+                 # whether the developer happens to have the Julia sources
+                 # lying around -- and a count that changes with the machine
+                 # is a count nobody can compare against anything.
+                 "SpikingNeuralNetworks.jl", "SNNModels.jl", "SNNUtils.jl"}
     files = []
     for base, dirs, names in os.walk(ROOT):
         dirs[:] = [d for d in dirs if d not in skip_dirs]
@@ -1539,13 +1570,20 @@ GATES = [
 # for environmental reasons teaches everyone to ignore red, and three
 # releases in this repository have already died to a pipeline problem rather
 # than to a content one.
+#
+# `provenance` is not here either, and its own docstring says why: it audits
+# the oracle against a checkout of the reference under `_build/`, which is
+# gitignored. On a runner there is nothing to audit against, so it reports
+# `unavailable` -- correctly, and fatally, since a CI gate that could not
+# check anything fails the job. That is the rule working, not the rule
+# being wrong: the first version of this list DID include it, and the first
+# CI run failed on exactly this.
 CI_GATES = [
     "deps",
     "pin",
     "dup",
     "shadow",
     "security",
-    "provenance",
     "release",
     "docs",
 ]

@@ -105,10 +105,10 @@ Two additions came with the split. `mbt/gpu/` is an optional
 single-precision BLAS seam for the dense layers in `nn/`, complete with a C
 stub, CUDA kernels and build scripts, and deliberately unconnected -- see
 its own `moon.pkg` for the measurements behind that decision.
-`verify/qa_loop.py` runs 20 quality gates over the tree. Eight of them --
-the ones that need no MoonBit toolchain and no PyTorch -- also run on every
-push in `.github/workflows/ci.yml`, because the release workflow is tag-driven
-and cannot check itself.
+`verify/qa_loop.py` runs 20 quality gates over the tree. 7 of them -- the
+ones that need no MoonBit toolchain and no PyTorch -- also run on every push
+in `.github/workflows/ci.yml`, because the release workflow is tag-driven and
+cannot check itself.
 
 See the top-level `README.md` for both, and for the release-vs-debug
 performance caveat that applies to any timing taken here.
