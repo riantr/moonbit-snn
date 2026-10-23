@@ -42,6 +42,34 @@ jobs:
           # depends on it.
           moon version --all
 
+      # A fresh runner's registry index is empty, and this module imports
+      # riantr/moonbit_image and moonbit-community/sqlite3 from mooncakes.io.
+      # Without this, the gates below fail with "Failed to resolve registry
+      # dependency" before a single file is checked.
+      - name: Resolve the registry index
+        run: moon update
+
+      # The single most useful guard in this workflow. A tag that disagrees
+      # with moon.mod publishes the wrong thing silently: moon publishes
+      # whatever version moon.mod says, and the tag is just a label nobody
+      # checks against it.
+      - name: Resolve and check the release version
+        id: version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          want="${REF_NAME#v}"
+          got=$(sed -n 's/^version = "\(.*\)"$/\1/p' moon.mod)
+          echo "tag says  : $want"
+          echo "moon.mod says: $got"
+          if [ "$got" != "$want" ]; then
+            echo "::error file=moon.mod::version is '$got', the tag says '$want'."
+            echo "::error::the registry publishes moon.mod's value, not the tag's."
+            exit 1
+          fi
+          echo "version=$got" >> "$GITHUB_OUTPUT"
+
       # `typos` is checked before anything expensive because it has historically
       # been the step that actually fails in this repo -- the token has usually
       # been fine and the typo gate has not. Cheap to run, so run it first.
@@ -126,13 +154,104 @@ jobs:
       - name: moon test wave9
         run: moon test ./tests/wave9 --target native
 
+      # The secret must be the ENTIRE contents of ~/.moon/credentials.json
+      # as JSON -- not a bare token. `moon publish` reads that file, and a file
+      # holding only the token cannot authenticate: it fails with the same
+      # opaque non-zero exit as a rejected upload, which is why the shape is
+      # checked here instead of being taken on trust.
+      - name: Write mooncakes credentials
+        env:
+          MOON_CAKES_CREDENTIALS: ${{ secrets.MOONCAKES_RIANTR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MOON_CAKES_CREDENTIALS" ]; then
+            echo "::error::MOONCAKES_RIANTR_TOKEN is not set on this repository."
+            echo "::error::moon publish cannot authenticate. Nothing was published."
+            exit 1
+          fi
+          mkdir -p "$HOME/.moon"
+          printf '%s' "$MOON_CAKES_CREDENTIALS" > "$HOME/.moon/credentials.json"
+          python3 - <<'PY'
+          import json, os, sys
+          path = os.path.expanduser("~/.moon/credentials.json")
+          try:
+              with open(path, encoding="utf-8") as fh:
+                  doc = json.load(fh)
+          except Exception as exc:
+              print(f"::error::the secret is not valid JSON: {exc}")
+              sys.exit(1)
+          if not isinstance(doc, dict) or not doc.get("token"):
+              print("::error::the secret has no non-empty 'token' field")
+              sys.exit(1)
+          # Key names and the token's length only. Never its value.
+          print("credentials valid: keys=" + str(sorted(doc.keys())) +
+                " token length=" + str(len(doc["token"])))
+          PY
+
+      # `moon publish --dry-run` really authenticates (a bad token yields
+      # "Server status: 401 Unauthorized, detail: Invalid API token") but has
+      # no registry side effects, so a credential failure is caught here
+      # rather than half way through a publish.
+      #
+      # The exit code is NOT a signal. Measured on moon 0.1.20261016 against
+      # mooncakes.io with a working token, a fully successful dry run prints
+      #
+      #     Check passed
+      #     Server status: 202 Accepted, detail: Dry run completed
+      #     successfully. No changes were made. ...
+      #     Error: `moon publish` failed
+      #
+      # and still exits non-zero: the CLI appears to read the dry run's "no
+      # changes" state as a failed publish. So the exit code is discarded and
+      # the decision is made on the server's own response text, which does
+      # distinguish the two cases.
+      #
+      # `2>&1` matters -- this CLI writes these lines to stderr, so a
+      # stdout-only capture would see an empty log and fail the grep.
+      - name: Verify credentials (dry run)
+        run: |
+          set -uo pipefail
+          moon publish --dry-run --verbose 2>&1 | tee dryrun.log || true
+          if grep -q "Server status: 202 Accepted" dryrun.log; then
+            echo "credentials accepted by the server (dry run, no side effects)"
+          else
+            echo "::error::the dry run did not confirm credentials with the server"
+            grep -E "Server status|Error" dryrun.log || echo "(no server response in the log)"
+            exit 1
+          fi
+
       - name: Publish to mooncakes.io
         run: |
-          mkdir -p ~/.moon
-          # The secret must be the ENTIRE contents of ~/.moon/credentials.json
-          # as JSON -- not a bare token. `moon publish` reads that file.
-          echo "${{ secrets.MOONCAKES_RIANTR_TOKEN }}" > ~/.moon/credentials.json
-          moon publish
+          set -uo pipefail
+          # The credentials file is removed when this step ends, on success and
+          # on failure alike. It must NOT be removed at the end of the step
+          # that writes it: the dry run above reads the same file, and a trap
+          # there deletes it before the dry run gets to it.
+          trap 'rm -f "$HOME/.moon/credentials.json"' EXIT
+          moon publish --verbose 2>&1 | tee publish.log \
+            || echo "::warning::moon publish exited $? - the registry check below is authoritative"
+
+      # The authority for whether anything actually landed. It reads
+      # mooncakes.io with no credentials at all, so it cannot be fooled by a
+      # publish command that reported success or failure.
+      #
+      # `grep -qx`, not `grep`: the match is anchored to a whole line because
+      # `moon view --versions` prints one version per line, and an unanchored
+      # substring match is the exact failure this workflow exists to prevent
+      # -- checking for `0.166.0` would also match `0.166.01`.
+      - name: Verify the version is on the registry
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          echo "published versions of riantr/snn_mbt:"
+          moon view riantr/snn_mbt --versions
+          if moon view riantr/snn_mbt --versions | grep -qx "$VERSION"; then
+            echo "::notice::$VERSION is live on mooncakes.io"
+          else
+            echo "::error::$VERSION does not appear in the registry listing above"
+            exit 1
+          fi
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
