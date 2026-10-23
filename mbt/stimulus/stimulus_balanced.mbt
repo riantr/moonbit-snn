@@ -160,7 +160,7 @@ pub fn stimulate_balanced(
   if param.same_input {
     // Shared trace: draw one uniform, update r[0] / noise[0], then
     // sample Poisson once and broadcast the contribution to all ge[i].
-    let re = @core.next_f64(s.rng).to_float() - 0.5F
+    let re = Float::from_double(@core.next_f64(s.rng)) - 0.5F
     s.noise[0] = (s.noise[0] - re) * cc + re
     let mut nb = s.noise[0] * beta
     if nb > 1.0F {
@@ -185,7 +185,7 @@ pub fn stimulate_balanced(
     }
   } else {
     for i in 0..<n {
-      let re = @core.next_f64(s.rng).to_float() - 0.5F
+      let re = Float::from_double(@core.next_f64(s.rng)) - 0.5F
       s.noise[i] = (s.noise[i] - re) * cc + re
       let mut nb = s.noise[i] * beta
       if nb > 1.0F {

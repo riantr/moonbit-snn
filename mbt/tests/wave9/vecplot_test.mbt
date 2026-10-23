@@ -67,7 +67,7 @@ test "ascii_plot renders without crashing on a v monitor" {
   let mut k = 0
   while k < 80 {
     let t = Float::from_int(k) * 0.05F
-    let v = -65.0F + (k % 20).to_float()
+    let v = -65.0F + Float::from_int(k % 20)
     m.data.push(v)
     m.times.push(t)
     k = k + 1

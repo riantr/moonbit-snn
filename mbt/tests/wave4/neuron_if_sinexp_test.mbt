@@ -94,10 +94,10 @@ test "ifsinexp_step — 100-step stability (ge/gi bounded)" {
   for _ in 0..<100 {
     // Random spike injection.
     for k in 0..<pop.n {
-      if @core.next_f64(rng).to_float() < 0.3 {
+      if Float::from_double(@core.next_f64(rng)) < 0.3 {
         pop.glu[k] = pop.glu[k] + 1.0F
       }
-      if @core.next_f64(rng).to_float() < 0.2 {
+      if Float::from_double(@core.next_f64(rng)) < 0.2 {
         pop.gaba[k] = pop.gaba[k] + 0.5F
       }
     }

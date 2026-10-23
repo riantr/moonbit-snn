@@ -84,7 +84,7 @@ pub fn coincident_fraction(
       count = count + 1
     }
   }
-  Float::from_int(count) / a.length().to_float()
+  Float::from_int(count) / Float::from_int(a.length())
 }
 
 ///|

@@ -116,8 +116,8 @@ test "poisson_input — different neurons have different patterns (likely)" {
   }
   // Even-indexed and odd-indexed neurons should have similar spike counts
   // (within 50% of each other — Poisson variance).
-  let avg_a = total_a.to_float() / 5.0F
-  let avg_b = total_b.to_float() / 5.0F
+  let avg_a = Float::from_int(total_a) / 5.0F
+  let avg_b = Float::from_int(total_b) / 5.0F
   let ratio = if avg_a > avg_b { avg_a / avg_b } else { avg_b / avg_a }
   if ratio > 2.5 {
     fail("avg counts differ too much: even=\{(avg_a.to_double())} odd=\{(avg_b.to_double())}")

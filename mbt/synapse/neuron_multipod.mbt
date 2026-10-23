@@ -128,7 +128,7 @@ pub fn Multipod::new(
   let v_s : Array[Float] = Array::make(n, vr)
   let mut i = 0
   while i < n {
-    v_s[i] = vr + (i % 3).to_float() * range / 3.0F
+    v_s[i] = vr + Float::from_int(i % 3) * range / 3.0F
     i = i + 1
   }
   let w_s : Array[Float] = Array::make(n, 0.0F)
@@ -136,7 +136,7 @@ pub fn Multipod::new(
   let v_d : Array[Array[Float]] = Array::make(nd, [vr])
   let mut d = 0
   while d < nd {
-    let inner : Array[Float] = Array::make(n, vr + (d % 2).to_float() * range / 2.0F)
+    let inner : Array[Float] = Array::make(n, vr + Float::from_int(d % 2) * range / 2.0F)
     ignore(v_d.set(d, inner))
     d = d + 1
   }

@@ -38,7 +38,7 @@ pub fn LinearGaussianQNet::new(
   seed : UInt64,
 ) -> LinearGaussianQNet {
   let rng = @core.Xoshiro::from_state(seed, seed + 7UL, seed + 13UL, seed + 17UL)
-  let bound = 1.0F / Float::from_int(n_states).to_double().sqrt().to_float()
+  let bound = 1.0F / Float::from_double(Float::from_int(n_states).to_double().sqrt())
   let w_mu : Array[Array[Float]] = []
   let b_mu : Array[Float] = []
   let w_sigma : Array[Array[Float]] = []

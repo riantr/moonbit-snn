@@ -1,5 +1,5 @@
 import {
-  "riantr/moonbit_image@0.3.4",
+  "riantr/moonbit_image@0.3.7",
   "moonbit-community/sqlite3@0.2.3",
 }
 

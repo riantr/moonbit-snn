@@ -120,7 +120,7 @@ test "IZ bit-exact — single run trace summary (regression guard)" {
     if trace[k] > mx { mx = trace[k] }
     sum = sum + trace[k]
   }
-  let mean = sum / trace.length().to_float()
+  let mean = sum / Float::from_int(trace.length())
   // Soft assertions: min/max/mean should be in expected ranges.
   // IZ with 10pA and dt=0.125 over 100ms: v starts at -65 and
   // drifts up. With τm=7ms, expected peak ≈ -65 + 10*0.0125/0.07

@@ -90,7 +90,7 @@ test "gaussian_smooth — output length equals input length" {
   let mut i = 0
   while i < n {
     xs[i] = Float::from_int(i) * 0.1F
-    x[i] = (i % 5).to_float() * 0.5F
+    x[i] = Float::from_int(i % 5) * 0.5F
     i = i + 1
   }
   let out = @analysis.gaussian_smooth(xs, x, 1.5F, None)

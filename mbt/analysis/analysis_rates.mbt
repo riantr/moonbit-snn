@@ -206,6 +206,6 @@ pub fn firing_rate_cv(
   }
   let variance = var_sum / Float::from_int(n_pop - 1)
   // std = sqrt(variance). Use Double path for sqrt to preserve precision.
-  let std = variance.to_double().sqrt().to_float()
+  let std = Float::from_double(variance.to_double().sqrt())
   std / mean
 }

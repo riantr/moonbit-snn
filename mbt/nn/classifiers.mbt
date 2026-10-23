@@ -51,7 +51,7 @@ pub fn softmax(scores : Array[Float]) -> Array[Float] {
   let mut sum : Float = 0.0F
   for i in 0..<n {
     let e = @math.exp((scores[i] - m).to_double())
-    let f = e.to_float()
+    let f = Float::from_double(e)
     out[i] = f
     sum = sum + f
   }

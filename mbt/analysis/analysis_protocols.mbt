@@ -14,7 +14,7 @@
 pub fn get_poisson_spikes(rate : Float, dt : Float, rng : @core.Xoshiro) -> Float {
   let lambda = rate * dt
   // next_f64(rng) is uniform in [0, 1). If < lambda, fire.
-  if @core.next_f64(rng).to_float() < lambda {
+  if Float::from_double(@core.next_f64(rng)) < lambda {
     1.0F
   } else {
     0.0F

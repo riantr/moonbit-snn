@@ -67,7 +67,7 @@ pub fn NoisyLinearParam::init(
   rng : @core.Xoshiro,
 ) -> NoisyLinearParam {
   let bound : Float = 1.0F /
-    Float::from_int(in_features).to_double().sqrt().to_float()
+    Float::from_double(Float::from_int(in_features).to_double().sqrt())
   let w_mu : Array[Float] = Array::make(out_features * in_features, 0.0F)
   let w_sig : Array[Float] = Array::make(out_features * in_features, 0.017F)
   let b_mu : Array[Float] = Array::make(out_features, 0.0F)
@@ -84,9 +84,9 @@ pub fn NoisyLinearParam::init(
 /// Reduces CPU cost vs direct Gaussian sampling (paper §3.1).
 pub fn f_sign_sqrt(x : Float) -> Float {
   if x >= 0.0F {
-    x.to_double().sqrt().to_float()
+    Float::from_double(x.to_double().sqrt())
   } else {
-    -(-x).to_double().sqrt().to_float()
+    -Float::from_double((-x).to_double().sqrt())
   }
 }
 
@@ -100,8 +100,8 @@ pub fn sample_gaussians(n : Int, rng : @core.Xoshiro) -> Array[Float] {
     let u2 = @core.next_f32(rng)
     // Box-Muller: z0 = sqrt(-2 ln u1) cos(2π u2)
     let safe_u1 = if u1 < 1.0e-7F { 1.0e-7F } else { u1 }
-    let r : Float = (-2.0F *
-      Float::from_double(@math.ln(safe_u1.to_double()))).to_double().sqrt().to_float()
+    let r : Float = Float::from_double(
+      (-2.0F * Float::from_double(@math.ln(safe_u1.to_double()))).to_double().sqrt())
     let theta = 2.0F * 3.14159265F * u2
     let z0 : Float = r * Float::from_double(@math.cos(theta.to_double()))
     out[k] = z0

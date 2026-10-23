@@ -301,7 +301,7 @@ pub fn quantile_float(arr : Array[Float], q : Float) -> Float {
     sorted[k] = key
     j = j + 1
   }
-  let idx_f = q * n.to_float() - 1.0F
+  let idx_f = q * Float::from_int(n) - 1.0F
   let idx = Float::to_int(idx_f)
   sorted[idx]
 }
