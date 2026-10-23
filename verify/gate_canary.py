@@ -166,6 +166,18 @@ def summarise(out):
     return "no summary; build/compile failure. first: %s" % (fails[:2] or out[-500:])
 
 
+def failed_count(summary):
+    """Number of failing tests in a canary summary, or None when the tree did
+    not build at all (no summary was printed).
+
+    None is not zero. A canary whose scratch tree failed to compile has
+    proven nothing about the gate it was meant to exercise, and counting
+    that as "0 failures" is how a harness starts reporting green for the
+    wrong reason.
+    """
+    m = re.search(r"FAILED (\d+)", summary)
+    return int(m.group(1)) if m else None
+
 TOUCHED = [
     os.path.join("mbt", "nn", "batch_norm2d.mbt"),
     os.path.join("mbt", "tarnet", "tarnet_asp.mbt"),
@@ -236,13 +248,23 @@ def main():
 
     try:
         print()
-        print("canary 0  tree as committed          -> %s" % run_wave1(work))
+        results = []
+        control = run_wave1(work)
+        print("canary 0  tree as committed          -> %s" % control)
+        if failed_count(control) is None:
+            print()
+            print("canary 0 is the control: the tree as committed has to build")
+            print("and pass, or the canaries below are all measuring the same")
+            print("broken build and none of them says anything.")
+            sys.exit(1)
 
         # canary 1: put the defect G1 caught back into batch_norm2d.
         restore(work)
         with open(c_bn, "w", encoding="utf-8", newline="") as fh:
             fh.write(swap_in_two_pass(original_bn))
-        print("canary 1  one-pass variance restored -> %s" % run_wave1(work))
+        c1 = run_wave1(work)
+        print("canary 1  one-pass variance restored -> %s" % c1)
+        results.append((1, c1))
 
         # canary 2: empty the mutation sweep.
         restore(work)
@@ -253,7 +275,9 @@ def main():
             sys.exit("canary 2: could not find the mutant list to empty")
         with open(c_test, "w", encoding="utf-8", newline="") as fh:
             fh.write(ttext.replace(full, "    Correct,\n"))
-        print("canary 2  sweep holds only Correct    -> %s" % run_wave1(work))
+        c2 = run_wave1(work)
+        print("canary 2  sweep holds only Correct    -> %s" % c2)
+        results.append((2, c2))
 
         # canary 3: put the ASP context-layout defect back.
         restore(work)
@@ -264,27 +288,35 @@ def main():
                      "updating before it can be trusted")
         with open(c_asp, "w", encoding="utf-8", newline="") as fh:
             fh.write(asp_src.replace(ASP_FIXED, ASP_BUGGY, 1))
-        print("canary 3  ASP ctx stride reverted     -> %s" % run_wave2(work))
+        c3 = run_wave2(work)
+        print("canary 3  ASP ctx stride reverted     -> %s" % c3)
+        results.append((3, c3))
 
         # canary 4: swap the ASP BatchNorm's gamma and beta.
         restore(work)
         with open(c_asp, "w", encoding="utf-8", newline="") as fh:
             fh.write(swap_bn_affine(asp_src))
-        print("canary 4  ASP BatchNorm gamma/beta   -> %s" % run_wave2(work))
+        c4 = run_wave2(work)
+        print("canary 4  ASP BatchNorm gamma/beta   -> %s" % c4)
+        results.append((4, c4))
 
         # canary 5: the block oracle's reference is perturbed, not its bound.
         restore(work)
         bg = open(c_blk_gold, encoding="utf-8", newline="").read()
         with open(c_blk_gold, "w", encoding="utf-8", newline="") as fh:
             fh.write(perturb_first_value(bg, "blk0_out_golden", 1.05))
-        print("canary 5  block oracle golden skewed -> %s" % run_wave2(work))
+        c5 = run_wave2(work)
+        print("canary 5  block oracle golden skewed -> %s" % c5)
+        results.append((5, c5))
 
         # canary 6: the same for the SE oracle's reference.
         restore(work)
         sg = open(c_se_gold, encoding="utf-8", newline="").read()
         with open(c_se_gold, "w", encoding="utf-8", newline="") as fh:
             fh.write(perturb_first_value(sg, "se_out_golden", 1.05))
-        print("canary 6  SE oracle golden skewed    -> %s" % run_wave2(work))
+        c6 = run_wave2(work)
+        print("canary 6  SE oracle golden skewed    -> %s" % c6)
+        results.append((6, c6))
 
         # canary 7: the whole-model defect. One line, and the autograd gate goes
         # red on every coordinate -- the clearest evidence available that the
@@ -294,14 +326,22 @@ def main():
         c_tarnet = os.path.join(work, "mbt", "tarnet", "tarnet_backward.mbt")
         with open(c_tarnet, "w", encoding="utf-8", newline="") as fh:
             fh.write(swap_in_linear(tarnet_src))
-        print("canary 7  bottleneck 1x1 conv reverted -> %s" % run_wave2(work))
+        c7 = run_wave2(work)
+        print("canary 7  bottleneck 1x1 conv reverted -> %s" % c7)
+        results.append((7, c7))
     finally:
         with open(TARGET, "w", encoding="utf-8", newline="") as fh:
             fh.write(original_bn)
         shutil.rmtree(tmp, ignore_errors=True)
 
     print()
-    print("canaries 1 to 7 must each report FAILED > 0, and only its own.")
+    bad = [(n, s) for n, s in results if not (failed_count(s) or 0) > 0]
+    if bad:
+        print("canaries 1 to 7 must each report FAILED > 0, and only its own.")
+        for n, s in bad:
+            print("  canary %d did not: %s" % (n, s))
+        sys.exit(1)
+    print("canaries 1 to 7 each reported FAILED > 0, and the control passed.")
     print("The real files were never modified; the scratch copy is deleted.")
 
 
