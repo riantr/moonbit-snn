@@ -416,9 +416,15 @@ performance caveat that applies to any timing taken here.
 ## Running
 
 ```sh
-# Tests
+# Tests -- the test cases live in tests/waveN/, one package per wave.
+# `moon test` at the root does not run them: the root holds no test
+# files, and on Windows the root package's test target exceeds the
+# 32K command-line limit that moon inlines source paths into. See
+# tools/split_tests/README.md.
 cd moonbit-snn/mbt
-moon test
+moon test ./tests/wave1 --target native
+moon test ./tests/wave2 --target native
+# ... and so on through wave9
 
 # chain.jl example
 moon run examples/chain/main.mbt
