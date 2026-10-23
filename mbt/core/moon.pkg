@@ -7,3 +7,10 @@
 //
 // `math_native.mbt` binds libm through `extern "C"`, so this package is
 // native-only, the same constraint the root moon.mod already declares.
+//
+// `moonbitlang/core/math` is imported explicitly: the core library now
+// deprecates reaching the `math` package without an import, and `util.mbt`
+// calls @math.exp / @math.ln.
+import {
+  "moonbitlang/core/math",
+}

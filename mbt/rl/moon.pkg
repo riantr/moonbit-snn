@@ -21,6 +21,7 @@
 // optim/ used to point back at nn/, which made this cycle until sqrtf moved
 // down to core/. The direction is now one-way: rl -> optim -> nn.
 import {
+  "moonbitlang/core/math",
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/nn",
   "riantr/snn_mbt/activ",

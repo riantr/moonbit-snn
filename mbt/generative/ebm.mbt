@@ -78,7 +78,7 @@ pub fn ebm_sample_batch(
   for c in 0..<n {
     // Advance the RNG state per call so each chain is independent.
     let chain_rng = @core.Xoshiro::new(
-      @core.next_u64(rng) ^ (c + 1).to_uint64() * 7919UL,
+      @core.next_u64(rng) ^ ((c + 1).to_uint64() * 7919UL),
     )
     out[c] = ebm_sample(ebm, init_batch[c], n_steps, chain_rng)
   }

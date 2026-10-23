@@ -12,6 +12,7 @@
 // a connection's weight changed over a window. That measurement is defined on
 // a `SpikingSynapse`, so it cannot be written without naming the type.
 import {
+  "moonbitlang/core/math",
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/synapse",
 }

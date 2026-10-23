@@ -15,6 +15,7 @@
 // bottles.mbt itself. Moving them into core/ is what let this package exist.
 //
 import {
+  "moonbitlang/core/math",
   "riantr/snn_mbt/core",
   "riantr/snn_mbt/activ",
 }
