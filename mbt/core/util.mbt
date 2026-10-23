@@ -211,3 +211,60 @@ pub fn row_int_set_char(s : String, pos : Int, ch : Char) -> String {
   }
   sb.to_string()
 }
+
+///|
+/// Width of the widest of the three axis labels of an ASCII plot, so that
+/// the rows of the plot can be left-aligned against them.
+///
+/// Like `row_int_set_char` above, this lives in core because it is shared:
+/// infra/vecplot.mbt and synapse/stdp.mbt both draw labelled plots, and
+/// stdp.mbt cannot import vecplot.mbt (vecplot depends on synapse, so the
+/// other direction would be a cycle).
+pub fn axis_label_width(
+  max_label : String,
+  mid_label : String,
+  min_label : String,
+) -> Int {
+  let a = max_label.length()
+  let b = mid_label.length()
+  let c = min_label.length()
+  let m = if a > b { a } else { b }
+  if m > c { m } else { c }
+}
+
+///|
+/// The axis label that belongs on row `row` of a plot with `n_rows` rows:
+/// the maximum on the first row, the midpoint in the middle, the minimum on
+/// the last row, and nothing on the rows in between.
+///
+/// The order of the tests matters for a one-row plot: `row == 0` wins, so a
+/// single-row plot is labelled with the maximum.
+pub fn axis_label_for_row(
+  max_label : String,
+  mid_label : String,
+  min_label : String,
+  row : Int,
+  n_rows : Int,
+) -> String {
+  if row == 0 {
+    max_label
+  } else if row == n_rows - 1 {
+    min_label
+  } else if row == n_rows / 2 {
+    mid_label
+  } else {
+    ""
+  }
+}
+
+///|
+/// Pad `label` with spaces up to `width`, so that a column of labels lines
+/// up. Labels wider than `width` are returned unchanged.
+pub fn axis_label_pad(label : String, width : Int) -> String {
+  let pad_count = if width > label.length() {
+    width - label.length()
+  } else {
+    0
+  }
+  String::make(pad_count, ' ')
+}

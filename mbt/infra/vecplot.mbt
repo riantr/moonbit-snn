@@ -299,30 +299,11 @@ pub fn Monitor::ascii_plot(
   let mid_label = format_axis_label((mx + mn) / 2.0F)
   let min_label = format_axis_label(mn)
   // Find the longest axis label so we can left-align.
-  let label_width = {
-    let a = max_label.length()
-    let b = mid_label.length()
-    let c = min_label.length()
-    let m = if a > b { a } else { b }
-    if m > c { m } else { c }
-  }
+  let label_width = @core.axis_label_width(max_label, mid_label, min_label)
   // Print from top row to bottom.
   for r in 0..<n_rows {
-    let label = if r == 0 {
-      max_label
-    } else if r == n_rows - 1 {
-      min_label
-    } else if r == n_rows / 2 {
-      mid_label
-    } else {
-      ""
-    }
-    let pad_count = if label_width > label.length() {
-      label_width - label.length()
-    } else {
-      0
-    }
-    let padded = String::make(pad_count, ' ')
+    let label = @core.axis_label_for_row(max_label, mid_label, min_label, r, n_rows)
+    let padded = @core.axis_label_pad(label, label_width)
     println(padded + label + " |" + canvas[r])
   }
   // Footer: x-axis labels (start/end times).

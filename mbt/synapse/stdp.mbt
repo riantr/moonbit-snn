@@ -338,29 +338,10 @@ pub fn stdp_kernel_plot(
   let max_label = format_axis_label_kernel(mx)
   let mid_label = format_axis_label_kernel((mx + mn) / 2.0F)
   let min_label = format_axis_label_kernel(mn)
-  let label_width = {
-    let a = max_label.length()
-    let b = mid_label.length()
-    let c = min_label.length()
-    let m = if a > b { a } else { b }
-    if m > c { m } else { c }
-  }
+  let label_width = @core.axis_label_width(max_label, mid_label, min_label)
   for r in 0..<height {
-    let label = if r == 0 {
-      max_label
-    } else if r == height - 1 {
-      min_label
-    } else if r == height / 2 {
-      mid_label
-    } else {
-      ""
-    }
-    let pad_count = if label_width > label.length() {
-      label_width - label.length()
-    } else {
-      0
-    }
-    let padded = String::make(pad_count, ' ')
+    let label = @core.axis_label_for_row(max_label, mid_label, min_label, r, height)
+    let padded = @core.axis_label_pad(label, label_width)
     println(padded + label + " |" + canvas[r])
   }
   // Footer: Δt axis.
@@ -758,29 +739,10 @@ pub fn stdp_mexican_hat_plot(
   let max_label = format_axis_label_kernel(mx)
   let mid_label = format_axis_label_kernel((mx + mn) / 2.0F)
   let min_label = format_axis_label_kernel(mn)
-  let label_width = {
-    let a = max_label.length()
-    let b = mid_label.length()
-    let c = min_label.length()
-    let m = if a > b { a } else { b }
-    if m > c { m } else { c }
-  }
+  let label_width = @core.axis_label_width(max_label, mid_label, min_label)
   for r in 0..<height {
-    let label = if r == 0 {
-      max_label
-    } else if r == height - 1 {
-      min_label
-    } else if r == height / 2 {
-      mid_label
-    } else {
-      ""
-    }
-    let pad_count = if label_width > label.length() {
-      label_width - label.length()
-    } else {
-      0
-    }
-    let padded = String::make(pad_count, ' ')
+    let label = @core.axis_label_for_row(max_label, mid_label, min_label, r, height)
+    let padded = @core.axis_label_pad(label, label_width)
     println(padded + label + " |" + canvas[r])
   }
   let pad_str = String::make(label_width + 3, ' ')
@@ -843,29 +805,10 @@ pub fn stdp_antisymmetric_plot(
   let max_label = format_axis_label_kernel(mx)
   let mid_label = format_axis_label_kernel((mx + mn) / 2.0F)
   let min_label = format_axis_label_kernel(mn)
-  let label_width = {
-    let a = max_label.length()
-    let b = mid_label.length()
-    let c = min_label.length()
-    let m = if a > b { a } else { b }
-    if m > c { m } else { c }
-  }
+  let label_width = @core.axis_label_width(max_label, mid_label, min_label)
   for r in 0..<height {
-    let label = if r == 0 {
-      max_label
-    } else if r == height - 1 {
-      min_label
-    } else if r == height / 2 {
-      mid_label
-    } else {
-      ""
-    }
-    let pad_count = if label_width > label.length() {
-      label_width - label.length()
-    } else {
-      0
-    }
-    let padded = String::make(pad_count, ' ')
+    let label = @core.axis_label_for_row(max_label, mid_label, min_label, r, height)
+    let padded = @core.axis_label_pad(label, label_width)
     println(padded + label + " |" + canvas[r])
   }
   let pad_str = String::make(label_width + 3, ' ')

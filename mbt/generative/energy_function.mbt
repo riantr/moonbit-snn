@@ -33,9 +33,10 @@ pub struct EnergyFunction {
 }
 
 ///|
-/// Build a fresh EnergyFunction with `num_layers` hidden layers of
-/// width `hidden_dim`. The output is a single scalar (no bias array,
-/// just one Float).
+/// Build a fresh EnergyFunction with `num_layers` layers of width
+/// `hidden_dim` before the output projection -- an input->hidden layer plus
+/// `num_layers - 1` hidden matrices. The output is a single scalar (no bias
+/// array, just one Float).
 pub fn EnergyFunction::new(
   input_dim : Int,
   hidden_dim : Int,
@@ -48,23 +49,7 @@ pub fn EnergyFunction::new(
   let std1 = @core.sqrtf(2.0F / Float::from_int(input_dim))
   let w1 = @rl.xavier_normal(hidden_dim, input_dim, std1, rng1)
   let b1 : Array[Float] = Array::make(hidden_dim, 0.0F)
-  let hidden_w : Array[Array[Array[Float]]] = Array::make(
-    num_layers - 1, Array::make(0, Array::make(0, 0.0F)),
-  )
-  let hidden_b : Array[Array[Float]] = Array::make(
-    num_layers - 1, Array::make(0, 0.0F),
-  )
-  for l in 0..<(num_layers - 1) {
-    let rng_l = @core.Xoshiro::from_state(
-      seed + (l + 100).to_uint64() * 7UL,
-      seed + (l + 100).to_uint64() * 11UL,
-      seed + (l + 100).to_uint64() * 13UL,
-      seed + (l + 100).to_uint64() * 17UL,
-    )
-    let std_l = @core.sqrtf(2.0F / Float::from_int(hidden_dim))
-    hidden_w[l] = @rl.xavier_normal(hidden_dim, hidden_dim, std_l, rng_l)
-    hidden_b[l] = Array::make(hidden_dim, 0.0F)
-  }
+  let (hidden_w, hidden_b) = @rl.mlp_hidden_stack(hidden_dim, num_layers, seed)
   let rng_out = @core.Xoshiro::from_state(
     seed + 20UL, seed + 21UL, seed + 22UL, seed + 23UL,
   )
