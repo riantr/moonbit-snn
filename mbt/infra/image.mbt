@@ -1,5 +1,5 @@
 // image.mbt 鈥?Image struct + decoder adapter over
-// `riantr/moonbit_image@0.3.7`.
+// `riantr/moonbit_image@0.3.9`.
 //
 // This module bridges between the upstream decoder API
 // (`@moonbit_image.decode` returning an `Image` with private
