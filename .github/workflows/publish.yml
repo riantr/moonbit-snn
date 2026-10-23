@@ -14,6 +14,14 @@ jobs:
     # 2026-10-19, and a release toolchain should not change under you between
     # two tags of the same package.
     runs-on: ubuntu-22.04
+    # `contents: write` is what `softprops/action-gh-release` needs, and it is
+    # stated rather than inherited. The default GITHUB_TOKEN permission set is
+    # repository settings, not something the workflow controls, so a repo
+    # configured read-only would fail the LAST step of the release -- after
+    # the package was already published -- and report a failure for work that
+    # had succeeded.
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: mbt
