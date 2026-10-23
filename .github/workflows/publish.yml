@@ -128,12 +128,35 @@ jobs:
           fi
           echo "根包无残留测试文件。"
 
-      # `moon fmt --check` is deliberately NOT a gate. The package has ~998
-      # files and ten of them carry pre-existing formatting diffs that predate
-      # any of this work; enabling the check now would fail a release over
-      # unrelated files, and mass-reformatting them inside a release commit is
-      # scope creep. Worth doing as its own commit, then the gate can come
-      # back.
+      # `moon fmt --check` is deliberately NOT a gate. The tree is 621 of 635
+      # source files away from the formatter's canonical form, because it
+      # predates the spelling the toolchain now prefers (`Int` for `Int32`,
+      # `x?` for `x~`). Enabling the check would fail a release over 621
+      # files, and mass-reformatting them inside a release commit is scope
+      # creep. It also REFLOWS the checked-in oracle goldens, which would
+      # break the byte identity `verify/golden_repro.py` holds.
+      #
+      # A note that said "ten of them" was written from `moon fmt --check`'s
+      # own output, and that output is a sample of at most ten that rotates
+      # between runs: the real number is 621. The distance is measured and
+      # recorded instead, in verify/fmt_baseline.json, and the `fmt` gate
+      # fails when it moves.
+
+      # The tree that is about to be PUBLISHED is checked by the same gates
+      # that run on every push, before the test waves and before anything is
+      # uploaded. A tag is a release request, and the request has to pass the
+      # gates that a push passes -- otherwise the release is the first place
+      # a broken workflow, a drifted dependency pin or a stale documented
+      # count is found, which is the most expensive place to find one.
+      #
+      # `working-directory: .` is the repository root, because the gates read
+      # README.md, mbt/moon.mod and .github/workflows/ -- all of them above
+      # the package root this job otherwise runs in. The job default is `mbt`,
+      # so this step's directory is an OVERRIDE and the step must not `cd`
+      # into it.
+      - name: Run the process gates
+        working-directory: .
+        run: python3 verify/qa_loop.py --ci
 
       # NOT `moon test` on the root package. It fails with CreateProcessW
       # ERROR_FILENAME_EXCED_RANGE (the 32K Windows command-line limit) because

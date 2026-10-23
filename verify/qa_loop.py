@@ -22,12 +22,15 @@
 
 import argparse
 import ast
+import filecmp
+import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -121,21 +124,124 @@ def have(tool):
 # registry of lambdas would obscure what each one actually does.
 
 
+def _canonical_offenders():
+    """The files the formatter would rewrite, measured exactly.
+
+    `moon fmt --check` cannot answer this question. It formats the project,
+    diffs it against the source, and STOPS after ten differences: on a clean
+    tree it formatted 22 files and reported 10, and the ten it reported
+    ROTATED between runs on the same tree. It is a good way to find one file
+    to look at and a bad way to count -- and a repository note that said
+    "ten of them carry pre-existing formatting diffs" was written on the
+    strength of that sample. The real number is 621 of 635.
+
+    So the measurement is done on a copy: copy the module, format the copy,
+    compare it with the original. That is exact, it is the same set every
+    time, and the real tree is never touched.
+
+    Returns (offenders, None) or (None, reason).
+    """
+    tmp = tempfile.mkdtemp(prefix="moonbit_snn_fmt_")
+    try:
+        dst = os.path.join(tmp, "mbt")
+        shutil.copytree(MBT, dst, ignore=shutil.ignore_patterns(
+            "_build", ".mooncakes", "_scratch", ".git"))
+        p = subprocess.run(["moon", "fmt"], cwd=dst, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT, timeout=900)
+        if p.returncode != 0:
+            tail = (p.stdout or b"").decode("utf-8", errors="replace")
+            return None, "`moon fmt` on the copy exited %d: %s" % (
+                p.returncode, tail.strip().splitlines()[-1][:160]
+                if tail.strip() else "(no output)")
+        offenders = []
+        for base, dirs, names in os.walk(dst):
+            dirs[:] = [d for d in dirs
+                       if d not in ("_build", ".mooncakes", "_scratch")]
+            for n in names:
+                if not n.endswith(".mbt"):
+                    continue
+                new = os.path.join(base, n)
+                rel = os.path.relpath(new, dst).replace("\\", "/")
+                old = os.path.join(MBT, rel.replace("/", os.sep))
+                if not os.path.isfile(old):
+                    continue
+                if not filecmp.cmp(old, new, shallow=False):
+                    offenders.append("mbt/" + rel)
+        return sorted(offenders), None
+    except (OSError, subprocess.SubprocessError) as exc:
+        return None, "could not measure the formatter's verdict: %r" % (exc,)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def gate_fmt():
-    """moon fmt --check, scoped to the source tree."""
-    rc, out, dt = run(["moon", "fmt", "--check", "mbt"], cwd=ROOT, timeout=300)
-    if rc == 0:
-        return Result("fmt", "pass", "formatting clean", dt)
-    # --check may not exist on this moon version; fall back to a diff check.
-    rc2, out2, dt2 = run(["moon", "fmt", "mbt"], cwd=ROOT, timeout=300)
-    changed = len(re.findall(r"^(?:[A-Z]:)?[^\s:]+\.mbt\b", out2, re.M))
-    if changed:
+    """How far is the tree from the formatter's canonical form, and is it moving?
+
+    The answer is a long way: 621 of the 635 source files are not in the
+    current formatter's canonical form, because the tree predates the
+    spelling the toolchain now prefers (`Int` for `Int32`, `x?` for `x~`)
+    and the formatter also wants a trailing newline on most files. That is
+    a fact about the tree, not a defect in it -- the code compiles and
+    1925 tests pass -- and it is not worth a 621-file rewrite inside a QA
+    pass, especially since the rewrite would reflow the checked-in oracle
+    goldens and break the byte identity the `golden` gate exists to hold.
+
+    So this gate does not demand canonical form. It MEASURES the distance
+    and compares it with a recorded measurement, and it fails when the
+    distance changes in either direction: a file that becomes non-canonical
+    is drift, and a file that becomes canonical means the record is stale.
+    Either way the baseline in verify/fmt_baseline.json has to be updated
+    in the same commit, which is what makes it a record of the measurement
+    rather than a target to be fitted to.
+
+    The previous version of this gate ran `moon fmt --check` from the
+    repository root, where there is no moon.mod and no moon.work, so every
+    invocation died with "not in a Moon project", the fallback could not
+    run either, and the gate reported "formatting clean" on every run for
+    as long as it existed. It was a gate that could not fail, and the
+    reason nothing noticed is that nothing ever asked it to.
+    """
+    started = time.time()
+    offenders, err = _canonical_offenders()
+    dt = time.time() - started
+    if offenders is None:
+        return Result("fmt", "unavailable", err, dt)
+    base = load_fmt_baseline()
+    if base is None:
         return Result(
             "fmt", "fail",
-            f"{changed} file(s) would be reformatted; run `moon fmt mbt`",
-            dt2,
+            "verify/fmt_baseline.json is missing or malformed, so the "
+            "formatter's verdict cannot be compared against anything. "
+            "Restore it rather than letting the measurement drift unchecked.",
+            dt,
         )
-    return Result("fmt", "pass", "formatting clean (diff-check fallback)", dt2)
+    digest = hashlib.sha256("\n".join(offenders).encode("utf-8")).hexdigest()
+    count = len(offenders)
+    if count != base["non_canonical_files"] or digest != base["set_sha256"]:
+        grew = count > base["non_canonical_files"]
+        return Result(
+            "fmt", "fail",
+            "the formatter would rewrite %d file(s) and the recorded "
+            "measurement says %d. %s Update verify/fmt_baseline.json in the "
+            "same commit: it is a record of the measurement, not a target to "
+            "be fitted to."
+            % (count, base["non_canonical_files"],
+               "The tree moved FURTHER from canonical form."
+               if grew else
+               "The tree moved CLOSER to canonical form, so the record is "
+               "stale."),
+            dt,
+            {"non_canonical_files": count,
+             "expected": base["non_canonical_files"],
+             "set_sha256": digest, "expected_sha256": base["set_sha256"],
+             "sample": offenders[:10]},
+        )
+    return Result(
+        "fmt", "pass",
+        "%d of the source files are not in the formatter's canonical form, "
+        "which is the recorded state" % count,
+        dt, {"non_canonical_files": count, "set_sha256": digest},
+    )
 
 
 def gate_lint():
@@ -393,6 +499,7 @@ def gate_integration():
     # that as "15 examples broken" would have been worse than not having the
     # gate, because it sends the reader looking for bugs that are not there.
     bad, timed_out = [], []
+    started = time.time()
     for n in names:
         rc, out, dt = run(
             ["moon", "check", "--target", "native"],
@@ -404,6 +511,7 @@ def gate_integration():
             timed_out.append(n)
         else:
             bad.append(n)
+    elapsed = time.time() - started
 
     if timed_out:
         note = f"{len(timed_out)} timed out at 420s (not counted as failures)"
@@ -412,19 +520,20 @@ def gate_integration():
             return Result(
                 "integration", "fail",
                 f"{len(bad)}/{len(names)} failed: {', '.join(bad[:6])}; {note}",
-                0, {"total": len(names), "failed": bad, "timed_out": timed_out},
+                elapsed, {"total": len(names), "failed": bad,
+                          "timed_out": timed_out},
             )
-        return Result("integration", "pass", note, 0,
+        return Result("integration", "pass", note, elapsed,
                       {"total": len(names), "timed_out": timed_out})
     if bad:
         return Result(
             "integration", "fail",
             f"{len(bad)}/{len(names)} examples failed: {', '.join(bad[:6])}"
             + (" ..." if len(bad) > 6 else ""),
-            0, {"total": len(names), "failed": bad},
+            elapsed, {"total": len(names), "failed": bad},
         )
     return Result(
-        "integration", "pass", f"{len(names)} examples build", 0,
+        "integration", "pass", f"{len(names)} examples build", elapsed,
         {"total": len(names)},
     )
 
@@ -432,6 +541,7 @@ def gate_integration():
 COVERAGE_BASELINE = os.path.join(ROOT, "verify", "coverage_baseline.json")
 TEST_BASELINE = os.path.join(ROOT, "verify", "test_baseline.json")
 GATE_BASELINE = os.path.join(ROOT, "verify", "gate_baseline.json")
+FMT_BASELINE = os.path.join(ROOT, "verify", "fmt_baseline.json")
 
 
 def load_baseline(path, key):
@@ -466,6 +576,22 @@ def load_test_baseline():
 def load_gate_baseline():
     """The recorded gate-count baseline, or None if it cannot be read."""
     return load_baseline(GATE_BASELINE, "gate_count")
+
+
+def load_fmt_baseline():
+    """The recorded formatter baseline, or None if it cannot be read."""
+    if not os.path.isfile(FMT_BASELINE):
+        return None
+    try:
+        with open(FMT_BASELINE, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(doc.get("non_canonical_files"), int):
+        return None
+    if not isinstance(doc.get("set_sha256"), str):
+        return None
+    return doc
 
 
 def gate_coverage():
@@ -857,6 +983,7 @@ def gate_stress():
     if not waves:
         return Result("stress", "unavailable", "tests/wave1 not found")
     runs, totals = 3, []
+    started = time.time()
     for i in range(runs):
         rc, out, dt = run(
             ["moon", "test", "./tests/wave1", "--target", "native"],
@@ -864,20 +991,21 @@ def gate_stress():
         )
         m = re.search(r"passed:\s*(\d+),\s*failed:\s*(\d+)", out)
         totals.append((int(m.group(1)), int(m.group(2))) if m else (0, 1))
+    elapsed = time.time() - started
     bad = [i + 1 for i, (_p, f) in enumerate(totals) if f]
     if bad:
-        return Result("stress", "fail", f"run(s) {bad} of {runs} failed", 0,
+        return Result("stress", "fail", f"run(s) {bad} of {runs} failed", elapsed,
                       {"runs": totals})
     counts = {p for p, _f in totals}
     if len(counts) > 1:
         return Result(
             "stress", "fail",
-            f"pass count varies across runs: {sorted(counts)}", 0,
+            f"pass count varies across runs: {sorted(counts)}", elapsed,
             {"runs": totals},
         )
     return Result(
         "stress", "pass",
-        f"{runs} consecutive runs, {totals[0][0]} passed each time", 0,
+        f"{runs} consecutive runs, {totals[0][0]} passed each time", elapsed,
         {"runs": totals},
     )
 
@@ -911,39 +1039,47 @@ def gate_mutation():
         original = fh.read()
 
     killed, survived, broken = 0, [], []
-    for label, old, new in muts:
-        if old not in original:
-            broken.append(f"{label}: pattern absent")
-            continue
+    started = time.time()
+    try:
+        for label, old, new in muts:
+            if old not in original:
+                broken.append(f"{label}: pattern absent")
+                continue
+            with open(stub, "w", encoding="utf-8", errors="replace") as fh:
+                fh.write(original.replace(old, new, 1))
+            rc, out, dt = run(["moon", "run", "./fuzz_props", "--target", "native"],
+                              cwd=MBT, timeout=600)
+            fails = re.search(r"failures\s*:\s*(\d+)", out)
+            if rc != 0:
+                # A compile failure counts as killed: the change was detected.
+                killed += 1
+            elif fails and int(fails.group(1)) > 0:
+                killed += 1
+            else:
+                survived.append(label)
+    finally:
+        # The source file is restored even if the run raised -- and a run CAN
+        # raise: `run` propagates a timeout. Without this, a timeout leaves a
+        # MUTANT in the tree, and the next commit ships it. A harness that
+        # edits the thing it is testing has to put it back on the way out,
+        # not only on the way out of the happy path.
         with open(stub, "w", encoding="utf-8", errors="replace") as fh:
-            fh.write(original.replace(old, new, 1))
-        rc, out, dt = run(["moon", "run", "./fuzz_props", "--target", "native"],
-                          cwd=MBT, timeout=600)
-        fails = re.search(r"failures\s*:\s*(\d+)", out)
-        if rc != 0:
-            # A compile failure counts as killed: the change was detected.
-            killed += 1
-        elif fails and int(fails.group(1)) > 0:
-            killed += 1
-        else:
-            survived.append(label)
-
-    with open(stub, "w", encoding="utf-8", errors="replace") as fh:
-        fh.write(original)
+            fh.write(original)
+    elapsed = time.time() - started
 
     applied = killed + len(survived)
     if broken:
-        return Result("mutation", "fail", "; ".join(broken), 0,
+        return Result("mutation", "fail", "; ".join(broken), elapsed,
                       {"killed": killed, "survived": survived})
     if survived:
         return Result(
             "mutation", "fail",
             f"{len(survived)}/{applied} mutant(s) survived: {', '.join(survived)}",
-            0, {"killed": killed, "survived": survived, "total": applied},
+            elapsed, {"killed": killed, "survived": survived, "total": applied},
         )
     return Result(
         "mutation", "pass",
-        f"{killed}/{applied} mutant(s) killed by the property checks", 0,
+        f"{killed}/{applied} mutant(s) killed by the property checks", elapsed,
         {"killed": killed, "total": applied},
     )
 
@@ -1083,6 +1219,61 @@ def _workflow_jobs(lines):
     return jobs
 
 
+def _job_default_workdir(job_lines):
+    """The job's `defaults.run.working-directory`, if it declares one.
+
+    Only the block BEFORE `steps:` is consulted. A `working-directory:`
+    inside a step is that step's override, not the job's, and treating it as
+    the job's default would make every other step's `cd` look wrong.
+    """
+    in_defaults = False
+    for _n, line in job_lines:
+        if re.match(r"^\s*steps:\s*$", line):
+            break
+        if re.match(r"^\s*defaults:\s*$", line):
+            in_defaults = True
+            continue
+        if in_defaults:
+            m = re.match(r"\s*working-directory:\s*(\S+)\s*$", line)
+            if m:
+                return m.group(1).strip("/")
+    return None
+
+
+def _workflow_steps(job_lines):
+    """Split a job's lines into (label, lines) blocks, one per step.
+
+    A step is a list item under `steps:`. Splitting on those is what lets a
+    step's own `working-directory:` be applied to that step alone: a `cd` in
+    one step cannot contradict another step's directory, and resolving the
+    whole job as a single directory invents contradictions that do not
+    exist -- which is how a gate ends up crying wolf.
+    """
+    steps = []
+    current = None
+    in_steps = False
+    for n, line in job_lines:
+        if re.match(r"^\s*steps:\s*$", line):
+            in_steps = True
+            continue
+        if not in_steps:
+            continue
+        m = re.match(r"^\s*-\s+name:\s*(.*)$", line)
+        if m:
+            current = (m.group(1).strip() or "(unnamed step)", [])
+            steps.append(current)
+            current[1].append((n, line))
+            continue
+        if re.match(r"^\s*-\s+", line):
+            current = ("(unnamed step)", [])
+            steps.append(current)
+            current[1].append((n, line))
+            continue
+        if current is not None:
+            current[1].append((n, line))
+    return steps
+
+
 def gate_release():
     """Is every workflow consistent with itself, in the two ways they have broken?
 
@@ -1173,29 +1364,48 @@ def gate_release():
                     % (name, i_update, i_check)
                 )
 
-        # (2) no step may cd into a directory its own job already put it in
+        # (2) no step may cd into a directory its own job already put it in.
+        # The directory is resolved PER STEP: a step may override the job's
+        # default with its own `working-directory:`, and then that override
+        # is what its `cd` is measured against.
         jobs = _workflow_jobs(lines)
         if not jobs:
             jobs = [("(no job block found)", lines)]
         for job_name, job_lines in jobs:
-            workdirs = set()
-            for _n, line in job_lines:
-                m = re.match(r"\s*working-directory:\s*(\S+)\s*$", line)
-                if m:
-                    workdirs.add(m.group(1).strip("/"))
-            workdirs_seen |= workdirs
-            for n, line in job_lines:
-                m = re.match(r"\s*cd\s+(\S+)", line)
-                if not m:
+            job_wd = _job_default_workdir(job_lines)
+            if job_wd:
+                workdirs_seen.add(job_wd)
+            steps = _workflow_steps(job_lines)
+            if not steps:
+                steps = [("(no steps found)", job_lines)]
+            for step_label, step_lines in steps:
+                step_wd = None
+                for _n, line in step_lines:
+                    m = re.match(r"\s*working-directory:\s*(\S+)\s*$", line)
+                    if m:
+                        step_wd = m.group(1).strip("/")
+                        break
+                if step_wd:
+                    workdirs_seen.add(step_wd)
+                effective = step_wd if step_wd is not None else job_wd
+                if effective is None:
                     continue
-                target = m.group(1).strip("/")
-                for w in sorted(workdirs):
-                    if target == w or target.startswith(w + "/"):
+                for n, line in step_lines:
+                    # `cd mbt` on its own line, and `run: cd mbt` on one
+                    # line, are the same mistake. The first version of this
+                    # check only matched the first spelling, so the second
+                    # one walked straight past the bug this gate exists for.
+                    m = re.match(r"\s*(?:run:\s*)?cd\s+(\S+)", line)
+                    if not m:
+                        continue
+                    target = m.group(1).strip("/")
+                    if target == effective or target.startswith(effective + "/"):
                         problems.append(
-                            "%s job %s line %d: `cd %s` under "
+                            "%s job %s step '%s' line %d: `cd %s` under "
                             "`working-directory: %s` asks for %s/%s, which does "
                             "not exist"
-                            % (name, job_name, n, m.group(1), w, w, target)
+                            % (name, job_name, step_label, n, m.group(1),
+                               effective, effective, target)
                         )
         audited.append(name)
 

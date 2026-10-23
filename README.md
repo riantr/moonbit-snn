@@ -54,10 +54,38 @@ CPU reference loops in `mbt/gpu/cuda/linear_accel_stub.c` and checks that
 property suite was not covering a primitive at all, which is the kind of gap
 a passing test count hides.
 
+The `fmt` gate deserves a note, because it used to be a lie. It ran
+`moon fmt --check` from the repository root, where there is no `moon.mod`
+and no `moon.work`, so every invocation died with "not in a Moon project",
+the fallback could not run either, and the gate reported *formatting clean*
+every time. It now measures the thing instead: the tree is **621 of 635**
+source files away from the formatter's canonical form — it predates the
+spelling the toolchain now prefers, `Int` for `Int32` and `x?` for `x~` — and
+the gate records that distance in `verify/fmt_baseline.json` and fails when
+it moves in either direction. A file becoming non-canonical is drift; a file
+becoming canonical means the record is stale.
+
+Note the number, because `moon fmt --check` cannot tell you it: that command
+stops after ten differences and the ten rotate between runs on the same tree.
+It found "ten files" in a previous note in this repository, and the real
+number is 621.
+
+The battery is the other half of that question. `python verify/gate_battery.py`
+injects a deliberate fault into the thing a gate measures, runs the gate, and
+requires it to go **red**; then it removes the fault and requires the gate to
+go green again — so the red is attributable to the fault and not to the
+machine, the clock, or a gate that was already broken. It covers `lint`,
+`integration`, `coverage`, `fuzz`, `stress`, `mutation`, `oracle` and
+`provenance`; the other twelve were proved by hand.
+Every file it touches is restored byte-exactly, because `core.autocrlf=true`
+with no `.gitattributes` means `git checkout --` would rewrite a file with
+CRLF and change its bytes.
+
 ### What runs where
 
 The release is tag-driven: `.github/workflows/publish.yml` publishes when a
-`v*` tag appears. It runs `moon check` and the nine test waves, and it is the
+`v*` tag appears. It runs the same seven process gates on the tree it is
+about to publish, then `moon check` and the nine test waves, and it is the
 only thing that publishes.
 
 `.github/workflows/ci.yml` runs on every push and runs the 7 gates that need

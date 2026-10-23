@@ -1,0 +1,7 @@
+{
+  "non_canonical_files": 621,
+  "set_sha256": "3ea819e43c3b0d88c626f06b66d7e46c03c07d6fbadd63aacf7a36e57964c701",
+  "measured_at": "2026-10-24",
+  "measured_with": "moon 0.1.20261023 (3778465 2026-10-23)",
+  "why": "The tree predates the spelling the formatter now prefers: `Int` for `Int32`, `x?` for `x~`, and a trailing newline on most files. The code compiles and 1925 tests pass, so this is a distance to record, not a defect to fix here. Rewriting 621 files would also reflow the checked-in oracle goldens and break the byte identity the `golden` gate holds, so the reformat belongs in its own commit, if at all. The gate fails when this number moves in EITHER direction: a file becoming non-canonical is drift, and a file becoming canonical means this record is stale. Update it in the same commit as the change."
+}
