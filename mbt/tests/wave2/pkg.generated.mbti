@@ -2,6 +2,143 @@
 package "riantr/snn_mbt/tests/wave2"
 
 // Values
+pub const ASP_ATOL_GRAD : Float = 1.0e-3
+
+pub const ASP_ATT : Int32 = 6
+
+pub const ASP_C : Int32 = 5
+
+pub const ASP_N : Int32 = 3
+
+pub const ASP_RELU_LIVE : Int32 = 43
+
+pub const ASP_RELU_MIN : Float = 0.004699
+
+pub const ASP_STD_FLOOR : Float = 0.0001
+
+pub const ASP_T : Int32 = 7
+
+pub const ASP_TOL_FWD : Float = 1.0e-4
+
+pub const ASP_TOL_GRAD : Float = 1.0e-2
+
+pub const ASP_VAR_FLOOR : Float = 0.0001
+
+pub const BLOCK_C : Int32 = 8
+
+pub const BLOCK_N : Int32 = 3
+
+pub const BLOCK_T : Int32 = 6
+
+pub const LOGMEL_HOP : Int32 = 160
+
+pub const LOGMEL_N_FFT : Int32 = 512
+
+pub const LOGMEL_N_MELS : Int32 = 80
+
+pub const LOGMEL_N_SAMPLES : Int32 = 2400
+
+pub const LOGMEL_WIN : Int32 = 400
+
+pub const MODEL_CLASSES : Int32 = 4
+
+pub const MODEL_N : Int32 = 3
+
+pub const MODEL_NPARAMS : Int32 = 3573
+
+pub const MODEL_T : Int32 = 6
+
+pub const SE_BOTTLENECK : Int32 = 32
+
+pub const SE_C : Int32 = 8
+
+pub const SE_N : Int32 = 3
+
+pub const SE_T : Int32 = 6
+
+pub let asp_b1 : Array[Float]
+
+pub let asp_b2 : Array[Float]
+
+pub let asp_bn_beta : Array[Float]
+
+pub let asp_bn_gamma : Array[Float]
+
+pub let asp_db1_golden : Array[Float]
+
+pub let asp_db2_golden : Array[Float]
+
+pub let asp_dbn_beta_golden : Array[Float]
+
+pub let asp_dbn_gamma_golden : Array[Float]
+
+pub let asp_dw1_golden : Array[Float]
+
+pub let asp_dw2_golden : Array[Float]
+
+pub let asp_dx_golden : Array[Float]
+
+pub let asp_g : Array[Float]
+
+pub let asp_out_golden : Array[Float]
+
+pub let asp_w1 : Array[Float]
+
+pub let asp_w2 : Array[Float]
+
+pub let asp_x : Array[Float]
+
+pub let blk0_dp_golden : Array[Float]
+
+pub let blk0_dx_golden : Array[Float]
+
+pub let blk0_out_golden : Array[Float]
+
+pub let blk1_dp_golden : Array[Float]
+
+pub let blk1_dx_golden : Array[Float]
+
+pub let blk1_out_golden : Array[Float]
+
+pub let blk2_dp_golden : Array[Float]
+
+pub let blk2_dx_golden : Array[Float]
+
+pub let blk2_out_golden : Array[Float]
+
+pub let blk3_dp_golden : Array[Float]
+
+pub let blk3_dx_golden : Array[Float]
+
+pub let blk3_out_golden : Array[Float]
+
+pub let blk4_dp_golden : Array[Float]
+
+pub let blk4_dx_golden : Array[Float]
+
+pub let blk4_out_golden : Array[Float]
+
+pub let block_dilations : Array[Int32]
+
+pub let logmel_fb_golden : Array[Float]
+
+pub let logmel_mel_golden : Array[Float]
+
+pub let logmel_power_golden : Array[Float]
+
+pub let model_dp_golden : Array[Float]
+
+pub let model_dx_golden : Array[Float]
+
+pub let model_emb_golden : Array[Float]
+
+pub let model_logits_golden : Array[Float]
+
+pub let se_dp_golden : Array[Float]
+
+pub let se_dx_golden : Array[Float]
+
+pub let se_out_golden : Array[Float]
 
 // Errors
 

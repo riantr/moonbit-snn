@@ -2,6 +2,37 @@
 package "riantr/snn_mbt/tests/wave1"
 
 // Values
+pub const BN1D_C : Int32 = 6
+
+pub const BN1D_EPS : Float = 0.00001
+
+pub const BN1D_FWD_ATOL : Float = 0.000296
+
+pub const BN1D_N : Int32 = 4
+
+pub const BN1D_W : Int32 = 7
+
+pub let bn1d_beta : Array[Float]
+
+pub let bn1d_dbeta_golden : Array[Float]
+
+pub let bn1d_dgamma_golden : Array[Float]
+
+pub let bn1d_dx_golden : Array[Float]
+
+pub let bn1d_gamma : Array[Float]
+
+pub let bn1d_input : Array[Float]
+
+pub let bn1d_loss_golden : Float
+
+pub let bn1d_loss_weights : Array[Float]
+
+pub let bn1d_mean : Array[Float]
+
+pub let bn1d_var : Array[Float]
+
+pub let bn1d_y_golden : Array[Float]
 
 // Errors
 

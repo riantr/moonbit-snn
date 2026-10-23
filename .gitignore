@@ -45,3 +45,10 @@ _new_lstm/
 # Python bytecode from the tools under verify/ and tools/
 __pycache__/
 *.pyc
+
+# Generated package interfaces for the sub-packages. The toolchain rewrites
+# these whenever a package's public API changes, so they are build output,
+# not source. The module root's own copy (mbt/pkg.generated.mbti) is tracked
+# on purpose: it is the module's public API snapshot.
+mbt/*/pkg.generated.mbti
+mbt/*/*/pkg.generated.mbti
