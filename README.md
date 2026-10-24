@@ -146,8 +146,9 @@ injects a deliberate fault into the thing a gate measures, runs the gate, and
 requires it to go **red**; then it removes the fault and requires the gate to
 go green again — so the red is attributable to the fault and not to the
 machine, the clock, or a gate that was already broken. It covers `lint`,
-`integration`, `coverage`, `fuzz`, `stress`, `mutation`, `oracle` and
-`provenance`; the other twelve were proved by hand.
+`integration`, `coverage`, `fuzz`, `stress`, `mutation`, `oracle`,
+`provenance`, `release`, `fmt`, `deps` and `docs` — eighteen fault cases
+across thirteen gates; the other seven were proved by hand.
 Every file it touches is restored byte-exactly, because `core.autocrlf=true`
 with no `.gitattributes` means `git checkout --` would rewrite a file with
 CRLF and change its bytes.
@@ -364,14 +365,17 @@ on Windows the `time` builtin reports ~0.02 s of user CPU for a run whose wall
 clock is 2 s, so only elapsed-minus-baseline is usable.
 
 The same caution applies to the counts in this file. They are measured, not
-estimated, and they are pinned in `verify/tree_baseline.json`: the `docs` gate
-counts the tree from what git actually tracks, compares it with the baseline,
-and then checks that this file and `mbt/README.md` still quote the numbers. An
-earlier version of this file said "681 source files, ~125k lines across 23
-packages" while the package README said "732 source files" — both wrong, both
-counting the 400 vendored `.mbt` files that `moon update` leaves in
-`mbt/.mooncakes/`. The dependency cache is not this package's source, and
-`git ls-files` is how the difference is now made.
+estimated, and they are pinned: the tree counts in
+`verify/tree_baseline.json`, the suite in `verify/test_baseline.json`, the
+gate counts in `verify/gate_baseline.json`. The `docs` gate counts the tree
+from what git actually tracks, compares it with the baseline, and then checks
+that this file and `mbt/README.md` still quote the numbers — including the
+package table row by row, the list of runnable examples, and each row's own
+test count. An earlier version of this file said "681 source files, ~125k
+lines across 23 packages" while the package README said "732 source files" —
+both wrong, both counting the 400 vendored `.mbt` files that `moon update`
+leaves in `mbt/.mooncakes/`. The dependency cache is not this package's
+source, and `git ls-files` is how the difference is now made.
 
 ## A note on `git status` after a build
 
@@ -406,5 +410,5 @@ as is this package:
 
 Everything else is original work, written against a published paper with the
 citation in the file. `mbt/README.md` carries the full table — 74 of the 301
-library files are translations of a named upstream file, and the paper behind
+library files are translations of a named upstream, and the paper behind
 each original area.

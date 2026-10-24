@@ -390,6 +390,263 @@ def _check_claims(claims, placeholder, value):
     return missing
 
 
+def _check_claims_multi(claims, values):
+    """Like _check_claims, but a claim may quote SEVERAL pinned numbers.
+
+    "74 of the 301 library files" carries two measurements, and each has to
+    be checked against its own baseline: a sentence that quotes one right
+    number and one wrong one is wrong. The placeholders are named after the
+    facts, so the pattern reads "{ported_files} of the {library_source_files}".
+
+    The per-occurrence rule still applies. EVERY sentence of the claim's shape
+    has to carry the right numbers, not merely one of them -- a wrong count
+    that happens to sit beside a right one is still wrong.
+    """
+    missing = []
+    for claim in claims:
+        rel = claim.get("file", "")
+        pattern = claim.get("pattern", "")
+        if not rel or not pattern:
+            missing.append((rel or "?", "(a claim with no file or pattern)"))
+            continue
+        path = os.path.join(ROOT, rel)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+        except OSError as exc:
+            missing.append((rel, "unreadable: %s" % exc))
+            continue
+        probe = pattern
+        groups = []
+        for name, val in sorted(values.items()):
+            token = "{%s}" % name
+            if token not in probe:
+                # Only the facts this pattern actually quotes become groups.
+                # A group that was never substituted has no match to read, and
+                # asking for one raises rather than reports.
+                continue
+            # Each OCCURRENCE gets its own group: a pattern that quotes the
+            # same fact twice -- "31/31" -- cannot reuse one group name.
+            index = 0
+            while token in probe:
+                group = "__p_%s_%d" % (re.sub(r"\W", "_", name), index)
+                groups.append((group, val))
+                probe = probe.replace(token, r"(?P<%s>\d+)" % group, 1)
+                index += 1
+        try:
+            hits = list(re.finditer(probe, text))
+        except re.error as exc:
+            missing.append((rel, "unreadable pattern: %s" % exc))
+            continue
+        if not hits:
+            missing.append((rel, pattern))
+            continue
+        for m in hits:
+            for group, val in groups:
+                got = m.group(group)
+                if got != str(val):
+                    missing.append((rel, "%s (%s says %s, expected %s)"
+                                    % (pattern, group, got, val)))
+                    break
+            else:
+                continue
+            break
+    return missing
+
+
+def _check_rounded_claims(claims, rounded):
+    """Claims that quote a ROUNDED figure, checked against the pinned figure.
+
+    Some of the numbers in the documentation are deliberately approximate --
+    "about 65,300 lines" for a file count that is 65,308. The rounded figure
+    is what the documentation quotes AND what the baseline pins, and the
+    measurement has to round to it: the documented figure is the pinned
+    figure, and the pinned figure is the measurement rounded to the scale the
+    baseline declares. That is a rule, not a tolerance fitted to whatever the
+    prose happened to say.
+    """
+    missing = []
+    for claim in claims:
+        rel = claim.get("file", "")
+        pattern = claim.get("pattern", "")
+        fact = claim.get("fact", "")
+        if not rel or not pattern or not fact:
+            missing.append((rel or "?",
+                            "(a rounded claim with no file, pattern or fact)"))
+            continue
+        spec = rounded.get(fact)
+        if not isinstance(spec, dict) or not isinstance(spec.get("value"), int):
+            missing.append((rel, "%s (the fact %r is not pinned)"
+                            % (pattern, fact)))
+            continue
+        expected = spec["value"]
+        path = os.path.join(ROOT, rel)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+        except OSError as exc:
+            missing.append((rel, "unreadable: %s" % exc))
+            continue
+        probe = pattern.replace("{n}", r"(?P<__pinned>[\d,]+)")
+        try:
+            hits = list(re.finditer(probe, text))
+        except re.error as exc:
+            missing.append((rel, "unreadable pattern: %s" % exc))
+            continue
+        if not hits:
+            missing.append((rel, pattern))
+            continue
+        for m in hits:
+            got = m.group("__pinned").replace(",", "")
+            if not got.isdigit() or int(got) != expected:
+                missing.append((rel, "%s (says %s, expected %d)"
+                                % (pattern, m.group("__pinned"), expected)))
+                break
+    return missing
+
+
+def _check_package_table(text, per_package):
+    """Check the package table in the package README against the measurement.
+
+    The table is the detailed version of the aggregate counts the
+    documentation quotes, so it is checked against the same measurement the
+    aggregate comes from.
+
+    Two things are checked, and the second one is the one a count cannot
+    check for itself. The numbers in the rows are compared with the tree, and
+    the SET of rows is compared with the SET of packages: a package with no
+    row produces no number to be wrong, so a check that only looks at the
+    numbers that are written down cannot see a missing row at all.
+
+    Returns a (problems, rows) pair; empty problems means the table agrees.
+    """
+    problems = []
+    header = "| Package | Files | Lines | Ported |"
+    idx = text.find(header)
+    if idx < 0:
+        return ["the package table was not found in mbt/README.md"], 0
+
+    rows = []
+    for line in text[idx:].split("\n")[1:]:
+        if not line.startswith("|"):
+            break
+        m = re.match(
+            r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|",
+            line)
+        if not m:
+            continue
+        rows.append((m.group(1), int(m.group(2)), m.group(3).strip(),
+                     m.group(4).strip()))
+
+    # The packages are the directories under mbt/ that carry a manifest. A
+    # directory without one (the testdata fixture) is not a package, and the
+    # README says so.
+    real = {p for p in per_package
+            if os.path.isfile(os.path.join(MBT, p, "moon.pkg"))}
+
+    seen = set()
+    for pkg, files, lines, ported in rows:
+        if pkg in seen:
+            problems.append("%s has more than one row in the package table"
+                            % pkg)
+            continue
+        seen.add(pkg)
+        actual = per_package.get(pkg)
+        if actual is None:
+            problems.append("%s has a row in the package table but is not a "
+                            "package in the tree" % pkg)
+            continue
+        if files != actual["files"]:
+            problems.append("%s claims %d file(s) and the tree holds %d"
+                            % (pkg, files, actual["files"]))
+        if lines and lines != "—":
+            m = re.match(r"^~([\d.]+)k$", lines)
+            if not m:
+                problems.append("%s states its line count as %r, which is not "
+                                "a figure this gate can check" % (pkg, lines))
+            else:
+                stated = float(m.group(1))
+                measured = round(actual["lines"] / 1000.0, 1)
+                if abs(stated - measured) > 1e-9:
+                    problems.append("%s claims ~%sk lines and the tree holds %d "
+                                    "(~%sk)" % (pkg, m.group(1),
+                                                actual["lines"],
+                                                ("%.1f" % measured)))
+        if ported == "original":
+            if actual["ported"]:
+                problems.append("%s is marked 'original' but %d of its %d "
+                                "file(s) name an upstream Julia package"
+                                % (pkg, actual["ported"], actual["files"]))
+        else:
+            m = re.match(r"^(\d+)/(\d+)$", ported)
+            if not m:
+                problems.append("%s states its ported count as %r, which is "
+                                "not a figure this gate can check"
+                                % (pkg, ported))
+            else:
+                n, total = int(m.group(1)), int(m.group(2))
+                if n != actual["ported"]:
+                    problems.append("%s claims %d ported file(s) and the tree "
+                                    "holds %d" % (pkg, n, actual["ported"]))
+                if total != actual["files"]:
+                    problems.append("%s claims %d file(s) in the ported "
+                                    "fraction and the tree holds %d"
+                                    % (pkg, total, actual["files"]))
+
+    for pkg in sorted(real):
+        if pkg not in seen:
+            problems.append("%s is a package in the tree but has no row in "
+                            "the package table" % pkg)
+    for pkg in sorted(seen - real):
+        problems.append("%s has a row in the package table but is not a "
+                        "package in the tree" % pkg)
+    return problems, len(rows)
+
+
+def _check_example_list(text):
+    """The 'Examples runnable' list must name every example package in the tree.
+
+    The number beside the list is only half the claim; the list itself says
+    WHICH examples run. A name that is not in the tree is an example the
+    documentation does not have, and a tree name that is not in the list is
+    an example the documentation forgets. The line once said "72 of 50+" and
+    listed 72 of the 77 examples, and neither the number nor the list was
+    checked, so the five missing names sat in a published package page.
+
+    Returns a (problems, listed) pair.
+    """
+    problems = []
+    m = re.search(r"\*\*Examples runnable\*\*:\s*(\d+)\s*\(([^)]*)\)", text)
+    if not m:
+        return ["the 'Examples runnable' line was not found in mbt/README.md"], 0
+    stated = int(m.group(1))
+    names = [n.strip() for n in m.group(2).split(",") if n.strip()]
+
+    paths = _tracked_paths()
+    if paths is None:
+        return ["the example list could not be compared with the tree"], 0
+    exroot = os.path.join(MBT, "examples")
+    tracked = set()
+    for rel in paths:
+        if rel.startswith("mbt/examples/") and rel.endswith("moon.pkg"):
+            tracked.add(os.path.relpath(os.path.dirname(rel), exroot)
+                        .replace(os.sep, "/"))
+    listed = set(names)
+    for name in sorted(tracked - listed):
+        problems.append("the example %s is in the tree but is not in the "
+                        "'Examples runnable' list" % name)
+    for name in sorted(listed - tracked):
+        problems.append("the 'Examples runnable' list names %s, which is not "
+                        "an example package in the tree" % name)
+    if len(names) != len(listed):
+        problems.append("the 'Examples runnable' list has %d entries but only "
+                        "%d of them are distinct" % (len(names), len(listed)))
+    if stated != len(names):
+        problems.append("the 'Examples runnable' line says %d but lists %d "
+                        "names" % (stated, len(names)))
+    return problems, len(names)
+
+
 def gate_docs():
     """The documented counts, checked against the pinned baselines.
 
@@ -522,7 +779,20 @@ def gate_docs():
             "describing the shape of the tree cannot be compared against "
             "anything. Restore it rather than letting them drift unchecked.",
         )
-    measured = _measure_tree()
+    # How a ported file is counted is declared in the baseline, next to the
+    # number it defines. Without that rule the provenance split cannot be
+    # measured at all, and the documentation's "74 of the 301" would be a
+    # number nobody could reproduce.
+    rule = tbase.get("provenance") or {}
+    if not rule.get("upstream_packages"):
+        return Result(
+            "docs", "fail",
+            "verify/tree_baseline.json does not record which upstream Julia "
+            "packages mark a file as ported, so the provenance split cannot "
+            "be measured and the documented count cannot be checked against "
+            "anything.",
+        )
+    measured = _measure_tree(rule)
     if measured is None:
         return Result(
             "docs", "fail",
@@ -588,13 +858,7 @@ def gate_docs():
 
     # And the documentation has to quote the pinned numbers.
     tree_claims = tbase.get("claims") or []
-    missing_tree = []
-    for name in sorted(pinned):
-        for claim in tree_claims:
-            if claim.get("fact") != name:
-                continue
-            missing_tree.extend(
-                _check_claims([claim], "{%s}" % name, pinned[name]))
+    missing_tree = _check_claims_multi(tree_claims, pinned)
     if missing_tree:
         first = missing_tree[0]
         return Result(
@@ -610,6 +874,109 @@ def gate_docs():
             {"missing": missing_tree, "expected": pinned},
         )
 
+    # The figures the documentation quotes on purpose as approximations --
+    # "about 65,300 lines" -- are pinned as the ROUNDED figure, and the
+    # measurement has to round to it. Pinning the exact count instead would
+    # make this gate fire on every single-line edit to the library, and a gate
+    # that cries wolf is a gate that gets switched off.
+    rounded = tbase.get("rounded_facts") or {}
+    for name in sorted(rounded):
+        spec = rounded[name]
+        if not isinstance(spec, dict):
+            return Result(
+                "docs", "fail",
+                "verify/tree_baseline.json records %r as a rounded fact but "
+                "does not say what to round it to." % name,
+            )
+        value = spec.get("value")
+        scale = spec.get("scale")
+        if not isinstance(value, int) or not isinstance(scale, int) or scale < 1:
+            return Result(
+                "docs", "fail",
+                "verify/tree_baseline.json records %r as a rounded fact with "
+                "no usable value and scale, so it cannot be checked." % name,
+            )
+        live = measured.get(name)
+        if live is None:
+            return Result(
+                "docs", "fail",
+                "the rounded fact %r could not be measured, so the figure the "
+                "documentation quotes has nothing to be compared against."
+                % name,
+            )
+        if int(round(live / scale)) * scale != value:
+            return Result(
+                "docs", "fail",
+                "the tree measures %d for %r, which rounds to %d and not to "
+                "the pinned %d. Update verify/tree_baseline.json and the "
+                "figure quoted in README.md and mbt/README.md in the same "
+                "commit." % (live, name, int(round(live / scale)) * scale,
+                             value),
+                0.0,
+                {"measured": live, "expected": value},
+            )
+    rounded_claims = tbase.get("rounded_claims") or []
+    missing_rounded = _check_rounded_claims(rounded_claims, rounded)
+    if missing_rounded:
+        first = missing_rounded[0]
+        return Result(
+            "docs", "fail",
+            "%d rounded documented count(s) no longer match the measurement. "
+            "The documentation quotes an approximation of a number the tree "
+            "measures exactly, and the approximation has drifted. Update the "
+            "quoted figure, or update verify/tree_baseline.json if the tree "
+            "itself changed. First offender: %s -- %s"
+            % (len(missing_rounded), first[0], first[1]),
+            0.0,
+            {"missing": missing_rounded, "expected": pinned},
+        )
+
+    # The package table in the package README is the detailed version of the
+    # aggregate counts, and it is checked against the same measurement. The
+    # set of rows is checked as well as the numbers in them: a package with
+    # no row produces no number to be wrong.
+    pkg_readme = os.path.join(MBT, "README.md")
+    try:
+        with open(pkg_readme, encoding="utf-8") as fh:
+            pkg_text = fh.read()
+    except OSError:
+        pkg_text = ""
+    per_package = _measure_packages(rule)
+    if per_package is None:
+        return Result(
+            "docs", "fail",
+            "the package table could not be measured, so its rows cannot be "
+            "checked against the tree.",
+        )
+    table_problems, table_rows = _check_package_table(pkg_text, per_package)
+    if table_problems:
+        return Result(
+            "docs", "fail",
+            "%d problem(s) in the package table of mbt/README.md. The table is "
+            "checked against the same measurement the aggregate counts come "
+            "from, and every row has to agree with it -- and every package in "
+            "the tree has to have a row. First offender: %s"
+            % (len(table_problems), table_problems[0]),
+            0.0,
+            {"problems": table_problems},
+        )
+
+    # The list of runnable examples. The count beside it is checked by the
+    # claims above; the LIST is checked here, because a name that is missing
+    # from the list is an example the documentation does not mention, and no
+    # count can see that.
+    list_problems, listed_examples = _check_example_list(pkg_text)
+    if list_problems:
+        return Result(
+            "docs", "fail",
+            "%d problem(s) with the 'Examples runnable' list in "
+            "mbt/README.md. The list has to name every example package in the "
+            "tree, and every name in it has to be one. First offender: %s"
+            % (len(list_problems), list_problems[0]),
+            0.0,
+            {"problems": list_problems, "listed": listed_examples},
+        )
+
     # The per-row test counts in the package README's feature table. Each row
     # that states a count states it as "N tests in `<file>`", so the number can
     # be looked up in the file it names and compared. This is the check that
@@ -618,14 +985,14 @@ def gate_docs():
     # published package page for months because nothing compared them with
     # the suite.
     counts = _test_declaration_counts()
-    pkg_readme = os.path.join(MBT, "README.md")
-    try:
-        with open(pkg_readme, encoding="utf-8") as fh:
-            pkg_text = fh.read()
-    except OSError:
-        pkg_text = ""
     claimed_counts = re.findall(
         r"(\d+) tests? in `([\w./-]+_test\.mbt)`", pkg_text)
+    # A row that owns only PART of a test file says "N of the M tests in
+    # `<file>`". The M is the file's own count and is checked exactly; the N
+    # is this row's share of it, and the shares of all the rows that name the
+    # same file must not add up to more than the file holds.
+    part_counts = re.findall(
+        r"(\d+) of the (\d+) tests? in `([\w./-]+_test\.mbt)`", pkg_text)
     wrong_counts = []
     for claimed_n, f in claimed_counts:
         base = os.path.basename(f)
@@ -634,6 +1001,22 @@ def gate_docs():
             wrong_counts.append((f, int(claimed_n), None))
         elif actual != int(claimed_n):
             wrong_counts.append((f, int(claimed_n), actual))
+    shares = {}
+    for claimed_n, total, f in part_counts:
+        base = os.path.basename(f)
+        actual = counts.get(base)
+        if actual is None:
+            wrong_counts.append((f, int(total), None))
+            continue
+        if actual != int(total):
+            wrong_counts.append((f, int(total), actual))
+        elif int(claimed_n) > actual:
+            wrong_counts.append((f, int(claimed_n), actual))
+        shares[base] = shares.get(base, 0) + int(claimed_n)
+    for base, total in sorted(shares.items()):
+        actual = counts.get(base)
+        if actual is not None and total > actual:
+            wrong_counts.append((base, total, actual))
     if wrong_counts:
         first = wrong_counts[0]
         return Result(
@@ -653,15 +1036,21 @@ def gate_docs():
         "docs", "pass",
         "%d documented test count(s) agree with the pinned %d; %s; %d "
         "documented tree count(s) agree with the pinned tree shape; %d "
-        "per-row test count(s) agree with the files they name"
+        "rounded documented count(s) agree with the measurement; %d row(s) of "
+        "the package table agree with the tree; %d listed example(s) match the "
+        "tree; %d per-row test count(s) agree with the files they name"
         % (len(claims), n,
            "; ".join("%d documented %s counts agree with the pinned %d"
                      % (c, label, v) for label, c, v in checked),
-           len(tree_claims), len(claimed_counts)),
+           len(tree_claims), len(rounded_claims), table_rows,
+           listed_examples, len(claimed_counts)),
         0.0, {"claims": len(claims), "expected": n,
               "checked": [{"label": l, "claims": c, "value": v}
                           for l, c, v in checked],
               "tree_facts": pinned, "tree_claims": len(tree_claims),
+              "rounded_claims": len(rounded_claims),
+              "table_rows": table_rows,
+              "listed_examples": listed_examples,
               "row_counts": len(claimed_counts)},
     )
 
@@ -733,6 +1122,7 @@ GATE_BASELINE = os.path.join(ROOT, "verify", "gate_baseline.json")
 FMT_BASELINE = os.path.join(ROOT, "verify", "fmt_baseline.json")
 TREE_BASELINE = os.path.join(ROOT, "verify", "tree_baseline.json")
 DEPS_BASELINE = os.path.join(ROOT, "verify", "deps_baseline.json")
+PROVENANCE_BASELINE = os.path.join(ROOT, "verify", "provenance_baseline.json")
 
 
 def load_baseline(path, key):
@@ -841,7 +1231,52 @@ def _test_declaration_counts():
     return counts
 
 
-def _measure_tree():
+def _measure_packages(rule):
+    """Per-package file, line and ported counts for the library sources.
+
+    `rule` is the provenance rule recorded in verify/tree_baseline.json: the
+    upstream Julia packages whose appearance in a file marks it as a
+    translation, and the packages that are harness scaffolding rather than
+    ported code. The rule lives in the baseline rather than in this function
+    so that the definition sits next to the numbers it defines, and so that
+    changing what "ported" means is a reviewable edit to a data file rather
+    than an edit to the harness.
+
+    Returns {package: {"files": n, "lines": n, "ported": n}}, or None when
+    the rule is missing or the tree cannot be read.
+    """
+    upstream = tuple(rule.get("upstream_packages") or ())
+    harness = set(rule.get("harness_packages") or ())
+    if not upstream:
+        return None
+    paths = _tracked_paths()
+    if paths is None:
+        return None
+    out = {}
+    for rel in paths:
+        if not rel.endswith(".mbt"):
+            continue
+        if rel.startswith("mbt/tests/") or rel.startswith("mbt/examples/"):
+            continue
+        pkg = rel[len("mbt/"):].split("/")[0]
+        try:
+            with open(os.path.join(ROOT, rel), "rb") as fh:
+                raw = fh.read()
+        except OSError:
+            continue
+        text = raw.decode("utf-8", errors="replace")
+        entry = out.setdefault(pkg, {"files": 0, "lines": 0, "ported": 0})
+        entry["files"] += 1
+        entry["lines"] += raw.count(b"\n")
+        # A file that names an upstream Julia package is a translation of it.
+        # The harness packages are excluded: they are QA scaffolding, and one
+        # of them names the upstream in prose without being a translation.
+        if pkg not in harness and any(u in text for u in upstream):
+            entry["ported"] += 1
+    return out
+
+
+def _measure_tree(rule=None):
     """The shape of the tree, measured from what git actually tracks.
 
     Returns a dict of fact -> count, or None if the tree cannot be measured.
@@ -874,13 +1309,29 @@ def _measure_tree():
     except OSError:
         pass
 
-    return {
+    measured = {
         "library_source_files": len(library),
         "packages": len(packages),
         "root_imports": root_imports,
         "test_files": len(tests),
         "example_packages": len(examples),
+        "interface_snapshots": len([p for p in paths if p.endswith(".mbti")]),
     }
+
+    # The provenance split, and the line counts, come from the per-package
+    # measurement, so that the numbers the README quotes and the numbers the
+    # package table quotes are read off the same measurement.
+    per_package = _measure_packages(rule) if rule else None
+    if per_package is None:
+        return measured
+    ported = sum(e["ported"] for e in per_package.values())
+    measured["ported_files"] = ported
+    measured["original_files"] = measured["library_source_files"] - ported
+    measured["library_lines"] = sum(e["lines"] for e in per_package.values())
+    for pkg in ("rl", "synapse"):
+        if pkg in per_package:
+            measured["%s_lines" % pkg] = per_package[pkg]["lines"]
+    return measured
 
 
 def load_fmt_baseline():
@@ -1533,6 +1984,32 @@ def gate_provenance():
         failed = [ln.strip() for ln in text.splitlines() if "[FAIL]" in ln]
         return Result("provenance", "fail",
                       "; ".join(failed[:2]) or "audit produced no verdict", dt)
+    # The number of facts the audit asserts is pinned, because the README
+    # quotes it: a fact added to the audit is a fact the oracle now depends
+    # on, and the documentation has to say so in the same commit.
+    expected = None
+    try:
+        with open(PROVENANCE_BASELINE, encoding="utf-8") as fh:
+            expected = json.load(fh).get("structural_facts")
+    except (OSError, ValueError):
+        expected = None
+    if not isinstance(expected, int):
+        return Result(
+            "provenance", "fail",
+            "verify/provenance_baseline.json is missing or malformed, so the "
+            "number of structural facts the audit asserts cannot be compared "
+            "against anything. Restore it rather than letting the count "
+            "drift unchecked.",
+            dt)
+    if int(m.group(2)) != expected:
+        return Result(
+            "provenance", "fail",
+            "the audit asserts %s structural facts and "
+            "verify/provenance_baseline.json pins %d. A fact was added to or "
+            "removed from the audit: update the baseline and the count "
+            "quoted in README.md and mbt/README.md in the same commit."
+            % (m.group(2), expected),
+            dt, {"measured": int(m.group(2)), "expected": expected})
     return Result("provenance", "pass",
                   "%s of %s structural facts hold against the reference"
                   % (m.group(1), m.group(2)), dt)

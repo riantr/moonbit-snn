@@ -135,6 +135,55 @@ FAULTS = [
       ("mbt/infra/moon.pkg",
        '  "riantr/snn_mbt/models",\n}\n',
        '  "riantr/snn_mbt/models",\n  "riantr/snn_mbt/meta",\n}\n')]),
+
+    # The `docs` gate is the one that says the documentation agrees with the
+    # tree, so the faults below are the ones that make it disagree. Four of
+    # them, one per kind of claim it makes, because a gate that checks four
+    # things and can only be made to fail on one of them is not a gate on
+    # the other three.
+    ("docs",
+     "the package table claiming a file count the tree does not have",
+     [("mbt/README.md",
+       "| `rl` | 63 | ~15.1k | original |",
+       "| `rl` | 64 | ~15.1k | original |")]),
+
+    ("docs",
+     "an example dropped from the 'Examples runnable' list",
+     [("mbt/README.md",
+       ", izhikevich_net, izhikevich_postspike)",
+       ", izhikevich_postspike)")]),
+
+    ("docs",
+     "a pinned tree count that disagrees with the tree",
+     [("verify/tree_baseline.json",
+       '"ported_files": 74',
+       '"ported_files": 73')]),
+
+    # A row that owns part of a test file claims "N of the M tests in
+    # `<file>`". The rows that name the same file must not add up to more
+    # than the file holds -- so claiming one more than the row really owns
+    # has to be caught.
+    ("docs",
+     "a per-row test count claiming more of a file than the file holds",
+     [("mbt/README.md",
+       "6 of the 14 tests in `metaplasticity_test.mbt`",
+       "7 of the 14 tests in `metaplasticity_test.mbt`")]),
+
+    # The line counts are quoted on purpose as approximations, and the
+    # APPROXIMATION is pinned. Two faults, one per link in that chain: the
+    # baseline drifting away from the measurement, and the prose drifting
+    # away from the baseline.
+    ("docs",
+     "a rounded line count the measurement no longer rounds to",
+     [("verify/tree_baseline.json",
+       '"library_lines": {"value": 65300, "scale": 100}',
+       '"library_lines": {"value": 65200, "scale": 100}')]),
+
+    ("docs",
+     "an approximated line count in the prose that the baseline does not hold",
+     [("README.md",
+       "about 65,300 lines, across",
+       "about 65,400 lines, across")]),
 ]
 
 

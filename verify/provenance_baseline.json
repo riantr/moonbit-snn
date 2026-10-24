@@ -1,0 +1,7 @@
+{
+  "structural_facts": 31,
+  "measured_on": "3fb84cf",
+  "measured_at": "2026-10-26",
+  "owner": "verify/audit_transcription.py",
+  "note": "The number of structural facts the transcription audit asserts against the upstream reference. The `provenance` gate measures it -- it runs verify/audit_transcription.py and reads the count out of the verdict -- and fails when it moves, because a fact added to the audit is a fact the oracle now depends on and the documentation has to say so. The `docs` gate reads this file and checks that both READMEs still quote the number, so the count cannot drift between the audit and the prose. The audit needs a checkout of the reference under _build/, which is gitignored, so the GATE that measures this number is a local one: on a CI runner the provenance gate reports `unavailable` rather than `pass`. The documentation claim is still checked there, against this pin."
+}
