@@ -1,0 +1,36 @@
+{
+  "facts": {
+    "library_source_files": 301,
+    "packages": 24,
+    "root_imports": 19,
+    "test_files": 258,
+    "example_packages": 77
+  },
+  "measured_on": "a35f06f",
+  "measured_at": "2026-10-25",
+  "command": "git ls-files mbt, then count the .mbt files and package directories",
+  "definitions": {
+    "library_source_files": "tracked *.mbt under mbt/, excluding mbt/tests/ and mbt/examples/",
+    "packages": "directories directly under mbt/ that carry a moon.pkg",
+    "root_imports": "distinct riantr/snn_mbt/* entries imported by mbt/moon.pkg",
+    "test_files": "tracked *.mbt under mbt/tests/",
+    "example_packages": "directories under mbt/examples/ that carry a moon.pkg"
+  },
+  "claims": [
+    {"file": "README.md", "fact": "library_source_files", "pattern": "{library_source_files} library source files"},
+    {"file": "README.md", "fact": "packages", "pattern": "split across {packages} packages"},
+    {"file": "README.md", "fact": "test_files", "pattern": "{test_files} test files"},
+    {"file": "README.md", "fact": "example_packages", "pattern": "{example_packages} runnable examples"},
+    {"file": "README.md", "fact": "non_canonical_files", "pattern": "\\*\\*{non_canonical_files}\\*\\* source files"},
+    {"file": "mbt/README.md", "fact": "library_source_files", "pattern": "\\| Library source files \\| {library_source_files} \\|"},
+    {"file": "mbt/README.md", "fact": "packages", "pattern": "\\| Packages \\| {packages} \\|"},
+    {"file": "mbt/README.md", "fact": "root_imports", "pattern": "imports {root_imports} of them"},
+    {"file": "mbt/README.md", "fact": "test_files", "pattern": "\\| Test files \\| {test_files} \\|"},
+    {"file": "mbt/README.md", "fact": "example_packages", "pattern": "\\| Examples \\| {example_packages} \\|"},
+    {"file": "mbt/README.md", "fact": "non_canonical_files", "pattern": "\\*\\*{non_canonical_files}\\*\\* source files"}
+  ],
+  "borrowed": {
+    "non_canonical_files": {"file": "fmt_baseline.json", "key": "non_canonical_files"}
+  },
+  "note": "The shape of the tree, and the counts the documentation quotes from it. These are pinned because every one of them had already drifted, and the reason they drifted is worth recording: the documentation said 732 source files because the count came from a directory walk, and a walk sees the 400 vendored .mbt files that `moon update` leaves in mbt/.mooncakes/ and the four scratch files under the gitignored mbt/_disabled/ and mbt/_new_lstm/ directories. That is the dependency cache, not this package's source. The counts here come from `git ls-files`, which sees what the repository actually tracks, so the vendored cache cannot inflate them again. The numbers also drifted apart from each other -- the root README said 681 source files and 23 packages while the package README said 732 and 299 -- because two documents each carried its own count. Pinning them here means there is one number and one place to update it. The `docs` gate measures the tree, compares it with this file, and then checks that both READMEs still quote it: tree -> baseline -> documentation cannot come apart. Every sentence of a claim's shape must carry the pinned number, not merely one of them, because a wrong count that happens to sit beside a right one is still wrong. Any change to these counts must update this file and the quoted counts in the same commit."
+}

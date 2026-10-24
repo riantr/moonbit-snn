@@ -2,18 +2,40 @@
 
 A bit-exact MoonBit re-implementation of the
 [SpikingNeuralNetworks.jl](https://github.com/AlessioQuer/SpikingNeuralNetworks.jl)
-ecosystem. Long-term goal: every example in
-`SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces
-the same numerical trajectories (last-bit Float32) as the Julia run.
+ecosystem: neurons, synapses, plasticity, stimuli and the simulation harness,
+extended with the training machinery the Julia packages did not have.
 
-## Status (v0.166.2, 2026-10-23)
+[![CI](https://github.com/riantr/moonbit-snn/actions/workflows/ci.yml/badge.svg)](https://github.com/riantr/moonbit-snn/actions/workflows/ci.yml)
+[![Release](https://github.com/riantr/moonbit-snn/actions/workflows/publish.yml/badge.svg)](https://github.com/riantr/moonbit-snn/actions/workflows/publish.yml)
+[![mooncakes.io](https://img.shields.io/badge/mooncakes.io-riantr%2Fsnn__mbt-orange)](https://mooncakes.io/docs/riantr/snn_mbt)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/riantr/moonbit-snn)
 
-`moon.mod` carries this tree's version. The version currently on
-mooncakes.io is **0.155.0**: v0.165.0, v0.166.0 and v0.166.1 were all
-tagged, but their publish runs failed, and this tree is 0.166.2. The batch
-sections at
-the end of this file run from Batch C (v0.58.0) through Batch AG
-(v0.166.0) and describe what changed in each.
+The long-term goal is that every example in
+`SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces the same
+numerical trajectories (last-bit Float32) as the Julia run. **That goal is not
+met yet**, and this page says so explicitly rather than implying otherwise —
+see [Status](#status) and
+[How validity is established](#how-validity-is-established).
+
+## Status
+
+> **Experimental.** This is a port in progress, and a minor release may contain
+> breaking changes. The version in `moon.mod` is the source of truth, and the
+> release that follows it is published to
+> [mooncakes.io](https://mooncakes.io/docs/riantr/snn_mbt) by the tag workflow
+> and by nothing else.
+
+**Current version: 0.166.2** (2026-10-23). It is the version currently on
+mooncakes.io: the registry lists `0.166.2` as the latest, with
+`build_status: success` and not yanked. v0.165.0, v0.166.0 and v0.166.1 were
+tagged, but their publish runs failed; the tags were spent and the versions
+were not reused.
+
+The release history — what shipped in which version, batch by batch — is in
+[`CHANGELOG.md`](./CHANGELOG.md). The counts in it are historical: they are
+the numbers as they were when the release was made. The current counts are in
+the table below, and they are pinned in `verify/test_baseline.json` and
+`verify/tree_baseline.json` and checked on every push.
 
 ### What v0.166.2 changed
 
@@ -47,8 +69,8 @@ successful publish and call the release a failure for having worked.
 The module did not compile against the current MoonBit core, and three
 separate things had to be fixed before it would.
 
-**The core renamed `to_float`.** 23 call sites across 13 files — in the
-analysis, nn, rl, stimulus and synapse packages, and their tests — used
+**The core renamed `to_float`.** 23 call sites across 13 files -- in the
+analysis, nn, rl, stimulus and synapse packages, and their tests -- used
 `to_float()`, which no longer exists. They are now `Float::from_int` or
 `Float::from_double`, chosen by the receiver's type. The rewrite is
 value-preserving: `to_float` was the same intrinsic under another name,
@@ -63,14 +85,14 @@ formatters, so the effect is cosmetic label text.
 **The dependency was unpublishable.** `riantr/moonbit_image` 0.3.7 used
 the `try?` operator, which the core removed: unpack the published 0.3.7
 archive and `moon check` in it fails with `Error: [3002] try? has been
-removed`. 0.3.8 and 0.3.9 fix that and are published — 0.3.8 also declares
+removed`. 0.3.8 and 0.3.9 fix that and are published -- 0.3.8 also declares
 js and wasm-gc as supported targets. This tree depends on 0.3.9 and no
 longer carries a patched copy of the dependency under `mbt/.mooncakes`,
 so a clean checkout builds.
 
 **The coverage gate had stopped working.** `moon coverage analyze` no
 longer prints a percentage, so the gate that parsed one had been reporting
-`unavailable` instead of a verdict — a gate that cannot produce a verdict
+`unavailable` instead of a verdict -- a gate that cannot produce a verdict
 is not a gate. It now compares the toolchain's count of uncovered
 executable lines against a measured baseline, and the baseline records
 that the count is not the number of source lines in the raw coverage
@@ -79,8 +101,8 @@ dumps.
 Also: the test count is pinned in `verify/test_baseline.json` and checked
 by the `unit` and `docs` gates, so it cannot drift away from the
 documentation again; the release workflow resolves the registry index,
-checks the shape of its credentials, and treats the registry listing —
-not `moon publish`'s exit code — as the authority on whether anything
+checks the shape of its credentials, and treats the registry listing --
+not `moon publish`'s exit code -- as the authority on whether anything
 landed; and the mutation-canary harness asserts that its control builds
 and that each of its seven canaries fails, instead of reporting a broken
 build as a pass.
@@ -88,18 +110,9 @@ build as a pass.
 ### What v0.166.0 changed structurally
 
 The package was split. The root now holds **no source files at all** --
-every `.mbt` lives in one of 23 sub-packages, and `mbt/moon.pkg` is a
+every `.mbt` lives in one of the sub-packages, and `mbt/moon.pkg` is a
 manifest with an import list rather than a body. The waves under
 `mbt/tests/` were already split; this moved the library to match.
-
-| | |
-|---|---|
-| Packages | 23 |
-| Library source files | 299 (`*.mbt` in the library packages, not `mbt/tests/`) |
-| Library lines | ~62,700 |
-| Largest package | `rl` (~15,000 lines), then `synapse` (~8,000) |
-| Tests | 1925 across nine waves |
-| Examples | 77 |
 
 Two additions came with the split. `mbt/gpu/` is an optional
 single-precision BLAS seam for the dense layers in `nn/`, complete with a C
@@ -112,34 +125,195 @@ cannot check itself.
 
 See the top-level `README.md` for both, and for the release-vs-debug
 performance caveat that applies to any timing taken here.
+
+## At a glance
+
+| | |
+|---|---|
+| Packages | 24 |
+| Library source files | 301 |
+| Library lines | ~65,300 |
+| Largest package | `rl` (~15.1k lines), then `synapse` (~8.0k) |
+| Test files | 258 |
+| Tests | 1925 across nine waves |
+| Examples | 77 |
+| Quality gates | 20 |
+
+**Test count**: 1925, across 258 test files in nine wave packages under
+`mbt/tests/`. The count is measured by the `unit` gate and pinned in
+`verify/test_baseline.json`; the `docs` gate checks that this page still
+quotes it.
+
+## What this package is, and what it is not
+
+**It is** the simulation and training layer of the Julia SNN ecosystem:
+neurons (IF, AdEx, Izhikevich, Hodgkin-Huxley, Morris-Lecar, Poisson,
+Wilson-Cowan), synapses and plasticity (Markram STP, Gerstner / MexicanHat /
+AntiSymmetric / vSTDP / Confavreux 2025 STDP), receptors (AMPA, NMDA, GABAa,
+GABAb), stimuli, the model/simulation harness, and -- written here rather
+than ported -- the deep-learning machinery the Julia packages did not have.
+
+**It is not** a drop-in replacement for the Julia package:
+
+| | Status | Note |
+|---|---|---|
+| Self-consistency of every component | ✅ done | 1925 assertions across nine waves |
+| Bit-exact match with the Julia upstream | ⚠ partial | the comparison machinery is here; the reference traces are not committed |
+| Every Julia example reproduced | ❌ not implemented | 12 of the 77 examples carry a recorded comparison; the rest are scaled-down qualitative ports |
+| Julia's integer-seed RNG hashing | ❌ not implemented | `Xoshiro(seed::Integer)` hashes with SHA-256; this port uses splitmix64, so integer-seeded sequences differ. Use `Xoshiro::from_state(s0, s1, s2, s3)` for a comparable run |
+| Multi-receptor synapses (NMDA / GABAa / GABA_B) | ⚠ partial | the receptors exist; the HH_NMDA, Tripod, BallAndStick and Multipod models that use them are scaled-down |
+| Multi-compartment neurons | ⚠ partial | Tripod, BallAndStick and Multipod exist; the Julia models using them are scaled-down |
+| wasm target | ❌ not implemented | `core/` binds libm through `extern "C"`; the module is native-only |
+
+The list of gaps that specifically block bit-exactness is in
+[Network experiments summary](#network-experiments-summary).
+
+## Prerequisites
+
+- The MoonBit toolchain. The tree is developed against `moon
+  0.1.20261023`; `moon.mod` declares `preferred_target = "native"`.
+- A native target. There is no wasm build: `core/math_native.mbt` binds
+  `expf`, `tanhf`, `logf` and `sqrtf` from libm through `extern "C"`.
+- Nothing else for ordinary use. The QA gates additionally need Python 3,
+  and the PyTorch-backed ones need PyTorch and a checkout of the Julia
+  reference under `_build/`.
+
+## Install
+
+```sh
+moon add riantr/snn_mbt@0.166.2
+```
+
+That writes `import { "riantr/snn_mbt@0.166.2" }` into your `moon.mod`. The
+root package exports no symbols — it is a manifest, not a body — so import
+the packages you actually want:
+
+```moonbit
+import {
+  "riantr/snn_mbt/core"
+  "riantr/snn_mbt/neuron"
+}
+```
+
+## Quickstart
+
+```sh
+cd moonbit-snn/mbt
+moon update
+moon check --target native
+moon run examples/chain --target native
+```
+
+Expected output:
+
+```text
+chain.mbt: simulation done
+  v[0] = -68.17937
+  v[1] = -69.97869
+  v[2] = -69.98688
+  recorded steps: 801
+Monitor[v] n=801 min=-68.17937 max=-51.54429 mean=-65.70784
+```
+
+The tests live in nine sub-packages under `mbt/tests/`, not in the package
+root. `moon test` at the root does not run them: the root holds no test
+files, and on Windows the root package's test target exceeds the 32K
+command-line limit that moon inlines source paths into. See
+`tools/split_tests/README.md`.
+
+```sh
+cd mbt
+moon test ./tests/wave1 --target native
+# ... and so on through wave9
+```
+
+## Packages
+
+The library is split across 24 packages under `mbt/`. The root manifest
+`mbt/moon.pkg` imports 19 of them; every library package except `tarnet` and
+`gpu` is among those, and those two are imported by the wave2 test package
+and by the GPU harness packages respectively. `bench_lin`, `fuzz_props` and
+`gpu_selftest` are harness packages the QA gates drive, not library code.
+
+`ported` is `ported / total` files in that package: a file counts as ported
+when its header names the Julia upstream file it was translated from, so a
+package can be mostly ported and still carry original work. Provenance is
+per-file.
+
+| Package | Files | Lines | Ported | What it is |
+|---|---|---|---|---|
+| `rl` | 63 | ~15.1k | original | DDPG, TD3, SAC, PPO, recurrent (GRU/LSTM/GTrXL) actors and critics, Decision Transformer, Trajectory Transformer |
+| `synapse` | 34 | ~8.0k | 26/34 | connections, receptors, plasticity (STDP, STP, vSTDP, Istdp) |
+| `gnn` | 18 | ~6.8k | original | message passing, GCN, GIN, PNA, GAT, Set2Set, graph backward |
+| `infra` | 20 | ~5.7k | 6/20 | simulation, serialisation, Julia-parity machinery, datasets |
+| `neuron` | 21 | ~4.6k | 19/21 | IF, AdEx, Izhikevich, HH, Morris-Lecar, Poisson, Wilson-Cowan, dendrites |
+| `tarnet` | 7 | ~3.8k | original | TARNet speaker identification: conv, ASP, SE, log-Mel |
+| `generative` | 23 | ~3.7k | original | RealNVP, Glow, VAE/IWAE, DDPM, EBM, DCGAN, WGAN-GP |
+| `nn` | 16 | ~2.9k | 1/16 | Tensor, Linear, Conv2d, pooling, normalisation, backwards |
+| `attention` | 10 | ~1.9k | original | multi-head self-attention, SAttention, positional encodings, SpikeFormer |
+| `analysis` | 13 | ~1.9k | 10/13 | spike-train statistics: rates, ISI/CV2, STTC, weight measures |
+| `causal` | 5 | ~1.4k | original | SCMs, do-calculus, counterfactuals, causal effect estimation |
+| `stimulus` | 10 | ~1.2k | 9/10 | Poisson, spike-time, current, balanced and grouped stimuli |
+| `meta` | 8 | ~1.2k | original | MAML, FOMAML, Reptile, neural ODEs |
+| `timeseries` | 6 | ~1.2k | original | AR / ARIMA, Holt-Winters |
+| `optim` | 7 | ~1.1k | original | SGD, Adam, AdamW, RMSprop, AdaGrad, Adafactor, LR schedules |
+| `activ` | 16 | ~1.0k | original | activations, pooling, normalisation, elementwise ops |
+| `models` | 5 | ~0.9k | original | LeNet5, MLP, SimpleCNN, ViT, Siamese |
+| `core` | 5 | ~0.8k | 3/5 | Time, Xoshiro RNG, unit constants, libm bindings |
+| `capsule` | 4 | ~0.8k | original | CapsNet, dynamic routing |
+| `autodiff` | 3 | ~0.5k | original | reverse-mode autodiff over a recorded tape |
+| `gpu` | 3 | ~0.4k | original | single-precision BLAS seam; deliberately unconnected |
+| `bench_lin` | 1 | — | original | release-mode timing of the hot kernel (harness) |
+| `fuzz_props` | 1 | — | original | property checks the QA loop drives (harness) |
+| `gpu_selftest` | 1 | — | original | known-answer checks for the BLAS fallback (harness) |
+
+The Files column sums to 300; the 301st library source file is
+`testdata/smoke_test_archived.mbt`, which is a fixture and not a package. The
+dependency depth is 4; the widest fan-out is `tarnet` at 5 packages.
+`verify/qa_loop.py` reports both. The order bottom to top is `core`, then
+`activ`, then `nn`, then everything else; `infra` sits at the top because
+running a model touches a neuron, a connection, a stimulus and an optimiser at
+once.
+
+`src/`, `test/` and `units/` exist on disk but hold no files. They are
+leftovers from the sub-package split: nothing imports them, and they carry
+nothing that is not already in `core/`.
+
+## Feature matrix
+
+Every component below is covered by the test suite. Where a row names a test
+file and a count, that count is the number of test cases in that file, and a
+gate checks it against the file itself — the counts cannot drift away from
+the suite without the build going red.
+
 | Component | Status | Notes |
 |---|---|---|
-| Unit system | ✅ done | 30+ Float32 unit constants; `units_test.mbt` (8 tests pass) |
-| Time struct | ✅ done | `t`, `tt`, `dt`; `update_time` etc. (4 tests pass) |
-| Xoshiro RNG | ✅ done | xoshiro256++ (NOT **); Float32/Float64 paths match Julia (5 tests pass) |
-| Native math FFI | ✅ done | `expf`, `tanhf`, `logf` via libm; `sigmoid_f32` derived (5 tests pass) |
+| Unit system | ✅ done | 30+ Float32 unit constants; 8 tests in `units_test.mbt` |
+| Time struct | ✅ done | `t`, `tt`, `dt`; `update_time` etc. (4 tests in `time_test.mbt`) |
+| Xoshiro RNG | ✅ done | xoshiro256++ (NOT **); Float32/Float64 paths match Julia (5 tests in `rng_test.mbt`) |
+| Native math FFI | ✅ done | `expf`, `tanhf`, `logf` via libm; `sigmoid_f32` derived (5 tests in `math_native_test.mbt`) |
 | `math.ln`/cos/sin | ✅ done | Required for Box-Muller in IZ init; via `moonbitlang/core/math` |
-| IF neuron | ✅ done | Forward-Euler update; DoubleExpSynapse state; `IFParameter::with_el` (4 tests pass) |
-| **IF + Gsyn (Duarte2019 / LKD2014)** | ✅ done | `neuron_if_gsyn.mbt` — port of `IFParameterGsyn` from `refs/SNNModels.jl/src/populations/generized_if/if.jl`. `IFParameterGsyn { base : IFParameter, gsyn_e : Float, gsyn_i : Float }` wraps `IFParameter` + population-wide synaptic conductance scales. `IF::with_gsyn(n, base, gsyn_e, gsyn_i, rng)` convenience constructor + `IFParameterGsyn::apply(p)` setter that propagates the population scale to every neuron's `gsyn_e[i] / gsyn_i[i]` array (5 tests pass) |
-| AdEx neuron | ✅ done | Brette-Gerstner 2005 defaults; exponential term via `expf`; `AdExParameter::with_vr` (5 tests pass) |
-| IZ (Izhikevich) | ✅ done | Two half-step midpoint Euler; ge/gi decay; v > 30 reset; `fs()` constructor (4 tests pass) |
-| HH (Hodgkin-Huxley) | ✅ done | m/n/h gating with sigmoid+expf; Na/K currents; v > -20 reset (2 tests pass) |
-| MorrisLecar | ✅ done | tanhf-based activation; K recovery w; v > 20 reset (3 tests pass) |
-| Poisson (population) | ✅ done | `fire[i] = rand(Float32) < rate*dt`; rate matches frequency (3 tests pass) |
-| **InhomogeneousPoisson** (variable-rate) | ✅ done | `neuron_inhomogeneous_poisson.mbt` — port of `inhomogeneous_poisson.jl` (Julia's `VariablePoisson`). `InhomogeneousPoissonParam{beta, tau, r0, rate_timescale}` + `InhomogeneousPoisson::new(n, param, rng)` + `step_inhomogeneous_poisson(p, dt, rng)` (Ornstein-Uhlenbeck noise + rate adaptation toward r0; bit-exact integration) (7 tests pass) |
-| PoissonStimulus | ✅ done | Knuth's algorithm; Float32 λ; mean verified ≈ λ (3 tests pass) |
-| CurrentStimulus | ✅ done | Direct current injection with optional Gaussian noise; `set_active`, `set_i_base` (3 tests pass) |
-| SpikeTimeStimulus | ✅ done | `SpikeTimeParameter(spiketimes, neurons)` (auto-sorted) + `SpikeTimeStimulus::new(pop, sym, ...)` + `stimulate_spiketime(s, t, w)`. Wired into compose via `TimedStim_(stim, w)` (4 tests pass) |
+| IF neuron | ✅ done | Forward-Euler update; DoubleExpSynapse state; `IFParameter::with_el` (4 tests in `neuron_if_test.mbt`) |
+| **IF + Gsyn (Duarte2019 / LKD2014)** | ✅ done | `neuron_if_gsyn.mbt` — port of `IFParameterGsyn` from `refs/SNNModels.jl/src/populations/generized_if/if.jl`. `IFParameterGsyn { base : IFParameter, gsyn_e : Float, gsyn_i : Float }` wraps `IFParameter` + population-wide synaptic conductance scales. `IF::with_gsyn(n, base, gsyn_e, gsyn_i, rng)` convenience constructor + `IFParameterGsyn::apply(p)` setter that propagates the population scale to every neuron's `gsyn_e[i] / gsyn_i[i]` array (5 tests in `neuron_if_gsyn_test.mbt`) |
+| AdEx neuron | ✅ done | Brette-Gerstner 2005 defaults; exponential term via `expf`; `AdExParameter::with_vr` (4 tests in `neuron_adex_test.mbt`) |
+| IZ (Izhikevich) | ✅ done | Two half-step midpoint Euler; ge/gi decay; v > 30 reset; `fs()` constructor (4 tests in `neuron_iz_test.mbt`) |
+| HH (Hodgkin-Huxley) | ✅ done | m/n/h gating with sigmoid+expf; Na/K currents; v > -20 reset (2 tests in `neuron_hh_test.mbt`) |
+| MorrisLecar | ✅ done | tanhf-based activation; K recovery w; v > 20 reset (3 tests in `neuron_ml_test.mbt`) |
+| Poisson (population) | ✅ done | `fire[i] = rand(Float32) < rate*dt`; rate matches frequency (3 tests in `neuron_poisson_test.mbt`) |
+| **InhomogeneousPoisson** (variable-rate) | ✅ done | `neuron_inhomogeneous_poisson.mbt` — port of `inhomogeneous_poisson.jl` (Julia's `VariablePoisson`). `InhomogeneousPoissonParam{beta, tau, r0, rate_timescale}` + `InhomogeneousPoisson::new(n, param, rng)` + `step_inhomogeneous_poisson(p, dt, rng)` (Ornstein-Uhlenbeck noise + rate adaptation toward r0; bit-exact integration) (7 tests in `neuron_inhomogeneous_poisson_test.mbt`) |
+| PoissonStimulus | ✅ done | Knuth's algorithm; Float32 λ; mean verified ≈ λ (5 tests in `stimulus_poisson_test.mbt`) |
+| CurrentStimulus | ✅ done | Direct current injection with optional Gaussian noise; `set_active`, `set_i_base` |
+| SpikeTimeStimulus | ✅ done | `SpikeTimeParameter(spiketimes, neurons)` (auto-sorted) + `SpikeTimeStimulus::new(pop, sym,...)` + `stimulate_spiketime(s, t, w)`. Wired into compose via `TimedStim_(stim, w)` (4 tests in `stimulus_timed_test.mbt`) |
 | CurrentStimulusArray | ✅ done | Generic current injection into raw `Array[Float]` for any population |
-| WilsonCowan rate model | ✅ done | `x += dt*(-x+g+I); r=tanhf(x)`; init Normal(0, 0.5); `g` reset (5 tests pass) |
+| WilsonCowan rate model | ✅ done | `x += dt*(-x+g+I); r=tanhf(x)`; init Normal(0, 0.5); `g` reset (5 tests in `neuron_wc_test.mbt`) |
 | RateSynapse | ✅ done | CSR forward_rate: `g[post] += w * rJ[pre]`; weights Normal(0, μ/∈ pN)) |
-| `AnyPop` dispatcher | ✅ done | Enum-based heterogeneous sim loop; includes `WC_`, `PoissonIF_`, `CurrentIF_`, `CurrentArr_` (3 tests pass) |
+| `AnyPop` dispatcher | ✅ done | Enum-based heterogeneous sim loop; includes `WC_`, `PoissonIF_`, `CurrentIF_`, `CurrentArr_` (3 tests in `population_test.mbt`) |
 | `AnyStim` dispatcher | ✅ done | `PoissonIF_`, `CurrentIF_` variants; `stimulate_any` dispatch |
-| Monitor sr | ✅ done | `Monitor::new_v_sr(pop, n, sr_hz)` honours `rec_step = 1/(sr*dt)` (4 tests pass) |
-| vecplot text dump + ascii_plot | ✅ done | `count_spikes`, `count_spikes_interval`, `dump_summary`, `dump_csv_stdout`, `duration`, `ascii_plot(width?, height?)`, `firing_rate`, `firing_rate_interval`, `spike_times`, `mean`, `min`, `max` (17 tests pass) |
-| SparseMatrixCSR | ✅ done | `from_dense`, `random`, `random_with_rule`, `set`, `get`, `forward`, `forward_rate` (10 tests pass). Subset port of `sparse_matrix_test.jl` (matrix_size / get / set / nnz / bulk-set) in `sparse_matrix_extra_test.mbt` (8 tests pass) |
-| Population analysis | ✅ done | `analysis_populations.mbt` — port of `populations.jl` (subset). `PopIndex` struct (1-based inclusive ranges) + `population_indices(pops)` (assigns non-overlapping ranges) + `filter_items(pops)` (default drops `"noise*"` labels) + `filter_items_with(pops, rule)` (named `FilterRule` enum: Greater / Less / Equal / DropNoise; MoonBit lacks first-class fn refs) + `average_conn_strength(M, pops, μ)` (block-mean / μ of dense weight matrix) (13 tests pass) |
-| `ConnectRule` enum | ✅ done | `Bernoulli`, `FixedIn`, `FixedOut` rules (3 tests pass) |
+| Monitor sr | ✅ done | `Monitor::new_v_sr(pop, n, sr_hz)` honours `rec_step = 1/(sr*dt)` |
+| vecplot text dump + ascii_plot | ✅ done | `count_spikes`, `count_spikes_interval`, `dump_summary`, `dump_csv_stdout`, `duration`, `ascii_plot(width?, height?)`, `firing_rate`, `firing_rate_interval`, `spike_times`, `mean`, `min`, `max` (18 tests in `vecplot_test.mbt`) |
+| SparseMatrixCSR | ✅ done | `from_dense`, `random`, `random_with_rule`, `set`, `get`, `forward`, `forward_rate` (11 tests in `sparse_matrix_test.mbt`). Subset port of `sparse_matrix_test.jl` (matrix_size / get / set / nnz / bulk-set) in 8 tests in `sparse_matrix_extra_test.mbt` |
+| Population analysis | ✅ done | `analysis_populations.mbt` — port of `populations.jl` (subset). `PopIndex` struct (1-based inclusive ranges) + `population_indices(pops)` (assigns non-overlapping ranges) + `filter_items(pops)` (default drops `"noise*"` labels) + `filter_items_with(pops, rule)` (named `FilterRule` enum: Greater / Less / Equal / DropNoise; MoonBit lacks first-class fn refs) + `average_conn_strength(M, pops, μ)` (block-mean / μ of dense weight matrix) (13 tests in `analysis_populations_test.mbt`) |
+| `ConnectRule` enum | ✅ done | `Bernoulli`, `FixedIn`, `FixedOut` rules |
 | SpikingSynapse (CSR) | ✅ done | `new`, `random`, `random_with_rule`, `random_with_delays` (delay_dist), `spiking_connect`, `set_constant_delay`, `init_rho` (Markram STP), `forward_synapse`, `deliver_pending_synapse`. Pending-event queue drains scheduled spikes at delivery time. v0.10.57: added `name` field (mirrors Julia's `name` kwarg) + `with_name` setter (returns new struct). `EmptyConnection` placeholder (no-op, mirrors Julia's `EmptySynapse`) (10 tests pass in `connection_spiking_extra_test.mbt`) |
 | **Conv2d (NCHW forward)** | ✅ done | `conv2d.mbt` — NCHW row-major flat `Array[Float]` conv2d forward. `Conv2dParam { weight, bias, c_out, c_in, kh, kw, stride, pad }`; `Conv2dParam::new` with optional `stride=1`, `pad=0` defaults; `conv2d_forward(input, n, c_in, h, w, param) -> Array[Float]` returns `[n, c_out, ho, wo]` flat. Naive CPU loop (no im2col/matmul yet). 9 tests in `conv2d_test.mbt` (1x1 conv, 3x3 valid 5x5 -> 3x3, same-pad preserves shape, multi-channel in/out + stride=2 downsample, batch N=2, 1x1 multi-channel out-ch=2, all-zero input -> bias broadcast, 3x3 valid 4x4 known center pixel + bias, 3x3 box-blur sums window) |
 | **MaxPool2d (NCHW forward)** | ✅ done | `maxpool2d.mbt` — NCHW row-major flat `Array[Float]` max-pool forward. `MaxPool2dParam { kh, kw, stride, pad }`; `MaxPool2dParam::new(kh, kw, stride?, pad?)` with `stride` defaulting to `kh`; `maxpool2d_forward(input, n, c, h, w, param) -> Array[Float]` returns `[n, c, ho, wo]` flat. Out-of-bounds positions treated as -inf so padding never wins the max. 8 tests in `maxpool2d_test.mbt` (2x2 non-overlapping, stride=1 overlapping, multi-channel per-channel max, batch N=2, pad=1 + stride=2 on 4x3, all-negative picks least-negative, 3x3 stride=1 on 5x5 diagonal, 3x3 on 5x5 single-corner pick) |
@@ -159,12 +333,12 @@ performance caveat that applies to any timing taken here.
 | **Cross-entropy loss** | ✅ done | `cross_entropy.mbt` — `CrossEntropyLoss { mean : Tensor, per_batch : Tensor }` struct; `cross_entropy_loss(log_probs, targets) -> CrossEntropyLoss` returns mean + per-batch loss. 4 tests in `cross_entropy_test.mbt` (perfect predictions / uniform / batch mixed / softmax+cross_entropy pipeline) |
 | **Image adapter (BMP/QOI/TGA/PNG/GIF/JPEG/ICO/TIFF)** | ✅ done | `image.mbt` — 4D NCHW Float32 `Image { data, n, c, h, w }` plus `image_from_bytes(bytes) -> Image raise DecodeError` (auto-detect format via `riantr/moonbit_image@0.3.9`), `image_from_moonbit_image(img)` (3-channel RGB), `image_from_moonbit_image_rgba(img)` (4-channel with alpha). **Encode path not exposed** — upstream's `PixelFormat` enum variants are read-only from outside the package, so users wanting to write image files call upstream directly. 4 tests in `image_test.mbt` (zeros shape / 24-bit BMP 2x2 round-trip with 4 distinct pixels / uniform 4x4 BMP / RGBA alpha=1.0 for opaque) |
 | **STImage 5D [T, B, C, H, W] tensor** | ✅ done | `spatio_temporal.mbt` — 5D Float32 `STImage { data, t, b, c, h, w }` for spiking-CNN time-series input. Row-major flat `Array[Float]` of length `T*B*C*H*W`; flat offset `t * (B*C*H*W) + b * (C*H*W) + c * (H*W) + h * W + w`. Helpers: `STImage::zeros / shape / numel / frame_block / batch_slice / offset / get / set / get_frame(t)` (returns 4D `Image { n: 1, c, h, w }`, ready for v0.11.x Conv2d/MaxPool2d) / `get_batch(b)` (returns 4D `Image { n: T, c, h, w }`, time-flattened for vSTDP) / `STImage::from_frames(frames)` (stack `[N=1, C, H, W]` images along new T axis) / `st_image_concat_t(a, b)` (concatenate along T) / `st_image_repeat_t(img, t)` (broadcast a single image across T). 9 tests in `spatio_temporal_test.mbt` (zeros / flat offset computation / set-get round-trip / get_frame independence + no alias / get_batch time-flatten / from_frames stacking / concat_t ordering / repeat_t identical frames / Float32 bit-exact round-trip) |
-| **SGD optimiser (vanilla + momentum)** | ✅ done | `optimizer_sgd.mbt` — generic array-level `sgd_update_arrays(weight, bias, d_weight, d_bias, lr)` plus `SGDMomentumState { v_w, v_b }` for SGD-with-momentum (PyTorch convention: `v <- momentum * v + g; param <- param - lr * v`). Layer wrappers `sgd_update_linear` / `sgd_update_conv` and momentum wrappers `sgd_momentum_update_linear` / `sgd_momentum_update_conv` return fresh parameter structs (immutable update). 9 tests in `optimizer_sgd_test.mbt` (vanilla step / zero-gradient no-op / no-alias / Linear wrapper preserves shape / Conv wrapper preserves stride+pad / first momentum step = SGD with v=0 / second step accumulates velocity / momentum=0 == vanilla SGD / loss monotonically decreases on y=2x+1 fit, 200 steps) |
-| **Adam optimiser (with bias correction)** | ✅ done | `optimizer_adam.mbt` — `AdamState { m_w, v_w, m_b, v_b : Array[Float]; step : Int }` with `adam_init(weight_len, bias_len)`, `adam_next_step(state)` accessor, `adam_update_arrays(...)` (PyTorch convention: `m <- beta1*m + (1-beta1)*g; v <- beta2*v + (1-beta2)*g^2; m_hat <- m/(1-beta1^t); v_hat <- v/(1-beta2^t); param <- param - lr*m_hat/(sqrt(v_hat)+eps)`). Layer wrappers `adam_update_linear` / `adam_update_conv`. `sqrtf` Float32 FFI added (was missing from `math_native.mbt`). 9 tests in `optimizer_adam_test.mbt` (zero state / next_step no-mutation / first step moves param in correct direction / 600-step linear regression converges w→2 b→1 / step counter monotonic via returned state / zero gradient = no-op / Linear shape preserved / Conv shape preserved with stride+pad) |
+| **SGD optimiser (vanilla + momentum)** | ✅ done | `optimizer_sgd.mbt` — generic array-level `sgd_update_arrays(weight, bias, d_weight, d_bias, lr)` plus `SGDMomentumState { v_w, v_b }` for SGD-with-momentum (PyTorch convention: `v <- momentum * v + g; param <- param - lr * v`). Layer wrappers `sgd_update_linear` / `sgd_update_conv` and momentum wrappers `sgd_momentum_update_linear` / `sgd_momentum_update_conv` return fresh parameter structs (immutable update). 10 tests in `optimizer_sgd_test.mbt` (vanilla step / zero-gradient no-op / no-alias / Linear wrapper preserves shape / Conv wrapper preserves stride+pad / first momentum step = SGD with v=0 / second step accumulates velocity / momentum=0 == vanilla SGD / loss monotonically decreases on y=2x+1 fit, 200 steps) |
+| **Adam optimiser (with bias correction)** | ✅ done | `optimizer_adam.mbt` — `AdamState { m_w, v_w, m_b, v_b : Array[Float]; step : Int }` with `adam_init(weight_len, bias_len)`, `adam_next_step(state)` accessor, `adam_update_arrays(...)` (PyTorch convention: `m <- beta1*m + (1-beta1)*g; v <- beta2*v + (1-beta2)*g^2; m_hat <- m/(1-beta1^t); v_hat <- v/(1-beta2^t); param <- param - lr*m_hat/(sqrt(v_hat)+eps)`). Layer wrappers `adam_update_linear` / `adam_update_conv`. `sqrtf` Float32 FFI added (was missing from `math_native.mbt`). 8 tests in `optimizer_adam_test.mbt` (zero state / next_step no-mutation / first step moves param in correct direction / 600-step linear regression converges w→2 b→1 / step counter monotonic via returned state / zero gradient = no-op / Linear shape preserved / Conv shape preserved with stride+pad) |
 | **AdamW optimiser (decoupled weight decay)** | ✅ done | `optimizer_adamw.mbt` — `AdamWState { m_w, v_w, m_b, v_b : Array[Float]; step : Int }` (same shape as AdamState) with `adamw_init`, `adamw_update_arrays` (Loshchilov & Hutter 2019 convention: decoupled `param <- param - lr*(m_hat/(sqrt(v_hat)+eps) + weight_decay*param)`, where weight_decay acts on the raw parameter not on the gradient). Layer wrappers `adamw_update_linear` / `adamw_update_conv`. 7 tests in `optimizer_adamw_test.mbt` (zero state / weight_decay=0 matches Adam direction / large weights shrink more absolutely than small weights under zero gradient / step counter via returned state / 600-step linear regression converges with mild decay / Linear shape / Conv shape) |
 | **RMSprop optimiser** | ✅ done | `optimizer_rmsprop.mbt` — `RMSpropState { v_w, v_b }` (no first moment, no bias correction — Hinton 2012 lecture 6e form) with `rmsprop_init`, `rmsprop_update_arrays` (`v <- alpha*v + (1-alpha)*g^2; param <- param - lr*g/(sqrt(v)+eps)`). Layer wrappers `rmsprop_update_linear` / `rmsprop_update_conv`. 7 tests in `optimizer_rmsprop_test.mbt` (zero state / first step moves param in negative-gradient direction / alpha=0 ≈ raw gradient sign / large gradient gets shrunk by adaptive scaling / 600-step linear regression converges w→2 b→1 / Linear shape / Conv shape) |
 | **AdaGrad optimiser** | ✅ done | `optimizer_adagrad.mbt` — `AdaGradState { v_w, v_b }` with `adagrad_init`, `adagrad_update_arrays` (Duchi et al. JMLR 2011: `v <- v + g^2; param <- param - lr*g/(sqrt(v)+eps)`. Accumulating sum, not EMA — v monotonically grows, so effective per-parameter learning rate shrinks over time. Sparse-feature friendly; can stagnate on dense problems.) Layer wrappers `adagrad_update_linear` / `adagrad_update_conv`. 7 tests in `optimizer_adagrad_test.mbt` (zero state / first step moves in negative-gradient direction / v accumulates g^2 monotonically (not EMA) / per-parameter effective lr monotonically shrinks / 1500-step linear regression converges w→2 b→1 / Linear shape / Conv shape) |
-| **BatchNorm2d (NCHW, with running stats)** | ✅ done | `batch_norm2d.mbt` — `BatchNorm2d { gamma, beta, mut running_mean, mut running_var, momentum, eps, mut training }`. Forward `batch_norm2d_forward(input, n, c, h, w, bn) -> (output, BatchNormCache)`; backward `batch_norm2d_backward(d_output, cache, bn) -> (d_input, d_gamma, d_beta)`. Per-channel batch stats in training mode (across n*h*w), running stats for inference. PyTorch convention EMA on running stats: `running <- (1 - momentum) * running + momentum * batch`. Population variance (no Bessel correction). 8 tests in `batch_norm2d_test.mbt` (output shape / per-channel mean~0 std~1 / gamma/beta affine / running stats EMA update / backward shapes / zero d_output no-op / d_input numerical-gradient check). |
+| **BatchNorm2d (NCHW, with running stats)** | ✅ done | `batch_norm2d.mbt` — `BatchNorm2d { gamma, beta, mut running_mean, mut running_var, momentum, eps, mut training }`. Forward `batch_norm2d_forward(input, n, c, h, w, bn) -> (output, BatchNormCache)`; backward `batch_norm2d_backward(d_output, cache, bn) -> (d_input, d_gamma, d_beta)`. Per-channel batch stats in training mode (across n*h*w), running stats for inference. PyTorch convention EMA on running stats: `running <- (1 - momentum) * running + momentum * batch`. Population variance (no Bessel correction). 12 tests in `batch_norm2d_test.mbt` (output shape / per-channel mean~0 std~1 / gamma/beta affine / running stats EMA update / backward shapes / zero d_output no-op / d_input numerical-gradient check). |
 | **LayerNorm (per-sample, no running stats)** | ✅ done | `layer_norm.mbt` — `LayerNorm { gamma, beta, eps, c, h, w }`. Forward `layer_norm_forward(input, n, c, h, w, ln) -> (output, LayerNormCache)`; backward `layer_norm_backward(d_output, cache, ln) -> (d_input, d_gamma, d_beta)`. Per-sample statistics (across c*h*w). gamma/beta have shape `[c*h*w]` (per-feature). No running stats — deterministic at inference. 8 tests in `layer_norm_test.mbt` (output shape / per-sample mean~0 std~1 / different samples normalised independently / gamma/beta affine / backward shapes / zero d_output no-op / d_input numerical-gradient check). |
 | **Learning-rate schedulers (StepLR + ExponentialLR + CosineAnnealingLR + ReduceLROnPlateau)** | ✅ done | `scheduler.mbt` — 4 schedulers sharing the `step(s) -> Float` / `next(s) -> S` API (state is not mutated; caller threads the returned state). `StepLR::new(base_lr, step_size, gamma)` drops lr by gamma every `step_size` steps; `ExponentialLR::new(base_lr, gamma)` does continuous exponential decay; `CosineAnnealingLR::new(eta_max, eta_min, t_max)` follows a half-cosine from eta_max to eta_min over `t_max` steps (wraps and repeats). `ReduceLROnPlateau::new(base_lr, factor, patience, threshold)` is reactive: feeds `step(metric)` returns `(new_lr, new_state)`, drops lr by `factor` after `patience` consecutive non-improving calls (PyTorch convention with threshold-filtered improvements). `cosf` Float32 FFI added. 10 tests in `scheduler_test.mbt` (StepLR: step 0 = base, drops at step_size boundaries, next() does not mutate; ExponentialLR: lr = base*gamma^t; CosineAnnealingLR: t=0 -> eta_max, t=T_max/2 -> midpoint, monotonic decrease in first half; ReduceLROnPlateau: first call records metric, improvement resets bad counter, patience exhausted triggers decay, threshold prevents micro-improvements). |
 | **Generic Chain / Sequential (tagged-enum dispatch)** | ✅ done | `chain.mbt` — `Layer` enum (Conv2d / ReLU / MaxPool2d / Flatten / Linear / BatchNorm2d / LayerNorm) + public `Layer::conv2d / relu / max_pool2d / flatten / linear / batch_norm2d / layer_norm` constructor helpers (MoonBit enum variants are read-only from other files). `chain_forward(layers, input, n, c, h, w) -> (output, Array[LayerCache], n, c, h, w)` runs layers in order, tracking shape transitions; `chain_backward(layers, caches, d_output, n, c, h, w) -> (d_input, Array[LayerGrad])` runs them in reverse, returning per-layer `LayerGrad` enum (Linear(d_w, d_b) / Conv2d(d_w, d_b) / BatchNorm2d(d_g, d_b) / LayerNorm(d_g, d_b) / Empty / MaxPool2d). 7 tests in `chain_test.mbt` (empty chain / MLP forward / MLP backward with shape + grads / CNN Conv-ReLU-Pool-Flatten-Linear / zero d_output no-op / d_input numerical-gradient check vs central differences with non-zero pre-ReLU activations / BN inside MLP). |
@@ -182,17 +356,17 @@ performance caveat that applies to any timing taken here.
 | **Spiking Self-Attention (SpikeFormer-style)** | ✅ done | `spiking_attention.mbt` — standard MHA structure (Q/K/V/O Linear projections + scaled dot-product) but replaces softmax along key axis with the `fast_sigmoid_forward` from v0.22.0. `weights = fast_sigmoid_forward(scores, beta)` range (-1/β, 1/β). Backward uses `fast_sigmoid_surrogate` (peak 1 at x=0, decays at |x|→∞) — this is the BPTT-compatible gradient that lets the spike emit non-zero learning signal. `SpikingMultiHeadAttention { d_model, num_heads, d_k, beta, w_q, w_k, w_v, w_o }` + `SpikingAttention::new(d_model, num_heads, beta, seed)` (Xavier-normal init) + `spiking_attention_forward(x, sa, mask) -> (out, SpikingMultiHeadAttnCache)` + `spiking_attention_backward(cache, d_output, sa) -> (d_x, MHAGrad)` (reuses MHAGrad since structure is identical). 8 tests (constructor shapes / output shape + weights bounded in (-1/β, 1/β) / weights = fast_sigmoid_forward(scores, β) / mask blocks positions / zero d_output → zero d_x + zero grads / gradient check vs central difference on w_o[0] / gradient check on w_q[0] / zero input + large beta → zero weights). |
 | **Spiking Transformer block (Pre-Norm)** | ✅ done | `spiking_transformer_block.mbt` — Pre-Norm sub-layer stack using `SpikingMultiHeadAttention` instead of `MultiHeadAttention`: `x2 = x + SpikingAttn(LN1(x)); out = x2 + FFN(LN2(x2))`. `SpikingTransformerBlock { d_model, num_heads, d_ff, beta, ln_1, ln_2, sa, ffn_w1, ffn_w2 }` + `SpikingTransformerBlock::new(d_model, num_heads, beta, seed, d_ff? = 4*d_model)`. `spiking_transformer_block_forward / _backward` mirrors the standard TransformerBlock but routes through `spiking_attention_backward` instead of `multi_head_attention_backward`. 6 tests (constructor + default d_ff / forward shape preservation + cache sanity / same-seed determinism / zero d_output → zero d_x + zero all 8 grad arrays / gradient check on ffn_w2[0] / gradient check on sa.w_q[0]). |
 | AdEx SpikingSynapse (CSR) | ✅ done | `new`, `random`, `random_with_rule`; supports :ge/:he/:gi/:hi/:gaba routing |
-| **ReceptorSynapse (4-receptor routing)** | ✅ done | `connection_receptor.mbt` — port of `ReceptorSynapse.jl` (subset). Per-edge `target_receptor : Array[Int]` parallel to `matrix.colptr` selects which of the 4 receptors (AMPA/NMDA/GABAa/GABAb) each edge targets. `forward_receptor_synapse(s)` routes spike weights into `s.glu[k]` (if target in `glu_receptors = [0, 1]`) or `s.gaba[k]` (if in `gaba_receptors = [2, 3]`). `set_target_receptor(s, idx, r)` re-targets edge `idx` (5 tests pass) |
-| SpikingSynapseIZ (CSR) | ✅ done | IZ-targeting: `:ge`/`gi` routed directly into post.ge/post.gi (no DoubleExp rise) (4 tests pass) |
+| **ReceptorSynapse (4-receptor routing)** | ✅ done | `connection_receptor.mbt` — port of `ReceptorSynapse.jl` (subset). Per-edge `target_receptor : Array[Int]` parallel to `matrix.colptr` selects which of the 4 receptors (AMPA/NMDA/GABAa/GABAb) each edge targets. `forward_receptor_synapse(s)` routes spike weights into `s.glu[k]` (if target in `glu_receptors = [0, 1]`) or `s.gaba[k]` (if in `gaba_receptors = [2, 3]`). `set_target_receptor(s, idx, r)` re-targets edge `idx` (5 tests in `connection_receptor_test.mbt`) |
+| SpikingSynapseIZ (CSR) | ✅ done | IZ-targeting: `:ge`/`gi` routed directly into post.ge/post.gi (no DoubleExp rise) (4 tests in `connection_spiking_iz_test.mbt`) |
 | SpikingSynapseHH (CSR) | ✅ done | HH-targeting: same structure as SpikingSynapseIZ |
-| STDP (Gerstner 1996) | ✅ done | `STDPGerstner` params + `STDPVariables` traces + `stdp_step` mutating weights. Auto-integrated into compose layer via `STDPEntry`. `gerstner_kernel(Δt, ...)` for visualising the ΔW curve. `stdp_kernel_plot(param)` ASCII plot (11 tests pass) |
+| STDP (Gerstner 1996) | ✅ done | `STDPGerstner` params + `STDPVariables` traces + `stdp_step` mutating weights. Auto-integrated into compose layer via `STDPEntry`. `gerstner_kernel(Δt,...)` for visualising the ΔW curve. `stdp_kernel_plot(param)` ASCII plot (32 tests in `stdp_test.mbt`) |
 | STDP (MexicanHat) | ✅ done | `STDPMexicanHat` params + `mexican_hat_kernel(x)` pure fn + `stdp_mexican_hat_step` (pre-spike + post-spike passes; trace decay via `dt * -x/τ`). `stdp_mexican_hat_plot` ASCII viz. Auto-integrated into compose layer via `STDPEntryMexicanHat` + `STDPEntryKind::MexicanHat_` (5+1 tests pass) |
 | STDP (AntiSymmetric) | ✅ done | `STDPAntiSymmetric` params + `STDPAntiSymmetricVariables` (tr_x, to_y) + `stdp_antisymmetric_step` (pre-spike pass uses to_y[i], post-spike pass uses tr_x[j]). `stdp_antisymmetric_plot` ASCII viz. Auto-integrated into compose layer via `STDPEntryAntiSymmetric` + `STDPEntryKind::AntiSymmetric_` (5+1 tests pass) |
 | `STDPEntryKind` enum | ✅ done | `pub(all) enum STDPEntryKind { Gerstner_(STDPEntry), MexicanHat_(STDPEntryMexicanHat), AntiSymmetric_(STDPEntryAntiSymmetric) }`. Replaces the previously-hardcoded `STDPEntry` in `HeterogeneousModel.stdp_entries` (1 smoke test) |
-| **STP (Markram 1998)** | ✅ done | `MarkramSTPParameter` (τD/τF/U/Wmax/Wmin) + `MarkramSTPVariables` (u/x/rho_pre/last_spike/active per pre) + `markram_stp_step` (event-based update_traces!: u=x=1 recovery via exp, then u+=U*(1-u)/x-=u*x bump) + `init_rho` on SpikingSynapse + ρ-broadcast to outgoing edges. Auto-integrated into compose layer via `STPEntryKind::MarkramSTP_` (12 tests pass) |
+| **STP (Markram 1998)** | ✅ done | `MarkramSTPParameter` (τD/τF/U/Wmax/Wmin) + `MarkramSTPVariables` (u/x/rho_pre/last_spike/active per pre) + `markram_stp_step` (event-based update_traces!: u=x=1 recovery via exp, then u+=U*(1-u)/x-=u*x bump) + `init_rho` on SpikingSynapse + ρ-broadcast to outgoing edges. Auto-integrated into compose layer via `STPEntryKind::MarkramSTP_` (20 tests in `stp_test.mbt`) |
 | `STPEntryKind` enum | ✅ done | `pub(all) enum STPEntryKind { MarkramSTP_(MarkramSTPEntry) | MarkramSTPHet_(MarkramSTPEntryHet) }`. Run before forward in `step_heterogeneous` so ρ is fresh when spikes propagate. The `_Het` variant uses per-pre-neuron `Array[Float]` τD/τF/U (matches Julia's `MarkramSTPParameterHet`) |
-| Float32 `logf` FFI | ✅ done | `extern "C" fn logf(x : Float) -> Float = "logf"` added to `math_native.mbt` (1 test pass) |
-| `compose()` + sim | ✅ done | `HeterogeneousModel` with pops+conns+stims+monitors+stdp+stp; `step_heterogeneous` (7-phase: stimulate → deliver_pending → STP → forward → STDP → integrate → record → update_time); `heterogeneous_sim_for`, `get_time_heterogeneous`, `reset_time_heterogeneous` (7 tests pass) |
+| Float32 `logf` FFI | ✅ done | `extern "C" fn logf(x : Float) -> Float = "logf"` added to `math_native.mbt` (5 tests in `math_native_test.mbt`) |
+| `compose()` + sim | ✅ done | `HeterogeneousModel` with pops+conns+stims+monitors+stdp+stp; `step_heterogeneous` (7-phase: stimulate → deliver_pending → STP → forward → STDP → integrate → record → update_time); `heterogeneous_sim_for`, `get_time_heterogeneous`, `reset_time_heterogeneous` (8 tests in `compose_test.mbt`) |
 | `sim!` loop | ✅ done | `sim_for`, `Monitor`, `record_one` (single-pop case) |
 | AdEx sim! loop | ✅ done | `adex_sim_for`, `MonitorAdEx` |
 | chain.jl | ⚠ partial | Runs; final voltages + Monitor summary printed |
@@ -231,26 +405,26 @@ performance caveat that applies to any timing taken here.
 | **izhikevich_debug.mbt** | ⚠ partial | Debugging variant of izhikevich.mbt. Records v[0] for 100 ms with fixed seed; prints min/max/mean. Used for bit-exactness verification against Julia's Izikievich_neuron.jl |
 | **calcium_kernel.mbt** | ⚠ partial | CalciumPlasticity_kernel.jl port (partial): plots reversed-polarity + classical Gerstner kernels + STDPMexicanHat (sombrero) kernel + decorrelated weights. iSTDPTime / SymmetricSTDP still TODO |
 | **oja_rule.mbt** | ⚠ partial | Oja_rule.jl port: 100 Wilson-Cowan rate neurons + all-to-all RateSynapse (μ=1.2, p=1.0). 100ms sim: r[mean]=-0.019, r[max]=0.87 |
-| **stp_demo.mbt** | ⚠ partial | Markram STP dynamics on a single forced-fire pre IF neuron: shows isolated spike (u=0.36, x=0.64, ρ=0.2), paired-pulse 10ms (ρ=0.236, facilitation > depression at short ISI), 5-spike 50ms burst (x drops from 0.235→ .059, depression catches up), and full recovery (ρ → 0.2 after 10s silence). Also includes a 200-spike train @ 50ms ISI: ρ converges to steady-state ≈ 0.21, u→ .907 (saturated facilitation, τF=1500ms ≈ ISI), x→ .022 (deep depression, τD=200ms < ISI) — validates Markram 1998 analytical steady-state |
-| **stp_onecell.mbt** | ⚠ partial | Simplified port of Mongillo2008 STP_onecell.jl. 6 bursts × 240 spikes at 8kHz drive u→ .9997 (fully facilitated), x→ .7e-7 (fully depleted), ρ→ e-4. Documents that recovery requires integrate! to apply exp(-dt/τD); see stp_demo for the recovery phase |
+| **stp_demo.mbt** | ⚠ partial | Markram STP dynamics on a single forced-fire pre IF neuron: shows isolated spike (u=0.36, x=0.64, ρ=0.2), paired-pulse 10ms (ρ=0.236, facilitation > depression at short ISI), 5-spike 50ms burst (x drops from 0.235→.059, depression catches up), and full recovery (ρ → 0.2 after 10s silence). Also includes a 200-spike train @ 50ms ISI: ρ converges to steady-state ≈ 0.21, u→.907 (saturated facilitation, τF=1500ms ≈ ISI), x→.022 (deep depression, τD=200ms < ISI) — validates Markram 1998 analytical steady-state |
+| **stp_onecell.mbt** | ⚠ partial | Simplified port of Mongillo2008 STP_onecell.jl. 6 bursts × 240 spikes at 8kHz drive u→.9997 (fully facilitated), x→.7e-7 (fully depleted), ρ→ e-4. Documents that recovery requires integrate! to apply exp(-dt/τD); see stp_demo for the recovery phase |
 | **lkd2014_adex.mbt** | ⚠ partial | Litwin-Kumar-Doiron 2014 vSTDP network using AdExSinExpParameter (LKD defaults: El=-70mV, Vt=-52mV, Vr=-60mV, τm=20ms, R=1/15nS, At=10mV, τe=6ms, τi=2ms). Scaled 100× down (40 E + 10 I); manual pre→post routing (SpikingSynapse is hardcoded to IF-to-IF); 1s sim: E[0]=6 Hz, I[0]=9 Hz |
 | **simulation_speed.mbt** | ⚠ partial | Port of SpikingNeuralNetworks.jl/examples/simulation_speed.jl (AdEx + PoissonLayer benchmark, first part). Scaled 10× down (10 AdEx + 100 Poisson per pop); 1s sim; prints Poisson spike counts, AdEx spike counts, v checksum. The TripodHet / BallAndStick parts of the Julia example require multi-compartment neurons (TODO) |
-| AdEx network (full) | ✅ done | `AdExParameterHet` (per-ne Vector{Float] vt/vr/el/tm/r/dt_slope/tw/a/b) + `AdExHet` population + `step_adex_het` (4 tests pass). Matches Julia's `AdExParameter{Vector{Float32}}` + `update_neuron!` for the Vector variant |
+| AdEx network (full) | ✅ done | `AdExParameterHet` (per-ne Vector{Float] vt/vr/el/tm/r/dt_slope/tw/a/b) + `AdExHet` population + `step_adex_het` (4 tests in `neuron_adex_het_test.mbt`). Matches Julia's `AdExParameter{Vector{Float32}}` + `update_neuron!` for the Vector variant |
 | **AdExSinExp** (single-exp synapse) | ✅ done | `AdExSinExpParameter` (pub(all) struct, same fields as AdExParameter) + `AdExSinExp` population + `step_adex_sinexp` (same as step_adex) + `adex_sinexp_step_synapses` (single-exp: ge += glu; ge += dt*(-ge/τe); gi + gaba similar) + `adex_sinexp_synaptic_current` (same as AdEx). Auto-integrated via `AdExSinExp_` in `AnyPop`. Matches Julia's `AdExSinExpParameter` + `SingleExpSynapse`. 6 tests + 1 new example (lkd2014_adex) |
 | Network experiments (Festa, Lagzi) | ⏳ TODO | v0.7.5+ |
 | Tripod / BallAndStick neurons | ⏳ TODO | v0.7.5+ |
-| **Dendrite** (passive compartment) | ✅ done | `Dendrite` struct (per-ne El/C/gax/gm/l/d/gax_parent) + `Dendrite::new` (Julia defaults: El=-70.6mV, C=10pF, gax=10nS, gm=1nS, l=150μm, d=4μm) + `Dendrite::custom(...)` + `dendrite_step` (passive forward-Euler: `(El-v)*gm + (v_parent-v)*gax + i_ext) / C`) + `g_axial`/`g_mem`/`c_mem` helpers (Julia `G_axial`/`G_mem`/`C_mem` formulas). Foundational building block for BallAndStick (1 dendrite) and Tripod (2 dendrites) multi-compartment neurons (7 tests pass) |
+| **Dendrite** (passive compartment) | ✅ done | `Dendrite` struct (per-ne El/C/gax/gm/l/d/gax_parent) + `Dendrite::new` (Julia defaults: El=-70.6mV, C=10pF, gax=10nS, gm=1nS, l=150μm, d=4μm) + `Dendrite::custom(...)` + `dendrite_step` (passive forward-Euler: `(El-v)*gm + (v_parent-v)*gax + i_ext) / C`) + `g_axial`/`g_mem`/`c_mem` helpers (Julia `G_axial`/`G_mem`/`C_mem` formulas). Foundational building block for BallAndStick (1 dendrite) and Tripod (2 dendrites) multi-compartment neurons (7 tests in `neuron_dendrite_test.mbt`) |
 | **BallAndStick** (soma + 1 dendrite) | ✅ done | `BallAndStick` struct (soma AdEx + passive dendrite via `Dendrite::new` + single-exp synapses on both + Heun predictor-corrector integration) + `step_ballandstick` (bit-exact port of Julia `BallAndStick integrate!`: update_synapses → synaptic_current → 2× `update_neuron!` → Heun averaging → spike detection on soma with `ap_membrane=10mV` per Julia's PostSpike). 6 tests pass |
 | **Tripod** (soma + 2 dendrites) | ✅ done | `Tripod` struct (soma AdEx + 2 passive dendrites via `Dendrite::new` + single-exp synapses on soma+d1+d2 + Heun predictor-corrector for 4 Δv components per neuron: dv_s, dv_d1, dv_d2, dw_s) + `step_tripod` (bit-exact port of Julia `Tripod integrate!`: soma axial current = ic1+ic2 = `-(v_d - v_s) * gax` for both dendrites). 6 tests + 1 new example (tripod) |
 | **Metaplasticity** (homeostatic weight normalization) | ✅ done | `MultiplicativeNorm` (μ[i] = (W0[i]-W1[i])/W1[i]; W *= (1+μ)) + `AdditiveNorm` (μ[i] = W0[i]-W1[i]; W += μ) + `NormParam` enum + `SynapseTarget` struct + `SynapseNormalization::new(targets, param)` (captures W0[i] at construction) + `metaplasticity_step(norm)`. 6 tests + 1 new example (metaplasticity) |
 | **examples/ballandstick** + **examples/dendrite** | ✅ done | v0.10.16: first two standalone single-neuron examples for the multi-compartment infrastructure. `examples/ballandstick` runs 1 BallAndStick neuron (AdEx soma + 1 passive dendrite) with 1500 pA tonic drive for 1 s; final v_s/v_d + spike count + spike envelope. `examples/dendrite` runs 1 passive Dendrite with parent held at -50 mV and 50 pA current injection for 200 ms then 0 pA (passive relaxation); final v_d + peak v_d. **Both also exercise the v0.10.16 Heun fix**: predictor/corrector extrapolate `v + dv*dt` (not `v + dv`), spike detection runs **before** Heun apply with predictive criterion `v_s + corrector_dv*dt >= -10mV` (Julia's exact form), `fire && continue` skips the v_d apply (prevents corrector exp_term explosion from polluting v_d), and `tabs_steps = round(Int, (up + τabs) / dt)` (Julia's full refractory window; previously half — only `τabs` was used). The same fix is back-ported into Tripod |
 | **Heun fix (BallAndStick + Tripod)** | ✅ done | v0.10.16: re-aligned `step_ballandstick` and `step_tripod` apply loops with Julia's exact per-neuron order (decrement tabs → update threshold → refractory branch with `v_d += dt*(v_s-v_d)*gax/C` → active branch with predictive fire detection → fire overrides continue). Fixes v_d runaway when soma spikes (predictor dv_s explodes exp_term, corrector dv_d inherits the bogus extrapolation, v_d was being updated before spike detection) |
 | **HetRec** (heterogeneous-timescale non-recurrent layer) | ✅ done | v0.10.17: `HetRecParameter` (Nd/overlap/τd-low/τd-high/rate-low/rate-high/τabs/steepness/τm/τrate) + `HetRec` struct (v_d/v_s/is_/r/tau_d/fire/tabs/trace/randcache + sparse CSC colptr/i_syn/w_syn) + `HetRec::new` (samples r and τd from Uniform, builds sparse M with own-dendrite-always + cross-dendrite-per-overlap) + `hetrec_refresh_random` + `step_hetrec` (Euler: v_d += dt*(-v_d-is)/τd; soma: v_s += (W·v_d - v_s)*dt/τm per synapse; stochastic fire: rand < r*sigmoid(steepness·(v_s-trace))·dt; τabs refractory). Auto-integrated via `HetRec_` in `AnyPop`. 8 tests + 1 new example (hetrec) |
-| **examples/wilson_cowan** | ✅ done | v0.10.18: standalone single-population Wilson-Cowan rate-model example. 20 WilsonCowan + all-to-all self-RateSynapse (μ=0.5, p=1.0) + I=0.2 tonic drive; 100 ms sim; samples r at t=0/12.5/50/99.9 ms to show transient → fixed-point convergence (mean |r|≈ .21, r[0]=-0.06→ .34). Exercises the rate-mode forward (pre.r → post.g via sparse matrix) |
+| **examples/wilson_cowan** | ✅ done | v0.10.18: standalone single-population Wilson-Cowan rate-model example. 20 WilsonCowan + all-to-all self-RateSynapse (μ=0.5, p=1.0) + I=0.2 tonic drive; 100 ms sim; samples r at t=0/12.5/50/99.9 ms to show transient → fixed-point convergence (mean |r|≈.21, r[0]=-0.06→.34). Exercises the rate-mode forward (pre.r → post.g via sparse matrix) |
 | **examples/spikesynapse** | ✅ done | v0.10.19: minimal 2-IF + 1-SpikingSynapse network (E1 → E2 onto :ge, μ=1.62 nS, p=1.0, delay=Normal(3ms, 2ms)). E1 driven by 200 pA tonic current; E2 receives the synaptic input via the pending-event queue + delay (built v0.10.3). Result: E1 fires 381 spikes, E2 fires 379 spikes (1:1 with small loss to delay + refractory). Demonstrates the manual sim loop pattern (`deliver_pending_synapse` → `forward_synapse` → `step_synapses` → `synaptic_current` → `step_neuron`) |
 | **STTC (Spike-Time Tiling Coefficient) analysis** | ✅ done | v0.10.20: `analysis_sttc.mbt` (new) — `tile_fraction` (sorted train, ±dt intervals union, divided by T+2dt) + `coincident_fraction` (binary-search in B for each spike in A) + `sttc_pair` (symmetric formula `0.5*((PA-TB)/(1-PA*TB) + (PB-TA)/(1-PB*TA))`) + `sttc_matrix` (N×N symmetric, diagonal=1) + `sort_floats` helper. 13 tests + 1 new example (sttc) |
-| **ISI / CV2** | ✅ done | `analysis_isi.mbt` — port of `spikes.jl::ISI_CV2` (Holt et al. 1996). `isi_cv2_one(spike_times)` single-neuron CV2 (handles 0-spike / 1-spike / 2-spike / NaN edge cases); `isi_cv2(spike_times_per_neuron)` per-neuron CV2 array. CV2 bounded by [0, 2] (9 tests pass) |
-| **LIF closed-form verification** | ✅ done | `analysis_lif_closedform_test.mbt` — closed-form LIF analytical verification. For an IF neuron with constant input `I`, the membrane voltage follows `V(t) = V_rest + I*R*(1 - exp(-t/τm))`. Verifies that the MoonBit simulator matches the analytical solution to within forward-Euler drift tolerance (4 tests pass: decay transient, steady-state, decay-to-rest, τm time-constant). This serves as a "reference-output" check analogous to a Julia trajectory comparison (4 tests pass) |
+| **ISI / CV2** | ✅ done | `analysis_isi.mbt` — port of `spikes.jl::ISI_CV2` (Holt et al. 1996). `isi_cv2_one(spike_times)` single-neuron CV2 (handles 0-spike / 1-spike / 2-spike / NaN edge cases); `isi_cv2(spike_times_per_neuron)` per-neuron CV2 array. CV2 bounded by [0, 2] (9 tests in `analysis_isi_test.mbt`) |
+| **LIF closed-form verification** | ✅ done | `analysis_lif_closedform_test.mbt` — closed-form LIF analytical verification. For an IF neuron with constant input `I`, the membrane voltage follows `V(t) = V_rest + I*R*(1 - exp(-t/τm))`. Verifies that the MoonBit simulator matches the analytical solution to within forward-Euler drift tolerance (4 tests pass: decay transient, steady-state, decay-to-rest, τm time-constant). This serves as a "reference-output" check analogous to a Julia trajectory comparison (4 tests in `analysis_lif_closedform_test.mbt`) |
 | **PoissonLayer** (population of N Poisson sources) | ✅ done | v0.10.21: `PoissonLayer` struct (pub(all); rate / n_sources / active / μ / σ / p / dist / rule) + 4 constructors (`new`, `with_n`, `with_active`, `with_conn`) + `PoissonLayerStimulus` (wraps IF target + per-(pre, post) sparse weights drawn at construction via Box-Muller for Normal or Fixed for :Fixed) + `stimulate_layer(s, t, dt)` (per-step: reset fire buffer, sample Poisson per active source, apply weight to glu/gaba if fires). Auto-integrated via `PoissonLayer_` in `AnyStim`. Mirrors Julia's `PoissonLayer` + `Stimulus` + `stimulate!` pattern (11 tests + 1 new example) |
 | **examples/poisson_layer** | ✅ done | v0.10.21: minimal port of poisson_layer.jl. 10 Poisson sources @ 2 Hz → 200 IF (El=-49mV, vr=-60mV, vt=-50mV); Normal(μ=2.0, σ=1.0) weights, p=0.2 connectivity. Manual sim loop (stimulate_layer → step_synapses → synaptic_current → step_neuron) for 1 s at dt=0.125 ms. 410 actual connections (expected ~400); total 5322 spikes → 26.6 Hz mean rate per neuron (high because El is only 1 mV below vt) |
 | **examples/spike_analysis** | ✅ done | v0.10.22: exercises `vecplot` analysis infrastructure (Monitor::count_spikes / firing_rate / spike_times / count_spikes_interval / firing_rate_interval / dump_summary / ascii_plot) on a small driven IF population (20 neurons, El=-49mV, 500ms sim). Per-neuron spike counts (135— 73 spikes), rates (270— 46 Hz), spike times, sub-interval analysis, v summary, ASCII plot |
@@ -282,160 +456,37 @@ performance caveat that applies to any timing taken here.
 | **metaplasticity_step_gated** (periodic τ gating) | ✅ done | v0.10.48: added `metaplasticity_step_gated(norm, step_count, dt)` — periodic form that mirrors Julia's outer `plasticity!(c, param, dt, T)` which gates on `((tt) % round(Int, τ / dt)) < dt`. Fires only when `step_count % round(τ/dt) == 0`. τ=0 disables periodic firing (matches Julia default). Caller maintains the step counter (just pass `i` in your sim loop). 2 tests verify gate behavior: with τ=0.5ms and dt=0.125ms, period=4 steps, only steps 0/4/8 fire. τ=0 test verifies the gate stays closed. 2 tests + 0 examples |
 | **util.mbt** (utils/util.jl port) | ✅ done | v0.10.49: port of `SNNModels.jl/src/utils/util.jl` non-graph helpers. `rand_value(n, p1, p2, rng)` — uniform Float32 values in `[min(p1,p2), max(p1,p2)]`; degenerates to constant when p1==p2. `exp32(x)` / `exp64(x)` / `exp256(x)` — fast exp approximations via repeated squaring (Julia-side performance helper; we use libm expf directly but expose these for API parity). `name(pre, post, k?)` / `name2(pre, post)` — Symbol/String name generators for connection labels (MoonBit: returns String, not Symbol). `str_name(pre, post, k?)` / `str_name_single(pre, k?)` — String variants (matching Julia's `(::String, k?)` overload). `f2l(s, l?)` / `f2l_default(s)` — pad/truncate string to exact length `l` (default 10). 21 tests in `util_test.mbt` cover all helpers. **Note**: the full `compose` and `print_model` from util.jl are NOT ported — MoonBit's `compose` in compose.mbt already provides the heterogeneous-model builder; `print_model` is graph-based and out of scope. 21 tests + 0 examples |
 | **turnover.jl** (structural plasticity) | ✅ done | v0.10.50: port of `SNNModels.jl/src/connections/metaplasticity/turnover.jl` (structural plasticity). `RandomTurnover(rate, threshold, mu)` and `ActivityDependentTurnover(rate, fraction, tau_pre, tau_post, mu)` constructors + `Turnover` struct + `synaptic_turnover!(syn, p_rewire?, mu?, p_values?)` rewiring logic. `turnover_plasticity!(c, step_count, dt)` periodic gate (fires every τ/dt steps). `quantile_float` helper for the activity-dependent threshold. **Note**: `p_new` callback is ignored (MoonBit has no first-class function references — new posts are sampled uniformly). SpikingSynapse's actual field names are `matrix.vals` / `matrix.colptr` / `matrix.rowptr` (NOT `W` / `I`). 12 tests in `turnover_test.mbt` cover both variants + periodic gate + empty-array quantile. 12 tests + 0 examples |
-| **Multipod** (variable-dendrite-count Tripod) | ✅ done | v0.10.51: port of `SNNModels.jl/src/populations/multicompartment/multipod.jl` — `Multipod` struct with variable `nd` (number of dendrites), per-dendrite voltage arrays, 4-receptor per-dendrite per-neuron conductance buffers (AMPA/NMDA/GABAa/GABAb), Euler integrator. `MultipodParameter::new(dendrites)` / `::uniform(d, nd)` constructors. `Multipod::step(p, dt)` Euler update with soma_syn + dend_syn receptors, axial currents, soma+dendrite ODEs, spike detection. **Note**: simplified port — no full NMDA voltage gating or Heun corrector (those are TODO). Euler step has a stack-overflow issue on long simulations (likely the flat-index nested loops over `g_d[i, d, n]`); the `Multipod::step` runtime tests are marked as TODO pending a flat-loop refactor. 10 tests in `neuron_multipod_test.mbt` cover constructors + shape allocations + initial-state finiteness + receptor-marker preservation. 10 tests + 0 examples |
+| **Multipod** (variable-dendrite-count Tripod) | ✅ done | v0.10.51: port of `SNNModels.jl/src/populations/multicompartment/multipod.jl` — `Multipod` struct with variable `nd` (number of dendrites), per-dendrite voltage arrays, 4-receptor per-dendrite per-neuron conductance buffers (AMPA/NMDA/GABAa/GABAb), Euler integrator. `MultipodParameter::new(dendrites)` / `::uniform(d, nd)` constructors. `Multipod::step(p, dt)` Euler update with soma_syn + dend_syn receptors, axial currents, soma+dendrite ODEs, spike detection. **Note**: simplified port — no full NMDA voltage gating or Heun corrector (those are TODO). Euler step has a stack-overflow issue on long simulations (likely the flat-index nested loops over `g_d[i, d, n]`); the `Multipod::step` runtime tests are marked as TODO pending a flat-loop refactor. 16 tests in `neuron_multipod_test.mbt` cover constructors + shape allocations + initial-state finiteness + receptor-marker preservation. 10 tests + 0 examples |
 | **Multipod** (step refactor + 3 additional shape tests) | ✅ done | v0.10.52: refactored `Multipod::step` body into smaller helper functions (`multipod_step_neurons` + `multipod_sum_cs`) to flatten the call stack. The helper-function refactor didn't fix the runtime stack overflow (MoonBit's JIT still overflows on the `d × k × i` flat-index nested loops), so the runtime tests remain deferred. Added 3 additional constructor-shape tests: `Multipod::new — w_s, he_s, hi_s, ge_s, gi_s zero` (verify all soma spike-input + conductance buffers are zero-initialised), `Multipod::new — after_spike field shape + he_d/hi_d zero` (verify dendrite spike-input buffers), `Multipod::new — g_d / h_d / dv / dv_temp / cs / iv lengths` (verify scratch buffer lengths scale with N × nd × 4). 3 tests + 0 examples |
 | **Multipod** (g_d / h_d nested-array refactor) | ✅ done | v0.10.53: refactored `g_d` / `h_d` from a flat `Array[Float]` (indexed as `g_d[i + d*N + n*N*nd]`) to a nested 3-level `Array[Array[Array[Float]]]` (indexed as `g_d[d][i][n]`). The flat-index nested loops were the root cause of MoonBit's JIT stack overflow; the nested version has the same memory layout (4 × N × nd floats) but the inner loop is now a contiguous slice which the JIT handles better. **Note**: even with the nested refactor, `Multipod::step` still stack-overflows on runtime tests (likely a different JIT limitation in this version of MoonBit). 3 new tests verify the nested shape: `Multipod::new — g_d[d][i][n] nested zero-init across all 3 levels` (24 cells verified), `Multipod::new — g_d / h_d are independent per-dendrite slices` (setting one dendrite doesn't affect another), `Multipod::new — receptor index 3 (GABAb) accessible` (boundary index reachable). 3 tests + 0 examples |
 | **structs_extra.mbt** (EmptyParam + NetworkModel + Time::from_ms) | ✅ done | v0.10.54: port of additional `SNNModels.jl/src/utils/structs.jl` helpers. `EmptyParam` struct with `p_type : String` field (mirrors Julia's `EmptyParam` with `type::Symbol = :empty`; we use a String instead of Symbol since MoonBit has no first-class Symbols). `EmptyParam::new()` defaults to `"empty"`, `EmptyParam::with_type(p_type)` customises, `EmptyParam::type_str(p)` accessor. `NetworkModel` placeholder (MoonBit's `HeterogeneousModel` is the real port — this stub exists for API documentation). `isa_model(m)` accessor. `Time::from_ms(time)` was already in `time.mbt` but got 2 dedicated tests (100ms → tt=800, 0.5ms → tt=4). 6 tests in `structs_extra_test.mbt` cover all helpers + Time::from_ms numerics. 6 tests + 0 examples |
 | HH_NMDA multi-receptor variant | ⏳ TODO | v0.7.5+ |
-| Identity neuron (Lagzi-style pass-through) | ✅ done | `Identity::new(n, param)`, `step_neuron_id(p, dt)` — fires when `g > 0` (3 tests pass) |
-| STP (Markram 1998) integration into `compose` | ✅ done | v0.10.4: `MarkramSTPEntry` + `STPEntryKind` enum, auto-integrated before forward (12 tests pass) |
+| Identity neuron (Lagzi-style pass-through) | ✅ done | `Identity::new(n, param)`, `step_neuron_id(p, dt)` — fires when `g > 0` (3 tests in `neuron_identity_test.mbt`) |
+| STP (Markram 1998) integration into `compose` | ✅ done | v0.10.4: `MarkramSTPEntry` + `STPEntryKind` enum, auto-integrated before forward (20 tests in `stp_test.mbt`) |
 | Bit-exactness verification vs Julia | ⏳ TODO | Compare spike trains / voltage traces against the Julia run for each example |
 
 **Test count**: 1925 (all passing; v0.10.4 +12 STP tests, v0.10.6 +6 STP het tests, v0.10.7 +2 STP bit-exactness tests, v0.10.9 +4 AdEx het tests, v0.10.10 +7 AdExSinExp tests, v0.10.11 +3 IZ bit-exact regression tests, v0.10.12 +7 Dendrite tests, v0.10.13 +6 BallAndStick tests, v0.10.14 +6 Tripod tests, v0.10.15 +6 Metaplasticity tests, v0.10.16 Heun fix (no new tests), v0.10.17 +8 HetRec tests, v0.10.18 +0 tests (just example), v0.10.19 +0 tests (just example), v0.10.20 +13 STTC tests, v0.10.21 +11 PoissonLayer tests, v0.10.22 +0 tests (just example), v0.10.23 +11 CompartmentSynapse tests, v0.10.24 +8 TripodHet tests, v0.10.25 +10 NMDA receptor tests, v0.10.26 +6 ReceptorSynapseTripod tests, v0.10.27 +7 PoissonLayerStimulusTripod tests, v0.10.28 +5 change_plasticity tests, v0.10.29 +6 PoissonLayerStimulusBallAndStick tests, v0.10.30 +9 vSTDP tests, v0.10.31 +9 BalancedStimulus tests, v0.10.32 +9 STDPConfavreux2025 tests, v0.10.33 +10 IstdpRate tests, v0.10.34 +10 IstdpPotential tests, v0.10.35 +8 MarkramSTPParameterTimestep tests, v0.10.36 +11 STDPSymmetric + IstdpTime tests, v0.10.37 +0 tests (just example — TripodNetwork wiring), v0.10.38 +10 parameters_test tests, v0.10.39 +12 synapse_params tests, v0.10.40 +3 snn_utils_params tests, v0.10.41 +6 sim_control_test tests, v0.10.42 +4 spatial tests, v0.10.43 +9 aggregate_scaling tests, v0.10.44 +0 tests (just example — AdExParameter::custom + lkd2014_demo), v0.10.45 +4 metaplasticity_test extensions, v0.10.46 +8 set_plasticity_active tests, v0.10.47 +2 SynapseTarget::post_id tests, v0.10.48 +2 metaplasticity_step_gated tests, v0.10.49 +21 util.mbt tests, v0.10.50 +12 turnover_test tests, v0.10.51 +10 neuron_multipod_test tests, v0.10.52 +3 neuron_multipod shape tests, v0.10.53 +3 nested-array tests, v0.10.54 +6 structs_extra_test tests, v0.10.55 +8 sparse_matrix_extra_test tests, v0.10.56 +13 analysis_populations_test tests, v0.10.57 +10 connection_spiking_extra_test tests, v0.10.58 +7 parameters_extra_test tests, v0.10.59 +5 connection_receptor_test tests, v0.10.60 +7 neuron_inhomogeneous_poisson_test tests, v0.10.61 +9 analysis_isi_test tests, v0.10.62 +0 tests (cleanup), v0.10.63 +5 neuron_if_gsyn_test tests, v0.10.64 +0 tests, +1 example (duarte2019), v0.10.65 +4 analysis_lif_closedform_test tests, v0.10.66 +4 chain_bitexact_test tests, v0.10.67 +6 analysis_smooth_test tests, v0.10.68 +4 inhomogeneous_poisson_bitexact_test tests, v0.10.69 example tuning (no new tests), v0.10.70 +4 adex_sinexp_bitexact_test tests, v0.10.71 +0 tests (cleanup pass), v0.10.72 +11 ca_plasticity_test tests, v0.10.73 +8 connection_pinning_test tests, v0.10.74 +9 dump_params_test tests, **v0.10.75 +9 neuron_extended_if_test tests (ExtendedIF — multi-receptor conductance-based IF from `refs/SNNModels.jl/src/populations/generalized_if/if_extended.jl`; 3 receptor buffers g_Exc/g_PV/g_SST with per-synapse τe/τi + optional dendritic α-gating term `-α*g_Exc*g_SST*(E_e-v)`; matches Julia's `update_neuron!` exactly; 9 tests covering defaults + custom + decay + tonic drive + fire + refractory + α-gating + integrate; +1 example `examples/if_extended`), v0.10.76 +9 neuron_if_canahp_test tests (IFCANAHP — Calcium-activated CAN/AHP IF from `refs/SNNModels.jl/src/populations/generalized_if/if_CANAHP.jl`; Ca dynamics + pCAN/pAHP gating + membrane; simplified to single combined `syn_curr` for MoonBit compatibility; 9 tests covering defaults + Ca drive + gating + membrane + fire/reset + Ca bump + integrate), v0.10.77 +8 neuron_gif_test tests (GIFParameter + GIF — Generalized Integrate-and-Fire superset of IF/AdEx from `refs/SNNModels.jl/src/populations/generalized_if/{gif,if}.jl`; τr/τd are scalars here; full parameter struct includes ΔT/a/b/τw for the AdEx special case; 8 tests covering defaults + AdEx factory + state + pure-LIF + AdEx-fire adaptation + refractory + sub-threshold decay), v0.10.78 +10 neuron_adex_multi_timescale_test tests (AdExMultiTimescale — multi-timescale AdEx with dynamic spike threshold from `refs/SNNModels.jl/src/populations/adex/adex_multitimescale.jl`; per-receptor τr/τd vectors + dynamic θ[i] (incremented by At on spike, decays to Vt with τt); 10 tests covering parameter defaults + new shapes + 2-state decay + per-receptor independence + synaptic_current routing + fire + refractory + integrate), v0.10.79 +8 double_exp_current_synapse_test tests (DoubleExpCurrentSynapse — current-based DoubleExp from `refs/SNNModels.jl/src/populations/synapse/synapses/DoubleExpCurrentSynapse.jl`; differs from DoubleExpSynapse (in `synapse_params.mbt`) by `syn_curr = -(ge - gi)` instead of `ge*(v-E_e) + gi*(v-E_i)`; 8 tests covering defaults + vars init + Euler 2-state + exc/ihn routing + current formula + pure-exc + pure-inh + 100-step stability), **v0.10.80 +11 dendneuron_parameter_test tests (DendNeuronParameter — multicompartment dendritic neuron parameter container from `refs/SNNModels.jl/src/populations/multicompartment/dendneuron_parameter.jl` + `Physiology{Float32}` (Ri/Rd/Cd) from `dendrite.jl`; `DendriticTreeType` enum (BallAndStick/Tripod/Multipod) inferred from `ds.length()`; `tripod_param_new` + `ballandstick_param_new` factory shortcuts matching Julia's `TripodParameter` / `BallAndStickParameter`; 11 tests covering physiology defaults + custom + ds/physiology/geometry defaults + auto-infer for 1/2/3+ dendrites + population_from_dend_neuron passthrough + Float32 storage), v0.10.81 +9 confraveux2025_synapse_test tests (Confavreux2025Synapse — multi-timescale AMPA/NMDA/GABA synapse from `refs/SNNModels.jl/src/populations/synapse/synapses/Confraveux2025.jl`; differs from DoubleExpSynapse (in `synapse_params.mbt`) by separate gAMPA/gNMDA/gGABA buffers with gNMDA coupled to gAMPA via τNMDA and weighted current `syn_curr = (α*gAMPA + (1-α)*gNMDA)*(v-E_e) + gGABA*(v-E_i)`; 9 tests covering parameter defaults + vars init + AMPA/GABA spike input + NMDA coupled to AMPA + decay + weighted AMPA+NMDA + GABA inhibitory + α-blend dominance + 1000-step stability), **v0.10.82 +7 receptor_extra_test tests (Glutamatergic + GABAergic + alpha_synapse helper from `refs/SNNModels.jl/src/populations/synapse/receptors.jl`; Glutamatergic bundles ampa+nmda Receptor, GABAergic bundles gabaa+gabab; both `::new()` defaults + `::custom(...)` factory; 7 tests covering alpha_synapse formula + Glu default/custom + GABA default/custom + independent fields + Receptor consistency), v0.10.83 +7 infer_receptors_test tests (infer_receptors — index receptors by `target` field from Julia's `infer_receptors(receptors::ReceptorArray)::NamedTuple`; returns a ReceptorsByTarget struct with `glu : Array[Int]` + `gaba : Array[Int]` index arrays; 7 tests covering empty input + single glu/gaba + 4-receptor set + mixed order + unknown target dropped + count_by_target helper), v0.10.84 +2 receptor_extra_test tests (Receptors::from_pair — mirror Julia's `Receptors(glu::Glutamatergic, gaba::GABAergic)` constructor that builds a 4-receptor collection from a Glu + GABA pair; 2 tests covering default + custom), v0.10.85 +3 receptor_extra_test tests (receptors_current — sums AMPA+NMDA+GABAa+GABAb contributions via 4-receptor collection; 3 tests covering mixed-receptor sum + zero g_mat + pure AMPA contribution matches single receptor math)**), v0.10.86 +1 example (`examples/receptors_demo/main.mbt` — exercises Glutamatergic + GABAergic + Receptors::from_pair + infer_receptors + alpha_synapse + receptors_current end-to-end on a 4-neuron IF population; outputs the 4-receptor current sum per neuron), **v0.10.87 +4 get_synapse_symbol_test tests (get_synapse_symbol — maps symbol identifiers `"glu"`/`"gaba"`/`"he"`/`"ge"`/`"hi"`/`"gi"` to internal Float array handles; passthrough (returns the same String); 4 tests for each symbol passthrough), v0.10.88 +8 single_exp_synapse_test tests (SingleExpSynapse — single-exp decay synapse from `refs/SNNModels.jl/src/populations/synapse/synapses/SingleExpSynapse.jl`; uses SingleExpSynapseVars from `synapse_params.mbt` (already declared there — was the source of a "declared twice" error on first attempt); struct + step function `single_exp_synapse_step` updates `ge/gi` with `dt * (-ge/tau_e) + glu` and similar for gi; 8 tests covering defaults + vars init + exc-only + inh-only + mixed routing + tau dependence + spike-driven decay + 1000-step stability), v0.10.89 +8 stimulus_current_noise_test tests (CurrentNoise + stimulate_noise — current-injection with multiplicative noise `I = (I_base + noise) * (1-α) + I * α` from `refs/SNNModels.jl/src/populations/synapse/stimulus/CurrentNoise.jl`; 2-arg positional constructor `CurrentNoise::custom(n, i_base, noise_sigma, alpha)` (MoonBit rejects labeled `n=`); `box_muller_unit` for Float32 Box-Muller normal draws (uses Double path: `next_f64` → `@math.ln` → `@math.sqrt` → `@math.cos` → `Float::from_double`); 8 tests covering defaults + custom + noise mean + zero alpha + seeded reproducibility + set_i_base + I/O 2-arg constructor + custom 4-arg constructor), v0.10.90 +8 stimulus_group_test tests (StimulusGroup — container for grouping multiple stimuli from `refs/SNNModels.jl/src/populations/synapse/stimulus/StimulusGroup.jl`; 2-arg positional constructor `new(name, elements)` (same MoonBit labeled-arg limitation); `set_active_all` / `set_active_one` / `is_active` / `tag` helpers; 8 tests covering new + set_active_all + set_active_one + is_active + tag + combined + 2-arg new + accessors), v0.10.91 +4 empty_stimulus_test tests (EmptyStimulus — no-op stimulus from `refs/SNNModels.jl/src/populations/synapse/stimulus/EmptyStimulus.jl`; reuses existing `EmptyParam` from `structs_extra.mbt` (v0.10.54); `stimulate_empty` is a no-op; 4 tests covering new + param access + stimulate no-op + step no-op)**, **v0.10.92 +8 receptor_types_test tests (receptor presets port — `refs/SNNModels.jl/src/populations/synapse/receptor_types.jl`: Eyal/Soma NMDA voltage-dependency presets + MilesGabaSoma/DuarteGluSoma single receptors + EyalGluDend/MilesGabaDend/SomaGlu/SomaGABA bundles + TripodSomaReceptors/TripodDendReceptors/SomaReceptors 4-receptor collections; 8 tests covering NMDA defaults + single-receptor fields + bundle field shape + 4-receptor collection shape + fresh-each-call no-aliasing), v0.10.93 +8 analysis_weight_test tests (average_weight + average_weight_dynamics — port of `refs/SNNUtils.jl/src/analysis/weights.jl`; column-major CSR walk per pre-neuron with post-pop filter; `record : Array[Float]` is flat row-major n_connections × n_steps indexed via `record[s * n_steps + t]`; 8 tests covering empty/full/partial connectivity + pre/post pop filters + out-of-bounds + 3-timestep dynamics + zero-matched edges), v0.10.94 +6 analysis_EI_balance_test tests (kei_balance_per_neuron + kei_balance_population — port of `refs/SNNUtils.jl/src/analysis/EI_balance.jl`; per-neuron argmin over a flat row-major n_steps × n_neurons voltage matrix; tolerance 2.3mV; 6 tests covering constant-target + per-neuron settling + out-of-tolerance + boundary + population mean + never-settles), v0.10.95 +8 analysis_protocols_test tests (get_poisson_spikes + logrange — port of `refs/SNNUtils.jl/src/analysis/protocols.jl`; Bernoulli spike sample `if rand < rate*dt then 1.0F else 0.0F`; log10-spaced array via `@math.ln / @math.ln(10) / @math.exp` then `Float::from_double`; 8 tests covering rate=0 / rate=dt=1 / seeded reproducibility / frequency approximation / logrange shape), v0.10.96 +11 bimodal_kernel_test tests (KDE + globalKDE + get_maxima + is_bimodal + count_maxima + critical_window + all_windows — port of `refs/SNNUtils.jl/src/stimuli/balance_EI/bimodal_kernel.jl`; Float64 throughout (KDE density loses precision in Float32); strict local-max detection `data[i] > data[i-1] && data[i] > data[i+1]` (plateaus don't count); 11 tests covering Gaussian peak / empty data / shape / plateaus / single vs bimodal / asymmetric peaks / counter shape)**, **v0.10.97 +7 neuron_if_sinexp_test tests (IFSinExpParameter + IFSinExp — port of `refs/SNNUtils.jl/src/models/lkd2014.jl` `LKD2014SingleExp.PV`; IF neuron + single-exp synapse τe=6, τi=2; 2-arg constructor `IFSinExp::new(n, IFParameter::new(), rng)` + `lkd_pv()` defaults; 7 tests covering defaults + LKD PV preset + initial state + ge/gi single-exp decay (no he/hi) + fire threshold + refractory freeze + 100-step stability), v0.10.98 +7 analysis_poisson_input_test tests (`poisson_input_single` + `poisson_input` — port of `refs/SNNUtils.jl/src/analysis/protocols.jl`; inverse-CDF exponential ISI sampling `δ = -λ·ln(1-u)`; Float64 path for `ln`; spike_train `Array[Bool]`; 7 tests covering rate=0 / 500Hz / 100Hz / reproducibility / strictly-increasing spike indices / matrix shape / inter-neuron independence), v0.10.99 +8 analysis_intervals_test tests (`time_in_interval` + `start_interval` + `end_interval` — port of `refs/SNNUtils.jl/src/stimuli/sequence/sequence.jl`; `Array[Array[Float]]` of `[start, end]`; 8 tests covering empty intervals / inclusive bounds / x outside / -1 sentinel), v0.10.100 +3 receptor_from_array_test tests (`Receptors::from_array` — port of `refs/SNNModels.jl/src/populations/synapse/receptors.jl` `Receptors(rec::Vector{Receptor})` constructor; length-4 array → `pub struct Receptors { rec : Array[Receptor] }`; 3 tests covering length / shape parity with `Receptors::new` / index ordering), v0.10.101 +1 example (`examples/izhikevich_balanced/main.mbt` — 200 RS IZ neurons driven by 1kHz Bernoulli Poisson injection via `get_poisson_spikes(rate, dt, rng)` from v0.10.95, demonstrates IZ spike-frequency adaptation; balancedstimulus IF-only so excitatory-only here)**, **v0.10.102 +4 analysis_weight_test tests (`weights_indices` + `update_weight` — port of `refs/SNNUtils.jl/src/analysis/performance.jl`; `weights_indices` returns 0-based edge indices matching a pre/post-pop filter; `update_weight` multiplies matched edges by a factor in place; 4 tests covering full/partial filters + factor application + no-op), v0.10.103 +1 snn_utils_params_test tests (LKD2014Soma — soma-level connection parameter template port of `refs/SNNUtils.jl/src/models/connections.jl` `lkd2014_soma`; 4 (E→E, E→PV, PV→E, PV→PV) connection groups with p + μ values; 1 test covering defaults), v0.10.104 +1 snn_utils_params_test tests (Quaresima2023Dend — dendritic connection parameter template port of `quaresima2023_dend`; 9 connection groups with log-mean μ values; 1 test covering E→Ed exception + log(15.8)/log(1.4)/log(0.83) μ defaults), v0.10.105 +2 snn_utils_params_test tests (Quaresima2024UpDown + `eyal_equivalent_nar(nar, τd)` — port of `refs/SNNUtils.jl/src/models/quaresima_2024_updown.jl`; AMPA/NMDA g0 scaled by NAR; 2 tests covering AMPA/NMDA g0 computation at NAR=1.8 + struct population), v0.10.106 +1 example (`examples/izhikevich_net/main.mbt` — Brunel-style 80 E + 20 I IZ network with EE/EI/IE/II synapses; per-step Gaussian input via `box_muller`; demonstrates EE→RS + II→FS network dynamics; 800/200 from Julia port reduced to 80/20 for runtime)**, **v0.10.107 +3 neuron_iz_custom_test tests (IZParameter::custom — arbitrary (a, b, c, d) constructor matching Julia's `IZParameter(; a, b, c, d)`; τe, τi, Ee, Ei default to IZParameter defaults; 3 tests covering round-trip + IZ::new + parity with rs()), v0.10.108 +5 analysis_EPSP_test tests (exc_peak + inh_trough — port of `get_EPSP` from `refs/SNNUtils.jl/src/analysis/protocols.jl`; flat row-major `[n_steps × n_compartments]` voltage trace; 5 tests covering rise-then-fall / spiketime offset / rest offset / inhibitory dip / multi-compartment column selection), v0.10.109 +4 izhikevich_step_synapses_test tests (step_iz_synapses — standalone IZ synapse decay `ge += dt*(-ge/τe); gi += dt*(-gi/τi)`; 4 tests covering decay math / no-touch v-u / 1000-step stability / parity with full step_iz), v0.10.110 +3 izhikevich_bitexact_custom_test tests (IZ bit-exact with custom (a, b, c, d) — FS vs RS firing-rate comparison + custom c=-70 reset verification + custom RS-like trajectory), v0.10.111 +5 infer_receptors_extra_test tests (count_glu + count_gaba + infer_receptors_from + drop-unknown-target — extensions to infer_receptors helpers; 5 tests covering separate counts / zero glu case / helper-parity / unknown-target drop / total count)**, **v0.10.112 +6 analysis_EPSP_extensions_test tests (exc_peak_with_time + inh_trough_with_time + exc_peak_window + inh_trough_window — extensions of `get_EPSP` for time-of-peak + windowed peak detection; 6 tests covering peak value/time / plateau first-wins / trough value/time / windowed peak / empty-inverted-window), v0.10.113 +5 izhikevich_init_with_test tests (`IZ::init_with` + `IZ::init_uniform` — custom initial v/u arrays; supports restart-from-state; 5 tests covering per-neuron arrays / uniform state / fire+ge+gi zero-init / step_iz evolution / restart-continuity), v0.10.114 +5 analysis_EPSP_pair_test tests (`epsp_pair` + `epsp_pair_window` — single-pass exc_peak+inh_trough; 5 tests covering both peaks / monotonic trace / parity with individual helpers / bounded window / empty window), v0.10.115 +4 analysis_EPSP_window_extra_test tests (multi-compartment peak/trough column selection + boundary case where peak is at spiketime; 4 tests covering windowed multi-compartment / dip exclusion / first-sample-at-spik / 3-compartment peak), v0.10.116 +5 izhikevich_postspike_test tests (`IZPostSpike` + `IZ::init_with_postspike` — IZ absolute-refractory state mirroring IF/AdEx PostSpike; 5 tests covering default 1-step + custom N / initial state honours v/u / step_iz evolves / fire+ge+gi+i zero-init)**, **v0.10.117 +5 izhikevich_postspike_step_test tests (`step_iz_with_postspike` — refractory-aware IZ step function: `tabs` countdown decrements while > 0, synapse decay continues during refractory, on fire `tabs=tabs_const` resets; 5 tests covering force-fire + tabs decrement + synapse-decay-during-refractory + tabs_const=0 ≈ step_iz + multi-neuron heterogeneous firing), v0.10.118 +5 izhikevich_julia_ge_gi_test tests (`sample_julia_initial_ge_gi` — bit-exact port of Julia's `(1.5randn+4)*10nS` and `(12randn+20)*10nS` initial ge/gi via Box-Muller; 5 tests covering length / means / seeded-reproducibility / non-negative clamp / ge vs gi distribution), v0.10.119 +5 analysis_EPSP_normalise_test tests (`epsp_normalise` — z-score normalisation `v_normalised = (v - mean) / std` over a flat row-major voltage window; 5 tests covering zero-std degenerate / mean≈  unit-variance / multi-compartment column selection / invalid window returns empty / output length matches window), v0.10.120 +3 izhikevich_postspike_bit_exact_test tests (refractory timing verification: tabs countdown 2→ →  after single fire, tabs_const=5 → 5 refractory steps, second-fire re-extends refractory; 3 tests covering countdown / multi-step / re-fire-after-recovery), v0.10.121 +4 izhikevich_postspike_step_main_test tests (integration scenarios: 200-step stability / fire rate bounded by refractory / 5-neuron heterogeneous initial fire / u adaptation freezes during refractory; 4 tests covering long-run / tonic-vs-refractory / all-fire-once / u-frozen-during-refractory)**, **v0.10.122 +5 izhikevich_synapses_postspike_test tests (`step_iz_synapses_postspike` — standalone synapse decay with refractory countdown; 5 tests covering decay-no-refractory / tabs-countdown-during-refractory / no-touch v-u / tabs_const=0 ≈ step_iz_synapses / multi-neuron heterogeneous), v0.10.123 +5 izhikevich_reset_test tests (`iz_reset` — restore IZ to initial state; clears v/u/fire/ge/gi/tabs but preserves `i` (external input); 5 tests covering v-u restoration / fire-ge-gi-tabs clear / i preserved / step-determinism-after-reset / FS-parameters-reset), v0.10.124 +5 analysis_EPSP_normalise_by_compartment_test tests (`epsp_normalise_by_compartment` — multi-compartment z-score; returns `Array[Array[Float]]` of length n_compartments; 5 tests covering per-column z-scores / invalid window / single-compartment parity / degenerate-compartment-zeros / different std per compartment), v0.10.125 +1 example (`examples/izhikevich_postspike/main.mbt` — 3 RS IZ populations with different tabs_const (0/8/20); compares firing rates under 30 pA tonic drive), v0.10.126 +1 example (`examples/izhikevich_balanced_postspike/main.mbt` — 100 RS IZ + tabs_const=4 refractory + 1 kHz Bernoulli drive; demonstrates how refractory caps maximum firing rate)**, **v0.10.127 +5 izhikevich_reset_with_postspike_test tests (`iz_reset_with_postspike` — clear both IZ state AND refractory state, hot-swap `tabs_const` from `IZPostSpike`; promoted `IZ` and `IZPostSpike` to `pub(all)` with `mut tabs` / `mut tabs_const` for cross-file mutation; 5 tests covering state+tabs clear / tabs_const hot-swap / i preserved / step_iz_with_postspike after reset / multi-neuron), v0.10.128 +5 izhikevich_balanced_postspike_test tests (integration tests for `examples/izhikevich_balanced_postspike`; 5 tests covering refractory caps firing rate / spike-count ratio / tabs countdown through combined loop / single-neuron refractory / multi-neuron mixed tabs), v0.10.129 +5 izhikevich_EPSP_windowed_by_compartment_test tests (`epsp_normalise_windowed_by_compartment` — separate baseline window `[win_start, win_end]` for mean/std from observation window `[t_start, t_end]` for z-scores; 5 tests covering distinct windows / std > 0 / multi-compartment / invalid observation / invalid baseline), v0.10.130 +5 izhikevich_reset_test_bitexact_test tests (bit-exact reset verification: two parallel populations with same seed produce identical trajectories across reset boundary; uses `==` (not approx) on v/u; 5 tests covering same-seed determinism / post-reset parity / round-trip / FS params / custom IB-like params), v0.10.131 +5 izhikevich_postspike_step_synapses_test tests (integration tests combining `step_iz_synapses_postspike` and `step_iz_with_postspike` in the typical `sim!` loop pattern; **bugfix in `step_iz_with_postspike`** — changed `tabs[i] >= 0` to `tabs[i] <= 0` in loops for u-recovery and ge/gi-current contributions so that refractory correctly freezes ALL membrane updates (matches Julia's `step_neuron!` `continue` semantics); 5 tests covering tab countdown through combined loop / ge decays during refractory / multi-neuron heterogeneous tabs_const / injection between decay and step / 100-step deterministic round-trip)**.**, **v0.11.0 +17 conv2d_test / maxpool2d_test tests (881 → 898) — first CNN primitives: `conv2d.mbt` with `Conv2dParam` + `conv2d_forward` (NCHW row-major flat `Array[Float]`, naive 7-nested-loop, stride/pad, zero-padding, bias broadcast); `maxpool2d.mbt` with `MaxPool2dParam` + `maxpool2d_forward` (NCHW; out-of-bounds = -inf; stride defaults to kh). Forward-only, no new external deps.****, **v0.54.0 +15 DDPG tests (1721 → 1736) — `mbt/ddpg.mbt` (DeterministicPolicy + QNetworkContinuous + DDPG agent + train_ddpg closure for env_step) + `mbt/ddpg_update.mbt` (ContinuousReplayBuffer + ddpg_update_critic + ddpg_update_actor with closed-form critic gradient and sign(ReLU_out) gate) + `mbt/ddpg_test.mbt` (15 tests covering ContinuousReplayBuffer overflow wrap, twin-critic stability, target policy smoothness implicit via twin critics, deterministic action + tanh rescale, Gaussian noise exploration, Polyak averaging on all 5 networks).**, **v0.55.0 +8 TD3 tests (1736 → 1744) — `mbt/td3.mbt` (TD3Agent with twin target critics + target actor + 5 Polyak-averaged target nets, target policy smoothing `clip(clip(standard_normal, -c, c), -clip_range, clip_range)` with c=0.2, clip_range=0.5, twin-critic TD target `r + γ·min(q1', q2')`, delayed actor update every `policy_delay=2` grad steps) + `mbt/td3_test.mbt` (8 tests including the policy_delay-skip-actor-update verification).**, **v0.56.0 +12 Serialize tests (1744 → 1756) — `mbt/serialize.mbt` (pure-functional String round-trip for LinearQNet / QNetworkContinuous / DeterministicPolicy / AdamState + combined QNetCheckpoint). Lightweight SNNCKPT v1 header with key=value lines; 1D arrays encoded `[v0;v1;...]`, 2D arrays `[r0c0;r0c1|r1c0;r1c1;...]` (semicolons + pipes never appear in Float::to_string). Float encoding uses `Float::reinterpret_as_int` + `reinterpret_from_int` for bit-exact round-trip (initial `Float::to_string` attempt failed 4 tests on ULP drift because MoonBit 0.1.20260920's default Float printer truncates to ~6 digits).**, **v0.57.0 +9 SequenceReplayBuffer tests (1756 → 1765) — `mbt/sequence_replay_buffer.mbt` (per-step continuous replay buffer with T-step rollout sampling for recurrent LSTM/GRU actor-critic RL; flat row-major Float storage; `sample_seq_batch(batch_size, seq_len, rng)` returns 7 parallel arrays including terminal_mask for done-boundary handling and zero-padded windows when buffer size < seq_len; FIFO wrap on overflow; `reset()` clears size+cursor without releasing storage).**, **v0.58.0 +8 GRUDeterministicPolicy tests (1765 → 1773) — `mbt/gru_deterministic_policy.mbt` (recurrent deterministic actor for POMDPs; MLP w1 (state→hidden) → ReLU → GRU cell (over time) → MLP w2 (hidden→action) → tanh squash to `[action_low, action_high]`; reuses existing `GruCellParam` from `gru_cell.mbt`; Xavier-normal init for MLP weights He-style sqrtf(2/fan_in) for ReLU).**, **v0.59.0 +8 GRUQNetworkContinuous tests (1773 → 1781) — `mbt/gru_qnetwork_continuous.mbt` (recurrent continuous-action Q-network for POMDPs; MLP w1 (concat(state, action)→hidden) → ReLU → GRU cell (over time) → MLP w2 (hidden→scalar Q); 1×hidden weight matrix + scalar bias for the Q-value output).**, **v0.60.0 +10 DDPG_GRU tests (1781 → 1791) — `mbt/gru_ddpg.mbt` (DDPG agent with GRUDeterministicPolicy actor + twin GRUQNetworkContinuous critics + 5 Polyak-averaged target networks; `ddpg_gru_select_action(noise_std=0)` for deterministic inference or with Gaussian exploration noise clipped to action range; `ddpg_gru_compute_td_target_seq` for twin-critic TD forward (no parameter update yet — BPTT deferred to a follow-up because it requires matvec_backward over T steps + gru_cell_backward over T steps + sign(ReLU_out) gate per timestep); Polyak soft_update that covers both the MLP weights + biases AND the GRU sub-parameters (w_z, w_r, w_n, b_z, b_r, b_n)).**
 **Examples runnable**: 72 of 50+ (chain, adex, if_neuron, izhikevich, izhikevich_debug, hh_neuron, morris_lecar, poisson_pop, if_net, poisson_if, iz_net, if_noise, ei_inhibition, adex_net, out_degree, rate_net, potjans, hh_current, hh_net, tsodyks, adex_threshold, adex_balanced, stdp_demo, cuba_net, coba_net, stdp_compose_demo, festa2024, timed_stim, potjans_diesmann, lkd2014, stdp_kernel, afferent_response, lagzi2022, calcium_kernel, oja_rule, stp_demo, stp_onecell, lkd2014_adex, simulation_speed, tripod, metaplasticity, ballandstick, dendrite, hetrec, wilson_cowan, spikesynapse, sttc, aggregate_scaling, poisson_layer, spike_analysis, compartment_synapse, tripod_het, nmda, tripod_receptor, tripod_current, change_plasticity, stimuli, vstdp, balanced, stdp_confavreux, istdp_rate, istdp_potential, stp_timestep, stdp_symmetric, tripod_network, synapse_params, snn_utils_params, spatial, lkd2014_demo, duarte2019, if_extended, receptors_demo).
 
-## Recent additions (v0.44–v0.47, 2026-10-01)
+## Limits and defaults
 
-### v0.44.0 — Prioritized Experience Replay (PER, Schaul 2016)
+| | |
+|---|---|
+| Target | `native` only; the module declares `preferred_target = "native"` |
+| Accumulator | Float32 throughout; Float64 only inside the PyTorch-side oracles |
+| Time step | `dt = 0.125f0` by default (`core/time.mbt`) |
+| RNG | xoshiro256++; integer seeds hash with splitmix64, not Julia's SHA-256 |
+| `env.now()` | milliseconds |
+| Hot kernel | `nn/linear_forward`, batch 64, 4000 → 500 (256 MFLOP per call) |
+| Recorded baseline | 73.4 ms per call, budget 150 ms — a 2x regression fails |
+| Machine | Intel Core Ultra 9 285H; the budget is machine-specific |
+| Debug builds | about 12× slower: roughly 860 ms against 70 ms for the same call |
 
-- `mbt/sum_tree.mbt` — segmented priority tree with O(log N) sample/update. API: `SumTree::new(capacity)`, `add(priority) -> tree_idx`, `set_at(slot, p)`, `find_prefix(s) -> (tree_idx, p)`, `find_prefix_batch(segs)`, `total()`, `len()`, `get_leaf(slot)`.
-- `mbt/prioritized_replay.mbt` — `PrioritizedReplayBuffer` with proportional priorities `P(i) = p_i^α / Σ p_j^α`, importance-sampling weights `w_i = (N·P(i))^{-β} / max_j w_j` normalised to 1.0, FIFO wrap-around, max-priority insertion trick (so every transition is sampleable at least once). API: `new(capacity, α, β, ε)`, `push(s, a, r, s', done)`, `sample(batch_size, rng) -> (states, actions, rewards, next_states, dones, slot_indices, is_weights, probs)`, `update_priorities(slot_indices, td_errors)`, `len()`, `total_priority()`, `max_priority()`.
-- 22 new tests (`sum_tree_test.mbt`, `prioritized_replay_test.mbt`).
-
-### v0.45.0 — N-step returns (R2D2-style)
-
-- `mbt/n_step_buffer.mbt` — FIFO `StepRecord` ring. `NStepBuffer::new(n)`, `push(s, a, r, s', done) -> Bool` (true when window ready), `at(i)` chronological, `reset()`, `n_step_return(root, γ) -> (G_n, h_eff, s_root, s_look, truncated)` with terminal-truncation and partial-window handling.
-- `mbt/dqn_n_step.mbt` — `dqn_update_step_n_step` (γ^h bootstrap + no-bootstrap when terminal), `train_dqn_n_step` (NStepBuffer → ReplayBuffer flush + partial-window flush at episode end).
-- 14 new tests.
-
-### v0.46.0 — Distributional SAC (DSAC, Ma et al. 2021)
-
-- `mbt/dsac.mbt` — `LinearGaussianQNet` with μ + log-σ heads per action (σ = exp(log-σ) ∈ [1e-3, 10]), Gaussian NLL helper, `DSac` agent (policy + twin Gaussian critics + twin targets + α), `dsac_critic_update` with analytic ∂NLL/∂μ = (μ−t)/σ² and ∂NLL/∂log-σ = 0.5(z²−1), `dsac_soft_update` Polyak averaging on all 4 weight arrays, `dsac_soft_target` = SAC soft-Bellman + ε·N(0, 0.01) stochastic perturbation, `dsac_sample_action`.
-- 12 new tests.
-
-### v0.47.0 — Batch 4 unified Network Simulator framework
-
-- `mbt/network_simulator.mbt` — extends the existing `HeterogeneousModel` framework (compose.mbt). New helpers: `NetworkSummary` struct (counts of pops/conns/stims/monitors/stdp/stp entries + total_neurons + current_time), `network_summary(model)`, `reset_heterogeneous_full` (time → 0 + monitor.clear_records + per-type STDP/STP entry resets), `merge_heterogeneous(a, b)` (concatenates two HeterogeneousModels via compose), `heterogeneous_sim_for_with_log(model, duration, log_every_ms) -> Array[SimLog]` (periodic SimLog snapshots with `t`, `active_monitors`, `total_spikes`), `step_heterogeneous_with_record(model, dt, callback)` (caller-supplied callback after each step).
-- 9 new tests.
-
-## Recent additions (v0.48–v0.53, 2026-10-01)
-
-### v0.48.0 — Bit-exact Julia parity framework
-
-- `mbt/julia_parity.mbt` — ULP-distance comparator (`float32_ulp_distance` via `Float::reinterpret_as_int`), `float32_close(a, b, tol_ulps)`, `compare_float_traces` (element-by-element with max_abs + max_ulp), `compare_spike_trains` (greedy nearest-neighbour matching within `tol_steps`), `parse_parity_csv` (handles int/float traces + comments + blanks), int/float string parsers.
-- `mbt/julia_parity_test.mbt` — 12 tests including closed-form parity for a single IF neuron with constant current (geometric series `(1-α)^n · v₀ + (1−(1-α)^n) · v_eq`). The FP accumulation mismatch between MoonBit's `step_neuron` and the analytical closed-form is documented as a known limitation; tolerances (0.05–0.1 abs + 4096–8192 ULPs) catch regressions without requiring bit-exact analytical agreement.
-- **First piece of the bit-exact Julia parity infrastructure** that unblocks P0-1 (README TODO "Bit-exactness verification vs Julia").
-
-### v0.49.0 — IF_CANaHP example + AnyPop wiring
-
-- `mbt/population.mbt` — adds `IFCANAHP_(IFCANAHP)` to `AnyPop` enum + dispatch in `integrate_any` (calls `integrate_ifcanahp`) and `any_n_neurons`.
-- `mbt/network_simulator.mbt` — adds `IFCANAHP_` case to `count_neurons`.
-- `mbt/population_test.mbt` — adds `IFCANAHP_(_)` catch-all arm.
-- `mbt/examples/if_canahp/main.mbt` (NEW) + `moon.pkg` (NEW) — 100 IF_CANAHP neurons (Brogdon 2022 CAN-AHP LIF) with constant I=50 driven through `heterogeneous_sim_for` for 100 ms.
-- `mbt/neuron_if_canahp_test.mbt` — 2 new tests (`ifcanahp_example_smoke` 100-neuron finite-state, `ifcanahp_example_stable_dt` smaller dt bounds v).
-- The empty `if_canahp/` directory was the missing example for the already-ported neuron.
-
-### v0.50.0 — Multipod::step bug fix + re-enabled runtime tests
-
-- Fixed **1-based vs 0-based indexing bug** in the per-receptor `h_d` update block (`h_d[d][i][4]` was written but storage is sized 4 → indices 0..3). The receptor marker arrays stay as Julia's 1-based labels `[1, 2]` / `[3, 4]`; only the storage indices are corrected to 0-based.
-- Re-enabled 4 deferred runtime tests in `neuron_multipod_test.mbt` (stubbed since v0.10.53 due to "stack overflow"). The actual root cause was the indexing bug, not JIT stack depth.
-- New `multipod_runtime_test.mbt` with 3 smoke tests verifying long-simulation `Multipod::step` does NOT panic.
-- Heun corrector still TODO per README.
-
-### v0.51.0 — izhikevich_balanced_postspike.jl complete
-
-- Extended `mbt/examples/izhikevich_balanced_postspike/main.mbt` from E-only (100 RS IZ + Bernoulli + refractory) to a true E/I balanced network: 100 RS IZ (excitatory) + 25 FS IZ (inhibitory), both with `tabs_const=4` refractory, both receive 1 kHz Bernoulli drive; I→E cross-talk via `gi` spikes when an I neuron fires.
-- `mbt/izhikevich_balanced_postspike_test.mbt` — new "E/I balanced" test verifying both populations fire under drive.
-
-### v0.52.0 — tripod_network.jl example + tests
-
-- `mbt/tripod_network_test.mbt` (NEW) — 3 integration tests mirroring the existing `examples/tripod_network/main.mbt` scenario (E Tripod + I1/I2 IF + CompartmentSynapses I1→E[:soma, iSTDPRate] + I2→E[:d1, iSTDPPotential]): smoke run, I-populations-active-under-tonic-drive, iSTDP-rate-step-modifies-weights.
-- The example itself was already complete with the manual sim loop + iSTDP dispatch; only test coverage was missing.
-
-### v0.53.0 — tripod_current.jl example + tests
-
-- `mbt/tripod_current_test.mbt` (NEW) — 3 integration tests mirroring the existing `examples/tripod_current/main.mbt` scenario (4 TripodHet + PoissonLayerStimulusTripod exc@20Hz/inh@3Hz on :d1): smoke run, produces-bounded-spike-count, d1-receives-exc-and-inh.
-- The example itself was already complete; only test coverage was missing.
-
-## Recent additions (v0.54–v0.56, 2026-10-01) — Batch B (continuous-control RL + serialization)
-
-### v0.54.0 — DDPG (Deep Deterministic Policy Gradient, Lillicrap 2015)
-
-- `mbt/ddpg.mbt` (NEW) — `DeterministicPolicy` (state → continuous action via tanh-squash to `[action_low, action_high]`) + `QNetworkContinuous` ([state, action] → scalar Q with one ReLU hidden layer) + `DDPG` agent struct (deterministic actor + twin critics + twin target critics + target actor + 5 Polyak-averaged target nets + γ/τ/exploration_noise).
-- `mbt/ddpg_update.mbt` (NEW) — `ContinuousReplayBuffer` (FIFO wrap-around with `(s, a, r, s', done)` transitions) + `ddpg_update_critic` (analytic twin-critic TD gradient update) + `ddpg_update_actor` (closed-form critic gradient through `sign(ReLU_out)` gate, avoids backward pass through actor ReLU).
-- `mbt/ddpg_test.mbt` (NEW) — 15 tests: `ddpg_select_action_shape`, `ddpg_select_action_no_grad_shape`, `ddpg_update_critic_runs_without_crash` (NaN guard), `ddpg_update_actor_modifies_w2` (mutates w2 in place), `ddpg_twin_critic_does_not_collapse_on_seeded_inputs`, `ddpg_soft_update_polyak`, `continuous_replay_buffer_push_and_len`, `continuous_replay_buffer_overflow_wraps`, `deterministic_policy_tanh_squash_clips`, `deterministic_policy_action_range`, `deterministic_policy_random_init`, `qnet_continuous_forward_shape`, `qnet_continuous_zero_input_zero_weight`, `ddpg_train_smoke_pendulum_like_env` (end-to-end 4-step smoke train), `ddpg_select_action_is_deterministic`.
-
-### v0.55.0 — TD3 (Twin Delayed DDPG, Fujimoto 2018)
-
-- `mbt/td3.mbt` (NEW) — `TD3Agent` with actor + twin Q-critics (q1/q2) + twin target Q-critics + target actor + 5 Polyak-averaged target nets + Adam optimizers. Adds `policy_delay=2`, `target_noise_std=0.2`, `target_noise_clip=0.5` to the DDPG base.
-- `td3_smoothed_target_action(action, noise_std, clip_range, rng)` — `clip(action + clip(standard_normal, -c, c), -clip_range, clip_range)` where `c = noise_std`, applied to the target-actor action in the twin-critic TD target.
-- `td3_actor_update(actor, critic1, critic2, target_q1, target_q2, batch, lr)` — extracted from `ddpg_update_actor` (same body, separate name for dispatching clarity); closed-form critic gradient with sign(ReLU_out) gate.
-- `td3_soft_update(target_net, source_net, tau)` — Polyak averaging over all 5 networks (actor, q1, q2, target_actor, target_q1, target_q2).
-- `td3_update_step(agent, batch, lr_actor, lr_critic)` — twin-critic TD target `y = r + γ·min(q1', q2')`, critic update every step, actor + target-net soft update only when `step % policy_delay == 0`.
-- `td3_select_action(state, actor, exploration_noise_std, action_max, rng)` — action + Gaussian noise clipped to `[-action_max, action_max]`.
-- `train_td3(agent, env_step, n_episodes, max_steps, ...) -> Array[Float]` — closure-based env_step callback `(state, action) -> (next_state, reward, done)`, returns per-episode total rewards.
-- 8 tests: `td3_select_action_shape`, `td3_select_action_no_grad_shape`, `td3_smoothed_target_action_clip`, `td3_smoothed_target_action_noise`, `td3_soft_update_polyak`, `td3_update_step_twin_critic_td_target`, `td3_update_step_delayed_actor_update_skips_when_count_lt_delay` (verifies the skip path), `td3_train_smoke_pendulum_like_env`.
-
-### v0.56.0 — Model + optimizer checkpoint serialization
-
-- `mbt/serialize.mbt` (NEW) — pure-functional String round-trip for DQN / DDPG / TD3 model parameters + Adam optimizer state. Pure-functional API (no file I/O coupling; caller handles persistence via MoonBit `@fs` or piping to `moon run`).
-- Lightweight `SNNCKPT v1` header format with key=value lines, no nested objects. Each model is one block; combined checkpoint inlines model + optimizer sub-blocks via escape sequences (`\n` → `\\n`, `\` → `\\`).
-- 1D arrays encoded as `[v0;v1;...]` (semicolon-separated); 2D arrays as `[r0c0;r0c1|r1c0;r1c1;...]` (semicolons inside rows, pipes between rows). Both separators are non-numeric and never appear in `Float::to_string` output, so the format is safe to embed inside the `key=value\n` line-oriented header.
-- **Float encoding is bit-exact** via `Float::reinterpret_as_int` + `Float::reinterpret_from_int` (NOT `Float::to_string` / `parse_float` — initial attempt failed 4 tests on ULP drift because MoonBit 0.1.20260920's default Float printer truncates to ~6 digits, which loses last-bit precision for values like `0.1F`, `0.01F`, `-3.14159F`). Single-Float fields (`QNetworkContinuous.b2`, `action_low`, `action_high`) also use the same bit-exact Int encoding.
-- Public API: `serialize_linear_qnet` / `deserialize_linear_qnet`, `serialize_qnetwork_continuous` / `deserialize_qnetwork_continuous`, `serialize_deterministic_policy` / `deserialize_deterministic_policy`, `serialize_adam_state` / `deserialize_adam_state`, `serialize_qnet_checkpoint` / `deserialize_qnet_checkpoint` (returns `(LinearQNet, AdamState, Int)` tuple).
-- Deep-copy invariant: the deserialized model has freshly allocated arrays, so subsequent mutation of either side is independent (verified in `serialize_linear_qnet_independent_copy` + `serialize_qnet_checkpoint_independent_copies`).
-- 12 tests: round-trip for each model + AdamState (zero state + post-update state with step > 0) + combined checkpoint + header-tag presence + action range preservation + negative-float preservation. `b2` mutation tests skipped because `QNetworkContinuous.b2` is `mut b2` and read-only from outside the defining module in blackbox tests; the default-value round-trip still covers the encode/decode path.
-- `AdamState` fields are not `pub`, so tests use `adam_init` / `adam_update_arrays` / `adam_next_step` (the public API) to construct states with step > 0, and `let opt1 = decode_adam_state(s)` to get the deserialized state without mutating it.
-
-## Recent additions (v0.57–v0.60, 2026-10-01) — Batch C (recurrent / POMDP RL)
-
-### v0.57.0 — SequenceReplayBuffer for recurrent RL
-
-- `mbt/sequence_replay_buffer.mbt` (NEW) — per-step continuous replay buffer with T-step rollout sampling for LSTM/GRU actor-critic RL. Stores `(state, action, reward, next_state, done)` in flat row-major Float arrays.
-- `sample_seq_batch(batch_size, seq_len, rng)` returns 7 parallel arrays: `obs_seq [batch × seq_len × state_dim]`, `action_seq [batch × seq_len × action_dim]`, `reward_seq [batch × seq_len]`, `next_obs_seq [batch × seq_len × state_dim]`, `done_seq [batch × seq_len]`, `terminal_mask [batch × seq_len]` (1.0F at slots following a `done` boundary so caller can break BPTT), `hidden_init [batch]` (zeros — caller supplies hidden dim).
-- Padding behaviour: window crossing a `done` boundary zero-fills the rest and sets `terminal_mask`. Empty buffer (size < seq_len) returns all-zero windows with `terminal_mask` set everywhere (no panic).
-- 9 tests: new/len, push, overflow wrap, reset, sample shape, empty-buffer zero-pad, window-crosses-done terminal mask, reproducible under seed, dones propagate in window.
-
-### v0.58.0 — GRUDeterministicPolicy (recurrent actor for POMDPs)
-
-- `mbt/gru_deterministic_policy.mbt` (NEW) — recurrent deterministic actor for partially-observable continuous control. Architecture: `MLP w1 (state→hidden) → ReLU → GRU cell (over time) → MLP w2 (hidden→action) → tanh squash to [action_low, action_high]`. GRU hidden dim = MLP hidden dim so the ReLU-projected state and the GRU input/output match.
-- `GRUDeterministicPolicy::new(state_dim, action_dim, gru_hidden, action_low, action_high, seed)` — Xavier-normal init for MLPs (He-style `sqrtf(2/fan_in)` for ReLU), reuses `GruCellParam::new(gru_hidden, gru_hidden, seed+4UL)` for the recurrent cell, zero biases.
-- `gru_deterministic_policy_step(policy, obs, hidden) → (action, hidden_next)` — single-step inference. `gru_deterministic_policy_seq_forward(policy, obs_seq, seq_len, hidden_init) → (action_seq, final_hidden)` — flat row-major `[seq_len × action_dim]` output.
-- 8 tests: constructor shape, action in squash range, deterministic under seed, different seeds differ, hidden state evolves, seq_forward shape, seq_forward matches single-step chain, deterministic under seed at seq level.
-
-### v0.59.0 — GRUQNetworkContinuous (recurrent critic for POMDPs)
-
-- `mbt/gru_qnetwork_continuous.mbt` (NEW) — recurrent continuous-action Q-network for partially-observable environments. Architecture: `MLP w1 (concat(state, action)→hidden) → ReLU → GRU cell → MLP w2 (hidden→scalar Q)`.
-- `GRUQNetworkContinuous::new(state_dim, action_dim, hidden, seed)` — Xavier-normal init for MLPs, GRU via `GruCellParam::new(hidden, hidden, seed+4UL)`. `mlp_w2` is 1×hidden (scalar Q output) + scalar `mut mlp_b2 : Float` bias.
-- `gru_qnetwork_continuous_step(qnet, state, action, hidden) → (q, hidden_next)` — single-step inference (returns Float, not array). `gru_qnetwork_continuous_seq_forward(qnet, state_seq, action_seq, seq_len, hidden_init) → (q_seq, final_hidden)` — flat row-major `[seq_len]` output.
-- 8 tests: shape, deterministic under seed, different seeds differ, hidden state evolves, zero-zero-zero → 0.0F, seq_forward shape + deterministic, seq_forward matches single-step chain, scalar return type.
-
-### v0.60.0 — DDPG_GRU agent (recurrent actor + twin recurrent critics)
-
-- `mbt/gru_ddpg.mbt` (NEW) — DDPG agent with `GRUDeterministicPolicy` actor + twin `GRUQNetworkContinuous` critics + 5 Polyak-averaged target networks (`actor_target`, `critic1_target`, `critic2_target`). Recurrent hidden state threaded through the twin-critic TD update.
-- `DDPG_GRU::new(state_dim, action_dim, hidden, action_low, action_high, gamma, tau, exploration_noise, seed)` — each of the 6 networks gets a distinct seed (sources at seed/seed+1/seed+2, targets at seed+100/seed+101/seed+102) so Polyak-averaged targets start far from sources.
-- `ddpg_gru_select_action(agent, obs, hidden, noise_std, rng)` — single-step inference with optional Gaussian exploration noise clipped to `[action_low, action_high]`. `noise_std=0` recovers the deterministic policy output.
-- `ddpg_gru_compute_td_target_seq(agent, next_obs_seq, next_act_seq, reward_seq, done_seq, seq_len)` — twin-critic TD target forward: `y_t = r_t + γ·(1 - done_t)·min(q1_target(next), q2_target(next))`. **No parameter update yet** — BPTT-driven update (matvec_backward over T steps + gru_cell_backward over T steps + sign(ReLU_out) gate) is deferred to a follow-up because it's a significant incremental body of work.
-- `gru_deterministic_policy_soft_update(target, source, tau)` + `gru_qnetwork_continuous_soft_update(target, source, tau)` — Polyak averaging that updates the MLP weights + biases AND the GRU sub-parameters (`w_z`, `w_r`, `w_n`, `b_z`, `b_r`, `b_n`). `ddpg_gru_soft_update(agent)` calls all three.
-- `pub(all) struct DDPG_GRU` with `mut tau : Float` — required for cross-file record-update `{ ..agent, tau: 1.0F }` (MoonBit's blackbox test rule: `mut` field is only mutable if the containing struct is `pub(all)`).
-- 10 tests: 6 networks built + hyperparameters stored, source/target networks start distinct, deterministic with noise_std=0, noise clipped to action range, hidden state evolves, TD target shape + finiteness, zero rewards + γ=0 → zero target, tau=1 → actor_target exactly matches actor, tau=0 → actor_target unchanged, tau=1 → critics also soft-updated.
-
-## Running
-
-```sh
-# Tests -- the test cases live in tests/waveN/, one package per wave.
-# `moon test` at the root does not run them: the root holds no test
-# files, and on Windows the root package's test target exceeds the
-# 32K command-line limit that moon inlines source paths into. See
-# tools/split_tests/README.md.
-cd moonbit-snn/mbt
-moon test ./tests/wave1 --target native
-moon test ./tests/wave2 --target native
-# ... and so on through wave9
-
-# chain.jl example
-moon run examples/chain/main.mbt
-```
+The performance budget is derived from a median measured on one machine, and
+it is machine-specific: a slower machine reads high. The `perf` gate reports
+the value it measured on every run, so the reader can judge that rather than
+being told. Any timing taken from `moon test` or `moon run` without
+`--release` is wrong by the debug factor.
 
 ## Bit-exact contract
 
@@ -462,145 +513,6 @@ particular example has been checked against Julia in this repository: the
 comparison machinery is in `infra/parity_check.mbt` and
 `infra/julia_parity.mbt`, but the reference traces it would compare against are
 not committed here. See layer 2 of *How validity is established*.
-
-## Layout
-
-As of v0.166.0 the root package holds no source. `mbt/moon.pkg` is an import
-list; every `.mbt` lives in a sub-package. There are 732 source `.mbt` files
-outside `tests/` and `examples/`.
-
-Each package below says where its code comes from:
-
-- **ported** — at least one file is a translation of a named upstream file, and
-  the count is `ported / total` files in that package. Provenance is per-file,
-  so a package can be mostly ported and still carry original work.
-- **original** — no code upstream. Written against a published paper, with the
-  citation in the file.
-
-```
-mbt/
-|-- moon.mod                     # module riantr/snn_mbt, version 0.166.2
-|-- moon.pkg                     # root manifest: imports only, no source
-|-- README.md
-|
-|-- core/                        #   Time, Xoshiro RNG, units, libm bindings
-|--  `- ported 3/5               #   time/units/util from SNNModels.jl
-|-- neuron/                      #   IF, AdEx, Izhikevich, HH, MorrisLecar,
-|--  `- ported 19/21             #   Poisson, Wilson-Cowan, dendrites
-|-- synapse/                     #   connections, receptors, plasticity (~7.7k)
-|--  `- ported 26/34
-|-- stimulus/                    #   Poisson / spike-time / current stimuli
-|--  `- ported 9/10
-|-- analysis/                    #   spike-train statistics and measures
-|--  `- ported 10/13
-|-- infra/                       #   sim, serialisation, parity, datasets
-|--  `- ported 6/20
-|
-|-- nn/                          #   Tensor, Linear, Conv2d, norms, backwards
-|--  `- ported 1/16              #   structs_extra from SNNModels.jl
-|-- optim/                       #   SGD, Adam, AdamW, RMSprop, AdaGrad,
-|--  `- original                 #   Adafactor, LR schedules
-|-- activ/                       #   activations, pooling, elementwise ops
-|--  `- original
-|-- attention/                   #   MHA, SAttention, position encodings
-|--  `- original
-|-- autodiff/                    #   reverse-mode autodiff over a tape
-|--  `- original
-|-- gpu/                         #   single-precision BLAS seam
-|--  `- original                 #   ffi/gemm/loader .mbt + cuda/
-|
-|-- rl/                          #   DDPG, TD3, SAC, recurrent actors (~14.6k)
-|--  `- original
-|-- gnn/                         #   message passing, GCN/GIN/PNA/GAT (~6.5k)
-|--  `- original
-|-- generative/                  #   flows, VAE, DDPM, GAN, EBM
-|--  `- original
-|-- meta/                        #   MAML, FOMAML, Reptile, neural ODEs
-|--  `- original
-|-- causal/                      #   SCM, do-calculus, counterfactuals
-|--  `- original
-|-- capsule/                     #   CapsNet, dynamic routing
-|--  `- original
-|-- models/                      #   LeNet5, MLP, SimpleCNN, ViT, Siamese
-|--  `- original
-|-- timeseries/                  #   AR / ARIMA, Holt-Winters
-|--  `- original
-|-- tarnet/                      #   TARNet speaker ID: conv, ASP, SE, log-Mel
-|--  `- original                 #   (port of arXiv:2605.07735, see below)
-|
-|-- fuzz_props/                  #   property checks the QA loop drives
-|-- gpu_selftest/                #   known-answer checks for the BLAS fallback
-|-- bench_lin/                   #   release-mode timing of the hot kernel
-|-- testdata/                    #   fixtures
-|-- examples/                    #   77 runnable examples, one per model
-`-- tests/wave1 ... wave9        #   247 test files, split by domain
-```
-
-`src/`, `test/` and `units/` exist on disk but hold no files. They are
-leftovers from the sub-package split: nothing imports them, and they carry
-nothing that is not already in `core/`.
-
-Dependency depth is 4; the widest fan-out is `tarnet` at 5 packages.
-`verify/qa_loop.py` reports both. The order bottom to top is `core`, then
-`activ`, then `nn`, then everything else; `infra` sits at the top because
-running a model touches a neuron, a connection, a stimulus and an optimiser at
-once.
-
-## Provenance and attribution
-
-### Code upstreams
-
-Three Julia packages are vendored in this repository and are the source of the
-`ported` files above. All three are MIT, as is this package.
-
-| Upstream | Vendored at | Ported into |
-|---|---|---|
-| SpikingNeuralNetworks.jl v1.0.0 | `SpikingNeuralNetworks.jl/` | `neuron/`, `synapse/`, `analysis/`, `stimulus/`, `infra/` |
-| SNNModels.jl | `refs/SNNModels.jl/` | `core/` (Time, units, util), `nn/structs_extra.mbt` |
-| SNNUtils.jl v0.2.0 | `refs/SNNUtils.jl/` | `infra/sim.mbt`, `infra/compose.mbt`, `infra/population.mbt`, `infra/bimodal_kernel.mbt` |
-
-Those directories are unmodified upstream checkouts kept for reference. No
-build reads them, and `.typos.toml` excludes `_build/` but not them, so a lint
-run over the repository sees upstream sources as well.
-
-That is 74 of 732 source files. The other 658 are original.
-
-### Papers the original work follows
-
-| Area | Work | Source |
-|---|---|---|
-| `tarnet/` | TARNet speaker identification | Terraf & Iraqi, *TARNet: A Temporal-Aware Multi-Scale Architecture for Closed-Set Speaker Identification*, arXiv:2605.07735; upstream implementation `github.com/YassinTERRAF/CAT-Net` |
-| `tarnet/tarnet_se.mbt` | CTSE, the multi-scale channel-time gate | part of the same work |
-| `neuron/`, `attention/` | surrogate gradient for the Heaviside derivative | Zenke & Ganguli 2018 |
-| `attention/` | SAttention, spike-driven attention | Zenke & Ganguli 2018 |
-| `nn/` | ResNet foundations | He et al. 2015 |
-| `attention/` | multi-head self-attention, positional encodings | Vaswani et al. 2017 |
-| `attention/` | Vision Transformer | Dosovitskiy et al. 2020 |
-| `rl/` | PPO, DDPG, TD3, SAC | Mnih; Lillicrap; Fujimoto; Silver |
-| `rl/` | Decision Transformer, GTrXL | Chen et al. 2021 |
-| `gnn/` | message-passing interface, GCN, GAT, PNA, H2GCN, Set2Set | Gilmer et al. 2017; Hamilton; Velickovic; Battaglia; Lee et al. |
-| `generative/` | RealNVP, Glow, VAE/IWAE, DDPM, EBM, WGAN-GP | Dinh et al.; Kingma & Welling; Ho et al.; Arjovsky et al. |
-| `meta/` | MAML, FOMAML, Reptile | Finn et al. 2017; Nichol et al. 2018 |
-| `causal/` | SCMs, do-calculus, counterfactuals | Pearl; Spirtes et al.; Robins |
-| `capsule/` | CapsNet and dynamic routing | Hinton et al. 2017; Sabour et al. 2017 |
-| `models/` | Siamese embedding and contrastive loss | Bromley et al. 2015 |
-| `optim/` | AdamW, Adafactor | Loshchilov & Hinton 2019; Shazeer & Stern 2018 |
-| `timeseries/` | AR/ARIMA, Holt-Winters | Box & Jenkins; Hamilton |
-
-`autodiff/` and `gpu/` have no paper. The first is ordinary reverse-mode
-differentiation over a recorded tape; the second is a cuBLAS binding whose
-measurements are recorded in `gpu/moon.pkg`.
-
-### One unresolved deviation
-
-TARNet's global layer norm comes from `asteroid.masknn.norms.get("gLN")`.
-Asteroid is neither vendored here nor installed in the environment used to
-check, so two things follow: that dependency is documented rather than
-compared, and the epsilon this port uses (1e-8, in `nn/layer_norm.mbt`) is
-tighter than asteroid's documented default (1e-5). At the variances this model
-actually sees the difference is around one part in 1e7. It is recorded in
-`nn/layer_norm.mbt` so that anyone comparing against asteroid does not have to
-discover it.
 
 ## How validity is established
 
@@ -641,7 +553,7 @@ cross-language check and has not been closed against one here. Any claim that
 a specific file is bit-exact with Julia is a claim about a run performed
 elsewhere.
 
-### 3. Comparison against an independent reference implementation (new)
+### 3. Comparison against an independent reference implementation
 
 Where a paper or an upstream implementation exists, a second implementation is
 generated from *that* source and compared value by value:
@@ -713,659 +625,11 @@ For each of these, a *scaled-down qualitative* port works
 (`afferent_response`, `festa2024`, etc.) but the Julia run-time
 parameters are not reproduced bit-for-bit.
 
-## Recent additions (v0.58.0 - v0.155.0, 2026-10-05)
-
-Sixteen batches shipped between v0.57.0 and v0.155.0, all `moon check`
-clean (0 errors). Tests are blocked by the Windows CreateProcessW 32K
-command-line limit on `moon test`: the package has grown from 511 to 998
-`.mbt` files, so the limit is now hit harder than when it first
-appeared past v0.61.0. Verification runs through `moon check` plus the
-two harnesses in the Verification harness section below; the package
-holds 1939 test blocks across 383 test files and 77 examples.
-
-> **Superseded.** The root package can no longer host a test target at all,
-> and no test lives there any more. Every `*_test.mbt` is in one of nine
-> sub-packages under `tests/`, each an `is-test` package importing the
-> library `for "test"`, and CI runs all nine:
->
-> ```sh
-> moon test ./tests/waveN --target native
-> ```
->
-> That is 1884 tests passing, against the 280 CI could reach before. A guard
-> in `publish.yml` now fails the build if a `*_test.mbt` reappears in the
-> root, because such a file would be dead rather than red. See
-> `tools/split_tests/README.md`.
-
-### Batch C follow-up (v0.58.0 - v0.61.0): BPTT boundary handling
-- `sample_seq_batch_at` helper for arbitrary-window sequence replay
-  buffer sampling with `terminal_mask` for proper hidden-state
-  zeroing at episode boundaries.
-- 10 BPTT boundary tests added at v0.61.0 (1801 → 1811 tests).
-
-### Batch D (v0.61.0 - v0.63.0): Recurrent deterministic actor-critic (LSTM)
-- v0.61.0 `LSTMDeterministicPolicy`: recurrent actor for POMDPs.
-  state → MLP w1 → ReLU → LSTM cell → MLP w2 → tanh squash → action.
-- v0.62.0 `LSTMQNetworkContinuous`: recurrent critic.
-  [state; action] → MLP w1 → ReLU → LSTM cell → MLP w2 → scalar Q.
-- v0.63.0 `LSTM_DDPG`: full DDPG agent wrapping actor + twin critics +
-  5 Polyak targets. 6 distinct seeds (offset by +100UL for targets).
-
-### Batch E (v0.64.0 - v0.67.0): BPTT-driven recurrent critic/actor updates
-- v0.64.0 `gru_ddpg_update_critic_seq`: GRU critic T-step BPTT.
-- v0.65.0 `gru_ddpg_update_actor_seq`: GRU actor BPTT (finite-difference
-  ∂Q/∂a with eps=1e-3).
-- v0.66.0 `lstm_ddpg_update_critic_seq`: LSTM critic T-step BPTT.
-- v0.67.0 `lstm_ddpg_update_actor_seq`: LSTM actor BPTT.
-
-### Batch F (v0.68.0 - v0.71.0): Recurrent SAC (stochastic actor + twin critics)
-- v0.68.0 `GRUSACActor`: stochastic actor — state → MLP w1 → ReLU →
-  GRU cell → two MLP branches (mean + log_std) → tanh squash + Gaussian
-  sampling. log_std clamped [-20, 2] (Haarnoja 2018).
-- v0.69.0 `LSTMSACActor`: parallel LSTM variant.
-- v0.70.0 `SAC_GRU`: stochastic actor + twin recurrent critics + auto-alpha
-  + 5 Polyak targets. `target_entropy = -action_dim` default.
-- v0.71.0 `SAC_LSTM`: parallel.
-
-### Batch G (v0.72.0 - v0.75.0): Gated Transformer-XL (GTrXL) recurrent memory
-- v0.72.0 `GTrXLBlock`: gated FFN residual primitive.
-  y = sigmoid(W_gate · x) ⊙ FFN(x) + x (Parisotto et al. 2020).
-  Gate init std scaled by 0.1 so initial gate ≈ sigmoid(0) ≈ 0.5.
-- v0.73.0 `GTrXLDeterministicPolicy`: recurrent actor with GTrXL block
-  as memory.
-- v0.74.0 `GTrXLQNetworkContinuous` + `GTrXL_DDPG`: twin critics + 5
-  Polyak targets; 9 tensors per network, 45 total.
-- v0.75.0 `GTrXLSACActor` + `SAC_GTrXL`: stochastic SAC + auto-alpha; 12
-  tensors per target, 60 total.
-
-### Batch H (v0.76.0 - v0.79.0): Decision Transformer (offline RL via sequence modeling)
-- v0.76.0 `DTEmbeddings`: 3-modality tokenization (rtg/state/action)
-  + timestep lookup. Per-token =
-  Linear_rtg(R_t) + Linear_state(s_t) + Linear_action(a_t) + Embed_ts(t).
-- v0.77.0 `DecisionTransformer`: full DT = DTEmbeddings + GTrXLBlock
-  backbone + action head.
-- v0.78.0 `TrajectoryBuffer`: offline RL replay + returns-to-go
-  (R_t = r_t + γ·R_{t+1}, terminal zeros bootstrap) +
-  `sample_trajectory_window` for window batching.
-- v0.79.0 `DecisionTransformerTrainer`: MSE loss + per-element gradient
-  + SGD step on action head only. Embeddings + backbone frozen (BPTT
-  through GTrXL deferred).
-
-### Batch I (v0.80.0 - v0.83.0): Trajectory Transformer (planning via conditional sequence modeling)
-- v0.80.0 `TTEmbeddings` + `TrajectoryTransformer`: 4-modality
-  (state/action/reward/done) + 4 prediction heads (next_state,
-  reward, done, value) on GTrXL backbone.
-- v0.81.0 `BeamSearchPlanner`: K-beam expansion via TT dynamics +
-  uniform-random action sampling + value scoring + top-K selection
-  over horizon H. Score = accumulated discounted reward + γ^t · value(t).
-- v0.82.0 `TrajectoryTransformerTrainer`: total MSE = MSE(next_state) +
-  MSE(reward) + MSE(done) + MSE(value); SGD on all 4 heads.
-- v0.83.0 `TrajectoryTransformerAgent`: full pipeline — append
-  transition → sliding history → `beam_search_plan` → return best
-  first action.
-
-### Batch J (v0.85.0 - v0.88.0): time-series forecasting
-- v0.85.0 `ARIMA` enhancements: Yule-Walker stationarity estimate,
-  stateful `fit`/`forecast` (forecasts can be chained), confidence
-  intervals.
-- v0.86.0 `LSTMForecaster`: full BPTT + SGD training over a sliding
-  window.
-- v0.87.0 `GRUForecaster`: the same interface over a GRU, deliberately
-  parallel to v0.86 so the two forecasters are interchangeable.
-- v0.88.0 `TimeSeriesEnsemble`: inverse-variance weighted average of
-  the ARIMA / LSTM / GRU forecasts.
-
-### Batch K (v0.89.0 - v0.92.0): Neural ODE
-- v0.89.0 `ODEFunc`: the dynamics field `f(t, x)` as a first-class
-  primitive, so an ODE model is anything that supplies one.
-- v0.90.0 `ODESolver`: fixed-step Euler and Heun integrators.
-- v0.91.0 `AdjointSensitivity`: adjoint-method gradients, i.e. O(1) in
-  trajectory length rather than O(T) BPTT.
-- v0.92.0 `NeuralODEAgent`: forward + adjoint backward + SGD, closing
-  the loop on the batch.
-
-### Batch L (v0.93.0 - v0.96.0): meta-learning
-- v0.93.0 `TaskSampler`: MAML task family + meta-batched sampling.
-- v0.94.0 `MAML`: the FOMAML variant.
-- v0.95.0 `FOMAML`: the single-inner-step form split out on its own.
-- v0.96.0 `Reptile`: interpolation-based meta-update (no second
-  derivative, so it composes with any inner optimiser).
-
-### Batch M (v0.97.0 - v0.100.0): causal inference
-- v0.97.0 `LinearGaussianSCM`: DAG + structural equations + sampling.
-- v0.98.0 `DoCalculus`: interventions + Monte Carlo ATE.
-- v0.99.0 `CounterfactualReasoning`: Pearl's three-step procedure.
-- v0.100.0 `CausalEffectEstimator`: ATE + CATE + bootstrap CI.
-
-### Batch N (v0.101.0 - v0.104.0): normalizing flows
-- v0.101.0 `AffineCouplingLayer`: the Real NVP core block.
-- v0.102.0 `RealNVP`: stacked coupling + fixed permutation.
-- v0.103.0 `Glow`: Real NVP + ActNorm + 1x1 convolution permutation.
-- v0.104.0 `NormalizingFlowModel`: the full flow with a prior and an
-  exact density.
-
-### Batch O (v0.105.0 - v0.108.0): variational autoencoders
-- v0.105.0 `ELBO`: the Evidence Lower Bound loss.
-- v0.106.0 `GaussianReparameterization`: the reparameterization trick.
-- v0.107.0 `VAE`: the full model.
-- v0.108.0 `IWAE`: the importance-weighted bound (a tighter ELBO).
-
-### Batch P (v0.109.0 - v0.112.0): Vision Transformer
-- v0.109.0 `PatchEmbedding`: the patch linear projection.
-- v0.110.0 `ViTBlock`: LayerNorm + MHA + residual, then LayerNorm +
-  MLP + residual.
-- v0.111.0 `ViT`: PatchEmbed + CLS token + positional encoding +
-  N blocks + head.
-- v0.112.0 `ViTTrainer`: cross-entropy + SGD on the classification head.
-
-### Batch Q (v0.113.0 - v0.116.0): diffusion models
-- v0.113.0 `DiffusionSchedule`: linear and cosine beta schedules,
-  `q_sample`, `q_sample_pair`.
-- v0.114.0 `ScoreNetwork`: MLP denoiser + sinusoidal time embedding.
-- v0.115.0 `DDPM`: schedule + score net + reverse sampling + loss.
-- v0.116.0 `DDPMTrainer`: forward + MSE loss logging.
-
-### Batch R (v0.117.0 - v0.120.0): energy-based models
-- v0.117.0 `EnergyFunction`: MLP scalar energy.
-- v0.118.0 `LangevinSampler`: finite-difference gradient + Langevin
-  step + chain.
-- v0.119.0 `EBM`: energy + score + Langevin sampling.
-- v0.120.0 `EBMTrainer`: denoising score matching.
-
-### Batch S (v0.121.0 - v0.124.0): DCGAN
-- v0.121.0 `DCGANGenerator`: latent -> upconv stack -> tanh.
-- v0.122.0 `DCGANDiscriminator`: strided conv + LeakyReLU + spectral
-  norm helper.
-- v0.123.0 `DCGAN`: the composite, with BCE D/G losses and the
-  adversarial step.
-- v0.124.0 `DCGANTrainer`: mini-batch adversarial round + eval
-  metrics.
-
-### Batch T (v0.125.0 - v0.128.0): WGAN-GP
-- v0.125.0 Fix: the DCGAN generator emitted 16x16; corrected to the
-  canonical 4 -> 8 -> 16 -> 32 upconv progression.
-- v0.126.0 `WCritic`: Wasserstein critic loss + Lipschitz weight
-  clipping.
-- v0.127.0 `GradientPenalty`: WGAN-GP interpolation + finite-difference
-  input gradient + the `||grad|| - 1` squared term.
-- v0.128.0 `WGANTrainer`: n_critic loop + Wasserstein/GP losses + eval.
-
-### Batch U (v0.129.0 - v0.132.0): metric learning
-- v0.129.0 `EmbeddingNet`: MLP embedding + L2 normalize + pairwise
-  and cosine distances.
-- v0.130.0 `ContrastiveLoss`: contrastive + triplet + hard-negative +
-  N-pair.
-- v0.131.0 `SiameseNet`: shared-weight twin/triplet embedding.
-- v0.132.0 `SiameseTrainer`: triplet batch builder + hard-negative step
-  + Recall@K.
-
-### Batch V (v0.133.0 - v0.136.0): capsule networks
-- v0.133.0 Capsule primitives: squash activation, norm, dot, margin
-  loss.
-- v0.134.0 `PrimaryCapsule`: shared-conv primary capsule bank.
-- v0.135.0 `DynamicRouting`: iterative agreement-based routing with
-  coefficients.
-- v0.136.0 `CapsuleNetwork`: ReLUConv + PrimaryCapsule + routing +
-  margin loss.
-
-### Batch W (v0.137.0 - v0.140.0): graph neural networks, forward pass
-- v0.137.0 `Graph`: COO edge list + scatter sum/mean/max + GCN
-  adjacency normalisation.
-- v0.138.0 `MessagePassing`: `GCNLayer` + `MPnnLayer` (the Gilmer
-  formulation).
-- v0.139.0 `GraphAttention`: GAT single head + the multi-head stack
-  with ELU.
-- v0.140.0 `GraphClassifier`: mean/sum/max readout + MLP head +
-  graph-level cross-entropy and accuracy.
-
-### Batch X (v0.141.0 - v0.144.0): graph architectures
-- v0.141.0 `GIN`: unweighted sum aggregation + learnable-eps self term
-  + 2-layer MLP.
-- v0.142.0 `PNA`: mean/max/min/std + degree scaler. Also fixed a
-  negative-seed bug in `scatter_max` and added `scatter_min`.
-- v0.143.0 `Set2Set`: LSTM-query attention readout, plus
-  `Set2SetClassifier` with GIN/PNA backbone dispatch.
-- v0.144.0 `EdgeGNN` (`RelationalConv` with edge features) + `H2GCN`
-  separated ego/neighbour/high-order spaces + homophily diagnostics.
-
-### Batch Y (v0.145.0 - v0.148.0): graph backward pass
-- v0.145.0 `graph_backward.mbt`: scatter sum/mean backward (edge-list
-  gradient accumulation) + max/min argmax routing + `GraphLinearGrad`
-  + `graph_linear_backward` + SGD step.
-- v0.146.0 GIN + MPNN backward: `GINLayerGrad` / `MPnnGrad` bundles and
-  edge-list gradient routing.
-- v0.147.0 GCN backward: `gcn_layer_support` shared with the forward,
-  backward through the normalised edge weights,
-  `graph_cross_entropy_grad`.
-- v0.148.0 PNA backward including the standard-deviation reducer
-  derivative, `TrainableGraphNet` dispatch, and
-  `graph_net_train_step` (node-level and graph-level CE).
-
-### Batch Z (v0.149.0): gradient-check harness
-Central-difference checks for dL/dh and dL/dW, plus a negative control,
-and they immediately found four real defects that `moon check` and code
-review had both passed: the four backward stack traversals ran forwards
-instead of backwards; `g.feat_dim` was used where `layer.in_dim` was
-meant (in the GIN, MPNN and PNA forward AND backward); the PNA reducer
-gradients were written one node at a time into a `[n_nodes x dim]`
-buffer, keeping only the last node; and `GraphLinearGrad::zero`
-aliased every row of `d_w` onto row 0.
-
-### Batch AA (v0.150.0 - v0.151.0): gate green
-- v0.150.0 Replaced the cross-entropy objective with a bounded
-  quadratic one (`0.5 * sum(out^2)`, whose gradient is exactly `out`),
-  and absolute tolerance with a relative one. This overturned the
-  previous round's conclusion that GIN was the worst architecture: GIN's
-  *relative* error was in fact the smallest of all six configs.
-- v0.151.0 Added `gradcheck_over_fraction`, the kink-versus-bug
-  discriminator (a ReLU kink perturbs 1-2 components, a wrong routing
-  perturbs nearly all of them), and fixed the last two defects: the
-  MPNN ReLU mask was taken on the `self_pre` branch alone instead of on
-  the sum, and a leftover `let dim = g.feat_dim` in
-  `pna_layer_backward`.
-
-### Batch AB (v0.152.0 - v0.153.0): parameter gradients and the GAT head
-- v0.152.0 `dL/dW` wired into the gate via
-  `trainable_net_param_grad_from_dout` and `gradcheck_param_relative`,
-  with a `corrupt~` factor so the negative control is real (a corrupted
-  gradient produces max_diff 2490 against a tolerance of 74.8). This
-  matters because dL/dW accumulates over NODES inside the linear
-  backward while dL/dh accumulates over EDGES outside it, so one can
-  pass while the other fails.
-- v0.153.0 `gat_backward.mbt`: the GAT head backward. GAT is the only
-  reducer here whose score reads BOTH endpoints of an edge, so the
-  score gradient fans out to two ends and the family needed two new
-  scatter directions (`scatter_add_by_src` / `scatter_add_by_dst`).
-
-### Batch AC (v0.154.0 - v0.155.0): multi-head GAT and end-to-end training
-- v0.154.0 Multi-head `GraphAttention` backward: the concatenated
-  upstream gradient has to be un-interleaved per head, all heads of a
-  layer share their input so their input gradients sum, and the ELU sits
-  BETWEEN a head and the next layer, so its derivative multiplies at the
-  head's own pre-activation. `gat_layer_backward`'s `elu` flag had been a
-  placeholder, i.e. a hidden head asking for the mask silently received
-  an unmasked gradient. Three latent bugs in the never-called stack
-  forward were fixed at the same time: `GraphAttention::new` gave layer
-  `l > 0` an input width of `dims[l]` when concatenation requires
-  `num_heads * dims[l]`; a single-layer stack ran layer 0 twice; and the
-  head output was indexed with the layer's `in_dim` as its row stride
-  instead of its own `out_dim`. The gate separated them cleanly: the
-  configuration where `in_dim == out_dim` passed and the one where they
-  differ was off by 118%.
-- v0.155.0 `gnn_train_demo.mbt`: an end-to-end transductive
-  two-community fixture, a backbone + `GraphLinear` head composite
-  training step, training curves, and the baselines needed to make the
-  result mean something. It found a defect that had shipped for six
-  versions: `graph_cross_entropy` had an inverted sign on its
-  `logf(sum_exp)` term, so it returned a NEGATIVE loss for every
-  confident and correct prediction. Its gradient was correct throughout,
-  so training worked and accuracy rose; only the reported loss moved the
-  wrong way. It survived because the gradient gate deliberately checks a
-  bounded quadratic objective instead of cross-entropy, and a gate that
-  exercises one objective cannot see a bug in another. `graph_cross_entropy`
-  is fixed and `gradcheck_ce_consistency` now pins the loss against its
-  own gradient.
-
-### Batch AD (v0.156.0 - v0.159.0): `moon test`, and DragonNet
-
-These four shipped in v0.159.0.
-
-- v0.156.0 The training demo grows a second, deeper backbone and reports
-  per-architecture depth effects: both depths learn on 5/5 probes, the
-  deeper one is better on 4/5, and neither generalises on noise.
-- v0.157.0 **Test sub-packages.** `moon test` on the root package has
-  failed since v0.61.0 with `CreateProcessW: The filename or extension is
-  too long` -- Win32 ERROR_FILENAME_EXCED_RANGE, rendered in Chinese by a
-  zh-CN console -- which is the 32767-character command-line limit. The
-  stage is unambiguous:
-  `moon check` over all 516 files reports **0 errors**, so `moonc` is
-  fine, and a sub-package that generates **957 KB** of C compiles and
-  links where the root package's **203 KB** test C does not. The size of
-  the generated C is therefore NOT the mechanism, and reasoning from it
-  sends you down the wrong path. The fix is to stop asking the root
-  package to host tests: a per-directory `moon.pkg` with
-  `import { "riantr/snn_mbt", }` and `options("is-test": true)` gives a
-  split package blackbox access to the package under test as
-  `@snn_mbt.X`, with no `moon.work` and no interface regeneration
-  (`moon work` manages *separate modules*, each with its own
-  `moon.mod`). `tests/wave1/` holds 27 files and **216 test blocks that
-  had never been executed before**. Those 27 files were relocated rather
-  than added, so the published archive grows by 6,340 bytes (+0.5%) --
-  just the `@snn_mbt.` prefixes -- and extracting the published zip and
-  running `moon test ./tests/wave1` gives 216/216 against the published
-  artifact rather than the working tree.
-- v0.158.0 `ELU`: `elu_forward` / `elu_backward`. Only a GAT-scoped ELU
-  *derivative* existed (`gat_elu_grad`); there was no forward at all. The
-  backward takes the pre-activation, because at zero the two branches
-  coincide and reading the post-activation would make the mask depend on
-  a value the caller may already have transformed.
-- v0.159.0 `DragonNet`: the architecture of arXiv:1906.02120 (Shi, Blei &
-  Veitch) with the three-term objective transcribed from the authors'
-  implementation (`claudiashi57/dragonnet`, `src/experiment/models.py`):
-  `L_reg + L_bce + ratio * L_tarreg`. The gate in `tests/wave2/` checks
-  **every** parameter by central difference rather than a sample, which
-  is what the `dragonnet_flatten` / `unflatten` / `grad_flatten` /
-  `layer_offset` family exists for. It caught two defects that
-  type-check, compile, train, and report a plausible number:
-  1. The propensity is clipped to `[1e-7, 1-1e-7]` exactly as Keras'
-     `binary_crossentropy` does, but the gradient was taken from the
-     clipped value as though the clip were not there -- terms of order
-     **1e7** for a term the loss does not depend on, with the finite
-     difference reading exactly **0**. `dn_prop` now returns
-     `(value, derivative)` and the derivative is zero whenever the clip
-     is active; it is the single place the clipping decision is made, so
-     the loss and its gradient cannot disagree about it.
-  2. A widely circulated variant of this Keras model omits the sigmoid
-     on the propensity head. Without it the linear output leaves
-     `[0,1]`, the clip saturates, the BCE term becomes a **constant**,
-     and the propensity head trains on nothing at all while the loss
-     falls and the ATE looks fine. `DragonNet::new` defaults to
-     `t_sigmoid = true`; the linear variant remains available and its
-     gradient stays correct either way.
-
-  The gate also carries two negative controls (doubling and sign-flipping
-  `d_epsilon` must both be detected) and a shuffled-outcome control on the
-  training test, so a gate that stops comparing cannot report PASS. The
-  first version of that control zeroed the y1 head's parameters instead
-  of shuffling the outcomes; the targeted-regularisation term drags y0
-  down uniformly, so the "blinded" model reported an ATE of 2.18 and the
-  control failed for a reason unrelated to the leak it was meant to
-  detect.
-
-### Batch AE (v0.160.0 - v0.163.0): TARNet
-
-These four shipped in v0.163.0.
-
-Note on the name: TARNet here is **not** the treatment-effect regressor of
-Shalit et al. (2017) that this package implements elsewhere. It is Terraf &
-Iraqi, ICME 2026, arXiv:2605.07735 -- a temporal-aware multi-scale architecture
-for closed-set speaker identification.
-
-- v0.160.0 **TARNet primitives and forward.** `tarnet_conv1d.mbt` (dilated
-  depthwise convolution, PReLU, pointwise 1x1 in `[n, C, T]` layout),
-  `tarnet_se.mbt` (the post-MFA squeeze-excitation and the paper's
-  multi-scale channel-time gate, CTSE), `tarnet_asp.mbt` (attentional
-  statistics pooling), and `tarnet.mbt` (the residual block, the three parallel
-  dilation stacks, and the classifier head). The gLN reuses this package's
-  `LayerNorm(c, 1, T)` and the bottleneck 1x1 reuses `linear_forward` with the
-  frame axis as the batch axis.
-
-  Two composition faults were found here that type-check, train, and report a
-  plausible number:
-  1. The 1x1 convolutions inside a block read the wrong permutation of the
-     `[n, C, T]` layout. Per-coordinate finite differences flagged 75 of 120
-     input coordinates and the directional derivative was off by 108%.
-     `tn_conv1x1_*` now exists specifically so the layout-correct pair cannot
-     be confused with the `linear_*` pair.
-  2. `layer_norm`'s `d_gamma` accumulated `dy * x_centered` and dropped the
-     `inv_std`. Isolated reproduction: 51 of 64 coordinates wrong. It is
-     invisible on any fixture whose variance is near 1, since `inv_std ~ 1`
-     there -- see the `batch_norm2d` entry below for the same mistake made a
-     second time.
-
-- v0.161.0 **Block and stack backward**, plus the multi-fixture sweep that the
-  rest of the package now uses.
-
-  The last red gate was block coordinate 145, which disagreed by 11.6% on one
-  fixture. It is a float32 artifact, and the argument is worth recording
-  because it is the basis of the instrument used everywhere after it: a wiring
-  fault is VALUE-INDEPENDENT, because the flat index -> parameter mapping does
-  not change when the RNG produces different numbers. Sweeping eight fixtures
-  gave 718 coordinate checks and exactly one failure -- seed 71, index 145 --
-  while a mutation that really is a wiring fault missed at index 50 on six of
-  eight. The tolerance was not widened; the gate gained coverage and a
-  discriminator instead (at most two coordinate-fixture artifacts, and no index
-  failing on three or more fixtures).
-
-  The supporting measurement: with `f ~ 28.23`, one float32 ulp is 1.9e-6 and
-  the measured slope is quantised in steps of `ulp/h = 4.77e-4`. At the base
-  point the two one-sided slopes differ by exactly 8 ulps, and `d_pos` stays
-  frozen bit-for-bit across steps while `d_neg` drifts -- curvature moves both
-  toward one limit, so that is a kink, not curvature. Below `h = 1e-3` the
-  signal is 1-10 ulps and carries no information at all.
-
-- v0.162.0 **Model-level backward**, `tarnet_backward.mbt`. The flat gradient
-  is in `tarnet_flatten`'s order, term for term, so a layout off-by-one cannot
-  hide. The gate sweeps the whole 4417-parameter vector over four fixtures.
-
-  Two more real bugs, and the first is a good illustration of how a broken
-  backward and a broken loss look identical:
-  1. Cross-entropy summed probabilities instead of their log (`loss -= p`
-     where it had to be `loss -= logf(p)`). `d_logits` was CORRECT throughout,
-     because it is computed from `p`, while the loss was wrong -- so 102 of 512
-     coordinates failed and the whole thing read as a broken backward pass. What
-     settled it was differentiating the WRONG objective by hand: the finite
-     difference gave 0.08617, and `-p_y(p_y - onehot)/n` is 0.0862. A finite
-     difference that lands exactly on a *different* analytic formula is
-     measuring a different function, not disagreeing with the gradient.
-  2. `batch_norm2d_backward`'s `d_gamma` was missing the `inv_std` factor --
-     the same mistake as v0.160.0's `layer_norm` one, in a second function. On
-     TARNet's `bn_seg` the small-variance channels made it a ~250x
-     under-estimate. It survived because every existing gate checked `d_gamma`'s
-     SHAPE and never its value, while the `d_input` gate used a single channel.
-     `tests/wave1/batch_norm2d_test.mbt` now has a numerical gate on a fixture
-     whose channels are scaled 1.0 / 0.05 / 20.0, plus an assertion that the
-     channel spread really exceeds 20x -- otherwise the gate would be green
-     because `inv_std` is 1 and there is nothing to see.
-
-  `se_backward` (the plain squeeze-excitation, not the CTSE) is new here. Its
-  first gate was vacuous: deleting the pooling path ENTIRELY left it green at
-  90/90, because `SeParam::new` scales `w1`/`w2` by 0.05 and the squeeze is
-  then ~0.25% of the direct path. Amplifying the fixture to ~13% made it catch
-  both the deletion (35 of 90) and a missing `g*(1-g)` (58 of 58).
-
-- v0.163.0 **Training, and the log-Mel front end.** `tarnet_train.mbt` reuses
-  the existing `adam_update_arrays` by passing the flat parameter vector as one
-  weight array, so the optimizer is the same already-gated code the rest of the
-  package uses. 60 steps take the loss from 0.6388 to 0.00061 with zero error
-  on a separable batch.
-
-  Two gate lessons from the training test, both recorded next to the gate:
-  1. "Every parameter moved" was the wrong assertion. It demanded 90% of the
-     vector and failed at 3742/4359 -- which was correct information, not a bug:
-     617 parameters have exactly zero gradient (dead PReLU slopes, biases on
-     dead channels) and must legitimately stay put. The assertion is now the
-     property: every parameter with a non-zero gradient must move, and at least
-     one must be dead or the fixture has changed.
-  2. **A training gate can never stand in for the numerical gates.** Adam's
-     update is `lr * m_hat / (sqrt(v_hat) + eps)`, so rescaling the gradient by
-     any constant `k` rescales `m_hat` by `k` and `sqrt(v_hat)` by `|k|` and
-     they cancel. Measured: halving the gradient moved the 60-step loss from
-     0.0006082716 to 0.0006083312 with every gate green. What the training gate
-     does catch is the wiring the numerical gates cannot -- a stale gradient, an
-     update to a discarded copy, a reported post-update loss.
-
-  `tarnet_logmel.mbt` is the front end, forward-only because the reference
-  computes it under `torch.no_grad()`. New primitives: radix-2 FFT, HTK mel
-  scale and filterbank, Hamming window, reflect padding, STFT, pre-emphasis.
-
-  Every gate above is SELF-CONSISTENCY: it compares my code against my own
-  arithmetic, so a transcription error in the ARCHITECTURE would pass all of
-  them. A line-by-line reading of the reference against this implementation is
-  the only check that can catch that class, and it found two things:
-
-  1. **Pre-emphasis was missing entirely.** The reference's model front end is
-     `PreEmphasis(0.97)` -> `MelSpectrogram`, and `train_voxceleb.py` defaults
-     `feature_type` to `'raw'`, so the dataset hands the model a WAVEFORM and
-     the model does its own feature extraction -- pre-emphasis included. The
-     reference implements it as `pad(1, 0, reflect)` then `conv1d` with kernel
-     `[-coef, 1.0]`, which is
-     `y[0] = x[0] - coef*x[1]` and `y[n] = x[n] - coef*x[n-1]`. The reflected
-     FIRST sample is the detail: borrowing `x[0]` instead of `x[1]` yields
-     `(1-coef)*x[0] = 0.03*x[0]`, which is not a rounding difference but a
-     different filter. Mutation-tested -- with the wrong reflection the gate
-     reports `y[0] = 0.030` against a correct `-0.940`.
-  2. A comment on the classifier claimed the reference uses
-     `xavier_uniform` while the code allocated `randn(0.05)`. A comment that
-     states something the code does not do is worse than no comment, so the
-     mismatch is now resolved in favour of saying what the code does, with the
-     deviation (0.068 vs 0.05 gain for the default shape) and the reason.
-
-  Everything else matched, and the comparison is worth recording because the
-  close calls are easy to get wrong: SE sits INSIDE the MFA module (conv ->
-  ReLU -> SE), its bottleneck is `max(32, fuse_out // 4)`, the dilation stacks
-  are `build_stack([1,2], 4) / build_stack([4,8], 4) / build_stack([16], 4)`
-  with the repeat loop OUTSIDE the dilation loop, `bn_seg` is over
-  `2 * fuse_out`, and the block is `pw1 -> PReLU -> gLN -> depthwise -> PReLU ->
-  gLN` then `res_conv` then CTSE then `x + residual`.
-
-  One deviation remains, documented in the code: the reference declares TWO
-  separate `nn.PReLU()` layers per block, each learning its own slope, while
-  this implementation shares one.
-
-  3. **The gLN affine was per element where asteroid's is per channel.** The
-     reference gets its normalisation from `norms.get("gLN")`, which is
-     `asteroid.masknn.norms.GlobLN` -- an UNDECLARED dependency: it is not in
-     the reference's own `install_requires`, so it cannot be read from the
-     checkout and has to be verified against the library. Its `_LayerNorm`
-     allocates `gamma`/`beta` of shape `(channel_size,)` and broadcasts them
-     over time, while the statistic is still one mean and one std over every
-     dim except batch, i.e. the `(C, T)` plane jointly. This implementation had
-     used this package's `LayerNorm(c, 1, T)`, which agrees on the axis but
-     allocates one gamma/beta per ELEMENT. Two consequences, only one of which
-     is cosmetic:
-       - parameter count: `GlobLN` has C, `LayerNorm` had C * T. At the default
-         `t_frames = 301` that is 301x more parameters in each of a block's
-         four norms, none of them in the reference.
-       - **LENGTH.** `GlobLN` has no length-dependent parameter, so the
-         reference runs utterances of any length through ONE model.
-         `LayerNorm(c, 1, T)` cannot -- the model was hard-wired to the
-         `t_frames` it was constructed with, which defeats the point of a
-         model whose input is variable-length speech. `tarnet_forward` read `t`
-         from the input, not from the model, and `tarnet_param_count` no longer
-         depends on `t` at all.
-
-     `GlobalLayerNorm` (`layer_norm.mbt`) is the faithful version, with EPS
-     1e-8 against `LayerNorm`'s 1e-5, because that is asteroid's value on the
-     gLN path. `tarnet_test.mbt`'s round-trip gate had hard-coded the old flat
-     offsets (`2 * 6 * 9`, `b.hid * 9 * 2`); they are now derived from the
-     model, since a literal would have kept pointing at the wrong slot while
-     still compiling. The gate that matters is the length-independence one: the
-     parameter count must be identical at every `t`, because a forward that
-     merely happens to run at several lengths proves nothing while a per-frame
-     affine is still hiding somewhere in the parameter vector. Making the
-     count `t`-dependent again fails it with `t = 9 gives 3665 against 3593`. The reference's
-  unstated torchaudio defaults are written out rather than left implicit
-  (`center=True` with reflect padding, `power=2.0`, `mel_scale='htk'`,
-  `norm=None`, and a SYMMETRIC window whose cosine runs over N-1). The `1e-6`
-  goes in BEFORE the log: it floors the power spectrum, so a silent frame logs
-  finitely, rather than clamping the log and biasing loud frames. Resampling is
-  a precondition, not a step -- the reference uses torchaudio's Kaiser-windowed
-  sinc kernel, which is not reproduced here, so the input must already be mono
-  at 16 kHz.
-
-  Two assertions in the filterbank gate were wrong and measurement caught both.
-  "Every band peaks at 1.0" is impossible: with `f_min = 20 Hz` the FFT bins sit
-  every 31.25 Hz while band 0's centre is 42.2 Hz, so the triangle falls between
-  bins. "Peak alignment improves with frequency" is also false -- the measured
-  peaks oscillate across the whole bank (band 1 = 0.443, band 2 = 0.392) and
-  never exceed 0.51, because at low frequency a mel band is narrower than a
-  single bin. Neither is a defect; both follow from the reference's parameters.
-  The gate now asserts only what holds for every correct bank, and leaves "does
-  this frequency land in the right band" to a pure-tone test.
-
-### Batch AF (v0.164.0 - v0.165.0): gate-design and BatchNorm defects
-
-Two defects that belong to the TARNet batch above but landed after Batch AE
-was written.
-
-- v0.164.0 **`batch_norm2d`'s cache recorded statistics the forward never
-  used.** The forward picks its statistics by `bn.training`, and in inference
-  mode two things went wrong: the cache stored the BATCH `inv_std` (computed
-  unconditionally and never overwritten) while the output was written with the
-  RUNNING one, and the two coupling terms in `d_input` were applied
-  unconditionally even though running statistics are constants and the output
-  is affine in the input. So a backward after an inference-mode forward
-  differentiated a relationship the forward never used. No gate caught it
-  because **no gate set `training = false`**. The fix stores the statistics
-  actually used and adds a `coupled` flag to `BatchNormCache`; the new gate
-  freezes running stats at values deliberately unlike the batch's, and
-  dropping the one line that stores the effective `inv_std` fails it with
-  48 of 48 coordinates out of tolerance, worst 148.9.
-
-- v0.165.0 **The block sweep's artifact budget was an absolute count, and
-  that was a design defect rather than a tuning choice.** The number of checks
-  is the block's flat length over a stride derived from that length, and the
-  flat length changed when the gLN affine went from per-element to
-  per-channel -- so the same budget of 2 meant 0.28% of 718 checks before and
-  0.33% of 600 after, and the sweep had drifted to sitting exactly AT its own
-  limit. A budget whose meaning moves with the thing it measures is not a
-  budget. It is now `TN_MAX_ARTIFACT_FRACTION = 0.01`. Mutation-tested: a 10%
-  scale on the gradient entering `ln1` yields 89 of 600 artifacts (14.8%) and
-  trips the per-index rule on all eight fixtures, so real faults are still
-  rejected loudly.
-
-### Batch AG (v0.166.0): ASP's context layout, and the BatchNorm1d behind it
-
-Two real defects, both found by building a PyTorch **autograd** oracle rather than
-another finite difference, and both in code that several gates already passed.
-
-- **`asp_forward` wrote the context's x-slot at x's stride.** `ctx` is `[n, 3c,
-  t]`; the mean and sd slots used that stride and the x-slot used `[n, c, t]`'s.
-  Batch *b*'s x-slot therefore lands on batch *b-1*'s mean-slot. At n=3, c=5,
-  t=7 batch 1's x overwrote batch 0's mean at `[35,70)` and batch 2's x
-  overwrote batch 0's sd at `[70,105)`. Batch 0's attention was reading other
-  samples' activations as its own context, and its "standard deviation" slot
-  held raw waveform values -- including negatives, which no square root can
-  produce. `asp_backward` was meanwhile reading the x-slot at the *correct*
-  stride, so the forward and the backward disagreed about the buffer's layout.
-
-  The write was self-consistent (`ctx[i0] = x[i0]` reads and writes one index),
-  which is why nothing downstream complained. It is the third stride defect of
-  this family in this module and the same failure mode as the two already
-  recorded in Batch AD.
-
-- **`batch_norm2d_forward` computed its variance one-pass**, as `E[x^2] -
-  E[x]^2`. Exact in real arithmetic and exact in float64, but in float32 it
-  subtracts two nearly equal numbers whenever the mean is large relative to the
-  spread. On a fixture with per-channel means over `[-7.5, 7.5]` and variances
-  spanning 1535x, channel 0's variance came out 2.09% high and its `inv_std`
-  1.00% high. It is now PyTorch's two-pass form, `E[(x - mean)^2]`.
-
-  It hid because every pre-existing test normalises inputs that are either
-  already centred or have a spread comparable to their mean, where the
-  cancellation costs six figures rather than two.
-
-**Why neither gate caught either.** `asp_backward` carried a long investigation
-ending in NOT SOLVED and the claim that "the chain written in `asp_backward` is
-not the chain `asp_forward` computes" -- which was literally true and was one
-index. Every measurement in it was a finite difference of the module's own
-forward, and a difference of a forward is blind to a forward that is wrong: it
-reports the gradient of whatever the forward computes. The gate that replaced the
-removed one runs at `rtol=3e-2`, `atol=2e-3`, `h=1.2e-2` and is green -- but a
-float32 central difference of an objective summed over ~170 terms was measured
-carrying an absolute noise floor of order 0.1 at a 1e-2 step, so that gate sits
-below its own instrument's noise.
-
-The replacement is `tests/wave2/asp_oracle_test.mbt`, which compares against
-`verify/asp_oracle.py` -- torch autograd, no step size, exact to float32
-roundoff, structurally unable to agree with a wrong implementation by
-construction. It checks the forward, `d_x`, all four convolution gradients,
-`d_b2` (exactly zero, because softmax is shift-invariant), the BatchNorm affine
-gradients, and the shape of the BatchNorm's own reduction.
-
-With `d_x` verified, **ASP's `nn.BatchNorm1d(att_hidden)` is now implemented**
-(`nn/batch_norm1d.mbt`, a checked `h=1` view of `batch_norm2d`, and the layer
-itself between ReLU and tanh in `tarnet_asp.mbt`). Its per-channel affine is
-carried in `AspParam` and threaded through `tarnet_flatten` / `tarnet_backward`;
-leaving it out would have produced a normalisation that is correct in every
-forward check and permanently frozen at `gamma = 1, beta = 0`.
-
-Every tolerance in both gates is derived rather than fitted -- the forward's
-absolute bound is `2*(FLT_EPS/2)*max|x|*max(inv_std)*sqrt(n*w)`, the gradient's
-is 2.5x the measured float32 residue, and the finite-difference column's is set
-by what the instrument can resolve (its worst error on the *correct*
-implementation is 13% at the best step). `verify/gate_canary.py` runs all of it
-against a scratch copy and requires each gate to fail when its defect is
-restored.
-
-## Verification harness
-Gradients being correct and the resulting model being useful are
-different properties, and this package now checks both.
+## Verification
 
 Two commands, both runnable from the repository root:
 
-```sh
+```powershell
 & ".\verify\verify_gnn_grads.ps1"      # gradient gate
 & ".\verify\run_gnn_train_demo.ps1"     # end-to-end training demo
 ```
@@ -1373,10 +637,10 @@ Two commands, both runnable from the repository root:
 Both flip `"is-main": true` into `mbt/moon.pkg` for the duration of the
 run and restore it in a `finally` block. This is necessary rather than
 stylistic: a freshly created sub-package cannot resolve any symbol from
-the parent module in moon 0.1.20260920 (not even `Graph`), and
-`moon test` cannot link at all, because the package has 511 `.mbt` files
-and Moon inlines every source path into the Windows command line, which
-caps at 32K (CreateProcessW). The library-side functions
+the parent module in the current toolchain (not even `Graph`), and
+`moon test` cannot link at all, because the package has more than 500
+`.mbt` files and Moon inlines every source path into the Windows command
+line, which caps at 32K (CreateProcessW). The library-side functions
 (`gnn_gradcheck.mbt`, `gnn_paramcheck.mbt`, `gnn_train_demo.mbt`) are the
 durable artifact; the runners under `verify/` are thin drivers.
 
@@ -1415,6 +679,118 @@ of specific failures rather than by design:
   max-subtraction makes the value insensitive to the largest logit below
   Float32 resolution, so a central difference there measures nothing.
 
+### The gates
+
+`verify/qa_loop.py` runs 20 quality gates over the tree. 7 of them -- the
+ones that need no MoonBit toolchain and no PyTorch -- also run on every push
+in `.github/workflows/ci.yml`, because the release workflow is tag-driven and
+cannot check itself.
+
+```sh
+python verify/qa_loop.py            # every gate, one exit code
+python verify/qa_loop.py --list     # the registry
+python verify/qa_loop.py --quick    # skip the slow gates
+python verify/qa_loop.py --ci       # the CI-portable subset
+```
+
+| Gate | What it establishes |
+|---|---|
+| `deps` | the declared package graph is a DAG, depth 4, widest fan-out `tarnet` at 5 |
+| `pin` | the pinned dependencies are the current ones on the registry |
+| `dup` | no duplicated code across the `.mbt` tree |
+| `shadow` | no name defined twice at module level in the repository's Python |
+| `security` | no secret patterns in the working tree |
+| `release` | every workflow is consistent with itself, in the two ways they have broken |
+| `docs` | the counts quoted here and in the root README agree with the pinned baselines |
+| `lint` | `moon check --target native` reports 0 errors |
+| `unit` | all nine waves pass, and the total matches the pinned 1925 |
+| `integration` | all 77 examples compile |
+| `oracle` | the PyTorch oracle's own backward matches its own forward |
+| `provenance` | 31 of 31 structural facts still hold against the reference checkout |
+| `golden` | every committed oracle golden is reproduced by the generator beside it |
+| `fuzz` | 38 seeded property checks hold |
+| `bench` | the documented measurement entry point runs end to end |
+| `perf` | the hot kernel is inside a budget derived from a measurement |
+| `coverage` | uncovered executable lines match a measured baseline (4074 in 290 files) |
+| `stress` | the unit suite repeated, to catch order- and state-dependence |
+| `mutation` | mutants injected into the numeric kernels are killed (3 of 3) |
+| `fmt` | the tree's distance from the formatter's canonical form, in either direction |
+
+The `fmt` gate deserves a note, because it used to be a lie. It ran
+`moon fmt --check` from the repository root, where there is no `moon.mod`
+and no `moon.work`, so every invocation died with "not in a Moon project",
+the fallback could not run either, and the gate reported *formatting clean*
+every time. It now measures the thing instead: **621** source files are not
+in the formatter's canonical form — the tree predates the spelling the
+toolchain now prefers, `Int` for `Int32` and `x?` for `x~` — and the gate
+records that distance in `verify/fmt_baseline.json` and fails when it moves
+in either direction. Note the number, because `moon fmt --check` cannot tell
+you it: that command stops after ten differences and the ten rotate between
+runs on the same tree.
+
+A gate that does not run reports `unavailable` with the reason rather than
+`pass` — "did not check" is a finding, not a success. `python
+verify/gate_battery.py` injects a deliberate fault into the thing a gate
+measures, runs the gate, and requires it to go red; then it removes the fault
+and requires the gate to go green again, so the red is attributable to the
+fault and not to the machine.
+
+## Provenance and attribution
+
+### Code upstreams
+
+Three Julia packages are vendored in this repository and are the source of the
+`ported` files above. All three are MIT, as is this package.
+
+| Upstream | Vendored at | Ported into |
+|---|---|---|
+| SpikingNeuralNetworks.jl v1.0.0 | `SpikingNeuralNetworks.jl/` | `neuron/`, `synapse/`, `analysis/`, `stimulus/`, `infra/` |
+| SNNModels.jl | `refs/SNNModels.jl/` | `core/` (Time, units, util), `nn/structs_extra.mbt` |
+| SNNUtils.jl v0.2.0 | `refs/SNNUtils.jl/` | `infra/sim.mbt`, `infra/compose.mbt`, `infra/population.mbt`, `infra/bimodal_kernel.mbt` |
+
+Those directories are unmodified upstream checkouts kept for reference. No
+build reads them, and `.typos.toml` excludes `_build/` but not them, so a lint
+run over the repository sees upstream sources as well.
+
+That is 74 of the 301 library source files. The other 227 are original.
+
+### Papers the original work follows
+
+| Area | Work | Source |
+|---|---|---|
+| `tarnet/` | TARNet speaker identification | Terraf & Iraqi, *TARNet: A Temporal-Aware Multi-Scale Architecture for Closed-Set Speaker Identification*, arXiv:2605.07735; upstream implementation `github.com/YassinTERRAF/CAT-Net` |
+| `tarnet/tarnet_se.mbt` | CTSE, the multi-scale channel-time gate | part of the same work |
+| `neuron/`, `attention/` | surrogate gradient for the Heaviside derivative | Zenke & Ganguli 2018 |
+| `attention/` | SAttention, spike-driven attention | Zenke & Ganguli 2018 |
+| `nn/` | ResNet foundations | He et al. 2015 |
+| `attention/` | multi-head self-attention, positional encodings | Vaswani et al. 2017 |
+| `attention/` | Vision Transformer | Dosovitskiy et al. 2020 |
+| `rl/` | PPO, DDPG, TD3, SAC | Mnih; Lillicrap; Fujimoto; Silver |
+| `rl/` | Decision Transformer, GTrXL | Chen et al. 2021 |
+| `gnn/` | message-passing interface, GCN, GAT, PNA, H2GCN, Set2Set | Gilmer et al. 2017; Hamilton; Velickovic; Battaglia; Lee et al. |
+| `generative/` | RealNVP, Glow, VAE/IWAE, DDPM, EBM, WGAN-GP | Dinh et al.; Kingma & Welling; Ho et al.; Arjovsky et al. |
+| `meta/` | MAML, FOMAML, Reptile | Finn et al. 2017; Nichol et al. 2018 |
+| `causal/` | SCMs, do-calculus, counterfactuals | Pearl; Spirtes et al.; Robins |
+| `capsule/` | CapsNet and dynamic routing | Hinton et al. 2017; Sabour et al. 2017 |
+| `models/` | Siamese embedding and contrastive loss | Bromley et al. 2015 |
+| `optim/` | AdamW, Adafactor | Loshchilov & Hinton 2019; Shazeer & Stern 2018 |
+| `timeseries/` | AR/ARIMA, Holt-Winters | Box & Jenkins; Hamilton |
+
+`autodiff/` and `gpu/` have no paper. The first is ordinary reverse-mode
+differentiation over a recorded tape; the second is a cuBLAS binding whose
+measurements are recorded in `gpu/moon.pkg`.
+
+### One unresolved deviation
+
+TARNet's global layer norm comes from `asteroid.masknn.norms.get("gLN")`.
+Asteroid is neither vendored here nor installed in the environment used to
+check, so two things follow: that dependency is documented rather than
+compared, and the epsilon this port uses (1e-8, in `nn/layer_norm.mbt`) is
+tighter than asteroid's documented default (1e-5). At the variances this model
+actually sees the difference is around one part in 1e7. It is recorded in
+`nn/layer_norm.mbt` so that anyone comparing against asteroid does not have to
+discover it.
+
 ## Reference source
 
 The Julia source has been cloned to
@@ -1423,3 +799,7 @@ for line-by-line reference. The main umbrella package
 `SpikingNeuralNetworks.jl/src/SpikingNeuralNetworks.jl` is a thin
 re-export layer over the subpackages; the actual neuron/synapse
 implementations live in `SNNModels.jl/`.
+
+## License
+
+MIT. `moon.mod` declares `license = "MIT"`.

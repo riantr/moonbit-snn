@@ -344,6 +344,12 @@ def _check_claims(claims, placeholder, value):
     pinned number, so the claim is checked against the CURRENT number rather
     than against whatever the prose happened to say when it was written.
 
+    EVERY sentence of the claim's shape has to carry that number, not merely
+    one of them. The weaker rule -- "the number appears somewhere in the
+    file" -- let a wrong count hide behind a right one: the file said 1926 in
+    one place and 1925 in another, and the search found the 1925 and called
+    the claim satisfied. A stale number next to a fresh one is still stale.
+
     Returns a list of (file, pattern) for the claims that did not match.
     """
     missing = []
@@ -360,8 +366,27 @@ def _check_claims(claims, placeholder, value):
         except OSError as exc:
             missing.append((rel, f"unreadable: {exc}"))
             continue
-        if not re.search(pattern.replace(placeholder, str(value)), text):
+        probe = pattern.replace(placeholder, r"(?P<__pinned>\d+)")
+        if probe == pattern:
+            # No placeholder in this claim, so there is no number to compare:
+            # the claim is that the shape appears at all.
+            if not re.search(pattern, text):
+                missing.append((rel, pattern))
+            continue
+        try:
+            hits = list(re.finditer(probe, text))
+        except re.error as exc:
+            missing.append((rel, "unreadable pattern: %s" % exc))
+            continue
+        if not hits:
             missing.append((rel, pattern))
+            continue
+        for m in hits:
+            got = m.group("__pinned")
+            if got != str(value):
+                missing.append((rel, "%s (says %s, expected %s)"
+                                % (pattern, got, value)))
+                break
     return missing
 
 
@@ -378,10 +403,21 @@ def gate_docs():
     "thirteen quality gates" while the registry held nineteen, and nothing
     noticed: a gate that counts the gates is the only thing that can.
 
-    The claims are enumerated in verify/test_baseline.json rather than
-    discovered by scanning, because a scan cannot tell a current claim from
-    a historical one - this repository has both, and the historical ones are
-    marked "Superseded" and must keep the number they were written with.
+    The shape of the tree is pinned here too, in verify/tree_baseline.json.
+    The documentation said 732 source files because the count came from a
+    directory walk, and a walk sees the vendored dependency cache; the two
+    READMEs also disagreed with each other, because each carried its own
+    count. The tree is now measured from what git actually tracks.
+
+    And the per-row test counts in the package README's feature table are
+    checked against the test files they name, which is the check that would
+    have caught the four wrong counts and the one count naming a file that
+    does not exist.
+
+    The claims are enumerated in the baseline files rather than discovered by
+    scanning, because a scan cannot tell a current claim from a historical
+    one. The historical ones now live in mbt/CHANGELOG.md, which no claim
+    reads: a changelog records the counts as they were.
     """
     base = load_test_baseline()
     if base is None:
@@ -465,15 +501,168 @@ def gate_docs():
             )
         checked.append((label, len(cclaims), actual))
 
+    # The shape of the tree. These are the numbers that drifted, and they
+    # drifted for a reason worth recording: the documentation said 732 source
+    # files because the count came from a directory walk, and a walk sees the
+    # 400 vendored `.mbt` files that `moon update` leaves in `mbt/.mooncakes/`.
+    # That is the dependency cache, not this package's source. The two READMEs
+    # also disagreed with each other -- 681 against 732 source files, 23
+    # against 299 -- because each document carried its own count and nothing
+    # made them agree.
+    #
+    # So the tree is measured here from what git actually tracks, compared with
+    # verify/tree_baseline.json, and then the READMEs are checked for still
+    # quoting it. The chain is tree -> baseline -> documentation, the same
+    # chain the test count has, and it closes in the same commit.
+    tbase = load_tree_baseline()
+    if tbase is None:
+        return Result(
+            "docs", "fail",
+            "verify/tree_baseline.json is missing or malformed, so the counts "
+            "describing the shape of the tree cannot be compared against "
+            "anything. Restore it rather than letting them drift unchecked.",
+        )
+    measured = _measure_tree()
+    if measured is None:
+        return Result(
+            "docs", "fail",
+            "could not measure the shape of the tree: `git ls-files` did not "
+            "succeed, so the documented file counts have nothing to be "
+            "compared against. A gate that cannot check anything is not a "
+            "gate.",
+        )
+    facts = tbase.get("facts") or {}
+    if not facts:
+        return Result(
+            "docs", "fail",
+            "verify/tree_baseline.json records no facts, so there is nothing "
+            "to compare the tree against.",
+        )
+    drift = []
+    for name in sorted(facts):
+        pinned = facts[name]
+        live = measured.get(name)
+        if live != pinned:
+            drift.append((name, live, pinned))
+    if drift:
+        first = drift[0]
+        return Result(
+            "docs", "fail",
+            "%d of %d recorded tree counts moved: %s is %s now and the "
+            "baseline says %s. The tree changed shape: update "
+            "verify/tree_baseline.json and every count quoted in README.md "
+            "and mbt/README.md in the same commit, or the documentation and "
+            "the tree will disagree again."
+            % (len(drift), len(facts), first[0],
+               "not measurable" if first[1] is None else first[1],
+               first[2]),
+            0.0,
+            {"drift": drift, "measured": measured, "expected": facts},
+        )
+
+    # A fact this gate does not measure but another gate owns. The formatter's
+    # distance from canonical form is measured by the `fmt` gate and pinned in
+    # verify/fmt_baseline.json. This gate does not re-measure it -- that would
+    # run `moon fmt` a second time for the same number -- but it does check
+    # that the READMEs quote the number the `fmt` gate owns, so the two
+    # baselines cannot drift apart silently.
+    pinned = dict(facts)
+    for name in sorted(tbase.get("borrowed") or {}):
+        spec = (tbase.get("borrowed") or {}).get(name) or {}
+        path = os.path.join(ROOT, "verify", spec.get("file", ""))
+        try:
+            with open(path, encoding="utf-8") as fh:
+                other = json.load(fh)
+            value = other.get(spec.get("key", ""))
+        except (OSError, ValueError):
+            value = None
+        if not isinstance(value, int):
+            return Result(
+                "docs", "fail",
+                "the borrowed fact %r is supposed to come from verify/%s, and "
+                "it could not be read as an integer. The gate that owns that "
+                "number has to be able to publish it." % (name, spec.get("file")),
+                0.0, {"borrowed": name},
+            )
+        pinned[name] = value
+
+    # And the documentation has to quote the pinned numbers.
+    tree_claims = tbase.get("claims") or []
+    missing_tree = []
+    for name in sorted(pinned):
+        for claim in tree_claims:
+            if claim.get("fact") != name:
+                continue
+            missing_tree.extend(
+                _check_claims([claim], "{%s}" % name, pinned[name]))
+    if missing_tree:
+        first = missing_tree[0]
+        return Result(
+            "docs", "fail",
+            "%d documented tree count(s) no longer match the pinned numbers. "
+            "The tree measures %s; the documentation now says something else. "
+            "Update the quoted count, or update verify/tree_baseline.json if "
+            "the tree itself changed. First offender: %s -- %s"
+            % (len(missing_tree), ", ".join(
+                "%s=%d" % (k, pinned[k]) for k in sorted(pinned)),
+               first[0], first[1]),
+            0.0,
+            {"missing": missing_tree, "expected": pinned},
+        )
+
+    # The per-row test counts in the package README's feature table. Each row
+    # that states a count states it as "N tests in `<file>`", so the number can
+    # be looked up in the file it names and compared. This is the check that
+    # would have caught the four counts in that table that were wrong and the
+    # one that named a file which does not exist -- all of which sat in a
+    # published package page for months because nothing compared them with
+    # the suite.
+    counts = _test_declaration_counts()
+    pkg_readme = os.path.join(MBT, "README.md")
+    try:
+        with open(pkg_readme, encoding="utf-8") as fh:
+            pkg_text = fh.read()
+    except OSError:
+        pkg_text = ""
+    claimed_counts = re.findall(
+        r"(\d+) tests? in `([\w./-]+_test\.mbt)`", pkg_text)
+    wrong_counts = []
+    for claimed_n, f in claimed_counts:
+        base = os.path.basename(f)
+        actual = counts.get(base)
+        if actual is None:
+            wrong_counts.append((f, int(claimed_n), None))
+        elif actual != int(claimed_n):
+            wrong_counts.append((f, int(claimed_n), actual))
+    if wrong_counts:
+        first = wrong_counts[0]
+        return Result(
+            "docs", "fail",
+            "%d of %d test count(s) in mbt/README.md no longer match the file "
+            "they name. %s is claimed to hold %d test(s)%s. A count that "
+            "cannot be checked against the suite is a number that rots: fix "
+            "the count, or drop it if the file no longer covers that row."
+            % (len(wrong_counts), len(claimed_counts), first[0], first[1],
+               "" if first[2] is None else
+               (" but the file now holds %d" % first[2])),
+            0.0,
+            {"wrong": wrong_counts, "checked": len(claimed_counts)},
+        )
+
     return Result(
         "docs", "pass",
-        "%d documented test count(s) agree with the pinned %d; %s"
+        "%d documented test count(s) agree with the pinned %d; %s; %d "
+        "documented tree count(s) agree with the pinned tree shape; %d "
+        "per-row test count(s) agree with the files they name"
         % (len(claims), n,
            "; ".join("%d documented %s counts agree with the pinned %d"
-                     % (c, label, v) for label, c, v in checked)),
+                     % (c, label, v) for label, c, v in checked),
+           len(tree_claims), len(claimed_counts)),
         0.0, {"claims": len(claims), "expected": n,
               "checked": [{"label": l, "claims": c, "value": v}
-                          for l, c, v in checked]},
+                          for l, c, v in checked],
+              "tree_facts": pinned, "tree_claims": len(tree_claims),
+              "row_counts": len(claimed_counts)},
     )
 
 
@@ -542,6 +731,7 @@ COVERAGE_BASELINE = os.path.join(ROOT, "verify", "coverage_baseline.json")
 TEST_BASELINE = os.path.join(ROOT, "verify", "test_baseline.json")
 GATE_BASELINE = os.path.join(ROOT, "verify", "gate_baseline.json")
 FMT_BASELINE = os.path.join(ROOT, "verify", "fmt_baseline.json")
+TREE_BASELINE = os.path.join(ROOT, "verify", "tree_baseline.json")
 
 
 def load_baseline(path, key):
@@ -576,6 +766,115 @@ def load_test_baseline():
 def load_gate_baseline():
     """The recorded gate-count baseline, or None if it cannot be read."""
     return load_baseline(GATE_BASELINE, "gate_count")
+
+
+def load_tree_baseline():
+    """The recorded tree-shape baseline, or None if it cannot be read.
+
+    Not `load_baseline`, because this file holds a set of counts rather than
+    one: the facts live under "facts" and every one of them has to be an
+    integer, or the file is not a baseline this gate can compare against.
+    """
+    try:
+        with open(TREE_BASELINE, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(doc, dict):
+        return None
+    facts = doc.get("facts")
+    if not isinstance(facts, dict) or not facts:
+        return None
+    for name, value in facts.items():
+        if not isinstance(value, int):
+            return None
+    return doc
+
+
+def _tracked_paths():
+    """The paths git tracks under mbt/, or None if git cannot answer.
+
+    `git ls-files` and not a directory walk, and the difference is not a
+    detail. A walk sees the 400 vendored `.mbt` files that `moon update` leaves
+    in `mbt/.mooncakes/` -- the dependency cache, not this package's source --
+    plus the four scratch files under the gitignored `mbt/_disabled/` and
+    `mbt/_new_lstm/` directories. That is how the documentation came to say the
+    tree held 732 source files: it counted the cache.
+
+    Git knows which files the repository owns, so asking git is both the
+    correct answer and the reproducible one. It is also available on a CI
+    runner, where actions/checkout leaves a working git repository.
+    """
+    rc, out, _ = run(["git", "-C", ROOT, "ls-files", "--", "mbt"])
+    if rc != 0:
+        return None
+    return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def _test_declaration_counts():
+    """How many test cases each test file under mbt/tests/ declares.
+
+    The count is the number of `test "..."` declarations in the file, which is
+    what `moon test` reports for that file.
+    """
+    counts = {}
+    root = os.path.join(MBT, "tests")
+    if not os.path.isdir(root):
+        return counts
+    for dp, _dn, fn in os.walk(root):
+        for name in fn:
+            if not name.endswith(".mbt"):
+                continue
+            try:
+                with open(os.path.join(dp, name), encoding="utf-8",
+                          errors="replace") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            counts[name] = len(re.findall(r'^\s*test\s+"', text, re.M))
+    return counts
+
+
+def _measure_tree():
+    """The shape of the tree, measured from what git actually tracks.
+
+    Returns a dict of fact -> count, or None if the tree cannot be measured.
+    The definitions are the ones recorded in verify/tree_baseline.json, so the
+    measurement and the pinned numbers are talking about the same thing.
+    """
+    paths = _tracked_paths()
+    if paths is None:
+        return None
+    sources = [p for p in paths if p.endswith(".mbt")]
+    library = [p for p in sources
+               if not p.startswith("mbt/tests/")
+               and not p.startswith("mbt/examples/")]
+    tests = [p for p in sources if p.startswith("mbt/tests/")]
+
+    packages = [e for e in os.listdir(MBT)
+                if os.path.isfile(os.path.join(MBT, e, "moon.pkg"))]
+    examples = []
+    exroot = os.path.join(MBT, "examples")
+    if os.path.isdir(exroot):
+        examples = [e for e in os.listdir(exroot)
+                    if os.path.isfile(os.path.join(exroot, e, "moon.pkg"))]
+
+    root_imports = 0
+    try:
+        with open(os.path.join(MBT, "moon.pkg"), encoding="utf-8",
+                  errors="replace") as fh:
+            manifest = fh.read()
+        root_imports = len(set(re.findall(r'"riantr/snn_mbt/([\w.]+)"', manifest)))
+    except OSError:
+        pass
+
+    return {
+        "library_source_files": len(library),
+        "packages": len(packages),
+        "root_imports": root_imports,
+        "test_files": len(tests),
+        "example_packages": len(examples),
+    }
 
 
 def load_fmt_baseline():

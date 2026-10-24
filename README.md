@@ -1,19 +1,84 @@
 # moonbit-snn
 
-Bit-exact MoonBit port of [SpikingNeuralNetworks.jl](https://github.com/AlessioQuer/SpikingNeuralNetworks.jl).
+Bit-exact MoonBit port of [SpikingNeuralNetworks.jl](https://github.com/AlessioQuer/SpikingNeuralNetworks.jl),
+extended with the training machinery the Julia ecosystem never had.
 
-The MoonBit implementation lives in [`mbt/`](./mbt/). See
-[`mbt/README.md`](./mbt/README.md) for full status, design notes, and
-test history.
+[![CI](https://github.com/riantr/moonbit-snn/actions/workflows/ci.yml/badge.svg)](https://github.com/riantr/moonbit-snn/actions/workflows/ci.yml)
+[![Release](https://github.com/riantr/moonbit-snn/actions/workflows/publish.yml/badge.svg)](https://github.com/riantr/moonbit-snn/actions/workflows/publish.yml)
 
-Since v0.166.0 the library is split across 23 sub-packages and the root
-package holds no source of its own.
+The MoonBit implementation lives in [`mbt/`](./mbt/), and is published to
+mooncakes.io as [`riantr/snn_mbt`](https://mooncakes.io/docs/riantr/snn_mbt).
+The package's own page — status, scope table, provenance, and an explicit list
+of what is *not* implemented — is [`mbt/README.md`](./mbt/README.md).
+
+Since v0.166.0 the library is split across 24 packages under `mbt/`, and the
+root package holds no source of its own: `mbt/moon.pkg` is an import list.
+
+## What this is, and what it is not
+
+This is the **simulation and training layer** of the Julia SNN ecosystem:
+neurons, synapses, plasticity, stimuli, and the model/simulation harness —
+plus, written here rather than ported, the deep-learning machinery the Julia
+packages did not have (convolution, attention, reinforcement learning,
+generative models, causal inference, meta-learning).
+
+**The long-term goal is not met.** The goal is that every example in
+`SpikingNeuralNetworks.jl/examples/` runs under MoonBit and produces the same
+numerical trajectories, last-bit Float32, as the Julia run. Twelve examples
+carry a recorded comparison against the Julia side and five of those are
+positive; the comparison machinery for the rest exists but has never been
+closed against a reference trace. The package README says which is which, per
+example, in the table *Network experiments summary*.
+
+Three layers of evidence back the work, and they are not equally strong:
+self-consistency everywhere (1925 assertions across nine waves), bit-exact
+comparison against the Julia upstream (partially available — the machinery is
+here, the reference traces are not), and comparison against an independent
+reference implementation (applied to TARNet's ASP head and its BatchNorm1d).
+The rest of this file explains how each of them is checked, and why a fourth
+layer — "the test suite is green" — is not one of them.
+
+## Install
+
+```sh
+moon add riantr/snn_mbt@0.166.2
+```
+
+That writes `import { "riantr/snn_mbt@0.166.2" }` into your `moon.mod`. The
+root package exports no symbols — it is a manifest, not a body — so import the
+packages you actually want:
+
+```moonbit
+import {
+  "riantr/snn_mbt/core"
+  "riantr/snn_mbt/neuron"
+}
+```
+
+The module is **native-only**. `core/` binds libm through `extern "C"`, and
+`mbt/moon.mod` declares `preferred_target = "native"` to match; there is no
+wasm build of this package, and the CI compiles it with `--target native` for
+that reason.
 
 ## Quick start
 
 ```sh
-cd mbt
+git clone https://github.com/riantr/moonbit-snn.git
+cd moonbit-snn/mbt
+moon update
 moon check --target native
+moon run examples/chain --target native
+```
+
+Expected output:
+
+```text
+chain.mbt: simulation done
+  v[0] = -68.17937
+  v[1] = -69.97869
+  v[2] = -69.98688
+  recorded steps: 801
+Monitor[v] n=801 min=-68.17937 max=-51.54429 mean=-65.70784
 ```
 
 Tests live in nine sub-packages under `mbt/tests/`, not in the package root.
@@ -58,12 +123,12 @@ The `fmt` gate deserves a note, because it used to be a lie. It ran
 `moon fmt --check` from the repository root, where there is no `moon.mod`
 and no `moon.work`, so every invocation died with "not in a Moon project",
 the fallback could not run either, and the gate reported *formatting clean*
-every time. It now measures the thing instead: the tree is **621 of 635**
-source files away from the formatter's canonical form — it predates the
-spelling the toolchain now prefers, `Int` for `Int32` and `x?` for `x~` — and
-the gate records that distance in `verify/fmt_baseline.json` and fails when
-it moves in either direction. A file becoming non-canonical is drift; a file
-becoming canonical means the record is stale.
+every time. It now measures the thing instead: **621** source files are not in
+the formatter's canonical form — the tree predates the spelling the toolchain
+now prefers, `Int` for `Int32` and `x?` for `x~` — and the gate records that
+distance in `verify/fmt_baseline.json` and fails when it moves in either
+direction. A file becoming non-canonical is drift; a file becoming canonical
+means the record is stale.
 
 Note the number, because `moon fmt --check` cannot tell you it: that command
 stops after ten differences and the ten rotate between runs on the same tree.
@@ -192,8 +257,12 @@ because both edges were divided by the full band width instead of their own
 half-widths.
 
 The reference is `verify/gen_logmel_golden.py`, whose STFT is `torch.stft` — a
-library call — against this package's hand-rolled radix-2 FFT. It now agrees to
-**1.84e-06**.
+library call — against this package's hand-rolled radix-2 FFT. The four stages
+agree to **7.9e-08** (filtered signal), **1.8e-06** (power spectrum), **1.0e-05**
+(mel filterbank) and **2.5e-03** (log-Mel output). The last figure is the one
+that matters, because the log-Mel output is what the model consumes; the
+earlier stages are intermediates, and the tolerances in
+`logmel_oracle_test.mbt` are set per stage for that reason.
 
 Two things from that investigation are worth more than the fix:
 
@@ -216,17 +285,26 @@ report `FAILED > 0`. A gate that has only ever been green measures nothing.
 ## Optional GPU path
 
 `mbt/gpu/` is a single-precision BLAS surface for the dense layers in `nn/`.
-It is **deliberately unconnected**: no package imports it, so `nn/` stays free
-of `extern "c"` and remains importable from wasm.
+It is **deliberately unconnected**: no library package imports it — only the
+two harness packages that test it do — and `nn/` itself declares no
+`extern "C"`. The module as a whole is native-only anyway — `core/` binds libm
+the same way — so "unconnected" is a statement about the GPU seam, not about
+wasm portability.
 
 The reason is measured. At the LeNet5 fc1 shape (batch 64, 4000 → 500, 256
 MFLOP per call, release build):
 
 | | |
 |---|---|
-| `nn/linear_forward` today | 98.4 ms |
+| `nn/linear_forward` today | 73.4 ms |
 | `Array` → `FixedArray`, weight (8.0 MB) | 4.5 ms |
 | PCIe 4.0 ×16 round trip, 1.0 MB | 0.04 ms |
+
+The first figure is the recorded baseline in `verify/perf_baseline.json`,
+measured on an Intel Core Ultra 9 285H. The `perf` gate measures the same
+workload on every run and compares the median against a budget of 150 ms; on
+the machine that took the baseline it reads a little under it, and it reports
+the value it measured rather than the one in this table.
 
 `FixedArray::from_array` is a deep copy, so a dispatch that converted per call
 would pay ten times the transfer for the input and a hundred and ten times for
@@ -238,19 +316,22 @@ numbers are recorded in [`mbt/gpu/moon.pkg`](./mbt/gpu/moon.pkg).
 
 ## Project layout
 
-- `mbt/` — the MoonBit port: 681 source files, ~125k lines across 23 packages,
-  plus `mbt/examples/` (77 runnable examples).
+- `mbt/` — the MoonBit port: **301 library source files** (tracked `*.mbt`
+  outside `mbt/tests/` and `mbt/examples/`), about 65,300 lines, across
+  **24 packages**, plus `mbt/examples/` (**77 runnable examples**).
 - `mbt/core`, `mbt/neuron`, `mbt/synapse`, `mbt/stimulus` — the simulation
-  core. `synapse` is the largest at ~8k lines.
+  core. `synapse` is the largest of the four at about 8,000 lines.
 - `mbt/nn`, `mbt/optim`, `mbt/activ`, `mbt/attention`, `mbt/infra` — the
   deep-learning layer and its training machinery.
-- `mbt/rl` — reinforcement learning, ~15k lines, the largest single package.
+- `mbt/rl` — reinforcement learning, about 15,100 lines, the largest single
+  package.
 - `mbt/gnn`, `mbt/generative`, `mbt/causal`, `mbt/meta`, `mbt/capsule`,
   `mbt/autodiff`, `mbt/tarnet`, `mbt/models`, `mbt/analysis`,
   `mbt/timeseries` — the newer domains, each its own package.
 - `mbt/gpu/` — the optional BLAS seam, described above.
 - `mbt/tests/wave1` … `wave9` — 1925 tests, split by domain so a failure
-  points at one. None of it can live in the package root; see Quick start.
+  points at one. That is 258 test files, and none of it can live in the
+  package root; see Quick start.
 - `mbt/fuzz_props/`, `mbt/gpu_selftest/` — property and fallback checks,
   driven by the mutation and fuzz gates.
 - `mbt/bench_lin/` — the release-mode timing of the hot kernel, which the
@@ -269,12 +350,22 @@ numbers are recorded in [`mbt/gpu/moon.pkg`](./mbt/gpu/moon.pkg).
 ## A note on numbers
 
 Performance figures in this repository come from release builds. The debug
-profile is 8.5× slower — 837 ms against 98.4 ms for the same call — so any
-timing taken from `moon test` or `moon run` without `--release` is wrong by
-that factor. `verify/run_release_bench.ps1` exists for this, and its header
-records why a baseline subtraction is required rather than merely tidy: on
-Windows the `time` builtin reports ~0.02 s of user CPU for a run whose wall
+profile is about **12×** slower — roughly 860 ms against 70 ms for the same
+call — so any timing taken from `moon test` or `moon run` without `--release`
+is wrong by that factor. `verify/run_release_bench.ps1` exists for this, and its
+header records why a baseline subtraction is required rather than merely tidy:
+on Windows the `time` builtin reports ~0.02 s of user CPU for a run whose wall
 clock is 2 s, so only elapsed-minus-baseline is usable.
+
+The same caution applies to the counts in this file. They are measured, not
+estimated, and they are pinned in `verify/tree_baseline.json`: the `docs` gate
+counts the tree from what git actually tracks, compares it with the baseline,
+and then checks that this file and `mbt/README.md` still quote the numbers. An
+earlier version of this file said "681 source files, ~125k lines across 23
+packages" while the package README said "732 source files" — both wrong, both
+counting the 400 vendored `.mbt` files that `moon update` leaves in
+`mbt/.mooncakes/`. The dependency cache is not this package's source, and
+`git ls-files` is how the difference is now made.
 
 ## A note on `git status` after a build
 
@@ -295,3 +386,19 @@ the staged diff is empty and `git commit -a` reports that there is nothing
 to commit — but it looks alarming enough to be worth saying here, because
 the reflex is to "fix" it with a commit, and the only way to get one is to
 change the line endings by hand.
+
+## Provenance and license
+
+Three Julia packages are the source of the ported files, and all three are MIT,
+as is this package:
+
+| Upstream | Vendored at | Ported into |
+|---|---|---|
+| SpikingNeuralNetworks.jl v1.0.0 | `SpikingNeuralNetworks.jl/` | `neuron/`, `synapse/`, `analysis/`, `stimulus/`, `infra/` |
+| SNNModels.jl | `refs/SNNModels.jl/` | `core/`, `nn/structs_extra.mbt` |
+| SNNUtils.jl v0.2.0 | `refs/SNNUtils.jl/` | `infra/sim.mbt`, `infra/compose.mbt`, `infra/population.mbt`, `infra/bimodal_kernel.mbt` |
+
+Everything else is original work, written against a published paper with the
+citation in the file. `mbt/README.md` carries the full table — 74 of the 301
+library files are translations of a named upstream file, and the paper behind
+each original area.
