@@ -113,6 +113,12 @@ and a shadowed-definition scan. A gate that does not run reports `unavailable`
 with the reason rather than `pass` — "did not check" is a finding, not a
 success.
 
+The `deps` gate measures the declared package graph rather than trusting it:
+24 packages, a longest chain of 7, and `infra` at the top importing 11 others.
+Those numbers are recorded in `verify/deps_baseline.json`, and the gate fails
+when the chain deepens past them. It exists because the compiler has no
+opinion about depth — only about cycles, and a cycle is a build error anyway.
+
 The mutation gate is the one worth knowing about. It injects mutants into the
 CPU reference loops in `mbt/gpu/cuda/linear_accel_stub.c` and checks that
 `mbt/fuzz_props/` notices. It currently kills 3 of 3. When it did not, the

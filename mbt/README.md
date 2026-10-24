@@ -268,8 +268,9 @@ per-file.
 | `gpu_selftest` | 1 | — | original | known-answer checks for the BLAS fallback (harness) |
 
 The Files column sums to 300; the 301st library source file is
-`testdata/smoke_test_archived.mbt`, which is a fixture and not a package. The
-dependency depth is 4; the widest fan-out is `tarnet` at 5 packages.
+`testdata/smoke_test_archived.mbt`, which is a fixture and not a package.
+
+Dependency depth is 7; the widest fan-out is `infra` at 11 packages.
 `verify/qa_loop.py` reports both. The order bottom to top is `core`, then
 `activ`, then `nn`, then everything else; `infra` sits at the top because
 running a model touches a neuron, a connection, a stimulus and an optimiser at
@@ -695,7 +696,7 @@ python verify/qa_loop.py --ci       # the CI-portable subset
 
 | Gate | What it establishes |
 |---|---|
-| `deps` | the declared package graph is a DAG, depth 4, widest fan-out `tarnet` at 5 |
+| `deps` | the declared package graph is a DAG, depth 7, widest fan-out `infra` at 11 |
 | `pin` | the pinned dependencies are the current ones on the registry |
 | `dup` | no duplicated code across the `.mbt` tree |
 | `shadow` | no name defined twice at module level in the repository's Python |

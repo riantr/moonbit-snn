@@ -83,6 +83,58 @@ FAULTS = [
      [("_build/tarnet_ref/tarnet/models/tarnet.py",
        "kersize: tuple[int, int, int] = (3, 5, 9),",
        "kersize: tuple[int, int, int] = (3, 5, 7),")]),
+
+    # The release gate exists for exactly one bug: a step that `cd`s into the
+    # directory its own job already put it in. The v0.166.1 form was `cd mbt`
+    # on its own line. The one-line form -- `run: cd mbt && ...` -- is the same
+    # mistake, and a check that only matched the first spelling walked straight
+    # past the second. Both are faults here, one per spelling, so a regression
+    # in either one is named rather than hidden behind the other.
+    ("release",
+     "`cd mbt` on its own line under a job that already runs in mbt",
+     [(".github/workflows/publish.yml",
+       "          # `find`, not a glob: `ls *_test.mbt` with no match hands the",
+       "          cd mbt\n"
+       "          # `find`, not a glob: `ls *_test.mbt` with no match hands the")]),
+
+    ("release",
+     "`run: cd mbt` on one line under a job that already runs in mbt",
+     [(".github/workflows/publish.yml",
+       "        run: moon test ./tests/wave1 --target native",
+       "        run: cd mbt && moon test ./tests/wave1 --target native")]),
+
+    # The formatter's distance from canonical form is a RECORD, and the gate
+    # fails when it moves in either direction. A file that is currently
+    # canonical becomes non-canonical the moment the formatter's one
+    # remaining disagreement with it appears -- here, a missing trailing
+    # newline, which `moon fmt` puts back. Nothing about the code changes:
+    # the file is byte-for-byte the same program.
+    ("fmt",
+     "the trailing newline the formatter wants back",
+     [("mbt/tests/wave1/units_test.mbt",
+       "  assert_eq(@core.nM, 0.001F)\n}\n",
+       "  assert_eq(@core.nM, 0.001F)\n}")]),
+
+    # The package graph is three levels deeper than the recorded shape, which
+    # is the condition the `deps` gate exists to report. The chain it builds
+    # is core -> activ -> nn -> optim -> rl -> attention -> generative ->
+    # models -> meta -> infra: ten packages, where the tree records seven.
+    # The added edges are acyclic, which matters: a cycle would be a build
+    # error, and the gate would never get to measure it.
+    ("deps",
+     "a dependency chain three levels deeper than the recorded shape",
+     [("mbt/generative/moon.pkg",
+       '  "riantr/snn_mbt/rl",\n}\n',
+       '  "riantr/snn_mbt/rl",\n  "riantr/snn_mbt/attention",\n}\n'),
+      ("mbt/models/moon.pkg",
+       '  "riantr/snn_mbt/rl",\n}\n',
+       '  "riantr/snn_mbt/rl",\n  "riantr/snn_mbt/generative",\n}\n'),
+      ("mbt/meta/moon.pkg",
+       '  "riantr/snn_mbt/optim",\n}\n',
+       '  "riantr/snn_mbt/optim",\n  "riantr/snn_mbt/models",\n}\n'),
+      ("mbt/infra/moon.pkg",
+       '  "riantr/snn_mbt/models",\n}\n',
+       '  "riantr/snn_mbt/models",\n  "riantr/snn_mbt/meta",\n}\n')]),
 ]
 
 

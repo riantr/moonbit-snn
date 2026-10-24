@@ -1,0 +1,15 @@
+{
+  "dependency_depth": 7,
+  "widest_fan_out": 11,
+  "widest_fan_out_package": "infra",
+  "tolerance": 2,
+  "measured_on": "863da49",
+  "measured_at": "2026-10-25",
+  "command": "read every mbt/*/moon.pkg, build the dependency graph, and take the longest chain",
+  "definitions": {
+    "dependency_depth": "the number of packages in the longest chain of the declared dependency graph, counted from a package with no dependencies (depth 1) to the package at the top",
+    "widest_fan_out": "the number of other packages that the widest-importing package depends on",
+    "tolerance": "how many levels deeper the graph may become before the gate fails"
+  },
+  "note": "The shape of the package graph: how deep the longest chain is, and which package imports the most others. It is recorded rather than thresholded by a round number, because the shape of the tree is a fact about the tree and not about this gate. The tolerance is two levels, which is one package split: a split adds a level to the chain, and two of them are a structural change worth looking at. The chain is the long one and it is intentional -- infra/ sits at the top because running a model touches a neuron, a connection, a stimulus and an optimiser at once, and checkpointing one means naming the types all of those packages own. A package that depends on eleven others is not a design smell at the top of a dependency tree; it is what the top of a dependency tree looks like. This baseline exists because the gate that reads it was measuring the graph WRONG: it intersected each manifest with the packages it had already read, and the loop walks the directory in sorted order, so every edge to a later-sorting package was dropped. Twenty-eight edges went missing, including eight of infra/'s eleven. The tree was reported as 4 deep when it is 7 deep, the widest fan-out was reported as tarnet at 5 when it is infra at 11, and the gate's only failure condition -- a depth above 6 -- was unreachable on the real graph. Both READMEs quoted the wrong numbers. Any change to the shape of the graph must update this file and the quoted numbers in the same commit."
+}

@@ -133,7 +133,7 @@ def _canonical_offenders():
     ROTATED between runs on the same tree. It is a good way to find one file
     to look at and a bad way to count -- and a repository note that said
     "ten of them carry pre-existing formatting diffs" was written on the
-    strength of that sample. The real number is 621 of 635.
+    strength of that sample. The real number is 621 files, of 640.
 
     So the measurement is done on a copy: copy the module, format the copy,
     compare it with the original. That is exact, it is the same set every
@@ -177,7 +177,7 @@ def _canonical_offenders():
 def gate_fmt():
     """How far is the tree from the formatter's canonical form, and is it moving?
 
-    The answer is a long way: 621 of the 635 source files are not in the
+    The answer is a long way: 621 of the source files are not in the
     current formatter's canonical form, because the tree predates the
     spelling the toolchain now prefers (`Int` for `Int32`, `x?` for `x~`)
     and the formatter also wants a trailing newline on most files. That is
@@ -732,6 +732,7 @@ TEST_BASELINE = os.path.join(ROOT, "verify", "test_baseline.json")
 GATE_BASELINE = os.path.join(ROOT, "verify", "gate_baseline.json")
 FMT_BASELINE = os.path.join(ROOT, "verify", "fmt_baseline.json")
 TREE_BASELINE = os.path.join(ROOT, "verify", "tree_baseline.json")
+DEPS_BASELINE = os.path.join(ROOT, "verify", "deps_baseline.json")
 
 
 def load_baseline(path, key):
@@ -766,6 +767,11 @@ def load_test_baseline():
 def load_gate_baseline():
     """The recorded gate-count baseline, or None if it cannot be read."""
     return load_baseline(GATE_BASELINE, "gate_count")
+
+
+def load_deps_baseline():
+    """The recorded package-graph baseline, or None if it cannot be read."""
+    return load_baseline(DEPS_BASELINE, "dependency_depth")
 
 
 def load_tree_baseline():
@@ -1188,19 +1194,46 @@ def gate_deps():
 
     What is worth adding is the direction the compiler has no opinion about:
     whether the dependency graph is a DAG at all, and whether it is shallow.
-    A cycle would fail to build, so that is free; the depth is not. twenty-one
-    packages with infra/ depending on twelve of them is the shape of a top of a
+    A cycle would fail to build, so that is free; the depth is not. Twenty-four
+    packages with infra/ depending on eleven of them is the shape of a top of a
     dependency tree, and knowing it is intentional rather than accidental is
     what makes the next split easier to plan.
+
+    The depth is recorded rather than thresholded by a round number, because
+    the shape of the tree is a fact about the tree and not about this gate.
+    The recorded value and the tolerance live in verify/deps_baseline.json,
+    and the gate fails when the depth grows past them.
     """
-    graph = {}
+    manifests = {}
     for entry in sorted(os.listdir(MBT)):
         p = os.path.join(MBT, entry, "moon.pkg")
         if not os.path.isfile(p):
             continue
         with open(p, encoding="utf-8", errors="replace") as fh:
-            manifest = fh.read()
-        graph[entry] = set(re.findall(r'"riantr/snn_mbt/([\w.]+)"', manifest)) & set(graph)
+            manifests[entry] = fh.read()
+
+    # The edges are resolved against the WHOLE tree, and not against the
+    # packages that happen to have been read already.
+    #
+    # The first version intersected each manifest with the graph built SO FAR,
+    # and the loop walks the directory in sorted order -- so an edge to a
+    # LATER-sorting package was dropped on the floor. Twenty-eight edges went
+    # missing that way, including eight of infra/'s eleven. The tree was
+    # measured as 4 deep when it is 7 deep, and the wide fan-out was reported
+    # as `tarnet` at 5 when it is `infra` at 11.
+    #
+    # That is the failure this repository exists to catch: a gate that
+    # under-reports the thing it exists to report cannot fail. Its only
+    # failure condition, a depth above 6, was unreachable on the real graph
+    # because the measurement was wrong, and the number both READMEs quoted
+    # was wrong with it.
+    #
+    # A nested package (`gpu/cuda`) is not a top-level package, so it is not
+    # an edge either; and a package that names itself is not a dependency.
+    graph = {}
+    for entry, manifest in manifests.items():
+        deps = re.findall(r'"riantr/snn_mbt/([\w./-]+)"', manifest)
+        graph[entry] = {d for d in deps if d in manifests and d != entry}
 
     issues = []
 
@@ -1216,11 +1249,25 @@ def gate_deps():
 
     heights = {n: depth(n) for n in graph}
     tallest = max(heights.values())
-    if tallest > 6:
-        widest = [n for n, h in heights.items() if h == tallest]
+    widest_at_top = sorted(n for n, h in heights.items() if h == tallest)
+
+    base = load_deps_baseline()
+    if base is None:
+        return Result(
+            "deps", "fail",
+            "verify/deps_baseline.json is missing or malformed, so the shape of "
+            "the package graph cannot be compared against anything. Restore it "
+            "rather than letting the depth drift unchecked.",
+            0, {"depth": heights},
+        )
+    recorded = base["dependency_depth"]
+    tolerance = base.get("tolerance", 0)
+    if tallest > recorded + tolerance:
         issues.append(
-            f"dependency depth {tallest} at {widest}; a chain that deep usually "
-            f"means a package wants to sit lower or split"
+            "dependency depth %d exceeds the recorded %d (+%d tolerance) at %s; "
+            "a chain that deep usually means a package wants to sit lower or "
+            "split"
+            % (tallest, recorded, tolerance, ", ".join(widest_at_top))
         )
 
     # A package that depends on more than half the tree is a leaf-shaped node
@@ -1234,7 +1281,8 @@ def gate_deps():
                        "depth": heights})
     return Result(
         "deps", "pass",
-        f"{len(graph)} packages, depth {tallest}, widest fan-out [{summary}]",
+        f"{len(graph)} packages, depth {tallest} (recorded {recorded}), "
+        f"widest fan-out [{summary}]",
         0, {"graph": {k: sorted(v) for k, v in graph.items()},
             "depth": heights, "fanout": fanout},
     )

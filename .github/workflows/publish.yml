@@ -128,13 +128,13 @@ jobs:
           fi
           echo "根包无残留测试文件。"
 
-      # `moon fmt --check` is deliberately NOT a gate. The tree is 621 of 635
-      # source files away from the formatter's canonical form, because it
-      # predates the spelling the toolchain now prefers (`Int` for `Int32`,
-      # `x?` for `x~`). Enabling the check would fail a release over 621
-      # files, and mass-reformatting them inside a release commit is scope
-      # creep. It also REFLOWS the checked-in oracle goldens, which would
-      # break the byte identity `verify/golden_repro.py` holds.
+      # `moon fmt --check` is deliberately NOT a gate. 621 source files are away
+      # from the formatter's canonical form, because the tree predates the
+      # spelling the toolchain now prefers (`Int` for `Int32`, `x?` for `x~`).
+      # Enabling the check would fail a release over 621 files, and
+      # mass-reformatting them inside a release commit is scope creep. It also
+      # REFLOWS the checked-in oracle goldens, which would break the byte
+      # identity `verify/golden_repro.py` holds.
       #
       # A note that said "ten of them" was written from `moon fmt --check`'s
       # own output, and that output is a sample of at most ten that rotates
