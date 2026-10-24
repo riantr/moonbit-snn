@@ -147,8 +147,8 @@ requires it to go **red**; then it removes the fault and requires the gate to
 go green again — so the red is attributable to the fault and not to the
 machine, the clock, or a gate that was already broken. It covers `lint`,
 `integration`, `coverage`, `fuzz`, `stress`, `mutation`, `oracle`,
-`provenance`, `release`, `fmt`, `deps` and `docs` — eighteen fault cases
-across thirteen gates; the other seven were proved by hand.
+`provenance`, `release`, `fmt`, `deps` and `docs` — 21 fault cases across 12
+gates; the other 8 were proved by hand.
 Every file it touches is restored byte-exactly, because `core.autocrlf=true`
 with no `.gitattributes` means `git checkout --` would rewrite a file with
 CRLF and change its bytes.

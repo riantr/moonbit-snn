@@ -184,6 +184,36 @@ FAULTS = [
      [("README.md",
        "about 65,300 lines, across",
        "about 65,400 lines, across")]),
+
+    # A BLANK cell in the package table used to read as "no claim" and skip
+    # the check, while the Ported column beside it treated a blank as an
+    # invalid claim. One hole in one column is enough to let a row through
+    # unchecked, so the blank has to be reported.
+    ("docs",
+     "a blank line-count cell in the package table",
+     [("mbt/README.md",
+       "| `autodiff` | 3 | ~0.5k | original |",
+       "| `autodiff` | 3 |  | original |")]),
+
+    # The size of the battery is quoted in the README, and it was wrong
+    # twice: once because the gate count was mis-added, and once because the
+    # case count went stale the moment a fault case was added. It is pinned
+    # now, so the prose cannot drift away from the battery it describes.
+    ("docs",
+     "the quoted size of the battery disagreeing with the battery",
+     [("README.md",
+       "21 fault cases across 12",
+       "22 fault cases across 12")]),
+
+    # A row that says two different numbers about the same tests. The row
+    # names its file AND repeats the count in prose, and the two have to
+    # agree: one row claimed "added 3 tests" and "4 of the 14" in the same
+    # sentence, and the first one named no file, so nothing checked it.
+    ("docs",
+     "a row whose two test counts disagree",
+     [("mbt/README.md",
+       "21 tests + 0 examples |",
+       "22 tests + 0 examples |")]),
 ]
 
 

@@ -35,6 +35,17 @@ import time
 import urllib.error
 import urllib.request
 
+# This machine's console codec is GBK, and a gate message can quote a
+# character GBK cannot encode -- the check mark in a feature-matrix row, for
+# instance. Printing that raises UnicodeEncodeError, and the traceback
+# REPLACES the verdict the reader needed: the gate went red for a reason
+# that had nothing to do with what it was checking. So the output is UTF-8
+# with replacement, and a character that still cannot be shown becomes "?"
+# rather than an exception. The battery decodes this output as UTF-8, which
+# is what makes the distinction visible there.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MBT = os.path.join(ROOT, "mbt")
 
@@ -559,7 +570,11 @@ def _check_package_table(text, per_package):
         if files != actual["files"]:
             problems.append("%s claims %d file(s) and the tree holds %d"
                             % (pkg, files, actual["files"]))
-        if lines and lines != "—":
+        if lines != "—":
+            # An EMPTY cell is not "no claim": it is a cell that looks like a
+            # claim and cannot be checked. The Ported column is treated the
+            # same way, and it has to be -- a blank that reads as "nothing to
+            # check" is a hole in the table, not a fact about it.
             m = re.match(r"^~([\d.]+)k$", lines)
             if not m:
                 problems.append("%s states its line count as %r, which is not "
@@ -984,7 +999,17 @@ def gate_docs():
     # one that named a file which does not exist -- all of which sat in a
     # published package page for months because nothing compared them with
     # the suite.
-    counts = _test_declaration_counts()
+    counts, ambiguous = _test_declaration_counts()
+    if ambiguous:
+        return Result(
+            "docs", "fail",
+            "%d test file name(s) under mbt/tests/ are used by more than one "
+            "file (%s), so a row that names one of them cannot be checked: the "
+            "count would be whichever file the map happened to keep. Rename "
+            "one of them, or teach the rows to name a path."
+            % (len(ambiguous), ", ".join(sorted(ambiguous)[:3])),
+            0.0, {"ambiguous": sorted(ambiguous)},
+        )
     claimed_counts = re.findall(
         r"(\d+) tests? in `([\w./-]+_test\.mbt)`", pkg_text)
     # A row that owns only PART of a test file says "N of the M tests in
@@ -1030,6 +1055,50 @@ def gate_docs():
                (" but the file now holds %d" % first[2])),
             0.0,
             {"wrong": wrong_counts, "checked": len(claimed_counts)},
+        )
+
+    # Every test count in the feature matrix has to be covered by a count
+    # that names a file. A row that says "21 tests in `util_test.mbt` ...
+    # 21 tests + 0 examples" is checkable through the first number, but the
+    # second one is a second claim about the same tests, and it can disagree
+    # with the first: one row claimed "added 3 tests" and "4 of the 14" in
+    # the same sentence. So a bare count in a row is required to EQUAL the
+    # row's qualified count, and a row with a bare count and no qualified one
+    # is a count nothing checks.
+    #
+    # The plural "tests" is deliberate: "258 test files" is a count of FILES
+    # and is not a test count, and "tau=0 test verifies ..." is a sentence
+    # about one case, not a claim about a file.
+    bare_counts = re.compile(r"(?<![\w.=])(\d+) tests\b(?! in `)")
+    qualified_counts = re.compile(
+        r"(\d+) (?:of the (\d+) )?tests? in `([\w./-]+_test\.mbt)`")
+    unqualified = []
+    disagreeing = []
+    for line in pkg_text.split("\n"):
+        if not line.startswith("|"):
+            continue
+        bares = [int(m.group(1)) for m in bare_counts.finditer(line)]
+        if not bares:
+            continue
+        qualified = [int(m.group(1)) for m in qualified_counts.finditer(line)]
+        if not qualified:
+            unqualified.append((line[:70], bares))
+            continue
+        for bare in bares:
+            if bare not in qualified:
+                disagreeing.append((line[:70], bare, qualified))
+    if unqualified or disagreeing:
+        first = (unqualified or disagreeing)[0]
+        return Result(
+            "docs", "fail",
+            "%d row(s) of the feature matrix carry a test count that names no "
+            "file, and %d row(s) carry one that disagrees with the count in "
+            "the same row. A count that names no file is a number nothing "
+            "checks; a row that says two different numbers is wrong about one "
+            "of them. First offender: %s"
+            % (len(unqualified), len(disagreeing), first),
+            0.0,
+            {"unqualified": unqualified, "disagreeing": disagreeing},
         )
 
     return Result(
@@ -1212,23 +1281,78 @@ def _test_declaration_counts():
 
     The count is the number of `test "..."` declarations in the file, which is
     what `moon test` reports for that file.
+
+    The map is keyed by file NAME, because the documentation's rows name a
+    file by name. Two test files with the same name in different waves would
+    therefore shadow each other, and a row would be checked against the wrong
+    file -- which is a check that passes for the wrong reason. The ambiguous
+    names are returned separately so that the gate can refuse to check
+    anything at all, rather than check it wrongly.
+
+    Returns (counts, ambiguous).
     """
     counts = {}
+    where = {}
+    ambiguous = set()
     root = os.path.join(MBT, "tests")
     if not os.path.isdir(root):
-        return counts
+        return counts, ambiguous
     for dp, _dn, fn in os.walk(root):
         for name in fn:
             if not name.endswith(".mbt"):
                 continue
+            path = os.path.join(dp, name)
             try:
-                with open(os.path.join(dp, name), encoding="utf-8",
-                          errors="replace") as fh:
+                with open(path, encoding="utf-8", errors="replace") as fh:
                     text = fh.read()
             except OSError:
                 continue
+            if name in where and where[name] != path:
+                ambiguous.add(name)
+            where[name] = path
             counts[name] = len(re.findall(r'^\s*test\s+"', text, re.M))
-    return counts
+    return counts, ambiguous
+
+
+def _battery_fault_gates():
+    """The battery's fault cases, and how many distinct gates they cover.
+
+    Read with `ast` rather than by importing the module: importing it would
+    run its side effects -- it reconfigures stdout -- inside this process,
+    and a gate should not change how the thing it reports is printed.
+
+    The documentation quotes both numbers, and a quoted count that is read
+    from the thing it counts is a count that cannot drift. This one had
+    already been wrong twice: it was written as "thirteen gates ... the
+    other seven" when the battery covered twelve, and the case count went
+    stale the moment a fault case was added.
+
+    Returns (cases, gates) or None.
+    """
+    script = os.path.join(ROOT, "verify", "gate_battery.py")
+    if not os.path.isfile(script):
+        return None
+    try:
+        with open(script, encoding="utf-8") as fh:
+            tree = ast.parse(fh.read())
+    except (OSError, SyntaxError, ValueError):
+        return None
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        targets = [t.id for t in node.targets if isinstance(t, ast.Name)]
+        if "FAULTS" not in targets:
+            continue
+        try:
+            value = ast.literal_eval(node.value)
+        except (ValueError, SyntaxError):
+            return None
+        gates = []
+        for entry in value:
+            if isinstance(entry, (list, tuple)) and entry:
+                gates.append(str(entry[0]))
+        return len(value), len(set(gates))
+    return None
 
 
 def _measure_packages(rule):
@@ -1331,6 +1455,14 @@ def _measure_tree(rule=None):
     for pkg in ("rl", "synapse"):
         if pkg in per_package:
             measured["%s_lines" % pkg] = per_package[pkg]["lines"]
+
+    # The battery's own size, and how much of the registry it covers. The
+    # documentation quotes all three, and they have already been wrong.
+    battery = _battery_fault_gates()
+    if battery is not None:
+        measured["battery_fault_cases"] = battery[0]
+        measured["battery_gates"] = battery[1]
+        measured["hand_proved_gates"] = len(GATES) - battery[1]
     return measured
 
 

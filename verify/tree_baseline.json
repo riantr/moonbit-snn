@@ -7,7 +7,10 @@
     "example_packages": 77,
     "ported_files": 74,
     "original_files": 227,
-    "interface_snapshots": 80
+    "interface_snapshots": 80,
+    "battery_fault_cases": 21,
+    "battery_gates": 12,
+    "hand_proved_gates": 8
   },
   "rounded_facts": {
     "library_lines": {"value": 65300, "scale": 100},
@@ -28,7 +31,10 @@
     "synapse_lines": "newline count of the tracked *.mbt under mbt/synapse/ (rounded_facts, not facts)",
     "ported_files": "library files that name one of the upstream Julia packages and are not in a harness package",
     "original_files": "library_source_files - ported_files",
-    "interface_snapshots": "tracked *.mbti files under mbt/"
+    "interface_snapshots": "tracked *.mbti files under mbt/",
+    "battery_fault_cases": "the number of fault cases in verify/gate_battery.py's FAULTS list",
+    "battery_gates": "the number of distinct gates those fault cases cover",
+    "hand_proved_gates": "the registry size minus the gates the battery covers -- the gates whose ability to fail was established by hand"
   },
   "provenance": {
     "upstream_packages": ["SNNModels.jl", "SpikingNeuralNetworks.jl", "SNNUtils.jl"],
@@ -48,6 +54,7 @@
     {"file": "README.md", "fact": "interface_snapshots", "pattern": "reports all {interface_snapshots} as"},
     {"file": "README.md", "fact": "provenance_facts", "pattern": "asserts {provenance_facts} structural facts"},
     {"file": "README.md", "fact": "provenance_facts", "pattern": "reports \\*\\*{provenance_facts}/{provenance_facts}\\*\\* against the current reference"},
+    {"file": "README.md", "fact": "battery_fault_cases", "pattern": "— {battery_fault_cases} fault cases across {battery_gates}\n?gates; the other {hand_proved_gates} were proved by hand"},
     {"file": "mbt/README.md", "fact": "library_source_files", "pattern": "\\| Library source files \\| {library_source_files} \\|"},
     {"file": "mbt/README.md", "fact": "packages", "pattern": "\\| Packages \\| {packages} \\|"},
     {"file": "mbt/README.md", "fact": "root_imports", "pattern": "imports {root_imports} of them"},
